@@ -10,18 +10,4 @@
 #   2. Go to a file
 #   3. Use the command palette to run the CODEOWNERS: Show owners of current file command, which will display all code owners for the current file.
 
-# Default ownership for all repo files
-* @anasalkouz @andrross @Bukhtawar @CEHENKLE @dblock @dbwiddis @dreamer-89 @gbbafna @kotwanikunal @mch2 @msfroh @nknize @owaiskazi19 @reta @Rishikesh1159 @sachinpkale @saratvemulapalli @shwetathareja @sohami @tlfeng @VachaShah
-
-/modules/transport-netty4/ @peternied
-
-/plugins/identity-shiro/ @peternied
-
-/server/src/main/java/org/opensearch/extensions/ @peternied
-/server/src/main/java/org/opensearch/identity/ @peternied
-/server/src/main/java/org/opensearch/threadpool/ @peternied
-/server/src/main/java/org/opensearch/transport/ @peternied
-
-/.github/ @peternied
-
-/MAINTAINERS.md @anasalkouz @andrross @Bukhtawar @CEHENKLE @dblock @dbwiddis @dreamer-89 @gbbafna @jed326 @kotwanikunal @mch2 @msfroh @nknize @owaiskazi19 @peternied @reta @Rishikesh1159 @sachinpkale @saratvemulapalli @shwetathareja @sohami @tlfeng @VachaShah
+*   @wazuh/devel-indexer

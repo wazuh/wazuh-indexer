@@ -40,7 +40,7 @@ repositories {
 }
 
 dependencies {
-  jdkJarHell 'org.opensearch:opensearch-core:current'
+  jdkJarHell 'org.opensearch:opensearch-core:2.9.0'
   compileOnly "org.${project.properties.compileOnlyGroup}:${project.properties.compileOnlyVersion}"
   implementation "org.${project.properties.compileGroup}:${project.properties.compileVersion}"
 }

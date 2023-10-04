@@ -17,7 +17,7 @@ generate_mappings() {
   MODULE="$3"
   UPLOAD="$4"
   URL="$5"
-  
+
   IN_FILES_DIR="$INDEXER_SRC/ecs/$MODULE/fields"
   OUT_DIR="$INDEXER_SRC/ecs/$MODULE/mappings/$ECS_VERSION"
 
@@ -43,7 +43,7 @@ generate_mappings() {
       "settings": .settings,
       "mappings": .mappings
     }
-  }' > "$OUT_DIR/generated/elasticsearch/legacy/opensearch-template.json"
+  }' >"$OUT_DIR/generated/elasticsearch/legacy/opensearch-template.json"
 
   # Check if the --upload flag has been provided
   if [ "$UPLOAD" == "--upload" ]; then

@@ -10,16 +10,15 @@ This script generates the ECS mappings for the Wazuh indices.
 
 #### Folder structrue
 
-There is a folder for each module. Inside each folder, there is a `fields` folder with the required 
+There is a folder for each module. Inside each folder, there is a `fields` folder with the required
 files to generate the mappings. These are the inputs for the ECS generator.
 
 #### Usage
 
 **Copy the `generate.sh` script to the root level of the ECS repository.**
 
-Use the `generate.sh` script to generate the mappings for a module. The script takes 3 arguments, 
+Use the `generate.sh` script to generate the mappings for a module. The script takes 3 arguments,
 plus 2 optional arguments to upload the mappings to the Wazuh indexer (using **composable** indexes).
-
 
 ```plaintext
 Usage: ./generate.sh <ECS_VERSION> <INDEXER_SRC> <MODULE> [--upload <URL>]
@@ -28,10 +27,11 @@ Usage: ./generate.sh <ECS_VERSION> <INDEXER_SRC> <MODULE> [--upload <URL>]
   * MODULE: Module to generate mappings for
   * --upload <URL>: Upload generated index template to the OpenSearch cluster. Defaults to https://localhost:9200
 Example: ./generate.sh v8.10.0 ~/wazuh-indexer vulnerability-detector --upload https://indexer:9200
-``` 
+```
 
 For example, to generate the mappings for the `vulnerability-detector` module using the
 ECS version `v8.10.0` and the Wazuh indexer in path `~/wazuh/wazuh-indexer`:
+
 ```bash
 ./generate.sh v8.10.0 ~/wazuh/wazuh-indexer vulnerability-detector
 ```
@@ -45,10 +45,10 @@ For our use case, the most important files are under `mappings/<ECS_VERSION>/gen
 - `template.json`: Elasticsearch compatible index template for the module
 - `opensearch-template.json`: OpenSearch compatible index template for the module
 
-The original output is `template.json`, which is not compatible with OpenSearch by default. In order 
+The original output is `template.json`, which is not compatible with OpenSearch by default. In order
 to make this template compatible with OpenSearch, the following changes are made:
 
-- the `order` property is renamed to `priority`. 
+- the `order` property is renamed to `priority`.
 - the `mappings` and `settings` properties are nested under the `template` property.
 
 The script takes care of these changes automatically, generating the `opensearch-template.json` file as a result.

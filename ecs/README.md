@@ -1,19 +1,19 @@
-### ECS mappings generator
+## ECS mappings generator
 
 This script generates the ECS mappings for the Wazuh indices.
 
-#### Requirements
+### Requirements
 
 - ECS repository clone. The script is meant to be launched from the root level of that repository.
 - Python 3.6 or higher
 - jq
 
-#### Folder structrue
+### Folder structrue
 
 There is a folder for each module. Inside each folder, there is a `fields` folder with the required
 files to generate the mappings. These are the inputs for the ECS generator.
 
-#### Usage
+### Usage
 
 **Copy the `generate.sh` script to the root level of the ECS repository.**
 
@@ -36,7 +36,7 @@ ECS version `v8.10.0` and the Wazuh indexer in path `~/wazuh/wazuh-indexer`:
 ./generate.sh v8.10.0 ~/wazuh/wazuh-indexer vulnerability-detector
 ```
 
-#### Output
+### Output
 
 A new `mappings` folder will be created inside the module folder, containing all the generated files.
 The files are versioned using the ECS version, so different versions of the same module can be generated.
@@ -53,7 +53,20 @@ to make this template compatible with OpenSearch, the following changes are made
 
 The script takes care of these changes automatically, generating the `opensearch-template.json` file as a result.
 
-#### Adding new mappings
+### Upload
+
+You can either upload the index template using cURL or the UI (dev tools).
+
+```bash
+curl -u admin:admin -k -X PUT "https://indexer:9200/_index_template/wazuh-vulnerability-detector" -H "Content-Type: application/json" -d @opensearch-template.json
+```
+
+Notes:
+- PUT and POST are interchangable.
+- The name of the index template does not matter. Any name can be used.
+- Adjust credentials and URL accordingly.
+
+### Adding new mappings
 
 The easiest way to create mappings for a new module is to take a previous one as a base.
 Copy a folder and rename it to the new module name. Then, edit the `fields` files to
@@ -65,6 +78,24 @@ are required.
 - `fields/subset.yml`: This file contains the subset of ECS fields to be used for the module.
 - `fields/template-settings-legacy.json`: This file contains the legacy template settings for the module.
 - `fields/template-settings.json`: This file contains the composable template settings for the module.
+
+### Event generator
+
+For testing purposes, the script `generate_events.py` can be used to generate events for a given module.
+Currently, it is only able to generate events for the `vulnerability-detector` module. To support other
+modules, please extend of refactor the script.
+
+The script prompts for the required parameters, so it can be launched without arguments:
+  
+```bash
+./event_generator.py
+```
+
+The script will generate a JSON file with the events, and will also ask whether to upload them to the
+indexer. If the upload option is selected, the script will ask for the indexer URL and port, credentials,
+and index name.
+
+The script uses log file. Check it out for debugging or additonal information.
 
 #### References
 

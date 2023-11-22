@@ -164,7 +164,7 @@ echo "Copying artifact to ${OUTPUT}/dist"
 [[ "$SNAPSHOT" == "true" ]] && IDENTIFIER="-SNAPSHOT"
 ARTIFACT_BUILD_NAME=`ls distribution/$TYPE/$TARGET/build/distributions/ | grep "opensearch-min.*$SUFFIX.$EXT"`
 # [WAZUH] Used by the GH workflow to upload the artifact
-echo "$ARTIFACT_BUILD_NAME" >> "$OUTPUT/artifact_name.txt"
+echo "$ARTIFACT_BUILD_NAME" > "$OUTPUT/artifact_name.txt"
 mkdir -p "${OUTPUT}/dist"
 cp distribution/$TYPE/$TARGET/build/distributions/$ARTIFACT_BUILD_NAME "${OUTPUT}"/dist/$ARTIFACT_BUILD_NAME
 

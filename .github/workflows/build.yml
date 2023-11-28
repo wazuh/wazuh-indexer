@@ -13,7 +13,6 @@ env:
   SNAPSHOT: false
   PLATFORM: linux
   BUILD: bash scripts/build.sh
-  PACKAGE_NAME:
 
 
 jobs:
@@ -25,7 +24,7 @@ jobs:
       contents: read
     strategy:
         matrix:
-          # For act:
+          # act is resource-heavy. Avoid running parallel builds with it:
           # DISTRIBUTION: [ rpm ]
           # ARCHITECTURE: [ x64 ]
           DISTRIBUTION: [ tar, rpm, deb ]

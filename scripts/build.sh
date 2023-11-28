@@ -167,17 +167,3 @@ ARTIFACT_BUILD_NAME=`ls distribution/$TYPE/$TARGET/build/distributions/ | grep "
 echo "$ARTIFACT_BUILD_NAME" > "$OUTPUT/artifact_name.txt"
 mkdir -p "${OUTPUT}/dist"
 cp distribution/$TYPE/$TARGET/build/distributions/$ARTIFACT_BUILD_NAME "${OUTPUT}"/dist/$ARTIFACT_BUILD_NAME
-
-# [WAZUH] we don't need to build the plugins
-# echo "Building core plugins..."
-# mkdir -p "${OUTPUT}/core-plugins"
-# cd plugins
-# ../gradlew assemble -Dbuild.snapshot="$SNAPSHOT" -Dbuild.version_qualifier=$QUALIFIER
-# cd ..
-# for plugin in plugins/*; do
-#   PLUGIN_NAME=$(basename "$plugin")
-#   if [ -d "$plugin" ] && [ "examples" != "$PLUGIN_NAME" ]; then
-#     PLUGIN_ARTIFACT_BUILD_NAME=`ls "$plugin"/build/distributions/ | grep "$PLUGIN_NAME.*$IDENTIFIER.zip"`
-#     cp "$plugin"/build/distributions/"$PLUGIN_ARTIFACT_BUILD_NAME" "${OUTPUT}"/core-plugins/"$PLUGIN_ARTIFACT_BUILD_NAME"
-#   fi
-# done

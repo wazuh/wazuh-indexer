@@ -2,41 +2,57 @@
 
 # Attaches the project as a volume to a JDK 17 container
 # Requires Docker
-# Script usage: bash ./docker.sh
+# Script usage: bash ./dev.sh
 
 set -e
 
-# Change working directory to the root of the repository
-cd "${0%/*}/.."
+# ====
+# Checks that the script is run from the intended location
+# ====
+function check_project_root_folder () {
+    if [[ "$0" != "./dev.sh" && "$0" != "dev.sh" ]]; then
+        echo "Run the script from its location" 
+        usage
+        exit 1
+    fi
+    # Change working directory to the root of the repository
+    cd ..
+}
 
+# ====
+# Displays usage
+# ====
+function usage() {
+    echo "Usage: ./dev.sh {up|down|stop}"
+}
 
 # ====
 # Main function
 # ====
-main() {
-    COMPOSE_FILE=docker/dev.yml
+function main() {
+    check_project_root_folder "$@"
+    compose_file=docker/dev.yml
+    compose_cmd="docker compose -f $compose_file"
     REPO_PATH=$(pwd)
-    VERSION=$(bash "$REPO_PATH/docker/get_version.sh")
-    COMPOSE_CMD="docker compose -f $COMPOSE_FILE"
+    VERSION=$(cat VERSION)
     export REPO_PATH
     export VERSION
 
     case $1 in
     up)
-        $COMPOSE_CMD up -d
+        $compose_cmd up -d
         ;;
     down)
-        $COMPOSE_CMD down
+        $compose_cmd down
         ;;
     stop)
-        $COMPOSE_CMD stop
+        $compose_cmd stop
         ;;
     *)
-        echo "Usage: $0 {up|down|stop} [security]"
+        usage
         exit 1
         ;;
     esac
 }
-
 
 main "$@"

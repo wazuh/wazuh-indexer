@@ -162,7 +162,7 @@ echo "Building OpenSearch for $PLATFORM-$DISTRIBUTION-$ARCHITECTURE"
 # Copy artifact to dist folder in bundle build output
 echo "Copying artifact to ${OUTPUT}/dist"
 [[ "$SNAPSHOT" == "true" ]] && IDENTIFIER="-SNAPSHOT"
-ARTIFACT_BUILD_NAME=`ls distribution/$TYPE/$TARGET/build/distributions/ | grep "opensearch-min.*$SUFFIX.$EXT"`
+ARTIFACT_BUILD_NAME=`ls distribution/$TYPE/$TARGET/build/distributions/ | grep "wazuh-indexer-min.*$SUFFIX.$EXT"`
 # [WAZUH] Used by the GH workflow to upload the artifact
 echo "$ARTIFACT_BUILD_NAME" > "$OUTPUT/artifact_name.txt"
 mkdir -p "${OUTPUT}/dist"

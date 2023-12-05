@@ -22,7 +22,7 @@ buildCache {
   }
 }
 
-rootProject.name = "OpenSearch"
+rootProject.name = "Wazuh indexer"
 
 include 'doc-tools'
 includeBuild("doc-tools/missing-doclet")

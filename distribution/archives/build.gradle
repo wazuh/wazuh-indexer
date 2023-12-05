@@ -33,6 +33,7 @@ import org.opensearch.gradle.JavaPackageType
 apply plugin: 'opensearch.internal-distribution-archive-setup'
 
 CopySpec archiveFiles(CopySpec modulesFiles, String distributionType, String platform, String architecture, JavaPackageType java) {
+  version = rootProject.file('VERSION').getText()
   return copySpec {
     into("wazuh-indexer-${version}") {
       into('lib') {

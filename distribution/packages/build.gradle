@@ -106,6 +106,7 @@ addProcessFilesTask('rpm', false)
 // since we have different templated files that need to be consumed, but the structure
 // is the same
 Closure commonPackageConfig(String type, boolean jdk, String architecture) {
+  project.version = rootProject.file('VERSION').getText()
   return {
     onlyIf {
       OS.current().equals(OS.WINDOWS) == false
@@ -193,12 +194,6 @@ Closure commonPackageConfig(String type, boolean jdk, String architecture) {
         }
       }
     }
-
-    // // Version file
-    // into('/usr/share/wazuh-indexer') {
-    //   from(rootProject.file('VERSION'))
-    //   fileMode 0644
-    // }
 
     // license files
     if (type == 'deb') {

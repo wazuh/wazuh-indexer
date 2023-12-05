@@ -48,6 +48,10 @@ public class VersionProperties {
         return opensearch;
     }
 
+    public static String getWazuh() {
+        return wazuh;
+    }
+
     public static Version getOpenSearchVersion() {
         return Version.fromString(opensearch);
     }
@@ -89,6 +93,7 @@ public class VersionProperties {
     }
 
     private static final String opensearch;
+    private static final String wazuh;
     private static final String lucene;
     private static final String bundledJdkDarwin;
     private static final String bundledJdkFreeBSD;
@@ -104,6 +109,7 @@ public class VersionProperties {
     static {
         Properties props = getVersionProperties();
         opensearch = props.getProperty("opensearch");
+        wazuh = props.getProperty("wazuh");
         lucene = props.getProperty("lucene");
         bundledJdkVendor = props.getProperty("bundled_jdk_vendor");
         final String bundledJdk = props.getProperty("bundled_jdk");

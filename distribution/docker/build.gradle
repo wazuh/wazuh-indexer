@@ -60,7 +60,7 @@ ext.expansions = { Architecture architecture, DockerBase base, boolean local ->
     classifier = "linux-\$(arch)"
   }
 
-  final String opensearch = "wazuh-indexer-min-${VersionProperties.getOpenSearch()}-${classifier}.tar.gz"
+  final String opensearch = "wazuh-indexer-min-${VersionProperties.getWazuh()}-${classifier}.tar.gz"
 
   /* Both the following Dockerfile commands put the resulting artifact at
    * the same location, regardless of classifier, so that the commands that
@@ -256,7 +256,7 @@ subprojects { Project subProject ->
 
     final String exportTaskName = taskName("export", architecture, base, "DockerImage")
     final String buildTaskName = taskName("build", architecture, base, "DockerImage")
-    final String tarFile = "${parent.projectDir}/build/${artifactName}_${VersionProperties.getOpenSearch()}.${extension}"
+    final String tarFile = "${parent.projectDir}/build/${artifactName}_${VersionProperties.getWazuh()}.${extension}"
 
     tasks.register(exportTaskName, LoggedExec) {
       inputs.file("${parent.projectDir}/build/markers/${buildTaskName}.marker")

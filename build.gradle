@@ -76,6 +76,7 @@ allprojects {
   group = 'org.opensearch'
   version = VersionProperties.getOpenSearch()
   description = "OpenSearch subproject ${project.path}"
+  wazuhVersion = VersionProperties.getWazuh()
 }
 
 configure(allprojects - project(':distribution:archives:integ-test-zip')) {

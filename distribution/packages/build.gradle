@@ -195,6 +195,12 @@ Closure commonPackageConfig(String type, boolean jdk, String architecture) {
       }
     }
 
+    // // Version file
+    // into('/usr/share/wazuh-indexer') {
+    //   from(rootProject.file('VERSION'))
+    //   fileMode 0644
+    // }
+
     // license files
     if (type == 'deb') {
       into("/usr/share/doc/${packageName}") {

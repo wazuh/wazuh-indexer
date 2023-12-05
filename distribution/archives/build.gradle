@@ -34,7 +34,7 @@ apply plugin: 'opensearch.internal-distribution-archive-setup'
 
 CopySpec archiveFiles(CopySpec modulesFiles, String distributionType, String platform, String architecture, JavaPackageType java) {
   return copySpec {
-    into("opensearch-${version}") {
+    into("wazuh-indexer-${version}") {
       into('lib') {
         with libFiles()
       }
@@ -70,6 +70,9 @@ CopySpec archiveFiles(CopySpec modulesFiles, String distributionType, String pla
           dirMode 0755
           pluginsDir.getParent()
         }
+      }
+      into('') {
+        with versionFile()
       }
       from(rootProject.projectDir) {
         include 'README.md'

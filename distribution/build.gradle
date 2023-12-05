@@ -357,6 +357,13 @@ configure(subprojects.findAll { ['archives', 'packages'].contains(it.name) }) {
       }
     }
 
+    versionFile = {
+      copySpec {
+        from(rootProject.file('VERSION'))
+        fileMode 0644
+      }
+    }
+
     modulesFiles = { platform ->
       copySpec {
         eachFile {

@@ -10,28 +10,25 @@
 set -ex
 
 plugins=(
+    "alerting" # "opensearch-alerting"
+    "opensearch-job-scheduler"
+    "opensearch-anomaly-detection" # requires "opensearch-job-scheduler"
+    "asynchronous-search" # "opensearch-asynchronous-search"
+    "opensearch-cross-cluster-replication"
+    "geospatial" # "opensearch-geospatial"
+    "opensearch-index-management"
+    "opensearch-knn"
+    "opensearch-ml-plugin" # "opensearch-ml"
+    "neural-search" # "opensearch-neural-search"
+    "opensearch-notifications-core"
+    "notifications" # "opensearch-notifications" requires "opensearch-notifications-core"
+    "opensearch-observability"
+    "performance-analyzer" # "opensearch-performance-analyzer"
+    "opensearch-reports-scheduler"
     "opensearch-security"
+    "opensearch-security-analytics"
+    "opensearch-sql-plugin" # "opensearch-sql"
 )
-# plugins=(
-#     "alerting" # "opensearch-alerting"
-#     "opensearch-job-scheduler"
-#     "opensearch-anomaly-detection" # requires "opensearch-job-scheduler"
-#     "asynchronous-search" # "opensearch-asynchronous-search"
-#     "opensearch-cross-cluster-replication"
-#     "geospatial" # "opensearch-geospatial"
-#     "opensearch-index-management"
-#     "opensearch-knn"
-#     "opensearch-ml-plugin" # "opensearch-ml"
-#     "neural-search" # "opensearch-neural-search"
-#     "opensearch-notifications-core"
-#     "notifications" # "opensearch-notifications" requires "opensearch-notifications-core"
-#     "opensearch-observability"
-#     "performance-analyzer" # "opensearch-performance-analyzer"
-#     "opensearch-reports-scheduler"
-#     "opensearch-security"
-#     "opensearch-security-analytics"
-#     "opensearch-sql-plugin" # "opensearch-sql"
-# )
 
 function usage() {
     echo "Usage: $0 [args]"
@@ -218,52 +215,7 @@ case $SUFFIX.$EXT in
     aarch64.rpm) ;;
     x86_64.rpm) ;;
     amd64.deb)
-        cd "${TMP_DIR}"
-        PATH_CONF="./etc/wazuh-indexer"
-        PATH_BIN="./usr/share/wazuh-indexer/bin"
-
-        # Step 1: extract
-        echo "Extract data.tar.gz from deb for extraction"
-        ar -xf "$ARTIFACT_BUILD_NAME"
-        rm "$ARTIFACT_BUILD_NAME"
-
-        echo "Extract data.tar.gz archive based on the deb package"
-        tar -zvxf "data.tar.gz"
-        rm "data.tar.gz"
-
-        # Step 2: install plugins
-        echo "Install plugins"
-        for plugin in "${plugins[@]}"; do
-            plugin_from_maven="org.opensearch.plugin:${plugin}:$VERSION.0"
-            OPENSEARCH_PATH_CONF=$PATH_CONF $PATH_BIN/opensearch-plugin install --batch --verbose "${plugin_from_maven}"
-        done
-
-        # Step 3: swap configuration files
-        cp $PATH_CONF/security/* $PATH_CONF/opensearch-security/
-        cp $PATH_CONF/jvm.prod.options $PATH_CONF/opensearch-security/jvm.options
-        cp $PATH_CONF/opensearch.prod.yml $PATH_CONF/opensearch-security/opensearch.yml
-
-        rm -r $PATH_CONF/security
-        rm $PATH_CONF/jvm.prod.options $PATH_CONF/opensearch.prod.yml
-
-        # TODO generate changelog file ??
-        # TODO extract control.tar.gz
-
-        # Step 4: pack
-        debmake \
-            --fullname "Wazuh Team" \
-            --email "info@wazuh.com" \
-            --invoke debuild \
-            --package "wazuh-indexer" \
-            --native \
-            --revision 1 \
-            --upstreamversion "$(cat ./usr/share/wazuh-indexer/VERSION)"
-
-        # TODO Step 5 include build_templates (Dockerfile)
-        # TODO Step 6 copy back to ${OUTPUT}/dist/
-
         ;;
     arm64.deb)
-        PATH_CONF="./etc/wazuh-indexer"
         ;;
 esac

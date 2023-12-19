@@ -166,7 +166,7 @@ echo "$ARTIFACT_BUILD_NAME" >"$OUTPUT/artifact_name.txt"
 # Create temporal directory and copy the min package there for extraction
 TMP_DIR="${OUTPUT}/tmp/${TARGET}"
 mkdir -p "$TMP_DIR"
-cp "${OUTPUT}/dist/$ARTIFACT_BUILD_NAME" "${TMP_DIR}/${ARTIFACT_BUILD_NAME}"
+cp "${OUTPUT}/dist/$ARTIFACT_BUILD_NAME" "${TMP_DIR}"
 
 function assemble_tar() {
     cd "${TMP_DIR}"
@@ -187,8 +187,8 @@ function assemble_tar() {
 
     # Step 3: swap configuration files
     cp $PATH_CONF/security/* $PATH_CONF/opensearch-security/
-    cp $PATH_CONF/jvm.prod.options $PATH_CONF/opensearch-security/jvm.options
-    cp $PATH_CONF/opensearch.prod.yml $PATH_CONF/opensearch-security/opensearch.yml
+    cp $PATH_CONF/jvm.prod.options $PATH_CONF/jvm.options
+    cp $PATH_CONF/opensearch.prod.yml $PATH_CONF/opensearch.yml
 
     rm -r $PATH_CONF/security
     rm $PATH_CONF/jvm.prod.options $PATH_CONF/opensearch.prod.yml
@@ -205,6 +205,42 @@ function assemble_tar() {
     echo "After execution, shell path is $(pwd)"
 }
 
+
+function assemble_rpm() {
+    cd "${TMP_DIR}"
+    PATH_CONF="./etc/wazuh-indexer"
+    PATH_BIN="./usr/share/wazuh-indexer/bin"
+
+    # Step 1: extract. Create usr/, etc/ and var/
+    echo "Extract ${ARTIFACT_BUILD_NAME} archive"
+    rpm2cpio "${ARTIFACT_BUILD_NAME}" | cpio -imdv 
+    cd "$(ls -d wazuh-indexer-*/)"
+
+    # Step 2: install plugins
+    echo "Install plugins"
+    for plugin in "${plugins[@]}"; do
+        plugin_from_maven="org.opensearch.plugin:${plugin}:$VERSION.0"
+        OPENSEARCH_PATH_CONF=$PATH_CONF "${PATH_BIN}/opensearch-plugin" install --batch --verbose "${plugin_from_maven}"
+    done
+
+    # Step 3: swap configuration files
+    cp $PATH_CONF/security/* $PATH_CONF/opensearch-security/
+    cp $PATH_CONF/jvm.prod.options $PATH_CONF/jvm.options
+    cp $PATH_CONF/opensearch.prod.yml $PATH_CONF/opensearch.yml
+
+    rm -r $PATH_CONF/security
+    rm $PATH_CONF/jvm.prod.options $PATH_CONF/opensearch.prod.yml
+
+    # Step 4: pack
+    # archive_name="wazuh-indexer-$(cat VERSION)"
+    # rpmbuild --bb \
+    #     --define "_topdir $(pwd)" \
+    #     --define "_version $(cat ./usr/share/wazuh-indexer/VERSION)" \
+    #     --define "_architecture ${ARCHITECTURE}" \
+    #     "${RPM_SPEC}"
+
+}
+
 case $SUFFIX.$EXT in
     linux-arm64.tar.gz)
         assemble_tar
@@ -212,8 +248,12 @@ case $SUFFIX.$EXT in
     linux-x64.tar.gz)
         assemble_tar
         ;;
-    aarch64.rpm) ;;
-    x86_64.rpm) ;;
+    aarch64.rpm)
+        assemble_rpm
+        ;;
+    x86_64.rpm)
+        assemble_rpm
+        ;;
     amd64.deb)
         ;;
     arm64.deb)

@@ -72,13 +72,9 @@ fi
 mkdir -p %{buildroot}%{config_dir}/opensearch-observability
 mkdir -p %{buildroot}%{config_dir}/opensearch-reports-scheduler
 mkdir -p %{buildroot}%{product_dir}/performance-analyzer-rca
-echo %{_sharedstatedir}
-echo %{data_dir}
 # Symlinks (do not symlink config dir as security demo installer has dependency, if no presense it will switch to rpm/deb mode)
 ln -s %{data_dir} %{buildroot}%{product_dir}/data
 ln -s %{log_dir}  %{buildroot}%{product_dir}/logs
-echo %{buildroot}
-echo %{data_dir}
 # Pre-populate PA configs if not present
 if [ ! -f %{buildroot}%{data_dir}/rca_enabled.conf ]; then
     echo 'true' > %{buildroot}%{data_dir}/rca_enabled.conf

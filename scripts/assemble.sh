@@ -9,6 +9,11 @@
 
 set -ex
 
+# plugins=(
+#     "performance-analyzer"
+#     "opensearch-security"
+# )
+
 plugins=(
     "alerting" # "opensearch-alerting"
     "opensearch-job-scheduler"
@@ -207,23 +212,29 @@ function assemble_tar() {
 
 
 function assemble_rpm() {
+    # Copy spec
+    cp "distribution/packages/src/rpm/wazuh-indexer.rpm.spec" "${TMP_DIR}"
+    # Copy performance analyzer service file
+    mkdir -p "${TMP_DIR}"/usr/lib/systemd/system
+    cp "distribution/packages/src/rpm/wazuh-indexer-performance-analyzer.service" "${TMP_DIR}"/usr/lib/systemd/system
+
     cd "${TMP_DIR}"
     PATH_CONF="./etc/wazuh-indexer"
     PATH_BIN="./usr/share/wazuh-indexer/bin"
 
-    # Step 1: extract. Create usr/, etc/ and var/
+    # Extract min-package. Creates usr/, etc/ and var/ in the current directory
     echo "Extract ${ARTIFACT_BUILD_NAME} archive"
     rpm2cpio "${ARTIFACT_BUILD_NAME}" | cpio -imdv 
-    cd "$(ls -d wazuh-indexer-*/)"
+    # cd "$(ls -d wazuh-indexer-*/)"
 
-    # Step 2: install plugins
+    # Install plugins from Maven repository
     echo "Install plugins"
     for plugin in "${plugins[@]}"; do
         plugin_from_maven="org.opensearch.plugin:${plugin}:$VERSION.0"
         OPENSEARCH_PATH_CONF=$PATH_CONF "${PATH_BIN}/opensearch-plugin" install --batch --verbose "${plugin_from_maven}"
     done
 
-    # Step 3: swap configuration files
+    # Set up configuration files
     cp $PATH_CONF/security/* $PATH_CONF/opensearch-security/
     cp $PATH_CONF/jvm.prod.options $PATH_CONF/jvm.options
     cp $PATH_CONF/opensearch.prod.yml $PATH_CONF/opensearch.yml
@@ -231,14 +242,30 @@ function assemble_rpm() {
     rm -r $PATH_CONF/security
     rm $PATH_CONF/jvm.prod.options $PATH_CONF/opensearch.prod.yml
 
-    # Step 4: pack
-    # archive_name="wazuh-indexer-$(cat VERSION)"
-    # rpmbuild --bb \
-    #     --define "_topdir $(pwd)" \
-    #     --define "_version $(cat ./usr/share/wazuh-indexer/VERSION)" \
-    #     --define "_architecture ${ARCHITECTURE}" \
-    #     "${RPM_SPEC}"
+    # Remove symbolic links and bat files
+    find . -type l -exec rm -rf {} \;
+    find . -name "*.bat" -exec rm -rf {} \;
 
+    # Generate final package
+    # cd ..
+    local topdir
+    local version
+    local spec_file="wazuh-indexer.rpm.spec"
+    topdir=$(pwd)
+    version=$(cat ./usr/share/wazuh-indexer/VERSION)
+    # TODO validate architecture
+    rpmbuild --bb \
+        --define "_topdir ${topdir}" \
+        --define "_version ${version}" \
+        --define "_architecture ${SUFFIX}" \
+        ${spec_file}
+
+    # Move the root folder, copy the package and clean. 
+    cd ../../..
+    cp "${TMP_DIR}/RPMS/${SUFFIX}/wazuh-indexer-${version}-1.${SUFFIX}.${EXT}" "${OUTPUT}/dist/"
+    echo "Cleaning temporary ${TMP_DIR} folder"
+    rm -r "${TMP_DIR}"
+    echo "After execution, shell path is $(pwd)"
 }
 
 case $SUFFIX.$EXT in

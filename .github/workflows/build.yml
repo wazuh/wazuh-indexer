@@ -4,15 +4,35 @@ name: Build packages
 # - Run manually
 on:
   workflow_dispatch:
+    # TODO dynamic matrix or filtering complete matrix based on inputs
+    # inputs:
+    #   distribution:
+    #     description: 'One of [ "tar", "rpm", "deb", "all" ]'
+    #     default: 'all'
+    #     required: false
+    #     type: string
+    #   architecture:
+    #     description: 'One of [ "x64", "arm64", "all" ]'
+    #     default: 'x64'
+    #     required: true
+    #     type: string
 
-# Used to run locally using https://github.com/nektos/act
+# TODO para que esto funcione con reusable workflows hay que moverlos a variables
+# TODO para pasar el nombre del paquete del stage build al stage assemble hay que usar outputs
+
+# ==========================
+# Bibliography
+# ==========================
+#
+# * Reusable workflows: limitations
+#   | https://docs.github.com/en/actions/using-workflows/reusing-workflows#limitations
+# * Using matrix in reusable workflows:
+#   | https://docs.github.com/en/actions/using-workflows/reusing-workflows#using-a-matrix-strategy-with-a-reusable-workflow
+#  * Reading input from the called workflow
+#   | https://docs.github.com/en/enterprise-cloud@latest/actions/using-workflows/workflow-syntax-for-github-actions#onworkflow_callinputs
+
 env:
-  ACT:
-  VERSION: 2.11.0
-  SNAPSHOT: false
-  PLATFORM: linux
-  BUILD: bash scripts/build.sh
-  ASSEMBLE: bash scripts/assemble.sh
+  ACT: # Used to run locally using https://github.com/nektos/act
 
 jobs:
   build:
@@ -31,10 +51,10 @@ jobs:
         DISTRIBUTION: [tar, rpm, deb]
         ARCHITECTURE: [x64, arm64]
     outputs:
-      package_name: ${{ steps.get_package_name.outputs.package_name }}
+      package: ${{ steps.r_build.outputs.package }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-java@v3
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 11
@@ -43,23 +63,19 @@ jobs:
         uses: gradle/gradle-build-action@v2.9.0
 
       - name: Run `build.sh`
-        run: |
-          $BUILD -v $VERSION -s $SNAPSHOT -p $PLATFORM -a ${{ matrix.ARCHITECTURE }} -d ${{ matrix.DISTRIBUTION }}
-
-          # The package name is stored in the artifacts/artifact_name.txt file
-      - name: Read package name
-        id: get_package_name
-        run: |
-          echo $(ls -la)
-          echo "package_name=$(cat artifacts/artifact_name.txt)" >> $GITHUB_OUTPUT
-          echo "$(cat artifacts/artifact_name.txt)"
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        id: r_build
+        uses: ./.github/workflows/r_build.yml
         with:
-          name: ${{ steps.get_package_name.outputs.package_name }}
-          path: artifacts/dist/${{ steps.get_package_name.outputs.package_name }}
-          if-no-files-found: error
+          architecture: ${{ matrix.ARCHITECTURE }}
+          distribution: ${{ matrix.DISTRIBUTION }}
+      
+      - name: Run `assemble.sh`
+        uses: ./.github/workflows/r_assemble.yml
+        with:
+          architecture: ${{ matrix.ARCHITECTURE }}
+          distribution: ${{ matrix.DISTRIBUTION }}
+          package: ${{ needs.build.outputs.package }}
+          # TODO comprobar si usa la misma máquina y hay acceso a ./artifacts/dist
 
   # assemble:
   #   # needs: [build]
@@ -79,7 +95,7 @@ jobs:
   #     #   ARCHITECTURE: [ x64, arm64 ]
   #   steps:
   #     - name: Download artifact
-  #       uses: actions/download-artifact@v3
+  #       uses: actions/download-artifact@v4
   #       with:
   #         name: wazuh-indexer-*${{ matrix.ARCHITECTURE }}*${{ matrix.DISTRIBUTION }}
   #         # name: ${{ needs.build.outputs.package_name }}

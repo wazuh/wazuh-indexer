@@ -262,10 +262,12 @@ function assemble_rpm() {
 
     # Move the root folder, copy the package and clean. 
     cd ../../..
-    cp "${TMP_DIR}/RPMS/${SUFFIX}/wazuh-indexer-${version}-1.${SUFFIX}.${EXT}" "${OUTPUT}/dist/"
+    package_name="wazuh-indexer-${version}-1.${SUFFIX}.${EXT}"
+    cp "${TMP_DIR}/RPMS/${SUFFIX}/${package_name}" "${OUTPUT}/dist/"
     echo "Cleaning temporary ${TMP_DIR} folder"
     rm -r "${TMP_DIR}"
     echo "After execution, shell path is $(pwd)"
+    echo "${package_name}" > "${OUTPUT}/artifact_name.txt"
 }
 
 case $SUFFIX.$EXT in

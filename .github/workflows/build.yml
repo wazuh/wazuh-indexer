@@ -17,7 +17,6 @@ on:
     #     required: true
     #     type: string
 
-# TODO para que esto funcione con reusable workflows hay que moverlos a variables
 # TODO para pasar el nombre del paquete del stage build al stage assemble hay que usar outputs
 
 # ==========================
@@ -36,37 +35,61 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    # Permissions to upload the package
-    permissions:
-      packages: write
-      contents: read
     strategy:
-      # For use with act
-      # max-parallel: 1
-      # matrix:
-      #   DISTRIBUTION: [rpm, tar]
-      #   ARCHITECTURE: [x64]
       matrix:
         DISTRIBUTION: [tar, rpm, deb]
         ARCHITECTURE: [x64, arm64]
-    outputs:
-      package: ${{ steps.r_build.outputs.package }}
-    steps:
-      - name: Run `build.sh`
-        id: r_build
-        uses: ./.github/workflows/r_build.yml
-        with:
-          architecture: ${{ matrix.ARCHITECTURE }}
-          distribution: ${{ matrix.DISTRIBUTION }}
+    uses: ./.github/workflows/r_build.yml
+    with:
+      architecture: ${{ matrix.ARCHITECTURE }}
+      distribution: ${{ matrix.DISTRIBUTION }}
+
+  assemble:
+    needs: build
+    strategy:
+      matrix:
+        DISTRIBUTION: [tar, rpm, deb]
+        ARCHITECTURE: [x64, arm64]
+    uses: ./.github/workflows/r_assemble.yml
+    with:
+      architecture: ${{ matrix.ARCHITECTURE }}
+      distribution: ${{ matrix.DISTRIBUTION }}
+      package: ${{ needs.build.outputs.package }}
       
-      - name: Run `assemble.sh`
-        uses: ./.github/workflows/r_assemble.yml
-        with:
-          architecture: ${{ matrix.ARCHITECTURE }}
-          distribution: ${{ matrix.DISTRIBUTION }}
-          package: ${{ needs.build.outputs.package }}
-          # TODO comprobar si usa la misma máquina y hay acceso a ./artifacts/dist
+
+# jobs:
+#   build:
+#     runs-on: ubuntu-latest
+#     # Permissions to upload the package
+#     permissions:
+#       packages: write
+#       contents: read
+#     strategy:
+#       # For use with act
+#       # max-parallel: 1
+#       # matrix:
+#       #   DISTRIBUTION: [rpm, tar]
+#       #   ARCHITECTURE: [x64]
+#       matrix:
+#         DISTRIBUTION: [tar, rpm, deb]
+#         ARCHITECTURE: [x64, arm64]
+#     outputs:
+#       package: ${{ steps.r_build.outputs.package }}
+#     steps:
+#       - name: Run `build.sh`
+#         id: r_build
+#         uses: ./.github/workflows/r_build.yml
+#         with:
+#           architecture: ${{ matrix.ARCHITECTURE }}
+#           distribution: ${{ matrix.DISTRIBUTION }}
+      
+#       - name: Run `assemble.sh`
+#         uses: ./.github/workflows/r_assemble.yml
+#         with:
+#           architecture: ${{ matrix.ARCHITECTURE }}
+#           distribution: ${{ matrix.DISTRIBUTION }}
+#           package: ${{ needs.build.outputs.package }}
+#           # TODO comprobar si usa la misma máquina y hay acceso a ./artifacts/dist
 
   # assemble:
   #   # needs: [build]

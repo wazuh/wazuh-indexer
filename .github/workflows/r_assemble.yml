@@ -21,11 +21,11 @@ on:
     # outputs:
     #   package:
     #     description: "The package's name"
-    #     value: ${{ jobs.build.outputs.package }}
+    #     value: ${{ jobs.r_assemble.outputs.package }}
 
 
 jobs:
-  build:
+  r_assemble:
     # runs-on: ${{ inputs.architecture }}
     runs-on: ubuntu-latest
     # Permissions to upload the package

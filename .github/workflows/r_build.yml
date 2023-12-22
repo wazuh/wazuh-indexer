@@ -18,7 +18,7 @@ on:
     outputs:
       package:
         description: "The package's name"
-        value: ${{ jobs.build.outputs.package }}
+        value: ${{ jobs.r_build.outputs.package }}
       
 # TODO version must to be read from the VERSION file
 # TODO revision must be an input
@@ -27,7 +27,7 @@ env:
   revision: 1
 
 jobs:
-  build:
+  r_build:
     # runs-on: ${{ inputs.architecture }}
     runs-on: ubuntu-latest
     # Permissions to upload the package

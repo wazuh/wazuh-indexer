@@ -7,22 +7,17 @@ on:
     inputs:
       distribution:
         description: 'One of [ "tar", "rpm", "deb" ]'
-        default: 'rpm'
+        default: "rpm"
         required: false
         type: string
       architecture:
         description: 'One of [ "x64", "arm64" ]'
-        default: 'x64'
+        default: "x64"
         required: false
         type: string
-      package:
+      name:
         required: true
         type: string
-    # outputs:
-    #   package:
-    #     description: "The package's name"
-    #     value: ${{ jobs.r_assemble.outputs.package }}
-
 
 jobs:
   r_assemble:
@@ -32,40 +27,26 @@ jobs:
     permissions:
       packages: write
       contents: read
-    # outputs:
-    #   package: ${{ steps.get_name.outputs.name }}
     steps:
       - uses: actions/checkout@v4
-      - name: Read artifacts
+      - name: Test
         run: |
-          ls -l ./artifacts/dist
-          echo ${{ inputs.package }}
+          echo "${{ inputs.distribution }}_${{ inputs.architecture }}"
+          echo ${{ inputs.name }}
 
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: ${{ inputs.package }}
-          path: artifacts/dist/${{ inputs.package }}
+          name: ${{ inputs.name }}
+          path: artifacts/dist/${{ inputs.name }}
 
       # - name: Run `assemble.sh`
       #   run: |
       #     bash scripts/assemble.sh -v ${{ vars.OPENSEARCH_VERSION }} -p linux -a ${{ inputs.architecture }} -d ${{ inputs.distribution }}
 
-      # # The package name is stored in the artifacts/artifact_name.txt file.
-      # # The variable name is generated dynamically: rpm_x64
-      # - name: Set package name
-      #   id: get_name
-      #   run: |
-      #     echo $(ls -la)
-      #     # ${{ inputs.distribution }}_${{ inputs.architecture }}
-      #     echo "name=$(cat artifacts/artifact_name.txt)" >> $GITHUB_OUTPUT
-      #     echo "$(cat artifacts/artifact_name.txt)"
-
       # - name: Upload artifact
       #   uses: actions/upload-artifact@v4
       #   with:
-          # name: ${{ steps.get_name.outputs.name }}
-          # path: ${{ inputs.architecture }}/${{ inputs.distribution }}
+      # name: ${{ steps.get_name.outputs.name }}
+      # path: ${{ inputs.architecture }}/${{ inputs.distribution }}
       #     if-no-files-found: error
-
-

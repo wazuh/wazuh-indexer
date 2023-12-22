@@ -45,7 +45,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ inputs.package }}
-          path: ${{ inputs.architecture }}/${{ inputs.distribution }}
+          path: artifacts/dist/${{ inputs.package }}
 
       # - name: Run `assemble.sh`
       #   run: |

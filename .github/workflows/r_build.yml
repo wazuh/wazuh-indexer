@@ -55,10 +55,10 @@ jobs:
       - name: Set package name
         id: get_name
         run: |
-          echo $(ls -la)
+          ls -la
           # ${{ inputs.distribution }}_${{ inputs.architecture }}
           echo "name=$(cat artifacts/artifact_name.txt)" >> $GITHUB_OUTPUT
-          echo "$(cat artifacts/artifact_name.txt)"
+          cat artifacts/artifact_name.txt
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -67,7 +67,7 @@ jobs:
           # example: x64/deb/wazuh-indexer_4.8.0-rc1_x64_ff98475f.deb
           # TODO x64 -> deb: amd64, rpm: x86_64 
           name: ${{ steps.get_name.outputs.name }}
-          path: ${{ inputs.architecture }}/${{ inputs.distribution }}
+          path: artifacts/dist/${{ steps.get_name.outputs.name }}
           if-no-files-found: error
 
 

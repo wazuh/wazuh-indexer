@@ -19,22 +19,13 @@ on:
 #   | https://docs.github.com/en/actions/using-workflows/reusing-workflows#limitations
 # * Using matrix in reusable workflows:
 #   | https://docs.github.com/en/actions/using-workflows/reusing-workflows#using-a-matrix-strategy-with-a-reusable-workflow
-#  * Reading input from the called workflow
+# * Reading input from the called workflow
 #   | https://docs.github.com/en/enterprise-cloud@latest/actions/using-workflows/workflow-syntax-for-github-actions#onworkflow_callinputs
-
-env:
-  ACT: # Used to run locally using https://github.com/nektos/act
-  # VERSION: # Stored in ${{ version.outputs.version  }}
-  # rpm_x64:
-  # deb_x64:
-  # echo "{${{ matrix.distribution }}_${{ matrix.distribution }}}={value}" >> "$GITHUB_ENV"
 
 jobs:
   version:
     uses: ./.github/workflows/r_version.yml
 
-  # idea: test if the the code and repo versions match (vars.VERSION), if not
-  # raise an error to cancel build
   build:
     needs: version
     strategy:

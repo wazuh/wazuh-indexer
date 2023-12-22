@@ -19,12 +19,11 @@ on:
         type: string
     outputs:
       package:
-        description: "The package's name"
+        description: "The name of the generated package."
         value: ${{ jobs.r_build.outputs.package }}
 
 jobs:
   r_build:
-    # runs-on: ${{ inputs.architecture }}
     runs-on: ubuntu-latest
     # Permissions to upload the package
     permissions:
@@ -38,7 +37,6 @@ jobs:
         with:
           distribution: temurin
           java-version: 11
-          cache: 'gradle'
 
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2.9.0

@@ -15,7 +15,12 @@ on:
         default: "x64"
         required: false
         type: string
+      min:
+        description: The name of the package to download.
+        required: true
+        type: string
       name:
+        description: The name of the package to upload.
         required: true
         type: string
 
@@ -37,16 +42,19 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
+          name: ${{ inputs.min }}
+          path: artifacts/dist/${{ inputs.min }}
+
+      - name: Run `assemble.sh`
+        run: |
+          mkdir -p artifacts/dist
+          touch artifacts/dist/${{ inputs.name }}
+        # bash scripts/assemble.sh -v ${{ vars.OPENSEARCH_VERSION }} -p linux -a ${{ inputs.architecture }} -d ${{ inputs.distribution }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
           name: ${{ inputs.name }}
           path: artifacts/dist/${{ inputs.name }}
+          if-no-files-found: error
 
-      # - name: Run `assemble.sh`
-      #   run: |
-      #     bash scripts/assemble.sh -v ${{ vars.OPENSEARCH_VERSION }} -p linux -a ${{ inputs.architecture }} -d ${{ inputs.distribution }}
-
-      # - name: Upload artifact
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      # name: ${{ steps.get_name.outputs.name }}
-      # path: ${{ inputs.architecture }}/${{ inputs.distribution }}
-      #     if-no-files-found: error

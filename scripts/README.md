@@ -96,7 +96,7 @@ The script will:
 ### Running in Act
 
 ```console
-act -j assemble -W .github/workflows/build.yml --artifact-server-path ./artifacts
+act -j assemble -W .github/workflows/build.yml --artifact-server-path ./artifacts --matrix distribution:rpm --matrix architecture:x64 --var OPENSEARCH_VERSION=2.11.0
 
 [Build slim packages/build] 🏁  Job succeeded
 ```

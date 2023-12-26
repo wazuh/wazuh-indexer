@@ -158,10 +158,8 @@ case $PLATFORM-$DISTRIBUTION-$ARCHITECTURE in
 esac
 
 echo "Assembling OpenSearch for $PLATFORM-$DISTRIBUTION-$ARCHITECTURE"
-
-ARTIFACT_BUILD_NAME=$(ls "${OUTPUT}/dist/" | grep "wazuh-indexer-min.*$SUFFIX.$EXT")
-# [WAZUH] Used by the GH workflow to upload the artifact
-echo "$ARTIFACT_BUILD_NAME" >"$OUTPUT/artifact_name.txt"
+# wazuh-indexer-min_4.9.0-1-x64_78fcc3db6a5b470294319e48b58c3d715bee39d1.rpm
+ARTIFACT_BUILD_NAME=$(ls "${OUTPUT}/dist/" | grep "wazuh-indexer-min.*.$EXT")
 
 # Create temporal directory and copy the min package there for extraction
 TMP_DIR="${OUTPUT}/tmp/${TARGET}"
@@ -257,6 +255,7 @@ function assemble_rpm() {
     cd ../../..
     package_name="wazuh-indexer-${version}-1.${SUFFIX}.${EXT}"
     cp "${TMP_DIR}/RPMS/${SUFFIX}/${package_name}" "${OUTPUT}/dist/"
+    
     echo "Cleaning temporary ${TMP_DIR} folder"
     rm -r "${TMP_DIR}"
     echo "After execution, shell path is $(pwd)"

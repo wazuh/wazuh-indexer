@@ -9,11 +9,6 @@
 
 set -ex
 
-# plugins=(
-#     "performance-analyzer"
-#     "opensearch-security"
-# )
-
 plugins=(
     "alerting" # "opensearch-alerting"
     "opensearch-job-scheduler"
@@ -225,7 +220,6 @@ function assemble_rpm() {
     # Extract min-package. Creates usr/, etc/ and var/ in the current directory
     echo "Extract ${ARTIFACT_BUILD_NAME} archive"
     rpm2cpio "${ARTIFACT_BUILD_NAME}" | cpio -imdv 
-    # cd "$(ls -d wazuh-indexer-*/)"
 
     # Install plugins from Maven repository
     echo "Install plugins"
@@ -247,7 +241,6 @@ function assemble_rpm() {
     find . -name "*.bat" -exec rm -rf {} \;
 
     # Generate final package
-    # cd ..
     local topdir
     local version
     local spec_file="wazuh-indexer.rpm.spec"
@@ -260,13 +253,14 @@ function assemble_rpm() {
         --define "_architecture ${SUFFIX}" \
         ${spec_file}
 
-    # Move the root folder, copy the package and clean. 
+    # Move to the root folder, copy the package and clean. 
     cd ../../..
     package_name="wazuh-indexer-${version}-1.${SUFFIX}.${EXT}"
     cp "${TMP_DIR}/RPMS/${SUFFIX}/${package_name}" "${OUTPUT}/dist/"
     echo "Cleaning temporary ${TMP_DIR} folder"
     rm -r "${TMP_DIR}"
     echo "After execution, shell path is $(pwd)"
+    # Store package's name to file. Used by GH Action.
     echo "${package_name}" > "${OUTPUT}/artifact_name.txt"
 }
 

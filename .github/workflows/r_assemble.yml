@@ -37,7 +37,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ inputs.min }}
-          path: artifacts/dist/${{ inputs.min }}
+          path: artifacts/dist
 
       - name: Run `assemble.sh`
         run: |

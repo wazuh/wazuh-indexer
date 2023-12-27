@@ -200,7 +200,7 @@ function assemble_rpm() {
     cp "distribution/packages/src/rpm/wazuh-indexer.rpm.spec" "${TMP_DIR}"
     # Copy performance analyzer service file
     mkdir -p "${TMP_DIR}"/usr/lib/systemd/system
-    cp "distribution/packages/src/rpm/wazuh-indexer-performance-analyzer.service" "${TMP_DIR}"/usr/lib/systemd/system
+    cp "distribution/packages/src/common/wazuh-indexer-performance-analyzer.service" "${TMP_DIR}"/usr/lib/systemd/system
 
     cd "${TMP_DIR}"
     local src_path="./usr/share/wazuh-indexer"
@@ -270,7 +270,7 @@ function assemble_deb() {
     chmod a+x "${TMP_DIR}/debmake_install.sh"
     # Copy performance analyzer service file
     mkdir -p "${TMP_DIR}"/usr/lib/systemd/system
-    cp "distribution/packages/src/rpm/wazuh-indexer-performance-analyzer.service" "${TMP_DIR}"/usr/lib/systemd/system
+    cp "distribution/packages/src/common/wazuh-indexer-performance-analyzer.service" "${TMP_DIR}"/usr/lib/systemd/system
 
     cd "${TMP_DIR}"
     local src_path="./usr/share/wazuh-indexer"
@@ -321,7 +321,7 @@ function assemble_deb() {
     # Move to the root folder, copy the package and clean.
     cd ../../..
     package_name="wazuh-indexer_${version}_${SUFFIX}.${EXT}"
-    # debmake creates the package one level up
+    # debmake creates the package one level above
     cp "${TMP_DIR}/../${package_name}" "${OUTPUT}/dist/"
 
     echo "Cleaning temporary ${TMP_DIR} folder"

@@ -81,9 +81,7 @@ function generate_rollover_template() {
 }
 
 #########################################################################
-# Creates an index template with order 3 to set the rollover alias.
-# Arguments:
-#   - The alias name, a string. Also used as index pattern.
+# Creates an index template to disable replicas on ISM configurastion indices.
 # Returns:
 #   The index template as a JSON string.
 #########################################################################
@@ -104,11 +102,9 @@ function generate_ism_config_template() {
 }
 
 #########################################################################
-# Creates an index template with order 3 to set the rollover alias.
-# Arguments:
-#   - The alias name, a string. Also used as index pattern.
+# Creates persistent cluster's settings to disable replicas for ISM history.
 # Returns:
-#   The index template as a JSON string.
+#   The setting as a JSON string.
 #########################################################################
 function generate_ism_config() {
     cat <<-EOF
@@ -140,7 +136,7 @@ function load_templates() {
                 -o "${LOG_FILE}" --create-dirs \
                 -H 'Content-Type: application/json' -d @-; then
                 echo "  ERROR: 'wazuh' template creation failed"
-                exit 1
+                return 1
             else
                 echo " SUCC: 'wazuh' template created or updated"
             fi
@@ -273,7 +269,7 @@ function create_write_index() {
         -H 'Content-Type: application/json' \
         -d "$(generate_write_index_alias "${1}")"; then
         echo "  ERROR: creating '${1}' write index"
-        exit 1
+        return 1
     else
         echo "  SUCC: '${1}' write index created"
     fi
@@ -335,7 +331,7 @@ function show_help() {
     echo -e "        -v, --verbose"
     echo -e "                Set verbose mode. Prints more information."
     echo -e ""
-    exit 1
+    return 1
 }
 
 #########################################################################
@@ -425,7 +421,7 @@ function main() {
         echo "SUCC: Indexer ISM initialization finished successfully."
     else
         echo "ERROR: Indexer ISM initialization failed. Check ${LOG_FILE} for more information."
-        exit 1
+        return 1
     fi
 }
 

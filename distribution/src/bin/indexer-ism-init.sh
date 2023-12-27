@@ -144,7 +144,7 @@ function load_templates() {
         echo "  ERROR: $wazuh_template_path not found"
     fi
 
-    Load template for ISM configuration indices
+    # Load template for ISM configuration indices
     echo "Will create 'ism_history_indices' index template"
     generate_ism_config_template |
         if ! curl -s -k ${C_AUTH} \

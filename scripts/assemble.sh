@@ -9,27 +9,36 @@
 
 set -ex
 
+# Minimum required plugins
 plugins=(
-    "alerting" # "opensearch-alerting"
-    "opensearch-job-scheduler"
-    "opensearch-anomaly-detection" # requires "opensearch-job-scheduler"
-    "asynchronous-search" # "opensearch-asynchronous-search"
-    "opensearch-cross-cluster-replication"
-    "geospatial" # "opensearch-geospatial"
-    "opensearch-index-management"
-    "opensearch-knn"
-    "opensearch-ml-plugin" # "opensearch-ml"
-    "neural-search" # "opensearch-neural-search"
-    "opensearch-notifications-core"
-    "notifications" # "opensearch-notifications" requires "opensearch-notifications-core"
-    "opensearch-observability"
-    "performance-analyzer" # "opensearch-performance-analyzer"
-    "opensearch-reports-scheduler"
+    "performance-analyzer"
     "opensearch-security"
-    "opensearch-security-analytics"
-    "opensearch-sql-plugin" # "opensearch-sql"
 )
 
+# plugins=(
+#     "alerting" # "opensearch-alerting"
+#     "opensearch-job-scheduler"
+#     "opensearch-anomaly-detection" # requires "opensearch-job-scheduler"
+#     "asynchronous-search" # "opensearch-asynchronous-search"
+#     "opensearch-cross-cluster-replication"
+#     "geospatial" # "opensearch-geospatial"
+#     "opensearch-index-management"
+#     "opensearch-knn"
+#     "opensearch-ml-plugin" # "opensearch-ml"
+#     "neural-search" # "opensearch-neural-search"
+#     "opensearch-notifications-core"
+#     "notifications" # "opensearch-notifications" requires "opensearch-notifications-core"
+#     "opensearch-observability"
+#     "performance-analyzer" # "opensearch-performance-analyzer"
+#     "opensearch-reports-scheduler"
+#     "opensearch-security"
+#     "opensearch-security-analytics"
+#     "opensearch-sql-plugin" # "opensearch-sql"
+# )
+
+# ====
+# Usage
+# ====
 function usage() {
     echo "Usage: $0 [args]"
     echo ""
@@ -43,129 +52,109 @@ function usage() {
     echo -e "-h help"
 }
 
-while getopts ":h:v:q:o:p:a:d:" arg; do
-    case $arg in
-    h)
+# ====
+# Parse arguments
+# ====
+function parse_args() {
+
+    while getopts ":h:v:q:o:p:a:d:" arg; do
+        case $arg in
+        h)
+            usage
+            exit 1
+            ;;
+        v)
+            VERSION=$OPTARG
+            ;;
+        q)
+            QUALIFIER=$OPTARG
+            ;;
+        o)
+            OUTPUT=$OPTARG
+            ;;
+        p)
+            PLATFORM=$OPTARG
+            ;;
+        a)
+            ARCHITECTURE=$OPTARG
+            ;;
+        d)
+            DISTRIBUTION=$OPTARG
+            ;;
+        :)
+            echo "Error: -${OPTARG} requires an argument"
+            usage
+            exit 1
+            ;;
+        ?)
+            echo "Invalid option: -${arg}"
+            exit 1
+            ;;
+        esac
+    done
+
+    if [ -z "$VERSION" ]; then
+        echo "Error: You must specify the OpenSearch version"
         usage
         exit 1
-        ;;
-    v)
-        VERSION=$OPTARG
-        ;;
-    q)
-        QUALIFIER=$OPTARG
-        ;;
-    o)
-        OUTPUT=$OPTARG
-        ;;
-    p)
-        PLATFORM=$OPTARG
-        ;;
-    a)
-        ARCHITECTURE=$OPTARG
-        ;;
-    d)
-        DISTRIBUTION=$OPTARG
-        ;;
-    :)
-        echo "Error: -${OPTARG} requires an argument"
-        usage
-        exit 1
-        ;;
-    ?)
-        echo "Invalid option: -${arg}"
-        exit 1
-        ;;
-    esac
-done
+    fi
 
-if [ -z "$VERSION" ]; then
-    echo "Error: You must specify the OpenSearch version"
-    usage
-    exit 1
-fi
+    [ -z "$OUTPUT" ] && OUTPUT=artifacts
 
-[ -z "$OUTPUT" ] && OUTPUT=artifacts
+    # Assemble distribution artifact
+    # see https://github.com/opensearch-project/OpenSearch/blob/main/settings.gradle#L34 for other distribution targets
 
-# Assemble distribution artifact
-# see https://github.com/opensearch-project/OpenSearch/blob/main/settings.gradle#L34 for other distribution targets
+    [ -z "$PLATFORM" ] && PLATFORM=$(uname -s | awk '{print tolower($0)}')
+    [ -z "$ARCHITECTURE" ] && ARCHITECTURE=$(uname -m)
+    [ -z "$DISTRIBUTION" ] && DISTRIBUTION="tar"
 
-[ -z "$PLATFORM" ] && PLATFORM=$(uname -s | awk '{print tolower($0)}')
-[ -z "$ARCHITECTURE" ] && ARCHITECTURE=$(uname -m)
-[ -z "$DISTRIBUTION" ] && DISTRIBUTION="tar"
-
-case $PLATFORM-$DISTRIBUTION-$ARCHITECTURE in
+    case $PLATFORM-$DISTRIBUTION-$ARCHITECTURE in
     linux-tar-x64 | darwin-tar-x64)
         PACKAGE="tar"
         EXT="tar.gz"
-        # TYPE="archives"
         TARGET="$PLATFORM-$PACKAGE"
         SUFFIX="$PLATFORM-x64"
         ;;
     linux-tar-arm64 | darwin-tar-arm64)
         PACKAGE="tar"
         EXT="tar.gz"
-        # TYPE="archives"
         TARGET="$PLATFORM-arm64-$PACKAGE"
         SUFFIX="$PLATFORM-arm64"
         ;;
     linux-deb-x64)
         PACKAGE="deb"
         EXT="deb"
-        # TYPE="packages"
         TARGET="deb"
         SUFFIX="amd64"
         ;;
     linux-deb-arm64)
         PACKAGE="deb"
         EXT="deb"
-        # TYPE="packages"
         TARGET="arm64-deb"
         SUFFIX="arm64"
         ;;
     linux-rpm-x64)
         PACKAGE="rpm"
         EXT="rpm"
-        # TYPE="packages"
         TARGET="rpm"
         SUFFIX="x86_64"
         ;;
     linux-rpm-arm64)
         PACKAGE="rpm"
         EXT="rpm"
-        # TYPE="packages"
         TARGET="arm64-rpm"
         SUFFIX="aarch64"
         ;;
-    # windows-zip-x64)
-    #     PACKAGE="zip"
-    #     EXT="zip"
-    #     # TYPE="archives"
-    #     TARGET="$PLATFORM-$PACKAGE"
-    #     SUFFIX="$PLATFORM-x64"
-    #     ;;
-    # windows-zip-arm64)
-    #     PACKAGE="zip"
-    #     EXT="zip"
-    #     # TYPE="archives"
-    #     TARGET="$PLATFORM-arm64-$PACKAGE"
-    #     SUFFIX="$PLATFORM-arm64"
-    #     ;;
     *)
         echo "Unsupported platform-distribution-architecture combination: $PLATFORM-$DISTRIBUTION-$ARCHITECTURE"
         exit 1
         ;;
-esac
+    esac
+}
 
-echo "Assembling OpenSearch for $PLATFORM-$DISTRIBUTION-$ARCHITECTURE"
-# wazuh-indexer-min_4.9.0-1-x64_78fcc3db6a5b470294319e48b58c3d715bee39d1.rpm
-ARTIFACT_BUILD_NAME=$(ls "${OUTPUT}/dist/" | grep "wazuh-indexer-min.*.$EXT")
-
-# Create temporal directory and copy the min package there for extraction
-TMP_DIR="${OUTPUT}/tmp/${TARGET}"
-mkdir -p "$TMP_DIR"
-cp "${OUTPUT}/dist/$ARTIFACT_BUILD_NAME" "${TMP_DIR}"
-
+# ====
+# Tar assemble
+# ====
 function assemble_tar() {
     cd "${TMP_DIR}"
     PATH_CONF="./config"
@@ -203,7 +192,9 @@ function assemble_tar() {
     echo "After execution, shell path is $(pwd)"
 }
 
-
+# ====
+# RPM assemble
+# ====
 function assemble_rpm() {
     # Copy spec
     cp "distribution/packages/src/rpm/wazuh-indexer.rpm.spec" "${TMP_DIR}"
@@ -212,12 +203,13 @@ function assemble_rpm() {
     cp "distribution/packages/src/rpm/wazuh-indexer-performance-analyzer.service" "${TMP_DIR}"/usr/lib/systemd/system
 
     cd "${TMP_DIR}"
+    local src_path="./usr/share/wazuh-indexer"
     PATH_CONF="./etc/wazuh-indexer"
-    PATH_BIN="./usr/share/wazuh-indexer/bin"
+    PATH_BIN="${src_path}/bin"
 
     # Extract min-package. Creates usr/, etc/ and var/ in the current directory
     echo "Extract ${ARTIFACT_BUILD_NAME} archive"
-    rpm2cpio "${ARTIFACT_BUILD_NAME}" | cpio -imdv 
+    rpm2cpio "${ARTIFACT_BUILD_NAME}" | cpio -imdv
 
     # Install plugins from Maven repository
     echo "Install plugins"
@@ -225,6 +217,11 @@ function assemble_rpm() {
         plugin_from_maven="org.opensearch.plugin:${plugin}:$VERSION.0"
         OPENSEARCH_PATH_CONF=$PATH_CONF "${PATH_BIN}/opensearch-plugin" install --batch --verbose "${plugin_from_maven}"
     done
+
+    # Move performance-analyzer-rca to its final location
+    local rca_src="${src_path}/plugins/opensearch-performance-analyzer/performance-analyzer-rca"
+    local rca_dest="${src_path}"
+    mv "${rca_src}" "${rca_dest}"
 
     # Set up configuration files
     cp $PATH_CONF/security/* $PATH_CONF/opensearch-security/
@@ -251,19 +248,105 @@ function assemble_rpm() {
         --define "_architecture ${SUFFIX}" \
         ${spec_file}
 
-    # Move to the root folder, copy the package and clean. 
+    # Move to the root folder, copy the package and clean.
     cd ../../..
     package_name="wazuh-indexer-${version}-1.${SUFFIX}.${EXT}"
     cp "${TMP_DIR}/RPMS/${SUFFIX}/${package_name}" "${OUTPUT}/dist/"
-    
+
     echo "Cleaning temporary ${TMP_DIR} folder"
-    rm -r "${TMP_DIR}"
+    rm -r "artifacts/tmp"
     echo "After execution, shell path is $(pwd)"
     # Store package's name to file. Used by GH Action.
-    echo "${package_name}" > "${OUTPUT}/artifact_name.txt"
+    echo "${package_name}" >"${OUTPUT}/artifact_name.txt"
 }
 
-case $SUFFIX.$EXT in
+# ====
+# DEB assemble
+# ====
+function assemble_deb() {
+    # Copy spec
+    cp "distribution/packages/src/deb/Makefile" "${TMP_DIR}"
+    cp "distribution/packages/src/deb/debmake_install.sh" "${TMP_DIR}"
+    chmod a+x "${TMP_DIR}/debmake_install.sh"
+    # Copy performance analyzer service file
+    mkdir -p "${TMP_DIR}"/usr/lib/systemd/system
+    cp "distribution/packages/src/rpm/wazuh-indexer-performance-analyzer.service" "${TMP_DIR}"/usr/lib/systemd/system
+
+    cd "${TMP_DIR}"
+    local src_path="./usr/share/wazuh-indexer"
+    PATH_CONF="./etc/wazuh-indexer"
+    PATH_BIN="${src_path}/bin"
+
+    # Extract min-package. Creates usr/, etc/ and var/ in the current directory
+    echo "Extract ${ARTIFACT_BUILD_NAME} archive"
+    ar xf "${ARTIFACT_BUILD_NAME}" data.tar.gz
+    tar zvxf data.tar.gz
+
+    # Install plugins from Maven repository
+    echo "Install plugins"
+    for plugin in "${plugins[@]}"; do
+        plugin_from_maven="org.opensearch.plugin:${plugin}:$VERSION.0"
+        OPENSEARCH_PATH_CONF=$PATH_CONF "${PATH_BIN}/opensearch-plugin" install --batch --verbose "${plugin_from_maven}"
+    done
+
+    # Move performance-analyzer-rca to its final location
+    local rca_src="${src_path}/plugins/opensearch-performance-analyzer/performance-analyzer-rca"
+    local rca_dest="${src_path}"
+    mv "${rca_src}" "${rca_dest}"
+
+    # Set up configuration files
+    cp $PATH_CONF/security/* $PATH_CONF/opensearch-security/
+    cp $PATH_CONF/jvm.prod.options $PATH_CONF/jvm.options
+    cp $PATH_CONF/opensearch.prod.yml $PATH_CONF/opensearch.yml
+
+    rm -r $PATH_CONF/security
+    rm $PATH_CONF/jvm.prod.options $PATH_CONF/opensearch.prod.yml
+
+    # Remove symbolic links and bat files
+    find . -type l -exec rm -rf {} \;
+    find . -name "*.bat" -exec rm -rf {} \;
+
+    # Generate final package
+    local version
+    version=$(cat ./usr/share/wazuh-indexer/VERSION)
+    debmake \
+        --fullname "Wazuh Team" \
+        --email "hello@wazuh.com" \
+        --invoke debuild \
+        --package wazuh-indexer \
+        --native \
+        --revision 1 \
+        --upstreamversion "${version}"
+
+    # Move to the root folder, copy the package and clean.
+    cd ../../..
+    package_name="wazuh-indexer_${version}_${SUFFIX}.${EXT}"
+    # debmake creates the package one level up
+    cp "${TMP_DIR}/../${package_name}" "${OUTPUT}/dist/"
+
+    echo "Cleaning temporary ${TMP_DIR} folder"
+    rm -r "artifacts/tmp"
+    echo "After execution, shell path is $(pwd)"
+    # Store package's name to file. Used by GH Action.
+    echo "${package_name}" >"${OUTPUT}/artifact_name.txt"
+}
+
+# ====
+# Main function
+# ====
+function main() {
+    parse_args "${@}"
+
+    echo "Assembling OpenSearch for $PLATFORM-$DISTRIBUTION-$ARCHITECTURE"
+    # wazuh-indexer-min_4.9.0-1-x64_78fcc3db6a5b470294319e48b58c3d715bee39d1.rpm
+    ARTIFACT_BUILD_NAME=$(ls "${OUTPUT}/dist/" | grep "wazuh-indexer-min.*.$EXT")
+
+    # Create temporal directory and copy the min package there for extraction
+    TMP_DIR="${OUTPUT}/tmp/${TARGET}"
+    mkdir -p "$TMP_DIR"
+    cp "${OUTPUT}/dist/$ARTIFACT_BUILD_NAME" "${TMP_DIR}"
+
+    case $SUFFIX.$EXT in
     linux-arm64.tar.gz)
         assemble_tar
         ;;
@@ -277,7 +360,12 @@ case $SUFFIX.$EXT in
         assemble_rpm
         ;;
     amd64.deb)
+        assemble_deb
         ;;
     arm64.deb)
+        assemble_deb
         ;;
-esac
+    esac
+}
+
+main "${@}"

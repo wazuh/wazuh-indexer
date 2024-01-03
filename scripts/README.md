@@ -75,8 +75,10 @@ The script will:
     
 - Bundle a DEB file with `debmake` and the `Makefile`.
 
-    > `rpmbuild` is invoked from `wazuh-indexer/artifacts/tmp/rpm`. It creates the {BUILD,RPMS,SOURCES,SRPMS,SPECS,TMP} folders and applies the rules in the SPEC file. If successful, `rpmbuild` will generate the package in the `RPMS/` folder. The script will copy it to `wazuh-indexer/artifacts/dist` and clean: remove the `tmp\` folder and its contents.
+    > `debmake` and other dependencies can be installed using the provision.sh script. The
+    > script is invoked by the GitHub Workflow.
 
+    <!-- TODO update -->
     Current folder loadout at this stage:
     ```
     /deb/$ARCH

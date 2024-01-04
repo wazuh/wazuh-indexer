@@ -54,14 +54,18 @@ The script will:
   Current folder loadout at this stage:
 
   ```
-  /deb/$ARCH
-      /etc
-      /usr
-      /var
-      data.tar.gz
-      debmake_install
-      Makefile
-      wazuh-indexer-min-*.deb
+  artifacts/
+  |-- dist
+  |   |-- wazuh-indexer-min_4.9.0_amd64.deb
+  `-- tmp
+      `-- deb
+          |-- Makefile
+          |-- data.tar.gz
+          |-- debmake_install.sh
+          |-- etc
+          |-- usr
+          |-- var
+          `-- wazuh-indexer-min_4.9.0_amd64.deb
   ```
 
   `usr`, `etc` and `var` folders contain `wazuh-indexer` files, extracted from `wazuh-indexer-min-*.deb`.
@@ -78,18 +82,23 @@ The script will:
   > `debmake` and other dependencies can be installed using the provision.sh script. The
   > script is invoked by the GitHub Workflow.
 
-    <!-- TODO update -->
-
   Current folder loadout at this stage:
 
   ```
-  /deb/$ARCH
-      /{BUILD,RPMS,SOURCES,SRPMS,SPECS,TMP}
-      /etc
-      /usr
-      /var
-      wazuh-indexer-min-*.deb
-      wazuh-indexer.rpm.spec
+  artifacts/
+  |-- artifact_name.txt
+  |-- dist
+  |   |-- wazuh-indexer-min_4.9.0_amd64.deb
+  |   `-- wazuh-indexer_4.9.0_amd64.deb
+  `-- tmp
+      `-- deb
+          |-- Makefile
+          |-- data.tar.gz
+          |-- debmake_install.sh
+          |-- etc
+          |-- usr
+          |-- var
+          `-- wazuh-indexer-min_4.9.0_amd64.deb
   ```
 
 ### Running in Act

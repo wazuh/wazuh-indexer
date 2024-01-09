@@ -91,6 +91,7 @@ cp -r ./build/local-test-repo/org/opensearch "${OUTPUT}"/maven/org
 [ -z "$PLATFORM" ] && PLATFORM=$(uname -s | awk '{print tolower($0)}')
 [ -z "$ARCHITECTURE" ] && ARCHITECTURE=$(uname -m)
 [ -z "$DISTRIBUTION" ] && DISTRIBUTION="tar"
+[ -z "$QUALIFIER" ] && QUALIFIER="1"
 
 case $PLATFORM-$DISTRIBUTION-$ARCHITECTURE in
     linux-tar-x64|darwin-tar-x64)
@@ -169,6 +170,7 @@ ARTIFACT_BUILD_NAME=$(ls "distribution/$TYPE/$TARGET/build/distributions/" | gre
 GIT_COMMIT=$(git rev-parse --short HEAD)
 
 WI_VERSION=$(<VERSION)
+
 
 ARTIFACT_PACKAGE_NAME=wazuh-indexer-min_"$WI_VERSION"-"$QUALIFIER"_"$SUFFIX"_"$GIT_COMMIT"."$EXT"
 

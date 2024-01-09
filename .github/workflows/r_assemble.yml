@@ -19,10 +19,6 @@ on:
         description: The name of the package to download.
         required: true
         type: string
-      name:
-        description: The name of the package to upload.
-        required: true
-        type: string
 
 jobs:
   r_assemble:

@@ -36,7 +36,6 @@ jobs:
     with:
       architecture: ${{ matrix.architecture }}
       distribution: ${{ matrix.distribution }}
-      name: wazuh-indexer-min_${{ needs.version.outputs.version }}-${{ inputs.revision }}-${{ matrix.architecture }}_${{ github.sha }}.${{ matrix.distribution }}
       # wazuh-indexer-min_4.8.0-rc1_x64_ff98475f.deb
       # TODO arm64 != amd64 (deb), x64 != x86_64 (rpm)
       # TODO use short SHA https://stackoverflow.com/a/59819441/13918537
@@ -56,5 +55,3 @@ jobs:
     with:
       architecture: ${{ matrix.architecture }}
       distribution: ${{ matrix.distribution }}
-      min: wazuh-indexer-min_${{ needs.version.outputs.version }}-${{ inputs.revision }}-${{ matrix.architecture }}_${{ github.sha }}.${{ matrix.distribution }}
-      name: wazuh-indexer_${{ needs.version.outputs.version }}-${{ inputs.revision }}-${{ matrix.architecture }}_${{ github.sha }}.${{ matrix.distribution }}

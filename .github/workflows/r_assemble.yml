@@ -33,17 +33,10 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
-      # The -min package's name is stored in artifacts/artifact_min_name.txt.
-
-      - name: Set min package name
-        id: get_min_name
-        run: |
-          echo "name=$(cat artifacts/artifact_min_name.txt)" >> $GITHUB_OUTPUT
-
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: ${{ steps.get_min_name.outputs.name }}
+          name: ${{ inputs.min }}
           path: artifacts/dist
 
       - name: Provision

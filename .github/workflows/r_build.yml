@@ -17,6 +17,10 @@ on:
         type: string
       name:
         type: string
+    outputs:
+      artifact_name:
+        description: "Returns the build artifact's filename"
+        value: ${{ jobs.r_build.outputs.get_name }}
 
 jobs:
   r_build:

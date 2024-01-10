@@ -166,6 +166,30 @@ function add_configuration_files() {
 }
 
 # ====
+# Remove unneeded files
+# ====
+function remove_unneeded_files() {
+		rm $PATH_PLUGINS/opensearch-security/tools/install_demo_configuration.sh
+}
+
+# ====
+# Set up configuration files
+# ====
+function add_configuration_files() {
+    # swap configuration files
+    cp $PATH_CONF/security/* $PATH_CONF/opensearch-security/
+    cp $PATH_CONF/jvm.prod.options $PATH_CONF/jvm.options
+    cp $PATH_CONF/opensearch.prod.yml $PATH_CONF/opensearch.yml
+
+    rm -r $PATH_CONF/security
+    rm $PATH_CONF/jvm.prod.options $PATH_CONF/opensearch.prod.yml
+
+    # Remove symbolic links and bat files
+    find . -type l -exec rm -rf {} \;
+    find . -name "*.bat" -exec rm -rf {} \;
+}
+
+# ====
 # Copy performance analyzer service file
 # ====
 function enable_performance_analyzer() {
@@ -246,6 +270,7 @@ function assemble_rpm() {
     local src_path="./usr/share/wazuh-indexer"
     PATH_CONF="./etc/wazuh-indexer"
     PATH_BIN="${src_path}/bin"
+    PATH_PLUGINS="${src_path}/plugins"
 
     # Extract min-package. Creates usr/, etc/ and var/ in the current directory
     echo "Extract ${ARTIFACT_BUILD_NAME} archive"
@@ -256,6 +281,8 @@ function assemble_rpm() {
     enable_performance_analyzer_rca ${src_path}
     # Swap configuration files
     add_configuration_files
+
+		remove_unneeded_files
 
     # Generate final package
     local topdir
@@ -295,6 +322,7 @@ function assemble_deb() {
     local src_path="./usr/share/wazuh-indexer"
     PATH_CONF="./etc/wazuh-indexer"
     PATH_BIN="${src_path}/bin"
+    PATH_PLUGINS="${src_path}/plugins"
 
     # Extract min-package. Creates usr/, etc/ and var/ in the current directory
     echo "Extract ${ARTIFACT_BUILD_NAME} archive"
@@ -306,6 +334,8 @@ function assemble_deb() {
     enable_performance_analyzer_rca ${src_path}
     # Swap configuration files
     add_configuration_files
+
+		remove_unneeded_files
 
     # Generate final package
     local version

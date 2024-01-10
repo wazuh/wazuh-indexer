@@ -58,4 +58,4 @@ jobs:
       architecture: ${{ matrix.architecture }}
       distribution: ${{ matrix.distribution }}
       min: wazuh-indexer-min_${{ needs.version.outputs.version }}-${{ inputs.revision }}-${{ matrix.architecture }}_${{ github.sha }}.${{ matrix.distribution }}
-      name: wazuh-indexer_${{ needs.version.outputs.version }}-${{ inputs.revision }}-${{ matrix.architecture }}_${{ github.sha }}.${{ matrix.distribution }}
+

@@ -19,11 +19,12 @@ function usage() {
     echo -e "-p PLATFORM\t[Optional] Platform, default is 'uname -s'."
     echo -e "-a ARCHITECTURE\t[Optional] Build architecture, default is 'uname -m'."
     echo -e "-d DISTRIBUTION\t[Optional] Distribution, default is 'tar'."
+    echo -e "-d REVISION\t[Optional] Package revision, default is '1'."
     echo -e "-o OUTPUT\t[Optional] Output path, default is 'artifacts'."
     echo -e "-h help"
 }
 
-while getopts ":h:v:q:s:o:p:a:d:" arg; do
+while getopts ":h:v:q:s:o:p:a:d:r:" arg; do
     case $arg in
         h)
             usage
@@ -49,6 +50,9 @@ while getopts ":h:v:q:s:o:p:a:d:" arg; do
             ;;
         d)
             DISTRIBUTION=$OPTARG
+            ;;
+        r)
+            REVISION=$OPTARG
             ;;
         :)
             echo "Error: -${OPTARG} requires an argument"
@@ -91,7 +95,7 @@ cp -r ./build/local-test-repo/org/opensearch "${OUTPUT}"/maven/org
 [ -z "$PLATFORM" ] && PLATFORM=$(uname -s | awk '{print tolower($0)}')
 [ -z "$ARCHITECTURE" ] && ARCHITECTURE=$(uname -m)
 [ -z "$DISTRIBUTION" ] && DISTRIBUTION="tar"
-[ -z "$QUALIFIER" ] && QUALIFIER="1"
+[ -z "$REVISION" ] && REVISION="1"
 
 case $PLATFORM-$DISTRIBUTION-$ARCHITECTURE in
     linux-tar-x64|darwin-tar-x64)
@@ -172,7 +176,7 @@ GIT_COMMIT=$(git rev-parse --short HEAD)
 WI_VERSION=$(<VERSION)
 
 
-ARTIFACT_PACKAGE_NAME=wazuh-indexer-min_"$WI_VERSION"-"$QUALIFIER"_"$SUFFIX"_"$GIT_COMMIT"."$EXT"
+ARTIFACT_PACKAGE_NAME=wazuh-indexer-min_"$WI_VERSION"-"$REVISION"_"$SUFFIX"_"$GIT_COMMIT"."$EXT"
 
 # [WAZUH] Used by the GH workflow to upload the artifact
 

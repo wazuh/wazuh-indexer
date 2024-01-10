@@ -17,6 +17,10 @@ on:
         type: string
       revision:
         type: string
+      name:
+        description: The name of the package to upload.
+        required: true
+        type: string
     outputs:
       artifact_name:
         description: "Returns the build artifact's filename"
@@ -52,6 +56,6 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.get_name.outputs.name }}
+          name: ${{ inputs.name }}
           path: artifacts/dist/${{ steps.get_name.outputs.name }}
           if-no-files-found: error

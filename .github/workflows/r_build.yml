@@ -20,7 +20,7 @@ on:
     outputs:
       artifact_name:
         description: "Returns the build artifact's filename"
-        value: ${{ jobs.r_build.outputs.get_name }}
+        value: ${{ jobs.r_build.outputs.get_name.name }}
 
 jobs:
   r_build:

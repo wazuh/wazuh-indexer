@@ -1,4 +1,4 @@
-name: Get commit SHA (reusable)
+name: "Get commit's short SHA (reusable)"
 
 # This workflow runs when any of the following occur:
 # - Run from another workflow
@@ -6,7 +6,7 @@ on:
   workflow_call:
     outputs:
       commit_sha:
-        description: "Returns the SHA of the git commit"
+        description: "Returns the short SHA of the latest commit"
         value: ${{ jobs.r_commit_sha.outputs.commit_sha }}
 
 jobs:

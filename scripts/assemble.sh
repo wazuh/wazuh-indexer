@@ -236,6 +236,7 @@ function assemble_tar() {
     cd "${TMP_DIR}"
     PATH_CONF="./config"
     PATH_BIN="./bin"
+    PATH_BIN="./plugins"
 
     # Extract
     echo "Extract ${ARTIFACT_BUILD_NAME} archive"
@@ -246,6 +247,8 @@ function assemble_tar() {
     install_plugins
     # Swap configuration files
     add_configuration_files
+
+		remove_unneeded_files
 
     # Pack
     archive_name="wazuh-indexer-$(cat VERSION)"

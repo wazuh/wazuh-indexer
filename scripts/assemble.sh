@@ -336,7 +336,7 @@ function main() {
 
     echo "Assembling wazuh-indexer for $PLATFORM-$DISTRIBUTION-$ARCHITECTURE"
 
-    ARTIFACT_BUILD_NAME=$(ls "${OUTPUT}/dist/" | grep "wazuh-indexer-min_.*\.$EXT")
+    ARTIFACT_BUILD_NAME=$(ls "${OUTPUT}/dist/" | grep "wazuh-indexer-min_.*$ARCHITECTURE.*\.$EXT")
 
 		ARTIFACT_PACKAGE_NAME=${ARTIFACT_BUILD_NAME/min_/}
 

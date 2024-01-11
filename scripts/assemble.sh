@@ -176,6 +176,10 @@ function remove_unneeded_files() {
 # Get missing Wazuh tools and files into packages
 # ====
 function get_wazuh_files() {
+
+		local version=$(<VERSION)
+    version=${version%%.[[:digit:]]}
+
     wget -q https://packages-dev.wazuh.com/4.9/config.yml -O $PATH_PLUGINS/opensearch-security/tools/config.yml
     wget -q https://packages-dev.wazuh.com/4.9/wazuh-passwords-tool.sh -O $PATH_PLUGINS/opensearch-security/tools/wazuh-passwords-tool.sh
     wget -q https://packages-dev.wazuh.com/4.9/wazuh-certs-tool.sh -O $PATH_PLUGINS/opensearch-security/tools/wazuh-certs-tool.sh

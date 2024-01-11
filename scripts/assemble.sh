@@ -169,24 +169,7 @@ function add_configuration_files() {
 # Remove unneeded files
 # ====
 function remove_unneeded_files() {
-		rm $PATH_PLUGINS/opensearch-security/tools/install_demo_configuration.sh
-}
-
-# ====
-# Set up configuration files
-# ====
-function add_configuration_files() {
-    # swap configuration files
-    cp $PATH_CONF/security/* $PATH_CONF/opensearch-security/
-    cp $PATH_CONF/jvm.prod.options $PATH_CONF/jvm.options
-    cp $PATH_CONF/opensearch.prod.yml $PATH_CONF/opensearch.yml
-
-    rm -r $PATH_CONF/security
-    rm $PATH_CONF/jvm.prod.options $PATH_CONF/opensearch.prod.yml
-
-    # Remove symbolic links and bat files
-    find . -type l -exec rm -rf {} \;
-    find . -name "*.bat" -exec rm -rf {} \;
+    rm "$PATH_PLUGINS/opensearch-security/tools/install_demo_configuration.sh"
 }
 
 # ====
@@ -236,7 +219,7 @@ function assemble_tar() {
     cd "${TMP_DIR}"
     PATH_CONF="./config"
     PATH_BIN="./bin"
-    PATH_BIN="./plugins"
+    PATH_PLUGINS="./plugins"
 
     # Extract
     echo "Extract ${ARTIFACT_BUILD_NAME} archive"
@@ -247,8 +230,7 @@ function assemble_tar() {
     install_plugins
     # Swap configuration files
     add_configuration_files
-
-		remove_unneeded_files
+    remove_unneeded_files
 
     # Pack
     archive_name="wazuh-indexer-$(cat VERSION)"
@@ -284,8 +266,7 @@ function assemble_rpm() {
     enable_performance_analyzer_rca ${src_path}
     # Swap configuration files
     add_configuration_files
-
-		remove_unneeded_files
+    remove_unneeded_files
 
     # Generate final package
     local topdir
@@ -337,8 +318,7 @@ function assemble_deb() {
     enable_performance_analyzer_rca ${src_path}
     # Swap configuration files
     add_configuration_files
-
-		remove_unneeded_files
+    remove_unneeded_files
 
     # Generate final package
     local version
@@ -354,7 +334,7 @@ function assemble_deb() {
 
     # Move to the root folder, copy the package and clean.
     cd ../../..
-		package_name="wazuh-indexer_${version}_${SUFFIX}.${EXT}"
+    package_name="wazuh-indexer_${version}_${SUFFIX}.${EXT}"
     # debmake creates the package one level above
     cp "${TMP_DIR}/../${package_name}" "${OUTPUT}/dist/$ARTIFACT_PACKAGE_NAME"
 
@@ -371,9 +351,7 @@ function main() {
 
     ARTIFACT_BUILD_NAME=$(ls "${OUTPUT}/dist/" | grep "wazuh-indexer-min_.*$SUFFIX.*\.$EXT")
 
-		ARTIFACT_PACKAGE_NAME=${ARTIFACT_BUILD_NAME/min_/}
-
-		
+    ARTIFACT_PACKAGE_NAME=${ARTIFACT_BUILD_NAME/min_/}
 
     # Create temporal directory and copy the min package there for extraction
     TMP_DIR="${OUTPUT}/tmp/${TARGET}"

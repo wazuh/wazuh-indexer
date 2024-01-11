@@ -173,6 +173,15 @@ function remove_unneeded_files() {
 }
 
 # ====
+# Get missing Wazuh tools and files into packages
+# ====
+function get_wazuh_files() {
+    wget -q https://packages-dev.wazuh.com/4.9/config.yml -O $PATH_PLUGINS/opensearch-security/tools/config.yml
+    wget -q https://packages-dev.wazuh.com/4.9/wazuh-passwords-tool.sh -O $PATH_PLUGINS/opensearch-security/tools/wazuh-passwords-tool.sh
+    wget -q https://packages-dev.wazuh.com/4.9/wazuh-certs-tool.sh -O $PATH_PLUGINS/opensearch-security/tools/wazuh-certs-tool.sh
+}
+
+# ====
 # Copy performance analyzer service file
 # ====
 function enable_performance_analyzer() {
@@ -231,6 +240,7 @@ function assemble_tar() {
     # Swap configuration files
     add_configuration_files
     remove_unneeded_files
+    get_wazuh_files
 
     # Pack
     archive_name="wazuh-indexer-$(cat VERSION)"
@@ -267,6 +277,7 @@ function assemble_rpm() {
     # Swap configuration files
     add_configuration_files
     remove_unneeded_files
+    get_wazuh_files
 
     # Generate final package
     local topdir
@@ -319,6 +330,7 @@ function assemble_deb() {
     # Swap configuration files
     add_configuration_files
     remove_unneeded_files
+    get_wazuh_files
 
     # Generate final package
     local version

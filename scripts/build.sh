@@ -54,6 +54,9 @@ while getopts ":h:v:q:s:o:p:a:d:r:" arg; do
         r)
             REVISION=$OPTARG
             ;;
+        b)
+            BRANCH=$OPTARG
+            ;;
         :)
             echo "Error: -${OPTARG} requires an argument"
             usage
@@ -96,6 +99,7 @@ cp -r ./build/local-test-repo/org/opensearch "${OUTPUT}"/maven/org
 [ -z "$ARCHITECTURE" ] && ARCHITECTURE=$(uname -m)
 [ -z "$DISTRIBUTION" ] && DISTRIBUTION="tar"
 [ -z "$REVISION" ] && REVISION="1"
+[ -z "$BRANCH" ] && BRANCH="master"
 
 case $PLATFORM-$DISTRIBUTION-$ARCHITECTURE in
     linux-tar-x64|darwin-tar-x64)
@@ -161,6 +165,9 @@ case $PLATFORM-$DISTRIBUTION-$ARCHITECTURE in
 esac
 
 echo "Building OpenSearch for $PLATFORM-$DISTRIBUTION-$ARCHITECTURE"
+
+
+wget -q https://raw.githubusercontent.com/wazuh/wazuh/$BRANCH/extensions/elasticsearch/7.x/wazuh-template.json -O distribution/src/config/wazuh-template.json
 
 ./gradlew ":distribution:$TYPE:$TARGET:assemble" -Dbuild.snapshot="$SNAPSHOT" -Dbuild.version_qualifier="$QUALIFIER"
 

@@ -166,6 +166,28 @@ function add_configuration_files() {
 }
 
 # ====
+# Remove unneeded files
+# ====
+function remove_unneeded_files() {
+    rm "$PATH_PLUGINS/opensearch-security/tools/install_demo_configuration.sh"
+}
+
+# ====
+# Add additional tools into packages
+# ====
+function add_wazuh_tools() {
+    local version
+    version=$(<VERSION)
+    version=${version%%.[[:digit:]]}
+    local download_url
+    download_url="https://packages-dev.wazuh.com/${version}"
+
+    wget -q "${download_url}/config.yml" -O $PATH_PLUGINS/opensearch-security/tools/config.yml
+    wget -q "${download_url}/wazuh-passwords-tool.sh "-O $PATH_PLUGINS/opensearch-security/tools/wazuh-passwords-tool.sh
+    wget -q "${download_url}/wazuh-certs-tool.sh" -O $PATH_PLUGINS/opensearch-security/tools/wazuh-certs-tool.sh
+}
+
+# ====
 # Copy performance analyzer service file
 # ====
 function enable_performance_analyzer() {
@@ -212,6 +234,7 @@ function assemble_tar() {
     cd "${TMP_DIR}"
     PATH_CONF="./config"
     PATH_BIN="./bin"
+    PATH_PLUGINS="./plugins"
 
     # Extract
     echo "Extract ${ARTIFACT_BUILD_NAME} archive"
@@ -222,6 +245,8 @@ function assemble_tar() {
     install_plugins
     # Swap configuration files
     add_configuration_files
+    remove_unneeded_files
+    add_wazuh_tools
 
     # Pack
     archive_name="wazuh-indexer-$(cat VERSION)"
@@ -246,6 +271,7 @@ function assemble_rpm() {
     local src_path="./usr/share/wazuh-indexer"
     PATH_CONF="./etc/wazuh-indexer"
     PATH_BIN="${src_path}/bin"
+    PATH_PLUGINS="${src_path}/plugins"
 
     # Extract min-package. Creates usr/, etc/ and var/ in the current directory
     echo "Extract ${ARTIFACT_BUILD_NAME} archive"
@@ -256,6 +282,8 @@ function assemble_rpm() {
     enable_performance_analyzer_rca ${src_path}
     # Swap configuration files
     add_configuration_files
+    remove_unneeded_files
+    add_wazuh_tools
 
     # Generate final package
     local topdir
@@ -263,7 +291,6 @@ function assemble_rpm() {
     local spec_file="wazuh-indexer.rpm.spec"
     topdir=$(pwd)
     version=$(cat ./usr/share/wazuh-indexer/VERSION)
-    # TODO validate architecture
     rpmbuild --bb \
         --define "_topdir ${topdir}" \
         --define "_version ${version}" \
@@ -272,9 +299,7 @@ function assemble_rpm() {
 
     # Move to the root folder, copy the package and clean.
     cd ../../..
-
     package_name="wazuh-indexer-${version}-1.${SUFFIX}.${EXT}"
-
     cp "${TMP_DIR}/RPMS/${SUFFIX}/${package_name}" "${OUTPUT}/dist/$ARTIFACT_PACKAGE_NAME"
 
     clean
@@ -295,6 +320,7 @@ function assemble_deb() {
     local src_path="./usr/share/wazuh-indexer"
     PATH_CONF="./etc/wazuh-indexer"
     PATH_BIN="${src_path}/bin"
+    PATH_PLUGINS="${src_path}/plugins"
 
     # Extract min-package. Creates usr/, etc/ and var/ in the current directory
     echo "Extract ${ARTIFACT_BUILD_NAME} archive"
@@ -306,6 +332,8 @@ function assemble_deb() {
     enable_performance_analyzer_rca ${src_path}
     # Swap configuration files
     add_configuration_files
+    remove_unneeded_files
+    add_wazuh_tools
 
     # Generate final package
     local version
@@ -321,7 +349,7 @@ function assemble_deb() {
 
     # Move to the root folder, copy the package and clean.
     cd ../../..
-		package_name="wazuh-indexer_${version}_${SUFFIX}.${EXT}"
+    package_name="wazuh-indexer_${version}_${SUFFIX}.${EXT}"
     # debmake creates the package one level above
     cp "${TMP_DIR}/../${package_name}" "${OUTPUT}/dist/$ARTIFACT_PACKAGE_NAME"
 
@@ -338,9 +366,7 @@ function main() {
 
     ARTIFACT_BUILD_NAME=$(ls "${OUTPUT}/dist/" | grep "wazuh-indexer-min_.*$SUFFIX.*\.$EXT")
 
-		ARTIFACT_PACKAGE_NAME=${ARTIFACT_BUILD_NAME/min_/}
-
-		
+    ARTIFACT_PACKAGE_NAME=${ARTIFACT_BUILD_NAME/min_/}
 
     # Create temporal directory and copy the min package there for extraction
     TMP_DIR="${OUTPUT}/tmp/${TARGET}"

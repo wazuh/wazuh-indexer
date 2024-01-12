@@ -177,7 +177,7 @@ function remove_unneeded_files() {
 # ====
 function get_wazuh_files() {
 
-		local version=$(<VERSION)
+    local version=$(<VERSION)
     version=${version%%.[[:digit:]]}
 
     wget -q https://packages-dev.wazuh.com/4.9/config.yml -O $PATH_PLUGINS/opensearch-security/tools/config.yml

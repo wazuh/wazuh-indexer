@@ -173,16 +173,18 @@ function remove_unneeded_files() {
 }
 
 # ====
-# Get missing Wazuh tools and files into packages
+# Add additional tools into packages
 # ====
-function get_wazuh_files() {
-
-    local version=$(<VERSION)
+function add_wazuh_tools() {
+    local version
+    version=$(<VERSION)
     version=${version%%.[[:digit:]]}
+    local download_url
+    download_url="https://packages-dev.wazuh.com/${version}"
 
-    wget -q https://packages-dev.wazuh.com/4.9/config.yml -O $PATH_PLUGINS/opensearch-security/tools/config.yml
-    wget -q https://packages-dev.wazuh.com/4.9/wazuh-passwords-tool.sh -O $PATH_PLUGINS/opensearch-security/tools/wazuh-passwords-tool.sh
-    wget -q https://packages-dev.wazuh.com/4.9/wazuh-certs-tool.sh -O $PATH_PLUGINS/opensearch-security/tools/wazuh-certs-tool.sh
+    wget -q "${download_url}/config.yml" -O $PATH_PLUGINS/opensearch-security/tools/config.yml
+    wget -q "${download_url}/wazuh-passwords-tool.sh "-O $PATH_PLUGINS/opensearch-security/tools/wazuh-passwords-tool.sh
+    wget -q "${download_url}/wazuh-certs-tool.sh" -O $PATH_PLUGINS/opensearch-security/tools/wazuh-certs-tool.sh
 }
 
 # ====
@@ -244,7 +246,7 @@ function assemble_tar() {
     # Swap configuration files
     add_configuration_files
     remove_unneeded_files
-    get_wazuh_files
+    add_wazuh_tools
 
     # Pack
     archive_name="wazuh-indexer-$(cat VERSION)"
@@ -281,7 +283,7 @@ function assemble_rpm() {
     # Swap configuration files
     add_configuration_files
     remove_unneeded_files
-    get_wazuh_files
+    add_wazuh_tools
 
     # Generate final package
     local topdir
@@ -289,7 +291,6 @@ function assemble_rpm() {
     local spec_file="wazuh-indexer.rpm.spec"
     topdir=$(pwd)
     version=$(cat ./usr/share/wazuh-indexer/VERSION)
-    # TODO validate architecture
     rpmbuild --bb \
         --define "_topdir ${topdir}" \
         --define "_version ${version}" \
@@ -298,9 +299,7 @@ function assemble_rpm() {
 
     # Move to the root folder, copy the package and clean.
     cd ../../..
-
     package_name="wazuh-indexer-${version}-1.${SUFFIX}.${EXT}"
-
     cp "${TMP_DIR}/RPMS/${SUFFIX}/${package_name}" "${OUTPUT}/dist/$ARTIFACT_PACKAGE_NAME"
 
     clean
@@ -334,7 +333,7 @@ function assemble_deb() {
     # Swap configuration files
     add_configuration_files
     remove_unneeded_files
-    get_wazuh_files
+    add_wazuh_tools
 
     # Generate final package
     local version

@@ -181,9 +181,9 @@ function add_wazuh_tools() {
     local download_url
     download_url="https://packages-dev.wazuh.com/${version}"
 
-    wget -q "${download_url}/config.yml" -O $PATH_PLUGINS/opensearch-security/tools/config.yml
-    wget -q "${download_url}/wazuh-passwords-tool.sh" -O $PATH_PLUGINS/opensearch-security/tools/wazuh-passwords-tool.sh
-    wget -q "${download_url}/wazuh-certs-tool.sh" -O $PATH_PLUGINS/opensearch-security/tools/wazuh-certs-tool.sh
+    curl -sL "${download_url}/config.yml" -o $PATH_PLUGINS/opensearch-security/tools/config.yml
+    curl -sL "${download_url}/wazuh-passwords-tool.sh" -o $PATH_PLUGINS/opensearch-security/tools/wazuh-passwords-tool.sh
+    curl -sL "${download_url}/wazuh-certs-tool.sh" -o $PATH_PLUGINS/opensearch-security/tools/wazuh-certs-tool.sh
 }
 
 # ====

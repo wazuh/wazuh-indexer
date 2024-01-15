@@ -61,7 +61,7 @@ Example:
 Usage: ./dev.sh {up|down|stop} [security]
 ```
 
-Once the `wazuh-indexer` container is up, attach a shell to it and run `./gradlew run`
+Once the `wi-build` container is up, attach a shell to it and run `./gradlew run`
 to start the application.
 
 

@@ -10,31 +10,31 @@
 set -ex
 
 # Minimum required plugins
-plugins=(
-    "performance-analyzer"
-    "opensearch-security"
-)
-
 # plugins=(
-#     "alerting" # "opensearch-alerting"
-#     "opensearch-job-scheduler"
-#     "opensearch-anomaly-detection" # Requires "opensearch-job-scheduler"
-#     "asynchronous-search"          # "opensearch-asynchronous-search"
-#     "opensearch-cross-cluster-replication"
-#     "geospatial" # "opensearch-geospatial"
-#     "opensearch-index-management"
-#     "opensearch-knn"
-#     "opensearch-ml-plugin" # "opensearch-ml"
-#     "neural-search"        # "opensearch-neural-search"
-#     "opensearch-notifications-core"
-#     "notifications" # "opensearch-notifications". Requires "opensearch-notifications-core"
-#     "opensearch-observability"
-#     "performance-analyzer" # "opensearch-performance-analyzer"
-#     "opensearch-reports-scheduler"
+#     "performance-analyzer"
 #     "opensearch-security"
-#     "opensearch-security-analytics"
-#     "opensearch-sql-plugin" # "opensearch-sql"
 # )
+
+plugins=(
+    "alerting" # "opensearch-alerting"
+    "opensearch-job-scheduler"
+    "opensearch-anomaly-detection" # Requires "opensearch-job-scheduler"
+    "asynchronous-search"          # "opensearch-asynchronous-search"
+    "opensearch-cross-cluster-replication"
+    "geospatial" # "opensearch-geospatial"
+    "opensearch-index-management"
+    "opensearch-knn"
+    "opensearch-ml-plugin" # "opensearch-ml"
+    "neural-search"        # "opensearch-neural-search"
+    "opensearch-notifications-core"
+    "notifications" # "opensearch-notifications". Requires "opensearch-notifications-core"
+    "opensearch-observability"
+    "performance-analyzer" # "opensearch-performance-analyzer"
+    "opensearch-reports-scheduler"
+    "opensearch-security"
+    "opensearch-security-analytics"
+    "opensearch-sql-plugin" # "opensearch-sql"
+)
 
 # ====
 # Usage

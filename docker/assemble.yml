@@ -1,0 +1,28 @@
+version: "3.9"
+
+services:
+
+  wi-assemble:
+    image: wi-assemble:${VERSION}
+    container_name: wi-assemble-${VERSION}
+    build:
+      context: ./..
+      dockerfile: ${REPO_PATH}/docker/images/wi-assemble.Dockerfile
+#    ports:
+#      # OpenSearch REST API
+#      - 9200:9200
+#      # Cross-cluster search
+#      # - 9250:9250
+#      # Node communication and transport
+#      # - 9300:9300
+#      # Performance Analyzer
+#      # - 9600:9600
+#    expose:
+#      - 9200
+    volumes:
+      - ${REPO_PATH}/scripts:/home/wazuh-indexer/scripts
+      - ${REPO_PATH}/artifacts:/home/wazuh-indexer/artifacts
+      - ${REPO_PATH}/distribution/packages/src:/home/wazuh-indexer/distribution/packages/src
+    entrypoint: ['tail', '-f', '/dev/null']
+    user: "1000:1000"
+    working_dir: /home/wazuh-indexer

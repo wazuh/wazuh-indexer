@@ -32,7 +32,7 @@ act -j build -W .github/workflows/build.yml --artifact-server-path ./artifacts
 Within the [Docker environment](../docker):
 
 ```console
-bash scripts/build.sh -v 2.11.0 -s false -p linux -a {x64|arm64} -d {rpm|deb|tar}
+bash scripts/build.sh -v 2.11.1 -s false -p linux -a {x64|arm64} -d {rpm|deb|tar}
 ```
 
 The generated package is sent to `artifacts/`
@@ -104,7 +104,7 @@ The script will:
 ### Running in Act
 
 ```console
-act -j assemble -W .github/workflows/build.yml --artifact-server-path ./artifacts --matrix distribution:deb --matrix architecture:x64 --var OPENSEARCH_VERSION=2.11.0
+act -j assemble -W .github/workflows/build.yml --artifact-server-path ./artifacts --matrix distribution:deb --matrix architecture:x64 --var OPENSEARCH_VERSION=2.11.1
 
 [Build slim packages/build] 🏁  Job succeeded
 ```
@@ -128,7 +128,7 @@ docker run --rm \
 # https://github.com/opensearch-project/opensearch-build/blob/2.11.1/docker/ci/dockerfiles/current/build.ubuntu2004.opensearch.x64.arm64.dockerfile
 
 # Install necessary packages
-apt-get update -y && apt-get upgrade -y && apt-get install -y curl build-essential curl &&
+apt-get update -y && apt-get upgrade -y && apt-get install -y curl wget build-essential &&
     apt-get install -y debmake debhelper-compat &&
     apt-get install -y libxrender1 libxtst6 libasound2 libxi6 libgconf-2-4 &&
     apt-get install -y libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libatspi2.0-dev libxcomposite-dev libxdamage1 libxfixes3 libxfixes-dev libxrandr2 libgbm-dev libxkbcommon-x11-0 libpangocairo-1.0-0 libcairo2 libcairo2-dev libnss3 libnspr4 libnspr4-dev freeglut3 &&
@@ -141,7 +141,7 @@ curl -o- https://www.aptly.info/pubkey.txt | apt-key add - &&
     apt-get update -y && apt-get install -y aptly && apt-get clean -y &&
     dpkg -r lintian
 
-bash scripts/assemble.sh -v 2.11.0 -p linux -a x64 -d deb
+bash scripts/assemble.sh -v 2.11.1 -p linux -a x64 -d deb
 ```
 
 ### RPM
@@ -197,7 +197,7 @@ The script will:
 ### Running in Act
 
 ```console
-act -j assemble -W .github/workflows/build.yml --artifact-server-path ./artifacts --matrix distribution:rpm --matrix architecture:x64 --var OPENSEARCH_VERSION=2.11.0
+act -j assemble -W .github/workflows/build.yml --artifact-server-path ./artifacts --matrix distribution:rpm --matrix architecture:x64 --var OPENSEARCH_VERSION=2.11.1
 
 [Build slim packages/build] 🏁  Job succeeded
 ```
@@ -219,6 +219,6 @@ docker run --rm \
     -it ubuntu:jammy /bin/bash
 
 apt-get update
-apt-get install -y rpm2cpio rpm cpio
-bash scripts/assemble.sh -v 2.11.0 -p linux -a x64 -d rpm
+apt-get install -y rpm2cpio rpm cpio wget
+bash scripts/assemble.sh -v 2.11.1 -p linux -a x64 -d rpm
 ```

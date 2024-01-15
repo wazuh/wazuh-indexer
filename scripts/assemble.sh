@@ -10,31 +10,31 @@
 set -ex
 
 # Minimum required plugins
-# plugins=(
-#     "performance-analyzer"
-#     "opensearch-security"
-# )
-
 plugins=(
-    "alerting" # "opensearch-alerting"
-    "opensearch-job-scheduler"
-    "opensearch-anomaly-detection" # Requires "opensearch-job-scheduler"
-    "asynchronous-search"          # "opensearch-asynchronous-search"
-    "opensearch-cross-cluster-replication"
-    "geospatial" # "opensearch-geospatial"
-    "opensearch-index-management"
-    "opensearch-knn"
-    "opensearch-ml-plugin" # "opensearch-ml"
-    "neural-search"        # "opensearch-neural-search"
-    "opensearch-notifications-core"
-    "notifications" # "opensearch-notifications". Requires "opensearch-notifications-core"
-    "opensearch-observability"
-    "performance-analyzer" # "opensearch-performance-analyzer"
-    "opensearch-reports-scheduler"
+    "performance-analyzer"
     "opensearch-security"
-    "opensearch-security-analytics"
-    "opensearch-sql-plugin" # "opensearch-sql"
 )
+
+# plugins=(
+#     "alerting" # "opensearch-alerting"
+#     "opensearch-job-scheduler"
+#     "opensearch-anomaly-detection" # Requires "opensearch-job-scheduler"
+#     "asynchronous-search"          # "opensearch-asynchronous-search"
+#     "opensearch-cross-cluster-replication"
+#     "geospatial" # "opensearch-geospatial"
+#     "opensearch-index-management"
+#     "opensearch-knn"
+#     "opensearch-ml-plugin" # "opensearch-ml"
+#     "neural-search"        # "opensearch-neural-search"
+#     "opensearch-notifications-core"
+#     "notifications" # "opensearch-notifications". Requires "opensearch-notifications-core"
+#     "opensearch-observability"
+#     "performance-analyzer" # "opensearch-performance-analyzer"
+#     "opensearch-reports-scheduler"
+#     "opensearch-security"
+#     "opensearch-security-analytics"
+#     "opensearch-sql-plugin" # "opensearch-sql"
+# )
 
 # ====
 # Usage
@@ -173,29 +173,10 @@ function remove_unneeded_files() {
 }
 
 # ====
-# Get version from VERSION file
-# ====
-function get_version()
-{
-		case $PACKAGE in
-    tar)
-        versionfile="./VERSION"
-        ;;
-    rpm|deb)
-        versionfile="./usr/share/wazuh-indexer/VERSION"
-        ;;
-    esac
-
-		echo $(cat $versionfile)
-}
-
-# ====
 # Add additional tools into packages
 # ====
 function add_wazuh_tools() {
-    local version
-		version=$(get_version)
-    version=${version%%.[[:digit:]]}
+    local version=${1%%.[[:digit:]]}
 
     local download_url
     download_url="https://packages-dev.wazuh.com/${version}"
@@ -259,15 +240,18 @@ function assemble_tar() {
     tar -zvxf "${ARTIFACT_BUILD_NAME}"
     cd "$(ls -d wazuh-indexer-*/)"
 
+    local version
+    version=$(cat VERSION)
+
     # Install plugins
     install_plugins
     # Swap configuration files
     add_configuration_files
     remove_unneeded_files
-    add_wazuh_tools
+    add_wazuh_tools "${version}"
 
     # Pack
-    archive_name="wazuh-indexer-$(cat VERSION)"
+    archive_name="wazuh-indexer-${version}"
     cd ..
     tar -cvf "${archive_name}-${SUFFIX}.${EXT}" "${archive_name}"
     cd ../../..
@@ -295,20 +279,21 @@ function assemble_rpm() {
     echo "Extract ${ARTIFACT_BUILD_NAME} archive"
     rpm2cpio "${ARTIFACT_BUILD_NAME}" | cpio -imdv
 
+    local version
+    version=$(cat ./usr/share/wazuh-indexer/VERSION)
+
     # Install plugins
     install_plugins
     enable_performance_analyzer_rca ${src_path}
     # Swap configuration files
     add_configuration_files
     remove_unneeded_files
-    add_wazuh_tools
+    add_wazuh_tools "${version}"
 
     # Generate final package
     local topdir
-    local version
     local spec_file="wazuh-indexer.rpm.spec"
     topdir=$(pwd)
-    version=$(cat ./usr/share/wazuh-indexer/VERSION)
     rpmbuild --bb \
         --define "_topdir ${topdir}" \
         --define "_version ${version}" \
@@ -345,17 +330,18 @@ function assemble_deb() {
     ar xf "${ARTIFACT_BUILD_NAME}" data.tar.gz
     tar zvxf data.tar.gz
 
+    local version
+    version=$(cat ./usr/share/wazuh-indexer/VERSION)
+
     # Install plugins
     install_plugins
     enable_performance_analyzer_rca ${src_path}
     # Swap configuration files
     add_configuration_files
     remove_unneeded_files
-    add_wazuh_tools
+    add_wazuh_tools "${version}"
 
     # Generate final package
-    local version
-    version=$(cat ./usr/share/wazuh-indexer/VERSION)
     debmake \
         --fullname "Wazuh Team" \
         --email "hello@wazuh.com" \

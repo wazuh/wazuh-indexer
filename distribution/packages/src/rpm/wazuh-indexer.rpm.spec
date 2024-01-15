@@ -182,6 +182,7 @@ exit 0
 %config(noreplace) %{config_dir}/opensearch.yml
 %config(noreplace) %{config_dir}/jvm.options
 %config(noreplace) %{config_dir}/log4j2.properties
+%config(noreplace) %{config_dir}/wazuh-template.json
 %config(noreplace) %{data_dir}/rca_enabled.conf
 %config(noreplace) %{data_dir}/performance_analyzer_enabled.conf
 

@@ -9,32 +9,39 @@
 
 set -ex
 
-# Minimum required plugins
-# plugins=(
-#     "performance-analyzer"
-#     "opensearch-security"
-# )
+### The $test variable determines whether we include a minimalistic
+### or the full set of OpenSearch plugins
 
-plugins=(
-    "alerting" # "opensearch-alerting"
-    "opensearch-job-scheduler"
-    "opensearch-anomaly-detection" # Requires "opensearch-job-scheduler"
-    "asynchronous-search"          # "opensearch-asynchronous-search"
-    "opensearch-cross-cluster-replication"
-    "geospatial" # "opensearch-geospatial"
-    "opensearch-index-management"
-    "opensearch-knn"
-    "opensearch-ml-plugin" # "opensearch-ml"
-    "neural-search"        # "opensearch-neural-search"
-    "opensearch-notifications-core"
-    "notifications" # "opensearch-notifications". Requires "opensearch-notifications-core"
-    "opensearch-observability"
-    "performance-analyzer" # "opensearch-performance-analyzer"
-    "opensearch-reports-scheduler"
-    "opensearch-security"
-    "opensearch-security-analytics"
-    "opensearch-sql-plugin" # "opensearch-sql"
-)
+test=${test:-false}
+
+if ( $test )
+then
+		plugins=(
+		    "performance-analyzer"
+		    "opensearch-security"
+		)
+else
+		plugins=(
+		    "alerting" # "opensearch-alerting"
+		    "opensearch-job-scheduler"
+		    "opensearch-anomaly-detection" # Requires "opensearch-job-scheduler"
+		    "asynchronous-search"          # "opensearch-asynchronous-search"
+		    "opensearch-cross-cluster-replication"
+		    "geospatial" # "opensearch-geospatial"
+		    "opensearch-index-management"
+		    "opensearch-knn"
+		    "opensearch-ml-plugin" # "opensearch-ml"
+		    "neural-search"        # "opensearch-neural-search"
+		    "opensearch-notifications-core"
+		    "notifications" # "opensearch-notifications". Requires "opensearch-notifications-core"
+		    "opensearch-observability"
+		    "performance-analyzer" # "opensearch-performance-analyzer"
+		    "opensearch-reports-scheduler"
+		    "opensearch-security"
+		    "opensearch-security-analytics"
+		    "opensearch-sql-plugin" # "opensearch-sql"
+		)
+fi
 
 # ====
 # Usage

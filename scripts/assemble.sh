@@ -173,17 +173,35 @@ function remove_unneeded_files() {
 }
 
 # ====
+# Get version from VERSION file
+# ====
+function get_version()
+{
+		case $PACKAGE in
+    tar)
+        versionfile="./VERSION"
+        ;;
+    rpm|deb)
+        versionfile="./usr/share/wazuh-indexer/VERSION"
+        ;;
+    esac
+
+		echo $(cat $versionfile)
+}
+
+# ====
 # Add additional tools into packages
 # ====
 function add_wazuh_tools() {
     local version
-    version=$(<VERSION)
+		version=$(get_version)
     version=${version%%.[[:digit:]]}
+
     local download_url
     download_url="https://packages-dev.wazuh.com/${version}"
 
     wget -q "${download_url}/config.yml" -O $PATH_PLUGINS/opensearch-security/tools/config.yml
-    wget -q "${download_url}/wazuh-passwords-tool.sh "-O $PATH_PLUGINS/opensearch-security/tools/wazuh-passwords-tool.sh
+    wget -q "${download_url}/wazuh-passwords-tool.sh" -O $PATH_PLUGINS/opensearch-security/tools/wazuh-passwords-tool.sh
     wget -q "${download_url}/wazuh-certs-tool.sh" -O $PATH_PLUGINS/opensearch-security/tools/wazuh-certs-tool.sh
 }
 

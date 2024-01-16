@@ -64,9 +64,10 @@ mkdir -p %{buildroot}%{pid_dir}
 mkdir -p %{buildroot}%{product_dir}/plugins
 # Install directories/files
 cp -a etc usr var %{buildroot}
-chmod 0755 %{buildroot}%{product_dir}/bin/*
+chmod 0750 %{buildroot}%{product_dir}/bin/*
 if [ -d %{buildroot}%{product_dir}/plugins/opensearch-security ]; then
-    chmod 0755 %{buildroot}%{product_dir}/plugins/opensearch-security/tools/*
+    chmod 0640 %{buildroot}%{product_dir}/plugins/opensearch-security/tools/*
+    chmod 0740 %{buildroot}%{product_dir}/plugins/opensearch-security/tools/*.sh
 fi
 # Pre-populate the folders to ensure rpm build success even without all plugins
 mkdir -p %{buildroot}%{config_dir}/opensearch-observability
@@ -182,7 +183,6 @@ exit 0
 %config(noreplace) %{config_dir}/opensearch.yml
 %config(noreplace) %{config_dir}/jvm.options
 %config(noreplace) %{config_dir}/log4j2.properties
-%config(noreplace) %{config_dir}/wazuh-template.json
 %config(noreplace) %{data_dir}/rca_enabled.conf
 %config(noreplace) %{data_dir}/performance_analyzer_enabled.conf
 
@@ -211,9 +211,11 @@ exit 0
 
 # Wazuh additional files
 %attr(440, %{name}, %{name}) %{product_dir}/VERSION
-%attr(750, %{name}, %{name}) %{product_dir}/bin/indexer-security-init.sh
-%attr(750, %{name}, %{name}) %{product_dir}/bin/indexer-ism-init.sh
-%attr(750, %{name}, %{name}) %{product_dir}/bin/indexer-init.sh
+## Removing as %{product_dir}/bin is included in line 199
+# %attr(750, %{name}, %{name}) %{product_dir}/bin/indexer-security-init.sh
+# %attr(750, %{name}, %{name}) %{product_dir}/bin/indexer-ism-init.sh
+# %attr(750, %{name}, %{name}) %{product_dir}/bin/indexer-init.sh
+%attr(660, %{name}, %{name}) %{config_dir}/wazuh-template.json
 
 %changelog
 * Thu Mar 28 2024 support <info@wazuh.com> - 4.9.0

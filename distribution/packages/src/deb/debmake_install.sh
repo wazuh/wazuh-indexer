@@ -18,7 +18,7 @@ fi
 
 curdir=$1
 product_dir=/usr/share/wazuh-indexer
-# config_dir=/etc/wazuh-indexer
+config_dir=/etc/wazuh-indexer
 data_dir=/var/lib/wazuh-indexer
 log_dir=/var/log/wazuh-indexer
 pid_dir=/var/run/wazuh-indexer
@@ -35,6 +35,7 @@ chmod -c 0755 "${buildroot}${product_dir}"/bin/*
 if [ -d "${buildroot}${product_dir}"/plugins/opensearch-security ]; then
     chmod -c 0755 "${buildroot}${product_dir}"/plugins/opensearch-security/tools/*
 fi
+chmod -c 660 ${config_dir}/wazuh-template.json
 
 # Symlinks (do not symlink config dir as security demo installer has dependency, if no presense it will switch to rpm/deb mode)
 ln -s ${data_dir} "${buildroot}${product_dir}/data"

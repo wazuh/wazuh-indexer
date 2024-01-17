@@ -9,12 +9,12 @@
 
 set -ex
 
-### The $test variable determines whether we include a minimalistic
+### The $TEST variable determines whether we include a minimalistic
 ### or the full set of OpenSearch plugins
 
-test=${test:-false}
+TEST=${TEST:-false}
 
-if ( $test )
+if ( $TEST )
 then
 		plugins=(
 		    "performance-analyzer"

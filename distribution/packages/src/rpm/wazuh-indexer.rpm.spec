@@ -205,10 +205,6 @@ exit 0
 
 # Wazuh additional files
 %attr(440, %{name}, %{name}) %{product_dir}/VERSION
-## Removing as %{product_dir}/bin is included in line 199
-# %attr(750, %{name}, %{name}) %{product_dir}/bin/indexer-security-init.sh
-# %attr(750, %{name}, %{name}) %{product_dir}/bin/indexer-ism-init.sh
-# %attr(750, %{name}, %{name}) %{product_dir}/bin/indexer-init.sh
 %attr(660, %{name}, %{name}) %{config_dir}/wazuh-template.json
 
 %changelog

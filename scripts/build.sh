@@ -77,6 +77,7 @@ fi
 
 [ -z "$OUTPUT" ] && OUTPUT=artifacts
 
+
 echo "Creating output directory $OUTPUT/maven/org/opensearch if it doesn't already exist"
 mkdir -p "$OUTPUT/maven/org/opensearch"
 
@@ -100,6 +101,21 @@ cp -r ./build/local-test-repo/org/opensearch "${OUTPUT}"/maven/org
 [ -z "$DISTRIBUTION" ] && DISTRIBUTION="tar"
 [ -z "$REVISION" ] && REVISION="1"
 [ -z "$BRANCH" ] && BRANCH="master"
+
+function download_template()
+{
+	echo "Downloading wazuh-template.json"
+	local download_url
+	download_url='https://raw.githubusercontent.com/wazuh/wazuh/$BRANCH/extensions/elasticsearch/7.x/'
+	curl -s ${download_url}wazuh-template.json -o distribution/src/config/wazuh-template.json
+
+  if [ $? -ne 0 ]; then
+  	echo "Unable to download wazuh-template.json"
+  	exit 1
+  fi
+	
+	echo "Successfully downloaded wazuh-template.json"
+}
 
 case $PLATFORM-$DISTRIBUTION-$ARCHITECTURE in
     linux-tar-x64|darwin-tar-x64)
@@ -166,8 +182,7 @@ esac
 
 echo "Building OpenSearch for $PLATFORM-$DISTRIBUTION-$ARCHITECTURE"
 
-
-wget -q https://raw.githubusercontent.com/wazuh/wazuh/$BRANCH/extensions/elasticsearch/7.x/wazuh-template.json -O distribution/src/config/wazuh-template.json
+download_template
 
 ./gradlew ":distribution:$TYPE:$TARGET:assemble" -Dbuild.snapshot="$SNAPSHOT" -Dbuild.version_qualifier="$QUALIFIER"
 

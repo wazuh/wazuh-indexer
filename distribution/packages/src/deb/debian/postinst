@@ -19,23 +19,6 @@ data_dir=/var/lib/wazuh-indexer
 log_dir=/var/log/wazuh-indexer
 pid_dir=/var/run/wazuh-indexer
 
-# Apply Security Settings
-if [ -d ${product_dir}/plugins/opensearch-security ]; then
-    bash ${product_dir}/plugins/opensearch-security/tools/install_demo_configuration.sh -y -i -s > ${log_dir}/install_demo_configuration.log 2>&1
-fi
-
-# Apply PerformanceAnalyzer Settings
-chmod a+rw /tmp
-if ! grep -q '## Wazuh Indexer Performance Analyzer' ${config_dir}/jvm.options; then
-   # Add Performance Analyzer settings in ${config_dir}/jvm.options
-   CLK_TCK=`/usr/bin/getconf CLK_TCK`
-   echo >> ${config_dir}/jvm.options
-   echo '## Wazuh Indexer Performance Analyzer' >> ${config_dir}/jvm.options
-   echo "-Dclk.tck=$CLK_TCK" >> ${config_dir}/jvm.options
-   echo "-Djdk.attach.allowAttachSelf=true" >> ${config_dir}/jvm.options
-   echo "-Djava.security.policy=file://${config_dir}/opensearch-performance-analyzer/opensearch_security.policy" >> ${config_dir}/jvm.options
-   echo "--add-opens=jdk.attach/sun.tools.attach=ALL-UNNAMED" >> ${config_dir}/jvm.options
-fi
 
 # Set owner
 chown -R wazuh-indexer.wazuh-indexer ${product_dir}

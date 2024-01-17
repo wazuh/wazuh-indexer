@@ -98,7 +98,14 @@ The script will:
           |-- etc
           |-- usr
           |-- var
-          `-- wazuh-indexer-min_4.9.0_amd64.deb
+          |-- wazuh-indexer-min_4.9.0_amd64.deb
+          `-- debian/
+              | -- control
+              | -- copyright
+              | -- rules
+              | -- preinst
+              | -- prerm
+              | -- postinst
   ```
 
 ### Running in Act

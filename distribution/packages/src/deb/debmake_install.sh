@@ -35,9 +35,9 @@ chmod -c 0755 "${buildroot}${product_dir}"/bin/*
 if [ -d "${buildroot}${product_dir}"/plugins/opensearch-security ]; then
     chmod -c 0755 "${buildroot}${product_dir}"/plugins/opensearch-security/tools/*
 fi
-chmod -c 660 "${buildroot}${config_dir}"/wazuh-template.json
 
 # Change Permissions
 chmod -Rf a+rX,u+w,g-w,o-w "${buildroot}"/*
+chmod -c 660 "${buildroot}${config_dir}"/wazuh-template.json
 
 exit 0

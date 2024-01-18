@@ -29,7 +29,7 @@ act -j build -W .github/workflows/build.yml --artifact-server-path ./artifacts
 
 #### Running in Docker
 
-Within the [Docker environment](../docker):
+Using the [Docker environment](../docker):
 
 ```console
 docker exec -it wi-build-$(<VERSION) bash scripts/build.sh -v 2.11.1 -s false -p linux -a {x64|arm64} -d {rpm|deb|tar}
@@ -115,7 +115,7 @@ Pre-requisites:
 
 - Current directory: `wazuh-indexer/`
 - Existing deb package in `wazuh-indexer/artifacts/dist/deb`, as a result of the _Build_ stage.
-- Within the [Docker environment](../docker):
+- Using the [Docker environment](../docker):
 
 ```console
 docker exec -it wi-assemble-$(<VERSION) bash scripts/assemble.sh -v 2.11.1 -p linux -a x64 -d deb
@@ -185,7 +185,7 @@ Pre-requisites:
 
 - Current directory: `wazuh-indexer/`
 - Existing rpm package in `wazuh-indexer/artifacts/dist/rpm`, as a result of the _Build_ stage.
-- Within the [Docker environment](../docker):
+- Using the [Docker environment](../docker):
 
 ```console
 docker exec -it wi-assemble-$(<VERSION) bash scripts/assemble.sh -v 2.11.1 -p linux -a x64 -d rpm

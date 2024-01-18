@@ -53,7 +53,7 @@ before starting Docker Desktop and any of the environments in this folder.
 
 ## Development environments
 
-Use the `dev/dev.sh` script to start development environment. 
+Use the `dev/dev.sh` script to start a development environment. 
 
 Example:
 
@@ -66,7 +66,7 @@ to start the application.
 
 ## Containers to generate packages
 
-Include the `ci/ci.sh` script to start provisioned containers to generate packages.
+Use the `ci/ci.sh` script to start provisioned containers to generate packages.
 
 ```bash
 Usage: ./ci.sh {up|down|stop} [ci]

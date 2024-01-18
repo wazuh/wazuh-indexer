@@ -343,10 +343,6 @@ Closure commonDebConfig(boolean jdk, String architecture) {
     requires 'libc6'
     requires 'adduser'
 
-    into('/usr/share/lintian/overrides') {
-      from('src/deb/lintian/wazuh-indexer')
-      fileMode 0644
-    }
   }
 }
 

@@ -25,6 +25,8 @@ on:
 #   | https://docs.github.com/en/actions/using-workflows/reusing-workflows#using-a-matrix-strategy-with-a-reusable-workflow
 # * Reading input from the called workflow
 #   | https://docs.github.com/en/enterprise-cloud@latest/actions/using-workflows/workflow-syntax-for-github-actions#onworkflow_callinputs
+# * Ternary operator
+#   | https://docs.github.com/en/actions/learn-github-actions/expressions#example
 
 jobs:
   version:
@@ -44,7 +46,7 @@ jobs:
       architecture: ${{ matrix.architecture }}
       distribution: ${{ matrix.distribution }}
       revision: ${{ inputs.revision }}
-      name: wazuh-indexer-min_${{ needs.version.outputs.version }}-${{ inputs.revision }}-${{ matrix.architecture }}_${{ needs.commit_sha.outputs.commit_sha }}.${{ matrix.distribution }}
+      name: wazuh-indexer-min_${{ needs.version.outputs.version }}-${{ github.event_name == 'push' && '1' || inputs.revision }}-${{ matrix.architecture }}_${{ needs.commit_sha.outputs.commit_sha }}.${{ matrix.distribution }}
 
   assemble:
     needs: [version, commit_sha, build]
@@ -61,4 +63,4 @@ jobs:
     with:
       architecture: ${{ matrix.architecture }}
       distribution: ${{ matrix.distribution }}
-      min: wazuh-indexer-min_${{ needs.version.outputs.version }}-${{ inputs.revision }}-${{ matrix.architecture }}_${{ needs.commit_sha.outputs.commit_sha }}.${{ matrix.distribution }}
+      min: wazuh-indexer-min_${{ needs.version.outputs.version }}-${{ github.event_name == 'push' && '1' || inputs.revision }}-${{ matrix.architecture }}_${{ needs.commit_sha.outputs.commit_sha }}.${{ matrix.distribution }}

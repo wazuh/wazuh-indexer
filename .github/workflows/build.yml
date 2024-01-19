@@ -10,10 +10,10 @@ on:
   workflow_dispatch:
     inputs:
       revision:
-        # description:
-        default: "1"
-        required: true
+        description: "Any string or number used to extend the package's identifier"
         type: string
+        required: true
+        default: "1"
 
 # ==========================
 # Bibliography

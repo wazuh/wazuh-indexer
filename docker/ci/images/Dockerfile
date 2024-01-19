@@ -15,6 +15,3 @@ RUN mkdir /home/wazuh-indexer && \
     chown -R 1000:1000 /home/wazuh-indexer
 USER wazuh-indexer
 WORKDIR /home/wazuh-indexer
-
-
-

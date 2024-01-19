@@ -39,7 +39,7 @@ The generated package is sent to `artifacts/`
 
 ## Assemble
 
-**Note:** set the environment variable `TEST=true` to assemble a package with the required plugins only, 
+**Note:** set the environment variable `TEST=true` to assemble a package with the required plugins only,
 speeding up the assembly process.
 
 <!--

@@ -9,11 +9,11 @@ set -e
 # ====
 # Checks that the script is run from the intended location
 # ====
-function check_project_root_folder () {
+function check_project_root_folder() {
     current=$(basename "$(pwd)")
 
     if [[ "$0" != "./dev.sh" && "$0" != "dev.sh" ]]; then
-        echo "Run the script from its location" 
+        echo "Run the script from its location"
         usage
         exit 1
     fi

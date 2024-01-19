@@ -53,7 +53,7 @@ before starting Docker Desktop and any of the environments in this folder.
 
 ## Development environments
 
-Use the `dev/dev.sh` script to start a development environment. 
+Use the `dev/dev.sh` script to start a development environment.
 
 Example:
 
@@ -73,7 +73,6 @@ Usage: ./ci.sh {up|down|stop} [ci]
 ```
 
 Refer to [scripts/README.md](../scripts/README.md) for details about how to build packages.
-
 
 [docker-desktop]: https://docs.docker.com/get-docker
 [docker-variant]: https://docs.docker.com/desktop/install/linux-install/#differences-between-docker-desktop-for-linux-and-docker-engine

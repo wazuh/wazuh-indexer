@@ -1,7 +1,6 @@
 version: "3.9"
 
 services:
-
   wi-dev:
     image: wi-dev:${VERSION}
     container_name: wi-dev_${VERSION}
@@ -15,6 +14,6 @@ services:
       - 9200
     volumes:
       - ${REPO_PATH}:/home/wazuh-indexer
-    entrypoint: ['tail', '-f', '/dev/null']
+    entrypoint: ["tail", "-f", "/dev/null"]
     user: "1000:1000"
     working_dir: /home/wazuh-indexer

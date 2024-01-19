@@ -42,6 +42,8 @@ function main() {
 
     case $1 in
     up)
+        # Main folder created here to grant access to both containers
+        mkdir artifacts
         $compose_cmd up -d
         ;;
     down)

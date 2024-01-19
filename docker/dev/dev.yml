@@ -14,7 +14,7 @@ services:
     expose:
       - 9200
     volumes:
-      - ${REPO_PATH}:/home/wazuh-indexer/app
+      - ${REPO_PATH}:/home/wazuh-indexer
     entrypoint: ['tail', '-f', '/dev/null']
     user: "1000:1000"
     working_dir: /home/wazuh-indexer

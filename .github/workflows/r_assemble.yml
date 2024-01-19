@@ -8,12 +8,12 @@ on:
       distribution:
         description: 'One of [ "tar", "rpm", "deb" ]'
         default: "rpm"
-        required: false
+        required: true
         type: string
       architecture:
         description: 'One of [ "x64", "arm64" ]'
         default: "x64"
-        required: false
+        required: true
         type: string
       min:
         description: The name of the package to download.

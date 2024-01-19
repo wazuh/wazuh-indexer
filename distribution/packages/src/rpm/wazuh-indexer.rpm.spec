@@ -64,10 +64,9 @@ mkdir -p %{buildroot}%{pid_dir}
 mkdir -p %{buildroot}%{product_dir}/plugins
 # Install directories/files
 cp -a etc usr var %{buildroot}
-chmod 0750 %{buildroot}%{product_dir}/bin/*
+chmod 0755 %{buildroot}%{product_dir}/bin/*
 if [ -d %{buildroot}%{product_dir}/plugins/opensearch-security ]; then
-    chmod 0640 %{buildroot}%{product_dir}/plugins/opensearch-security/tools/*
-    chmod 0740 %{buildroot}%{product_dir}/plugins/opensearch-security/tools/*.sh
+    chmod 0755 %{buildroot}%{product_dir}/plugins/opensearch-security/tools/*
 fi
 # Pre-populate the folders to ensure rpm build success even without all plugins
 mkdir -p %{buildroot}%{config_dir}/opensearch-observability
@@ -153,47 +152,58 @@ fi
 exit 0
 
 %files
-# Permissions
-%defattr(-, %{name}, %{name})
+%defattr(640, %{name}, %{name}, 750)
 
 # Root dirs/docs/licenses
+%{data_dir}
+%{config_dir}
+%dir %{log_dir}
+%dir %{pid_dir}
 %dir %{product_dir}
+%dir %{product_dir}/bin
 %doc %{product_dir}/NOTICE.txt
 %doc %{product_dir}/README.md
 %license %{product_dir}/LICENSE.txt
-
-# Config dirs/files
-%dir %{config_dir}
-%{config_dir}/jvm.options.d
-%{config_dir}/opensearch-*
-%config(noreplace) %{config_dir}/opensearch.yml
-%config(noreplace) %{config_dir}/jvm.options
-%config(noreplace) %{config_dir}/log4j2.properties
-%config(noreplace) %{data_dir}/rca_enabled.conf
-%config(noreplace) %{data_dir}/performance_analyzer_enabled.conf
 
 # Service files
 %attr(0644, root, root) %{_prefix}/lib/systemd/system/%{name}.service
 %attr(0644, root, root) %{_prefix}/lib/systemd/system/%{name}-performance-analyzer.service
 %attr(0644, root, root) %{_sysconfdir}/init.d/%{name}
-%attr(0644, root, root) %config(noreplace) %{_sysconfdir}/sysconfig/%{name}
 %attr(0644, root, root) %config(noreplace) %{_prefix}/lib/sysctl.d/%{name}.conf
 %attr(0644, root, root) %config(noreplace) %{_prefix}/lib/tmpfiles.d/%{name}.conf
 
-# Main dirs
-%{product_dir}/bin
-%{product_dir}/jdk
+# Binary files
 %{product_dir}/lib
 %{product_dir}/modules
-%{product_dir}/performance-analyzer-rca
 %{product_dir}/plugins
-%{log_dir}
-%{pid_dir}
-%dir %{data_dir}
+%{product_dir}/performance-analyzer-rca
+%{product_dir}/jdk/{conf,include,jmods,legal,lib,man,release,NOTICE}
+%exclude %{product_dir}/plugins/opensearch-security/tools/*.sh
+%exclude %{product_dir}/performance-analyzer-rca/bin/{performance-analyzer-rca,performance-analyzer-agent}
+%exclude %{product_dir}/jdk/lib/{jspawnhelper,modules}
 
-# Wazuh additional files
+# Configuration files
+%config(noreplace) %attr(0660, root, %{name}) "%{_sysconfdir}/sysconfig/%{name}"
+%config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/log4j2.properties
+%config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/jvm.options
+%config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/opensearch.yml
+
+
+###
+###	TODO: Need to make at least these two below dependent on whether plugins are built
+###
+#%%config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/opensearch-observability/observability.yml
+#%%config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/opensearch-reports-scheduler/reports-scheduler.yml
+
+
+# Files that need other permissions
 %attr(440, %{name}, %{name}) %{product_dir}/VERSION
-%attr(660, %{name}, %{name}) %{config_dir}/wazuh-template.json
+%attr(740, %{name}, %{name}) %{product_dir}/plugins/opensearch-security/tools/*.sh
+%attr(750, %{name}, %{name}) %{product_dir}/bin/*
+%attr(750, %{name}, %{name}) %{product_dir}/jdk/bin/*
+%attr(750, %{name}, %{name}) %{product_dir}/jdk/lib/jspawnhelper
+%attr(750, %{name}, %{name}) %{product_dir}/jdk/lib/modules
+%attr(750, %{name}, %{name}) %{product_dir}/performance-analyzer-rca/bin/*
 
 %changelog
 * Thu Mar 28 2024 support <info@wazuh.com> - 4.9.0

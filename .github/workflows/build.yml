@@ -12,7 +12,7 @@ on:
       revision:
         # description:
         default: "1"
-        required: false
+        required: true
         type: string
 
 # ==========================

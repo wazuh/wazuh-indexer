@@ -8,15 +8,17 @@ on:
       distribution:
         description: 'One of [ "tar", "rpm", "deb" ]'
         default: "rpm"
-        required: false
+        required: true
         type: string
       architecture:
         description: 'One of [ "x64", "arm64" ]'
         default: "x64"
-        required: false
+        required: true
         type: string
       revision:
         type: string
+        required: true
+        default: "1"
       name:
         description: The name of the package to upload.
         required: true

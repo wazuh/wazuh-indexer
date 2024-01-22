@@ -54,7 +54,9 @@ For more information, see: https://www.wazuh.com/
 # No-op. We are using dir so no need to setup.
 
 %build
-# No-op. This is all pre-built Java. Nothing to do here.
+
+%define observability_plugin %( if [ -f %{_topdir}/etc/wazuh-indexer/opensearch-observability/observability.yml ]; then echo "1" ; else echo "0"; fi )
+%define reportsscheduler_plugin %( if [ -f %{_topdir}/etc/wazuh-indexer/opensearch-reports-scheduler/reports-scheduler.yml ]; then echo "1" ; else echo "0"; fi )
 
 %install
 set -e
@@ -80,6 +82,35 @@ fi
 if [ ! -f %{buildroot}%{data_dir}/performance_analyzer_enabled.conf ]; then
     echo 'true' > %{buildroot}%{data_dir}/performance_analyzer_enabled.conf
 fi
+
+find %{buildroot} -type f > filelist.txt
+sed -i 's|%{buildroot}||' filelist.txt
+
+set -- "%{_sysconfdir}/sysconfig/%{name}"
+set -- "$@" "%{config_dir}/log4j2.properties"
+set -- "$@" "%{config_dir}/jvm.options"
+set -- "$@" "%{config_dir}/opensearch.yml"
+set -- "$@" "%{config_dir}/opensearch-observability/observability.yml"
+set -- "$@" "%{config_dir}/opensearch-reports-scheduler/reports-scheduler.yml"
+set -- "$@" "%{product_dir}/VERSION"
+set -- "$@" "%{product_dir}/plugins/opensearch-security/tools/.*\.sh"
+set -- "$@" "%{product_dir}/bin/.*"
+set -- "$@" "%{product_dir}/jdk/bin/.*"
+set -- "$@" "%{product_dir}/jdk/lib/jspawnhelper"
+set -- "$@" "%{product_dir}/jdk/lib/modules"
+set -- "$@" "%{product_dir}/performance-analyzer-rca/bin/.*"
+set -- "$@" "%{product_dir}/NOTICE.txt"
+set -- "$@" "%{product_dir}/README.md"
+set -- "$@" "%{product_dir}/LICENSE.txt"
+
+
+for i in "$@"
+do
+	sed -ri "\|^$i$|d" filelist.txt
+done
+
+
+
 # Change Permissions
 chmod -Rf a+rX,u+w,g-w,o-w %{buildroot}/*
 exit 0
@@ -151,12 +182,12 @@ if command -v systemctl >/dev/null && systemctl is-active %{name}-performance-an
 fi
 exit 0
 
-%files
+%files -f %{_topdir}/filelist.txt
 %defattr(640, %{name}, %{name}, 750)
 
 # Root dirs/docs/licenses
-%{data_dir}
-%{config_dir}
+%dir %{data_dir}
+%dir %{config_dir}
 %dir %{log_dir}
 %dir %{pid_dir}
 %dir %{product_dir}
@@ -166,21 +197,13 @@ exit 0
 %license %{product_dir}/LICENSE.txt
 
 # Service files
-%attr(0644, root, root) %{_prefix}/lib/systemd/system/%{name}.service
-%attr(0644, root, root) %{_prefix}/lib/systemd/system/%{name}-performance-analyzer.service
-%attr(0644, root, root) %{_sysconfdir}/init.d/%{name}
-%attr(0644, root, root) %config(noreplace) %{_prefix}/lib/sysctl.d/%{name}.conf
-%attr(0644, root, root) %config(noreplace) %{_prefix}/lib/tmpfiles.d/%{name}.conf
 
 # Binary files
-%{product_dir}/lib
-%{product_dir}/modules
-%{product_dir}/plugins
-%{product_dir}/performance-analyzer-rca
-%{product_dir}/jdk/{conf,include,jmods,legal,lib,man,release,NOTICE}
-%exclude %{product_dir}/plugins/opensearch-security/tools/*.sh
-%exclude %{product_dir}/performance-analyzer-rca/bin/{performance-analyzer-rca,performance-analyzer-agent}
-%exclude %{product_dir}/jdk/lib/{jspawnhelper,modules}
+%dir %{product_dir}/lib
+%dir %{product_dir}/modules
+%dir %{product_dir}/plugins
+%dir %{product_dir}/performance-analyzer-rca
+%dir %{product_dir}/jdk/{bin,conf,include,jmods,legal,lib,man,release}
 
 # Configuration files
 %config(noreplace) %attr(0660, root, %{name}) "%{_sysconfdir}/sysconfig/%{name}"
@@ -189,11 +212,13 @@ exit 0
 %config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/opensearch.yml
 
 
-###
-###	TODO: Need to make at least these two below dependent on whether plugins are built
-###
-#%%config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/opensearch-observability/observability.yml
-#%%config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/opensearch-reports-scheduler/reports-scheduler.yml
+%if %observability_plugin
+%config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/opensearch-observability/observability.yml
+%endif
+
+%if %reportsscheduler_plugin
+%config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/opensearch-reports-scheduler/reports-scheduler.yml
+%endif
 
 
 # Files that need other permissions

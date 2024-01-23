@@ -83,15 +83,36 @@ if [ ! -f %{buildroot}%{data_dir}/performance_analyzer_enabled.conf ]; then
     echo 'true' > %{buildroot}%{data_dir}/performance_analyzer_enabled.conf
 fi
 
-find %{buildroot} -type f > filelist.txt
+
+# Build a filelist to be included in the %files section
+echo '%defattr(640, %{name}, %{name}, 750)' > filelist.txt
+find %{buildroot} -type d >> filelist.txt
+sed -i 's|%{buildroot}|%%dir |' filelist.txt
+find %{buildroot} -type f >> filelist.txt
 sed -i 's|%{buildroot}||' filelist.txt
 
-set -- "%{_sysconfdir}/sysconfig/%{name}"
+
+# The %install section gets executed under a dash shell,
+# which doesn't have array structures.
+# Below, we are building a list of directories
+# which will later be excluded from filelist.txt
+set -- "%%dir %{_sysconfdir}"
+set -- "$@" "%%dir %{_sysconfdir}/sysconfig"
+set -- "$@" "%%dir /usr"
+set -- "$@" "%%dir /usr/lib"
+set -- "$@" "%%dir /usr/share"
+set -- "$@" "%%dir /var"
+set -- "$@" "%%dir /var/lib"
+set -- "$@" "%%dir /var/log"
+set -- "$@" "%%dir /etc/init.d"
+set -- "$@" "%%dir /usr/lib/sysctl.d"
+set -- "$@" "%%dir /usr/lib/systemd"
+set -- "$@" "%%dir /usr/lib/systemd"
+set -- "$@" "%{_sysconfdir}/sysconfig/%{name}"
 set -- "$@" "%{config_dir}/log4j2.properties"
 set -- "$@" "%{config_dir}/jvm.options"
 set -- "$@" "%{config_dir}/opensearch.yml"
-set -- "$@" "%{config_dir}/opensearch-observability/observability.yml"
-set -- "$@" "%{config_dir}/opensearch-reports-scheduler/reports-scheduler.yml"
+set -- "$@" "%{config_dir}/wazuh-template.json"
 set -- "$@" "%{product_dir}/VERSION"
 set -- "$@" "%{product_dir}/plugins/opensearch-security/tools/.*\.sh"
 set -- "$@" "%{product_dir}/bin/.*"
@@ -102,7 +123,23 @@ set -- "$@" "%{product_dir}/performance-analyzer-rca/bin/.*"
 set -- "$@" "%{product_dir}/NOTICE.txt"
 set -- "$@" "%{product_dir}/README.md"
 set -- "$@" "%{product_dir}/LICENSE.txt"
+set -- "$@" "%{_prefix}/lib/systemd/system/%{name}.service"
+set -- "$@" "%{_prefix}/lib/systemd/system/%{name}-performance-analyzer.service"
+set -- "$@" "%{_sysconfdir}/init.d/%{name}"
+set -- "$@" "%{_sysconfdir}/sysconfig/%{name}"
+set -- "$@" "%{_prefix}/lib/sysctl.d/%{name}.conf"
+set -- "$@" "%{_prefix}/lib/tmpfiles.d/%{name}.conf"
+set -- "$@" "%%dir %{product_dir}/bin/opensearch-performance-analyzer"
 
+# Check if we are including the observability and reports scheduler
+# plugins
+if [ %observability_plugin -eq 1 ]; then
+set -- "$@" "%{config_dir}/opensearch-observability/observability.yml"
+fi
+
+if [ %reportsscheduler_plugin -eq 1 ]; then
+set -- "$@" "%{config_dir}/opensearch-reports-scheduler/reports-scheduler.yml"
+fi
 
 for i in "$@"
 do
@@ -185,25 +222,17 @@ exit 0
 %files -f %{_topdir}/filelist.txt
 %defattr(640, %{name}, %{name}, 750)
 
-# Root dirs/docs/licenses
-%dir %{data_dir}
-%dir %{config_dir}
-%dir %{log_dir}
-%dir %{pid_dir}
-%dir %{product_dir}
-%dir %{product_dir}/bin
 %doc %{product_dir}/NOTICE.txt
 %doc %{product_dir}/README.md
 %license %{product_dir}/LICENSE.txt
 
 # Service files
+%attr(0644, root, root) %{_prefix}/lib/systemd/system/%{name}.service
+%attr(0644, root, root) %{_prefix}/lib/systemd/system/%{name}-performance-analyzer.service
+%attr(0644, root, root) %{_sysconfdir}/init.d/%{name}
+%attr(0644, root, root) %config(noreplace) %{_prefix}/lib/sysctl.d/%{name}.conf
+%attr(0644, root, root) %config(noreplace) %{_prefix}/lib/tmpfiles.d/%{name}.conf
 
-# Binary files
-%dir %{product_dir}/lib
-%dir %{product_dir}/modules
-%dir %{product_dir}/plugins
-%dir %{product_dir}/performance-analyzer-rca
-%dir %{product_dir}/jdk/{bin,conf,include,jmods,legal,lib,man,release}
 
 # Configuration files
 %config(noreplace) %attr(0660, root, %{name}) "%{_sysconfdir}/sysconfig/%{name}"
@@ -229,6 +258,7 @@ exit 0
 %attr(750, %{name}, %{name}) %{product_dir}/jdk/lib/jspawnhelper
 %attr(750, %{name}, %{name}) %{product_dir}/jdk/lib/modules
 %attr(750, %{name}, %{name}) %{product_dir}/performance-analyzer-rca/bin/*
+%attr(660, %{name}, %{name}) %{config_dir}/wazuh-template.json
 
 %changelog
 * Thu Mar 28 2024 support <info@wazuh.com> - 4.9.0

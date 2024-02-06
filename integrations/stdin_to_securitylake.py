@@ -7,13 +7,13 @@ import logging
 import time
 import json
 from datetime import datetime
-from pyarrow import json, parquet, Table
+from pyarrow import parquet, Table
 
 chunk_ending = { "chunk_ending": True }
 
 def encode_parquet(list):
   table = Table.from_pylist(list)
-  pq.write_table(table, '/tmp/{}.parquet'.format(clockstr))
+  parquet.write_table(table, '/tmp/{}.parquet'.format(clockstr))
 
 def push_to_s3(parquet):
   ## Fill with AWS S3 code

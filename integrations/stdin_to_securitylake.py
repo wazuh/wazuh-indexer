@@ -7,9 +7,11 @@ import logging
 import time
 import json
 from datetime import datetime
-from pyarrow import parquet, Table
+from pyarrow import parquet, Table, fs
 
 block_ending = { "block_ending": True }
+
+s3 = fs.S3FileSystem(region='eu-west-3')
 
 def map_to_ocsf():
   ## Code that translates fields to OCSF
@@ -17,6 +19,7 @@ def map_to_ocsf():
 def encode_parquet(list):
   ### We can write directly to S3 from pyarrow:
   ### https://arrow.apache.org/docs/python/filesystems.html#s3
+  ### https://arrow.apache.org/docs/python/generated/pyarrow.fs.S3FileSystem.html#pyarrow.fs.S3FileSystem.open_output_stream
   ###
   ### Credentials can be stored in /root/.aws/credentials
   ### https://docs.aws.amazon.com/sdk-for-cpp/v1/developer-guide/credentials.html

@@ -42,11 +42,12 @@ def encode_parquet(list,bucket_name,folder):
 
 def read_block(fileobject,length):
   output=[]
-  for i in range(0,length):
+  for line in range(0,length):
     line = fileobject.readline()
     if line == '':
       output.append(block_ending)
       break 
+    alert = json.loads(line)
     output.append(json.loads(line))
   return output
 

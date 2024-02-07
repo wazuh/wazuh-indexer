@@ -11,17 +11,30 @@ from pyarrow import parquet, Table, fs
 
 block_ending = { "block_ending": True }
 
-s3 = fs.S3FileSystem(region='eu-west-3')
+s3 = fs.S3FileSystem()
 
-def map_to_ocsf():
-  ## Code that translates fields to OCSF
+def map_to_ocsf(alert_dictionary,ocsf_mapping_filename):
+  ocsf_alert = {}
+  with open(ocsf_mapping_filename) as jsonfile:
+    mappings = json.loads(jsonfile.read())
+  ### Put constants into the output alert
+  ocsf_alert |= mappings['constants']
+
+  for key in mappings['mappings']:
+    dotted_destination_field = mappings['mappings'].get(key)
+    depth_levels = dotted_destination.split('.')
+    current_level = alert_dictionary[depth_levels[0]]
+    if len(depth_levels>1):
+      for field in depth_levels[1:]:
+        current_level = current_level[field]
+    ocsf_alert[key] = current_level
 
 def encode_parquet(list,bucket_name,folder):
   ### We can write directly to S3 from pyarrow:
   ### https://arrow.apache.org/docs/python/filesystems.html#s3
   ### https://arrow.apache.org/docs/python/generated/pyarrow.fs.S3FileSystem.html#pyarrow.fs.S3FileSystem.open_output_stream
   ###
-  ### Credentials can be stored in /root/.aws/credentials
+  ### Credentials can be stored in ~/.aws/credentials
   ### https://docs.aws.amazon.com/sdk-for-cpp/v1/developer-guide/credentials.html
 
   table = Table.from_pylist(list)
@@ -49,6 +62,7 @@ def parse_arguments():
   parser.add_argument('-m','--maxlength', action='store', default=20, help='Event number threshold for submission to Security Lake')
   parser.add_argument('-n','--linebuffer', action='store', default=10, help='stdin line buffer length')
   parser.add_argument('-s','--sleeptime', action='store', default=5, help='Input buffer polling interval')
+  parser.add_argument('-x','--mapping', action='store', default='ocsf-mapping.json', help='Location of the Wazuh Alert to OCSF mapping (json formatted)')
   debugging = parser.add_argument_group('debugging')
   debugging.add_argument('-o','--output', type=str, default="/tmp/{}_stdintosecuritylake.txt".format(clockstr), help='File path of the destination file to write to')
   debugging.add_argument('-d','--debug', action='store_true', help='Activate debugging')

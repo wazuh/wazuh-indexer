@@ -1,0 +1,42 @@
+{	
+	"constants":
+	{
+		"activity_id" : 1,
+		"analytic.type" : "Rule",
+		"analytic.type_id" : 1,
+		"attacks.version" : "v13.1",
+		"category_name" : "Findings",
+		"category_uid" : 2,
+		"class_name" : "Security Finding",
+		"class_uid" : 2001,
+		"metadata.log_name" : "Security events",
+		"metadata.log_provider" : "Wazuh",
+		"metadata.product.lang" : "en",
+		"metadata.product.name" : "Wazuh",
+		"metadata.product.vendor_name" : "Wazuh, Inc.",
+		"metadata.product.version" : "4.9.0",
+		"state_id" : 99,
+		"type_uid" : 200101
+	},
+	"mappings":
+	{
+		"analytic.category" : "rule.groups",
+		"analytic.name" : "decoder.name",
+		"analytic.uid" : "rule.id",
+		"attacks.tactics" : "rule.mitre.tactic",
+		"attacks.technique" : "rule.mitre.technique",
+		"count" : "rule.firedtimes",
+		"data_sources" : ["_index", "location", "manager.name"], 
+		"finding.title" : "rule.description",
+		"finding.type" : "input.type",
+		"finding.uid" : "id",
+		"message" : "rule.description",
+		"nist" : "rule.nist_800_53",
+		"raw_data" : "full_log",
+		"resources.name" : "agent.name",
+		"resources.uid" : "agent.id",
+		"risk_score" : "rule.level",
+		"severity_id" : "rule.level",
+		"time" : "timestamp"
+	}
+}

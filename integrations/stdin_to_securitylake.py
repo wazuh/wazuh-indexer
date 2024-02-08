@@ -26,6 +26,9 @@ def map_to_ocsf(alert_dictionary, mappings, ocsf_output):
       for field in depth_levels[1:]:
         current_level = current_level[field]
     ocsf_output[key] = current_level
+  ### We probably need to crop the fields we already
+  ### mapped to OCSF from ocsf_output
+  ocsf_output['unmapped'] = alert_dictionary
 
 def encode_parquet(list,bucket_name,folder):
   ### We can write directly to S3 from pyarrow:

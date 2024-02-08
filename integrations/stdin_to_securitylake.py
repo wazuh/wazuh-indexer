@@ -13,13 +13,13 @@ block_ending = { "block_ending": True }
 
 s3 = fs.S3FileSystem()
 
-def map_to_ocsf(alert_dictionary, mappings, ocsf_output):
+def map_to_ocsf(alert_dictionary, mappings, ocsf_output, ocsfschema):
   ocsf_output = {}
   ### Put constants into the output alert
-  ocsf_output |= mappings['constants']
+  ocsf_output |= mappings[ocsfschema]['constants']
 
-  for key in mappings['mappings']:
-    dotted_destination_field = mappings['mappings'].get(key)
+  for key in mappings[ocsfschema]['mappings']:
+    dotted_destination_field = mappings[ocsfschema]['mappings'].get(key)
     depth_levels = dotted_destination.split('.')
     current_level = alert_dictionary[depth_levels[0]]
     if len(depth_levels>1):
@@ -51,7 +51,7 @@ def map_block(fileobject, length, mappings):
     alert = json.loads(line)
     ocsf_mapped_alert = {}
     map_to_ocsf(alert, mappings, ocsf_mapped_alert):
-    output.append(ocsf_mapped_alert)
+   output.append(ocsf_mapped_alert)
   return output
 
 def get_elapsedseconds(reference_timestamp):
@@ -66,6 +66,7 @@ def parse_arguments():
   parser.add_argument('-m','--maxlength', action='store', default=20, help='Event number threshold for submission to Security Lake')
   parser.add_argument('-n','--linebuffer', action='store', default=10, help='stdin line buffer length')
   parser.add_argument('-s','--sleeptime', action='store', default=5, help='Input buffer polling interval')
+  parser.add_argument('-v','--ocsfschema', action='store', default='1.1.0', help='Version of the OCSF schema to use')
   parser.add_argument('-x','--mapping', action='store', default='ocsf-mapping.json', help='Location of the Wazuh Alert to OCSF mapping (json formatted)')
   debugging = parser.add_argument_group('debugging')
   debugging.add_argument('-o','--output', type=str, default="/tmp/{}_stdintosecuritylake.txt".format(clockstr), help='File path of the destination file to write to')
@@ -95,7 +96,7 @@ if __name__ == "__main__":
           ### * https://arrow.apache.org/docs/python/ipc.html#reading-from-stream-and-file-format-for-pandas
           ### * https://stackoverflow.com/questions/52945609/pandas-dataframe-to-parquet-buffer-in-memory
 
-          current_block = map_block(stdin, args.linebuffer, mappings)
+          current_block = map_block(stdin, args.linebuffer, mappings,args.ocsfschema)
           if current_block[-1] == block_ending :
             output_buffer +=  current_block[0:current_block.index(block_ending)]
             time.sleep(args.sleeptime)

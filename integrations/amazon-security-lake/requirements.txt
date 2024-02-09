@@ -1,0 +1,2 @@
+pyarrow>=10.0.1
+parquet-tools>=0.2.15

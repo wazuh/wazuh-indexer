@@ -127,7 +127,7 @@ class PublisherCreator:
 
 
 def date_now() -> str:
-    return datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]+'+0000'
+    return datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]+'+0000'
 
 # ================================================== #
 

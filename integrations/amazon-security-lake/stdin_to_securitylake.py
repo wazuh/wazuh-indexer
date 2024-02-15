@@ -6,10 +6,10 @@ import argparse
 import logging
 import time
 import json
-from datetime import datetime
+import datetime
 from pyarrow import parquet, Table, fs
 
-import ocsf
+from ocsf import converter
 
 block_ending = { "block_ending": True }
 
@@ -43,7 +43,7 @@ def encode_parquet(list,bucket_name,folder):
   table = Table.from_pylist(list)
   parquet.write_to_dataset(table, root_path='s3://{}/{}'.format(bucket_name, folder))
 
-def map_block(fileobject, length, mappings):
+def map_block(fileobject, length):
   output=[]
   for line in range(0, length):
     line = fileobject.readline()
@@ -51,44 +51,41 @@ def map_block(fileobject, length, mappings):
       output.append(block_ending)
       break 
     alert = json.loads(line)
-    ocsf_mapped_alert = ocsf.convert(alert)
+    ocsf_mapped_alert = converter.convert(alert)
     #map_to_ocsf(alert, mappings, ocsf_mapped_alert):
-   output.append(ocsf_mapped_alert)
+  output.append(ocsf_mapped_alert)
   return output
 
 def get_elapsedseconds(reference_timestamp):
-  current_time = datetime.now(tz='UTC')  
+  current_time = datetime.datetime.now(datetime.timezone.utc)  
   return (current_time - reference_timestamp).total_seconds()
   
-def parse_arguments():
+
+if __name__ == "__main__":
+  clock = datetime.datetime.now(datetime.timezone.utc)
+  clockstr = clock.strftime('%F_%H.%M.%S')
   parser = argparse.ArgumentParser(description='STDIN to Security Lake pipeline')
   parser.add_argument('-b','--bucketname', action='store', help='Name of the output S3 bucket')
   parser.add_argument('-f','--foldername', action='store', help='Name of the output S3 bucket\'s folder')
-  parser.add_argument('-i','--pushinterval', action='store', default=299, help='Time interval for pushing data to Security Lake')
+  parser.add_argument('-i','--pushinterval', action='store', default=299, help='Time interval in seconds for pushing data to Security Lake')
   parser.add_argument('-m','--maxlength', action='store', default=20, help='Event number threshold for submission to Security Lake')
   parser.add_argument('-n','--linebuffer', action='store', default=10, help='stdin line buffer length')
   parser.add_argument('-s','--sleeptime', action='store', default=5, help='Input buffer polling interval')
   parser.add_argument('-v','--ocsfschema', action='store', default='1.1.0', help='Version of the OCSF schema to use')
   parser.add_argument('-x','--mapping', action='store', default='ocsf-mapping.json', help='Location of the Wazuh Alert to OCSF mapping (json formatted)')
-  debugging = parser.add_argument_group('debugging')
-  debugging.add_argument('-o','--output', type=str, default="/tmp/{}_stdintosecuritylake.txt".format(clockstr), help='File path of the destination file to write to')
-  debugging.add_argument('-d','--debug', action='store_true', help='Activate debugging')
+  parser.add_argument('-o','--output', type=str, default="/tmp/stdintosecuritylake.txt", help='File path of the destination file to write to')
+  parser.add_argument('-d','--debug', action='store_true', help='Activate debugging')
   args = parser.parse_args()
-
-if __name__ == "__main__":
-  clock = datetime.now(tz='UTC')
-  clockstr = clock.strftime('%F_%H.%M.%S')
-  parse_arguments()
-  logging.basicConfig(format='%(asctime)s %(message)s',filename=args.output, encoding='utf-8', level=logging.DEBUG)
+  logging.basicConfig(format='%(asctime)s %(message)s', filename=args.output, encoding='utf-8', level=logging.DEBUG)
   logging.info('BUFFERING STDIN')
   
   try: 
-    with open(ocsf_mapping_filename) as jsonfile:
-      mappings = json.loads(jsonfile.read())
+    #with open(ocsf_mapping_filename) as jsonfile:
+    #  mappings = json.loads(jsonfile.read())
 
-    with os.fdopen(sys.stdin.fileno(), 'rt', buffering=0) as stdin:
+    with os.fdopen(sys.stdin.fileno(), 'rt') as stdin:
       output_buffer = []
-      starttimestamp = datetime.now(tz='UTC')
+      starttimestamp = datetime.datetime.now(datetime.timezone.utc)
       
       try:
         while True:
@@ -98,14 +95,14 @@ if __name__ == "__main__":
           ### * https://arrow.apache.org/docs/python/ipc.html#reading-from-stream-and-file-format-for-pandas
           ### * https://stackoverflow.com/questions/52945609/pandas-dataframe-to-parquet-buffer-in-memory
 
-          current_block = map_block(stdin, args.linebuffer, mappings,args.ocsfschema)
+          current_block = map_block(stdin, args.linebuffer )
           if current_block[-1] == block_ending :
             output_buffer +=  current_block[0:current_block.index(block_ending)]
             time.sleep(args.sleeptime)
           if len(output_buffer) > args.maxlength or get_elapsedseconds(starttimestamp) > args.pushinterval:
             encode_parquet(output_buffer,args.bucketname,args.foldername)
             logging.debug(json.dumps(output_buffer))
-            starttimestamp = datetime.now(tz='UTC')
+            starttimestamp = datetime.datetime.now(datetime.timezone.utc)
             output_buffer = []
           output_buffer.append(current_block)
 
@@ -117,4 +114,6 @@ if __name__ == "__main__":
 
   except Exception as e:
     logging.error("Error running script")
+    logging.error(e)
+    raise
     exit(1)

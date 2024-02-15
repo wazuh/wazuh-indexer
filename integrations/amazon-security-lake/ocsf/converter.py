@@ -27,30 +27,30 @@ def convert(event: dict) -> dict:
             "category_uid": 2,
             "class_name": "Detection Finding",
             "class_uid": 2004,
-            "count": event["_source"]["rule"]["firedtimes"],
-            "message": event["_source"]["rule"]["description"],
+            "count": event["rule"]["firedtimes"],
+            "message": event["rule"]["description"],
             "finding_info": {
                 "analytic": {
-                    "category": join(event["_source"]["rule"]["groups"]),
-                    "name": event["_source"]["decoder"]["name"],
+                    "category": join(event["rule"]["groups"]),
+                    "name": event["decoder"]["name"],
                     "type_id": 1,
-                    "uid": event["_source"]["rule"]["id"],
+                    "uid": event["rule"]["id"],
                 },
                 "attacks": {
                     "tactic": {
-                        "name": join(event["_source"]["rule"]["mitre"]["tactic"]),
+                        "name": join(event["rule"]["mitre"]["tactic"]),
                     },
                     "technique": {
-                        "name": join(event["_source"]["rule"]["mitre"]["technique"]),
-                        "uid": join(event["_source"]["rule"]["mitre"]["id"]),
+                        "name": join(event["rule"]["mitre"]["technique"]),
+                        "uid": join(event["rule"]["mitre"]["id"]),
                     },
                     "version": "v13.1"
                 },
-                "title": event["_source"]["rule"]["description"],
+                "title": event["rule"]["description"],
                 "types": [
-                    event["_source"]["input"]["type"]
+                    event["input"]["type"]
                 ],
-                "uid": event["_source"]['id']
+                "uid": event['id']
             },
             "metadata": {
                 "log_name": "Security events",
@@ -62,25 +62,25 @@ def convert(event: dict) -> dict:
                 },
                 "version": "1.1.0",
             },
-            "raw_data": event["_source"]["full_log"],
+            "raw_data": event["full_log"],
             "resources": [
                 {
-                    "name": event["_source"]["agent"]["name"],
-                    "uid": event["_source"]["agent"]["id"]
+                    "name": event["agent"]["name"],
+                    "uid": event["agent"]["id"]
                 },
             ],
-            "risk_score": event["_source"]["rule"]["level"],
-            "severity_id": normalize(event["_source"]["rule"]["level"]),
+            "risk_score": event["rule"]["level"],
+            "severity_id": normalize(event["rule"]["level"]),
             "status_id": 99,
-            "time": event["_source"]["timestamp"],
+            "time": event["timestamp"],
             "type_uid": 200401,
             "unmapped": {
                 "data_sources": [
                     event["_index"],
-                    event["_source"]["location"],
-                    event["_source"]["manager"]["name"]
+                    event["location"],
+                    event["manager"]["name"]
                 ],
-                "nist": event["_source"]["rule"]["nist_800_53"],  # Array
+                "nist": event["rule"]["nist_800_53"],  # Array
             }
         }
 

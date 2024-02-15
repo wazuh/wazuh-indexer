@@ -9,26 +9,28 @@ import json
 from datetime import datetime
 from pyarrow import parquet, Table, fs
 
+import ocsf
+
 block_ending = { "block_ending": True }
 
 s3 = fs.S3FileSystem()
 
-def map_to_ocsf(alert_dictionary, mappings, ocsf_output, ocsfschema):
-  ocsf_output = {}
-  ### Put constants into the output alert
-  ocsf_output |= mappings[ocsfschema]['constants']
-
-  for key in mappings[ocsfschema]['mappings']:
-    dotted_destination_field = mappings[ocsfschema]['mappings'].get(key)
-    depth_levels = dotted_destination.split('.')
-    current_level = alert_dictionary[depth_levels[0]]
-    if len(depth_levels>1):
-      for field in depth_levels[1:]:
-        current_level = current_level[field]
-    ocsf_output[key] = current_level
-  ### We probably need to crop the fields we already
-  ### mapped to OCSF from ocsf_output
-  ocsf_output['unmapped'] = alert_dictionary
+#def map_to_ocsf(alert_dictionary, mappings, ocsf_output, ocsfschema):
+#  ocsf_output = {}
+#  ### Put constants into the output alert
+#  ocsf_output |= mappings[ocsfschema]['constants']
+#
+#  for key in mappings[ocsfschema]['mappings']:
+#    dotted_destination_field = mappings[ocsfschema]['mappings'].get(key)
+#    depth_levels = dotted_destination.split('.')
+#    current_level = alert_dictionary[depth_levels[0]]
+#    if len(depth_levels>1):
+#      for field in depth_levels[1:]:
+#        current_level = current_level[field]
+#    ocsf_output[key] = current_level
+#  ### We probably need to crop the fields we already
+#  ### mapped to OCSF from ocsf_output
+#  ocsf_output['unmapped'] = alert_dictionary
 
 def encode_parquet(list,bucket_name,folder):
   ### We can write directly to S3 from pyarrow:
@@ -49,8 +51,8 @@ def map_block(fileobject, length, mappings):
       output.append(block_ending)
       break 
     alert = json.loads(line)
-    ocsf_mapped_alert = {}
-    map_to_ocsf(alert, mappings, ocsf_mapped_alert):
+    ocsf_mapped_alert = ocsf.convert(alert)
+    #map_to_ocsf(alert, mappings, ocsf_mapped_alert):
    output.append(ocsf_mapped_alert)
   return output
 

@@ -1,4 +1,4 @@
-#!/src/wazuh-indexer/integrations/amazon-security-lake/bin/python3
+#!/home/fede/src/wazuh-indexer/integrations/amazon-security-lake/venv/bin/python3
 
 import os
 import sys
@@ -13,8 +13,13 @@ from ocsf import converter
 block_ending = { "block_ending": True }
 
 def encode_parquet(list,foldername,filename):
-  table = Table.from_pylist(list)
-  parquet.write_table(table, '{}/{}.parquet'.format(foldername,filename))
+  try:
+    table = Table.from_pylist(list)
+    print(table)
+    parquet.write_table(table, '{}/{}.parquet'.format(foldername,filename))
+  except Exception as e:
+    logging.error(e)
+    raise
 
 def map_block(fileobject, length):
   output=[]
@@ -44,7 +49,8 @@ if __name__ == "__main__":
   parser.add_argument('-o','--outputfolder', type=str, action='store', help='Folder or S3 bucket URL to dump parquet files to')
   parser.add_argument('-s','--sleeptime', type=int, action='store', default=5, help='Input buffer polling interval')
   args = parser.parse_args()
-  logging.basicConfig(format='%(asctime)s %(message)s', filename=args.logoutput, encoding='utf-8', level=logging.DEBUG)
+  #logging.basicConfig(format='%(asctime)s %(message)s', filename=args.logoutput, encoding='utf-8', level=logging.DEBUG)
+  logging.basicConfig(format='%(asctime)s %(message)s', encoding='utf-8', level=logging.DEBUG)
   logging.info('BUFFERING STDIN')
   
   try: 
@@ -55,12 +61,6 @@ if __name__ == "__main__":
       
       try:
         while True:
-          
-          if len(output_buffer) > args.maxlength or get_elapsedseconds(starttimestamp) > args.pushinterval:
-            encode_parquet(output_buffer,args.outputfolder,'wazuh-{}'.format(date))
-            logging.debug(json.dumps(output_buffer))
-            starttimestamp = datetime.datetime.now(datetime.timezone.utc)
-            output_buffer = []
 
           current_block = map_block( stdin, args.linebuffer )
 
@@ -69,6 +69,15 @@ if __name__ == "__main__":
             time.sleep(args.sleeptime)
           else:
             output_buffer +=  current_block
+
+          if len(output_buffer) == 0:
+            continue
+
+          if len(output_buffer) > args.maxlength or get_elapsedseconds(starttimestamp) > args.pushinterval:
+            logging.info('Writing data to parquet file')
+            encode_parquet(output_buffer,args.outputfolder,'wazuh-{}'.format(date))
+            starttimestamp = datetime.datetime.now(datetime.timezone.utc)
+            output_buffer = []
 
       except KeyboardInterrupt:
         logging.info("Keyboard Interrupt issued")

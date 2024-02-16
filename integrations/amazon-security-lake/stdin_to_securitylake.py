@@ -36,7 +36,7 @@ def get_elapsedseconds(reference_timestamp):
 if __name__ == "__main__":
   date = datetime.datetime.now(datetime.timezone.utc).strftime('%F_%H.%M.%S')
   parser = argparse.ArgumentParser(description='STDIN to Security Lake pipeline')
-  parser.add_argument('-d','--debug', type=bool, action='store_true', help='Activate debugging')
+  parser.add_argument('-d','--debug', action='store_true', help='Activate debugging')
   parser.add_argument('-i','--pushinterval', type=int, action='store', default=299, help='Time interval in seconds for pushing data to Security Lake')
   parser.add_argument('-l','--logoutput', type=str, default="/tmp/stdintosecuritylake.txt", help='File path of the destination file to write to')
   parser.add_argument('-m','--maxlength', type=int, action='store', default=2000, help='Event number threshold for submission to Security Lake')

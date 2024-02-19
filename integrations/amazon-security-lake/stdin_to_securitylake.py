@@ -15,7 +15,6 @@ block_ending = { "block_ending": True }
 def encode_parquet(list,foldername,filename):
   try:
     table = Table.from_pylist(list)
-    print(table)
     parquet.write_table(table, '{}/{}.parquet'.format(foldername,filename))
   except Exception as e:
     logging.error(e)

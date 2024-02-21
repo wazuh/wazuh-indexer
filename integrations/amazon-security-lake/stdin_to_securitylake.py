@@ -7,8 +7,9 @@ import logging
 import time
 import json
 import datetime
-from pyarrow import parquet, Table
-from ocsf import converter
+from pyarrow import parquet, Table, fs
+
+from transform import converter
 
 block_ending = { "block_ending": True }
 

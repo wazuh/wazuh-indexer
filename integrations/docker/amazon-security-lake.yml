@@ -1,4 +1,4 @@
-version: '3'
+version: '3.8'
 name: "amazon-security-lake"
 services:
 
@@ -53,6 +53,7 @@ services:
       - wazuh.indexer_transport.pemkey
       - wazuh.indexer_http.pemtrustedcas
       - wazuh.indexer_transport.pemtrustedcas
+    #command: tail -f /dev/null
 
   wazuh.dashboard:
     image: opensearchproject/opensearch-dashboards:2.11.1

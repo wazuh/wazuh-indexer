@@ -1,5 +1,18 @@
 version: '3'
+name: "amazon-security-lake"
 services:
+  events-generator:
+    image: wazuh/indexer-events-generator
+    build:
+      context: ../tools/events-generator
+    container_name: events-generator
+    depends_on:
+      - opensearch-node
+    networks:
+      - opensearch-net
+    # TODO add healthcheck to indexer's service to avoid sending requests before API is ready.
+    command: bash -c "sleep 10 && echo 'Ey, wake up!' && python run.py -a opensearch-node"
+
   opensearch-node:
     image: opensearchproject/opensearch:latest # This should be the same image used for opensearch-node1 to avoid issues
     container_name: opensearch-node
@@ -21,6 +34,7 @@ services:
       - opensearch-data:/usr/share/opensearch/data
     networks:
       - opensearch-net
+
   opensearch-dashboards:
     image: opensearchproject/opensearch-dashboards:latest # Make sure the version of opensearch-dashboards matches the version of opensearch installed on other nodes
     container_name: opensearch-dashboards
@@ -33,16 +47,9 @@ services:
     networks:
       - opensearch-net
   logstash:
+    image: wazuh/indexer-security-lake-integration
     build:
-      context: .
-      dockerfile_inline: |
-        FROM logstash:8.12.1
-
-        COPY --chown=logstash:logstash logstash/setup.sh /usr/share/logstash/bin/setup.sh
-        COPY --chown=logstash:logstash logstash/pipeline/pipe-output.conf /usr/share/logstash/pipeline/pipe-output.config
-       
-        RUN bash /usr/share/logstash/bin/setup.sh
-        RUN /usr/share/logstash/bin/logstash-plugin install logstash-input-opensearch
+      context: ../amazon-security-lake
     container_name: logstash
     environment:
       LOG_LEVEL: trace
@@ -53,12 +60,14 @@ services:
       - "5000:5000/udp"
       - "5044:5044"
       - "9600:9600"
+    volumes:
+      - ../amazon-security-lake/logstash/pipeline:/usr/share/logstash/pipeline
     depends_on:
       - opensearch-node
     networks:
       - opensearch-net
     command: tail -f /dev/null
-    # command: logstash -f /usr/share/logstash/pipeline/pipe-output.config
+    # command: /usr/share/logstash/bin/logstash -f /usr/share/logstash/pipeline/indexer-to-integrator.config --path.settings /etc/logstash
 
 volumes:
   opensearch-data:

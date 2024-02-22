@@ -1,4 +1,4 @@
-#!/home/fede/src/wazuh-indexer/integrations/amazon-security-lake/venv/bin/python3
+#!/env/bin/python3.9
 
 import os
 import sys

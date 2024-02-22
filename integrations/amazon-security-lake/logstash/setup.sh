@@ -4,12 +4,7 @@
 # indexer's credentials. NOTE: works only for dockerized logstash.
 #   Source: https://www.elastic.co/guide/en/logstash/current/keystore.html
 
-# Prepare keystore
-set +o history
-export LOGSTASH_KEYSTORE_PASS="SecretPassword"
-set -o history
-
 # Create keystore
-/usr/share/logstash/bin/logstash-keystore create
-echo "admin" | /usr/share/logstash/bin/logstash-keystore add INDEXER_USERNAME
-echo "admin" | /usr/share/logstash/bin/logstash-keystore add INDEXER_PASSWORD
+/usr/share/logstash/bin/logstash-keystore create --path.settings /etc/logstash
+echo "admin" | /usr/share/logstash/bin/logstash-keystore add INDEXER_USERNAME --path.settings /etc/logstash
+echo "admin" | /usr/share/logstash/bin/logstash-keystore add INDEXER_PASSWORD --path.settings /etc/logstash

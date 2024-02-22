@@ -7,20 +7,21 @@ services:
       context: ../tools/events-generator
     container_name: events-generator
     depends_on:
-      - opensearch-node
+      - wazuh.indexer
     networks:
-      - opensearch-net
+      - net
     # TODO add healthcheck to indexer's service to avoid sending requests before API is ready.
-    command: bash -c "sleep 10 && echo 'Ey, wake up!' && python run.py -a opensearch-node"
+    command: bash -c "sleep 10 && echo 'Ey, wake up!' && python run.py -a wazuh.indexer"
 
-  opensearch-node:
-    image: opensearchproject/opensearch:latest # This should be the same image used for opensearch-node1 to avoid issues
-    container_name: opensearch-node
+  wazuh.indexer:
+    image: opensearchproject/opensearch:latest
+    container_name: wazuh.indexer
+    hostname: wazuh.indexer
     environment:
-      - cluster.name=opensearch-cluster
-      - node.name=opensearch-node
-      - discovery.seed_hosts=opensearch-node
-      - cluster.initial_cluster_manager_nodes=opensearch-node
+      # - cluster.name=opensearch-cluster
+      - node.name=wazuh.indexer
+      - discovery.type=single-node
+      # - cluster.initial_cluster_manager_nodes=opensearch-node
       - bootstrap.memory_lock=true
       - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
     ulimits:
@@ -31,26 +32,28 @@ services:
         soft: 65536
         hard: 65536
     volumes:
-      - opensearch-data:/usr/share/opensearch/data
+      - data:/usr/share/opensearch/data
     networks:
-      - opensearch-net
+      - net
 
-  opensearch-dashboards:
+  wazuh.dashboard:
     image: opensearchproject/opensearch-dashboards:latest # Make sure the version of opensearch-dashboards matches the version of opensearch installed on other nodes
-    container_name: opensearch-dashboards
+    container_name: wazuh.dashboard
+    hostname: wazuh.dashboard
     ports:
       - 5601:5601 # Map host port 5601 to container port 5601
     expose:
       - "5601" # Expose port 5601 for web access to OpenSearch Dashboards
     environment:
-      OPENSEARCH_HOSTS: '["https://opensearch-node:9200"]' # Define the OpenSearch nodes that OpenSearch Dashboards will query
+      OPENSEARCH_HOSTS: '["https://wazuh.indexer:9200"]' # Define the OpenSearch nodes that OpenSearch Dashboards will query
     networks:
-      - opensearch-net
-  logstash:
+      - net
+  wazuh.integration.security.lake:
     image: wazuh/indexer-security-lake-integration
     build:
       context: ../amazon-security-lake
-    container_name: logstash
+    container_name: wazuh.integration.security.lake
+    hostname: wazuh.integration.security.lake
     environment:
       LOG_LEVEL: trace
       LOGSTASH_KEYSTORE_PASS: "SecretPassword"
@@ -63,14 +66,14 @@ services:
     volumes:
       - ../amazon-security-lake/logstash/pipeline:/usr/share/logstash/pipeline
     depends_on:
-      - opensearch-node
+      - wazuh.indexer
     networks:
-      - opensearch-net
+      - net
     command: tail -f /dev/null
-    # command: /usr/share/logstash/bin/logstash -f /usr/share/logstash/pipeline/indexer-to-integrator.config --path.settings /etc/logstash
+    # command: /usr/share/logstash/bin/logstash -f /usr/share/logstash/pipeline/indexer-to-integrator.conf --path.settings /etc/logstash
 
 volumes:
-  opensearch-data:
+  data:
 
 networks:
-  opensearch-net:
+  net:

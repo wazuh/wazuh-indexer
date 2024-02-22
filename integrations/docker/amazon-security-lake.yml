@@ -26,6 +26,15 @@ services:
       - discovery.type=single-node
       # - cluster.initial_cluster_manager_nodes=opensearch-node
       - bootstrap.memory_lock=true
+      - "DISABLE_INSTALL_DEMO_CONFIG=true"
+      - plugins.security.ssl.http.pemcert_filepath="certs/wazuh.indexer.pem"
+      - plugins.security.ssl.transport.pemcert_filepath="certs/wazuh.indexer.pem"
+      - plugins.security.ssl.http.pemkey_filepath="certs/wazuh.indexer-key.pem"
+      - plugins.security.ssl.transport.pemkey_filepath="certs/wazuh.indexer-key.pem"
+      - plugins.security.ssl.http.pemtrustedcas_filepath="certs/root-ca.pem"
+      - plugins.security.ssl.transport.pemtrustedcas_filepath="certs/root-ca.pem"
+      - plugins.security.authcz.admin_dn="CN=wazuh.indexer,OU=Wazuh,O=Wazuh,L=California, C=US"
+
       - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
     ulimits:
       memlock:
@@ -36,6 +45,7 @@ services:
         hard: 65536
     volumes:
       - data:/usr/share/opensearch/data
+      - ./certs/:/usr/share/opensearch/config/certs/
     networks:
       - net
 
@@ -73,8 +83,6 @@ services:
       - "9600:9600"
     volumes:
       - ../amazon-security-lake/logstash/pipeline:/usr/share/logstash/pipeline
-    depends_on:
-      - wazuh.indexer
     networks:
       - net
     command: tail -f /dev/null

@@ -1,6 +1,7 @@
 version: '3'
 name: "amazon-security-lake"
 services:
+
   events-generator:
     image: wazuh/indexer-events-generator
     build:
@@ -14,8 +15,10 @@ services:
     command: bash -c "sleep 10 && echo 'Ey, wake up!' && python run.py -a wazuh.indexer"
 
   wazuh.indexer:
-    image: opensearchproject/opensearch:latest
+    image: opensearchproject/opensearch:2.11.1
     container_name: wazuh.indexer
+    depends_on:
+      - wazuh-certs-generator
     hostname: wazuh.indexer
     environment:
       # - cluster.name=opensearch-cluster
@@ -37,8 +40,10 @@ services:
       - net
 
   wazuh.dashboard:
-    image: opensearchproject/opensearch-dashboards:latest # Make sure the version of opensearch-dashboards matches the version of opensearch installed on other nodes
+    image: opensearchproject/opensearch-dashboards:2.11.1
     container_name: wazuh.dashboard
+    depends_on:
+      - wazuh.indexer
     hostname: wazuh.dashboard
     ports:
       - 5601:5601 # Map host port 5601 to container port 5601
@@ -48,11 +53,14 @@ services:
       OPENSEARCH_HOSTS: '["https://wazuh.indexer:9200"]' # Define the OpenSearch nodes that OpenSearch Dashboards will query
     networks:
       - net
+
   wazuh.integration.security.lake:
     image: wazuh/indexer-security-lake-integration
     build:
       context: ../amazon-security-lake
     container_name: wazuh.integration.security.lake
+    depends_on:
+      - wazuh.indexer
     hostname: wazuh.integration.security.lake
     environment:
       LOG_LEVEL: trace
@@ -71,6 +79,20 @@ services:
       - net
     command: tail -f /dev/null
     # command: /usr/share/logstash/bin/logstash -f /usr/share/logstash/pipeline/indexer-to-integrator.conf --path.settings /etc/logstash
+
+  wazuh-certs-generator:
+    image: wazuh-certs-generator
+    build:
+      dockerfile_inline: |
+        FROM ubuntu:20.04
+        RUN apt-get update && apt-get install openssl curl -y
+        WORKDIR /
+        COPY wazuh-certs-generator/entrypoint.sh /
+        RUN chmod 700 /entrypoint.sh
+        ENTRYPOINT ["/entrypoint.sh"]
+    volumes:
+      - ./certs/:/certificates/
+      - ./wazuh-certs-generator/certs.yml:/config/certs.yml
 
 volumes:
   data:

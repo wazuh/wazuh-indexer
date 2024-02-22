@@ -42,9 +42,11 @@ class Inventory:
             self.size = len(self.elements)
 
     def get_random(self) -> str:
+        """
+        Returns the last element of the list
+        """
         random.shuffle(self.elements)
-        return self.elements.pop()
-        # return self.elements[random.randint(0, self.size)]
+        return self.elements[self.size-1]
 
 # ================================================== #
 

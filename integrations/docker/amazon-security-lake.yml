@@ -8,17 +8,16 @@ services:
       context: ../tools/events-generator
     container_name: events-generator
     depends_on:
-      - wazuh.indexer
-    networks:
-      - net
-    # TODO add healthcheck to indexer's service to avoid sending requests before API is ready.
-    command: bash -c "sleep 10 && echo 'Ey, wake up!' && python run.py -a wazuh.indexer"
+      wazuh.indexer:
+        condition: service_healthy
+    command: bash -c "python run.py -a wazuh.indexer"
 
   wazuh.indexer:
     image: opensearchproject/opensearch:2.11.1
     container_name: wazuh.indexer
     depends_on:
-      - wazuh-certs-generator
+      wazuh-certs-generator:
+        condition: service_completed_successfully
     hostname: wazuh.indexer
     ports:
       - 9200:9200
@@ -46,13 +45,15 @@ services:
       nofile:
         soft: 65536
         hard: 65536
+    healthcheck:
+      test: curl -sku admin:admin https://localhost:9200/_cat/health | grep -q docker-cluster
+      start_period: 10s
+      start_interval: 3s
     volumes:
       - data:/usr/share/opensearch/data
       - ./certs/wazuh.indexer.pem:/usr/share/opensearch/config/wazuh.indexer.pem
       - ./certs/wazuh.indexer-key.pem:/usr/share/opensearch/config/wazuh.indexer-key.pem
       - ./certs/root-ca.pem:/usr/share/opensearch/config/root-ca.pem
-    networks:
-      - net
     #command: tail -f /dev/null
 
   wazuh.dashboard:
@@ -67,9 +68,6 @@ services:
       - "5601" # Expose port 5601 for web access to OpenSearch Dashboards
     environment:
       OPENSEARCH_HOSTS: '["https://wazuh.indexer:9200"]' # Define the OpenSearch nodes that OpenSearch Dashboards will query
-    networks:
-      - net
-
 
   wazuh.integration.security.lake:
     image: wazuh/indexer-security-lake-integration
@@ -90,27 +88,18 @@ services:
       - "9600:9600"
     volumes:
       - ../amazon-security-lake/logstash/pipeline:/usr/share/logstash/pipeline
-    networks:
-      - net
-    command: tail -f /dev/null
-    # command: /usr/share/logstash/bin/logstash -f /usr/share/logstash/pipeline/indexer-to-integrator.conf --path.settings /etc/logstash
+      - ./certs/root-ca.pem:/usr/share/logstash/root-ca.pem
+    #command: tail -f /dev/null
+    command: /usr/share/logstash/bin/logstash -f /usr/share/logstash/pipeline/indexer-to-integrator.conf --path.settings /etc/logstash --config.reload.automatic
 
   wazuh-certs-generator:
-    image: wazuh-certs-generator
-    build:
-      dockerfile_inline: |
-        FROM ubuntu:20.04
-        RUN apt-get update && apt-get install openssl curl -y
-        WORKDIR /
-        COPY wazuh-certs-generator/entrypoint.sh /
-        RUN chmod 700 /entrypoint.sh
-        ENTRYPOINT ["/entrypoint.sh"]
+    image: wazuh/wazuh-certs-generator:0.0.1
+    hostname: wazuh-certs-generator
+    container_name: wazuh-certs-generator
+    entrypoint: sh -c "/entrypoint.sh; chown -R 1000:999 /certificates; chmod 740 /certificates; chmod 440 /certificates/*"
     volumes:
       - ./certs/:/certificates/
-      - ./wazuh-certs-generator/certs.yml:/config/certs.yml
-
+      - ./config/certs.yml:/config/certs.yml
+  
 volumes:
   data:
-
-networks:
-  net:

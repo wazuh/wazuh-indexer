@@ -45,7 +45,7 @@ echo "Moving created certificates to the destination directory"
 cp /wazuh-certificates/* /certificates/
 echo "Changing certificate permissions"
 chmod 700 /certificates
-chmod 400 /certificates/*
+chmod 440 /certificates/*
 echo "Setting UID indexer and dashboard"
 chown -R 1000:1000 /certificates
 #echo "Setting UID for wazuh manager and worker"
@@ -59,3 +59,9 @@ chown -R 1000:1000 /certificates
 #  chown 101:101 "/certificates/${i}.pem"
 #  chown 101:101 "/certificates/${i}-key.pem"
 #done
+
+for i in /certificates/*key*
+do
+	chmod 400 $i
+done
+

@@ -44,18 +44,18 @@ node_names=($nodes_server)
 echo "Moving created certificates to the destination directory"
 cp /wazuh-certificates/* /certificates/
 echo "Changing certificate permissions"
-chmod -R 400 /certificates
-#chmod -R 400 /certificates/*
+chmod 700 /certificates
+chmod 400 /certificates/*
 echo "Setting UID indexer and dashboard"
 chown -R 1000:1000 /certificates
-echo "Setting UID for wazuh manager and worker"
-cp /certificates/root-ca.pem /certificates/root-ca-manager.pem
-cp /certificates/root-ca.key /certificates/root-ca-manager.key
+#echo "Setting UID for wazuh manager and worker"
+#cp /certificates/root-ca.pem /certificates/root-ca-manager.pem
+#cp /certificates/root-ca.key /certificates/root-ca-manager.key
 #chown 101:101 /certificates/root-ca-manager.pem
-chown 101:101 /certificates/root-ca-manager.key
+#chown 101:101 /certificates/root-ca-manager.key
 
-for i in ${node_names[@]};
-do
-  chown 101:101 "/certificates/${i}.pem"
-  chown 101:101 "/certificates/${i}-key.pem"
-done
+#for i in ${node_names[@]};
+#do
+#  chown 101:101 "/certificates/${i}.pem"
+#  chown 101:101 "/certificates/${i}-key.pem"
+#done

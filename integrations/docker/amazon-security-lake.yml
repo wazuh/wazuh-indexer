@@ -30,7 +30,7 @@ services:
       - bootstrap.memory_lock=true
       - "DISABLE_INSTALL_DEMO_CONFIG=true"
       - plugins.security.ssl.http.enabled=true
-      #- plugins.security.allow_default_init_securityindex=true
+      - plugins.security.allow_default_init_securityindex=true
       - plugins.security.ssl.http.pemcert_filepath=/usr/share/opensearch/config/wazuh.indexer.pem
       - plugins.security.ssl.transport.pemcert_filepath=/usr/share/opensearch/config/wazuh.indexer.pem
       - plugins.security.ssl.http.pemkey_filepath=/usr/share/opensearch/config/wazuh.indexer-key.pem

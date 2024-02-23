@@ -48,6 +48,7 @@ services:
       OPENSEARCH_HOSTS: '["https://wazuh.indexer:9200"]' # Define the OpenSearch nodes that OpenSearch Dashboards will query
     networks:
       - net
+  
   wazuh.integration.security.lake:
     image: wazuh/indexer-security-lake-integration
     build:
@@ -58,6 +59,8 @@ services:
       LOG_LEVEL: trace
       LOGSTASH_KEYSTORE_PASS: "SecretPassword"
       MONITORING_ENABLED: false
+      AWS_KEY: "AKIAIOSFODNN7EXAMPLE"
+      AWS_SECRET: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
     ports:
       - "5000:5000/tcp"
       - "5000:5000/udp"
@@ -72,8 +75,20 @@ services:
     command: tail -f /dev/null
     # command: /usr/share/logstash/bin/logstash -f /usr/share/logstash/pipeline/indexer-to-integrator.conf --path.settings /etc/logstash
 
+  s3.ninja:
+    image: scireum/s3-ninja:latest
+    container_name: s3.ninja
+    hostname: s3.ninja
+    ports:
+      - "9444:9000"
+    volumes:
+      - s3-data:/home/sirius/data
+    networks:
+      - net
+
 volumes:
   data:
+  s3-data:
 
 networks:
   net:

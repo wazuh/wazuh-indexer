@@ -89,6 +89,8 @@ services:
     volumes:
       - ../amazon-security-lake/logstash/pipeline:/usr/share/logstash/pipeline
       - ./certs/root-ca.pem:/usr/share/logstash/root-ca.pem
+      - ../amazon-security-lake/stdin_to_securitylake.py:/usr/share/logstash/bin/run.py
+      - ../amazon-security-lake/transform/:/usr/share/logstash/bin/transform/
     #command: tail -f /dev/null
     command: /usr/share/logstash/bin/logstash -f /usr/share/logstash/pipeline/indexer-to-integrator.conf --path.settings /etc/logstash --config.reload.automatic
 

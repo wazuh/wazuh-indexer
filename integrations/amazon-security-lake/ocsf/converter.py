@@ -27,12 +27,12 @@ def convert(event: dict) -> dict:
       "category_uid": 2,
       "class_name": "Detection Finding",
       "class_uid": 2004,
-      "count": event["_source"]["rule"]["firedtimes"],
+      #"count": event["_source"]["rule"]["firedtimes"],
       "message": event["_source"]["rule"]["description"],
       "finding_info": {
         "analytic": {
           "category": join(event["_source"]["rule"]["groups"]),
-          "name": event["_source"]["decoder"]["name"],
+          #"name": event["_source"]["decoder"]["name"],
           "type_id": 1,
           "uid": event["_source"]["rule"]["id"],
         },
@@ -50,7 +50,8 @@ def convert(event: dict) -> dict:
         },
         "title": event["_source"]["rule"]["description"],
         "types": [
-          event["_source"]["input"]["type"]
+          #event["_source"]["input"]["type"]
+          0
         ],
         "uid": event["_source"]['id']
       },

@@ -10,7 +10,7 @@ services:
     depends_on:
       wazuh.indexer:
         condition: service_healthy
-    command: bash -c "python run.py -a wazuh.indexer"
+    command: bash -c "python run.py -a wazuh.indexer -t1"
 
   wazuh.indexer:
     image: opensearchproject/opensearch:2.11.1
@@ -89,10 +89,21 @@ services:
     volumes:
       - ../amazon-security-lake/logstash/pipeline:/usr/share/logstash/pipeline
       - ./certs/root-ca.pem:/usr/share/logstash/root-ca.pem
-      - ../amazon-security-lake/stdin_to_securitylake.py:/usr/share/logstash/bin/run.py
+      - ../amazon-security-lake/run.py:/usr/share/logstash/bin/run.py
       - ../amazon-security-lake/transform/:/usr/share/logstash/bin/transform/
+      - ../amazon-security-lake/ocsf/:/usr/share/logstash/bin/ocsf/
+      - ./credentials:/usr/share/logstash/.aws/credentials
     #command: tail -f /dev/null
     command: /usr/share/logstash/bin/logstash -f /usr/share/logstash/pipeline/indexer-to-integrator.conf --path.settings /etc/logstash --config.reload.automatic
+
+  #s3.ninja:
+  #  image: scireum/s3-ninja:latest
+  #  container_name: s3.ninja
+  #  hostname: s3.ninja
+  #  ports:
+  #    - "9444:9000"
+  #  volumes:
+  #    - ./s3-data:/home/sirius/data
 
   wazuh-certs-generator:
     image: wazuh/wazuh-certs-generator:0.0.1

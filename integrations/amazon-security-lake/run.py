@@ -13,7 +13,25 @@ import boto3
 from pyarrow import parquet, Table, fs
 from ocsf import converter
 
-block_ending = { "block_ending": True }
+  
+logging.basicConfig(format='%(asctime)s %(message)s', encoding='utf-8', level=logging.DEBUG)
+
+BLOCK_ENDING = { "block_ending": True }
+
+
+
+def create_arg_parser():
+  parser = argparse.ArgumentParser(description='STDIN to Security Lake pipeline')
+  parser.add_argument('-d','--debug', action='store_true', help='Activate debugging')
+  parser.add_argument('-b','--bucketname', type=str, action='store', help='S3 bucket name to write parquet files to')
+  parser.add_argument('-e','--s3endpoint', type=str, action='store', default=None, help='Hostname and port of the S3 destination (defaults to AWS\')')
+  parser.add_argument('-i','--pushinterval', type=int, action='store', default=299, help='Time interval in seconds for pushing data to Security Lake')
+  parser.add_argument('-l','--logoutput', type=str, default="/tmp/stdintosecuritylake.txt", help='File path of the destination file to write to')
+  parser.add_argument('-m','--maxlength', type=int, action='store', default=2000, help='Event number threshold for submission to Security Lake')
+  parser.add_argument('-n','--linebuffer', type=int, action='store', default=100, help='stdin line buffer length')
+  parser.add_argument('-p','--s3profile', type=str, action='store', default='default', help='AWS profile as stored in credentials file')
+  parser.add_argument('-s','--sleeptime', type=int, action='store', default=5, help='Input buffer polling interval')
+  return parser
 
 def check_fd_open(file):
   return file.closed
@@ -47,7 +65,7 @@ def map_block(fileobject, length):
   for line in range(0, length):
     line = fileobject.readline()
     if line == '':
-      output.append(block_ending)
+      output.append(BLOCK_ENDING)
       break 
     alert = json.loads(line)
     ocsf_mapped_alert = converter.convert(alert)
@@ -62,23 +80,9 @@ def utctime():
   return datetime.datetime.now(datetime.timezone.utc)
 
 if __name__ == "__main__":
-
-  parser = argparse.ArgumentParser(description='STDIN to Security Lake pipeline')
-  parser.add_argument('-d','--debug', action='store_true', help='Activate debugging')
-  parser.add_argument('-b','--bucketname', type=str, action='store', help='S3 bucket name to write parquet files to')
-  parser.add_argument('-e','--s3endpoint', type=str, action='store', default=None, help='Hostname and port of the S3 destination (defaults to AWS\')')
-  parser.add_argument('-i','--pushinterval', type=int, action='store', default=299, help='Time interval in seconds for pushing data to Security Lake')
-  parser.add_argument('-l','--logoutput', type=str, default="/tmp/stdintosecuritylake.txt", help='File path of the destination file to write to')
-  parser.add_argument('-m','--maxlength', type=int, action='store', default=2000, help='Event number threshold for submission to Security Lake')
-  parser.add_argument('-n','--linebuffer', type=int, action='store', default=100, help='stdin line buffer length')
-  parser.add_argument('-p','--s3profile', type=str, action='store', default='default', help='AWS profile as stored in credentials file')
-  parser.add_argument('-s','--sleeptime', type=int, action='store', default=5, help='Input buffer polling interval')
-  args = parser.parse_args()
-  
-  logging.basicConfig(format='%(asctime)s %(message)s', encoding='utf-8', level=logging.DEBUG)
-  logging.info('BUFFERING STDIN')
-  
   try: 
+    args = create_arg_parser().parse_args()
+    logging.info('BUFFERING STDIN')
 
     with os.fdopen(sys.stdin.fileno(), 'rt') as stdin:
       output_buffer = []
@@ -90,7 +94,7 @@ if __name__ == "__main__":
           
           current_block = map_block( stdin, args.linebuffer )
 
-          if current_block[-1] == block_ending:
+          if current_block[-1] == BLOCK_ENDING:
             output_buffer +=  current_block[0:-1]
             time.sleep(args.sleeptime)
           else:

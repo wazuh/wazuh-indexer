@@ -3,3 +3,4 @@ opensearch
 splunk
 common
 config
+docker/certs

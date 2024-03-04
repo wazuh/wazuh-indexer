@@ -54,7 +54,6 @@ services:
       - ./certs/wazuh.indexer.pem:/usr/share/opensearch/config/wazuh.indexer.pem
       - ./certs/wazuh.indexer-key.pem:/usr/share/opensearch/config/wazuh.indexer-key.pem
       - ./certs/root-ca.pem:/usr/share/opensearch/config/root-ca.pem
-    #command: tail -f /dev/null
 
   wazuh.dashboard:
     image: opensearchproject/opensearch-dashboards:2.11.1
@@ -105,7 +104,7 @@ services:
     ports:
       - "9444:9000"
     volumes:
-      - ./s3-data:/home/sirius/data
+      - s3-data:/home/sirius/data
 
   wazuh-certs-generator:
     image: wazuh/wazuh-certs-generator:0.0.1
@@ -115,6 +114,7 @@ services:
     volumes:
       - ./certs/:/certificates/
       - ./config/certs.yml:/config/certs.yml
-  
+
 volumes:
   data:
+  s3-data:

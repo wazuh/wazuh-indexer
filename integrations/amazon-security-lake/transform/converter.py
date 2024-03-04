@@ -8,8 +8,20 @@ def normalize(level: int) -> int:
     """
     Normalizes rule level into the 0-6 range, required by OCSF.
     """
-    # TODO normalization
-    return level
+    if level >= 15:     # (5) Critical
+        severity = 5
+    elif level >= 11:   # (4) High
+        severity = 4
+    elif level >= 8:    # (3) Medium
+        severity = 3
+    elif level >= 4:    # (2) Low
+        severity = 2
+    elif level >= 0:    # (1) Informational
+        severity = 1
+    else:
+        severity = 0    # (0) Unknown
+
+    return severity
 
 
 def join(iterable, separator=","):
@@ -84,29 +96,3 @@ def from_json(event: dict) -> models.wazuh.Event:
         return models.wazuh.Event.model_validate_json(json.dumps(event))
     except pydantic.ValidationError as e:
         print(e)
-
-
-def _test():
-    ocsf_event = {}
-    with open("wazuh-event.sample.json", "r") as fd:
-        # Load from file descriptor
-        event = json.load(fd)
-        try:
-            # Create instance of Event from JSON input (must be string, bytes or bytearray)
-            event = models.wazuh.Event.model_validate_json(json.dumps(event))
-            print(event)
-            ocsf_event = to_detection_finding(event)
-
-        except KeyError as e:
-            raise (e)
-        except pydantic.ValidationError as e:
-            print(e)
-
-        if ocsf_event:
-            with open("wazuh-event.ocsf.json", "w") as fd:
-                json.dump(ocsf_event.model_dump(), fd)
-                print(ocsf_event.model_dump())
-
-
-if __name__ == '__main__':
-    _test()

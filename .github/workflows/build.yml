@@ -71,11 +71,12 @@ jobs:
         distribution: [tar, rpm, deb]
         architecture: [x64, arm64]
         exclude:
-          # skip arm64 until we have arm runners
+          # Only DEB packages can be tested on GitHub runners (ubuntu)
           - architecture: arm64
-          - distribution: [tar, rpm]
-      uses: ./.github/workflows/r_test.yml
-      with:
-        architecture: ${{ matrix.architecture }}
-        distribution: ${{ matrix.distribution }}
-        package: wazuh-indexer-${{ needs.version.outputs.version }}-${{ github.event_name == 'push' && '1' || inputs.revision }}-${{ matrix.architecture }}_${{ needs.commit_sha.outputs.commit_sha }}.${{ matrix.distribution }}
+          - distribution: tar
+          - distribution: rpm
+    uses: ./.github/workflows/r_test.yml
+    with:
+      architecture: ${{ matrix.architecture }}
+      distribution: ${{ matrix.distribution }}
+      package: wazuh-indexer-${{ needs.version.outputs.version }}-${{ github.event_name == 'push' && '1' || inputs.revision }}-${{ matrix.architecture }}_${{ needs.commit_sha.outputs.commit_sha }}.${{ matrix.distribution }}

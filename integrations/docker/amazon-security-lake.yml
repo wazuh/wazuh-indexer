@@ -10,7 +10,7 @@ services:
     depends_on:
       wazuh.indexer:
         condition: service_healthy
-    command: bash -c "python run.py -a wazuh.indexer -t1"
+    command: bash -c "python run.py -a wazuh.indexer"
 
   wazuh.indexer:
     image: opensearchproject/opensearch:2.11.1

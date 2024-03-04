@@ -74,7 +74,7 @@ jobs:
           # skip arm64 until we have arm runners
           - architecture: arm64
           - distribution: [tar, rpm]
-      uses: ./.github/workflows/r_assemble.yml
+      uses: ./.github/workflows/r_test.yml
       with:
         architecture: ${{ matrix.architecture }}
         distribution: ${{ matrix.distribution }}

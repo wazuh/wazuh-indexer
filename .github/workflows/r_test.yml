@@ -1,0 +1,46 @@
+name: Test (reusable)
+
+# This workflow runs when any of the following occur:
+# - Run from another workflow
+on:
+  workflow_call:
+    inputs:
+      distribution:
+        description: "One of [ 'tar', 'rpm', 'deb' ]"
+        default: "rpm"
+        required: true
+        type: string
+      architecture:
+        description: "One of [ 'x64', 'arm64' ]"
+        default: "x64"
+        required: true
+        type: string
+      package:
+        description: "The name of the package to download."
+        required: true
+        type: string
+
+jobs:
+  r_test:
+    runs-on: ubuntu-latest
+    # Permissions to upload the package
+    permissions:
+      packages: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.package }}
+          path: artifacts/dist
+
+      - name: Run `test.sh`
+        if: ${{ inputs.distribution == 'deb' }}
+        run: |
+          # bash scripts/test.sh -p artifacts/dist/${{ inputs.package }}
+          dpkg -i "artifacts/dist/${{ inputs.package }}"; 
+          systemctl daemon-reload;
+          systemctl enable wazuh-indexer.service;
+          systemctl start wazuh-indexer;
+          systemctl status wazuh-indexer

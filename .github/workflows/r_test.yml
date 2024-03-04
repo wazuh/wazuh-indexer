@@ -36,9 +36,7 @@ jobs:
           path: artifacts/dist
 
       - name: Run `test.sh`
-        if: ${{ inputs.distribution == 'deb' }}
         run: |
-          # bash scripts/test.sh -p artifacts/dist/${{ inputs.package }}
           dpkg -i "artifacts/dist/${{ inputs.package }}"; 
           systemctl daemon-reload;
           systemctl enable wazuh-indexer.service;

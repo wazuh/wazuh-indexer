@@ -25,10 +25,11 @@ jobs:
           name: ${{ inputs.package }}
           path: artifacts/dist
 
-      - name: Run `test.sh`
+      - name: Install package
         run: |
-          sudo dpkg -i "artifacts/dist/${{ inputs.package }}"; 
-          sudo systemctl daemon-reload;
-          sudo systemctl enable wazuh-indexer.service;
-          sudo systemctl start wazuh-indexer;
-          sudo systemctl status wazuh-indexer
+          sudo dpkg -i "artifacts/dist/${{ inputs.package }}"
+
+      - run: sudo systemctl daemon-reload
+      - run: sudo systemctl enable wazuh-indexer.service || sudo journalctl -xeu wazuh-indexer.service
+      - run: sudo systemctl start wazuh-indexer || sudo journalctl -xeu wazuh-indexer.service
+      - run: sudo systemctl status wazuh-indexer

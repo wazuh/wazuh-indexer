@@ -150,11 +150,12 @@ esac
 
 GIT_COMMIT=$(git rev-parse --short HEAD)
 WI_VERSION=$(<VERSION)
-ARTIFACT_PACKAGE_NAME=wazuh-indexer-min_"$WI_VERSION"_"$SUFFIX"_"$GIT_COMMIT"."$EXT"
+REVISION=$(<REVISION)
+ARTIFACT_NAME=wazuh-indexer-min_"$WI_VERSION"-"$REVISION"_"$SUFFIX"_"$GIT_COMMIT"."$EXT"
 
 # Print the package name and exit
 if [ "$DRY" ]; then
-    echo "${ARTIFACT_PACKAGE_NAME}"
+    echo "${ARTIFACT_NAME}"
     exit 0
 fi
 
@@ -212,10 +213,10 @@ fi
 # Copy artifact to dist folder in bundle build output
 echo "Copying artifact to ${OUTPUT}/dist"
 
-ARTIFACT_BUILD_NAME=$(ls "distribution/$TYPE/$TARGET/build/distributions/" | grep "wazuh-indexer-min.*$SUFFIX.$EXT")
+BUILD_ARTIFACT_NAME=$(ls "distribution/$TYPE/$TARGET/build/distributions/" | grep "wazuh-indexer-min.*$SUFFIX.$EXT")
 
 # Used by the GH workflow to upload the artifact
-echo "$ARTIFACT_PACKAGE_NAME" >"$OUTPUT/artifact_min_name.txt"
+echo "$ARTIFACT_NAME" >"$OUTPUT/artifact_min_name.txt"
 
 mkdir -p "${OUTPUT}/dist"
-cp "distribution/$TYPE/$TARGET/build/distributions/$ARTIFACT_BUILD_NAME" "${OUTPUT}/dist/$ARTIFACT_PACKAGE_NAME"
+cp "distribution/$TYPE/$TARGET/build/distributions/$BUILD_ARTIFACT_NAME" "${OUTPUT}/dist/$ARTIFACT_NAME"

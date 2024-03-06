@@ -117,6 +117,7 @@ set -- "$@" "%{config_dir}/jvm.options"
 set -- "$@" "%{config_dir}/opensearch.yml"
 set -- "$@" "%{config_dir}/wazuh-template.json"
 set -- "$@" "%{product_dir}/VERSION"
+set -- "$@" "%{product_dir}/REVISION"
 set -- "$@" "%{product_dir}/plugins/opensearch-security/tools/.*\.sh"
 set -- "$@" "%{product_dir}/bin/.*"
 set -- "$@" "%{product_dir}/jdk/bin/.*"
@@ -254,6 +255,7 @@ exit 0
 
 # Files that need other permissions
 %attr(440, %{name}, %{name}) %{product_dir}/VERSION
+%attr(440, %{name}, %{name}) %{product_dir}/REVISION
 %attr(740, %{name}, %{name}) %{product_dir}/plugins/opensearch-security/tools/*.sh
 %attr(750, %{name}, %{name}) %{product_dir}/bin/*
 %attr(750, %{name}, %{name}) %{product_dir}/jdk/bin/*

@@ -75,6 +75,7 @@ fi
 
 # Files that need other permissions
 chmod -c 440 "${buildroot}${product_dir}/VERSION"
+chmod -c 440 "${buildroot}${product_dir}/REVISION"
 if [ -d "${buildroot}${product_dir}/plugins/opensearch-security" ]; then
 	chmod -c 0740 "${buildroot}${product_dir}"/plugins/opensearch-security/tools/*.sh
 fi

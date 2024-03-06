@@ -8,15 +8,20 @@ on:
       version:
         description: "Returns the version of Wazuh"
         value: ${{ jobs.r_version.outputs.version }}
+      revision:
+        description: "Returns the revision of Wazuh"
+        value: ${{ jobs.r_version.outputs.revision }}
 
 jobs:
   r_version:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.get_version.outputs.version }}
+      revision: ${{ steps.get_version.outputs.revision }}
     steps:
       - uses: actions/checkout@v4
       - name: Read 'VERSION'
         id: get_version
         run: |
-          echo "version=$(cat VERSION)" >> $GITHUB_OUTPUT
+          echo "version=$(<VERSION)" >> $GITHUB_OUTPUT
+          echo "revision=$(<REVISION)" >> $GITHUB_OUTPUT

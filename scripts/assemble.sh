@@ -237,7 +237,7 @@ function clean() {
     rm -r "${OUTPUT}/tmp"
     echo "After execution, shell path is $(pwd)"
     # Store package's name to file. Used by GH Action.
-    echo "${ARTIFACT_PACKAGE_NAME}" >"${OUTPUT}/artifact_name.txt"
+    echo "${ARTIFACT_NAME}" >"${OUTPUT}/artifact_name.txt"
 }
 
 # ====
@@ -250,8 +250,8 @@ function assemble_tar() {
     PATH_PLUGINS="./plugins"
 
     # Extract
-    echo "Extract ${ARTIFACT_BUILD_NAME} archive"
-    tar -zvxf "${ARTIFACT_BUILD_NAME}"
+    echo "Extract ${BUILD_ARTIFACT_NAME} archive"
+    tar -zvxf "${BUILD_ARTIFACT_NAME}"
     cd "$(ls -d wazuh-indexer-*/)"
 
     local version
@@ -269,7 +269,7 @@ function assemble_tar() {
     cd ..
     tar -cvf "${archive_name}-${SUFFIX}.${EXT}" "${archive_name}"
     cd ../../..
-    cp "${TMP_DIR}/${archive_name}-${SUFFIX}.${EXT}" "${OUTPUT}/dist/$ARTIFACT_PACKAGE_NAME"
+    cp "${TMP_DIR}/${archive_name}-${SUFFIX}.${EXT}" "${OUTPUT}/dist/$ARTIFACT_NAME"
 
     clean
 }
@@ -290,8 +290,8 @@ function assemble_rpm() {
     PATH_PLUGINS="${src_path}/plugins"
 
     # Extract min-package. Creates usr/, etc/ and var/ in the current directory
-    echo "Extract ${ARTIFACT_BUILD_NAME} archive"
-    rpm2cpio "${ARTIFACT_BUILD_NAME}" | cpio -imdv
+    echo "Extract ${BUILD_ARTIFACT_NAME} archive"
+    rpm2cpio "${BUILD_ARTIFACT_NAME}" | cpio -imdv
 
     local version
     version=$(cat ./usr/share/wazuh-indexer/VERSION)
@@ -317,7 +317,7 @@ function assemble_rpm() {
     # Move to the root folder, copy the package and clean.
     cd ../../..
     package_name="wazuh-indexer-${version}-1.${SUFFIX}.${EXT}"
-    cp "${TMP_DIR}/RPMS/${SUFFIX}/${package_name}" "${OUTPUT}/dist/$ARTIFACT_PACKAGE_NAME"
+    cp "${TMP_DIR}/RPMS/${SUFFIX}/${package_name}" "${OUTPUT}/dist/$ARTIFACT_NAME"
 
     clean
 }
@@ -341,8 +341,8 @@ function assemble_deb() {
     PATH_PLUGINS="${src_path}/plugins"
 
     # Extract min-package. Creates usr/, etc/ and var/ in the current directory
-    echo "Extract ${ARTIFACT_BUILD_NAME} archive"
-    ar xf "${ARTIFACT_BUILD_NAME}" data.tar.gz
+    echo "Extract ${BUILD_ARTIFACT_NAME} archive"
+    ar xf "${BUILD_ARTIFACT_NAME}" data.tar.gz
     tar zvxf data.tar.gz
 
     local version
@@ -373,7 +373,7 @@ function assemble_deb() {
     cd ../../..
     package_name="wazuh-indexer_${version}_${SUFFIX}.${EXT}"
     # debmake creates the package one level above
-    cp "${TMP_DIR}/../${package_name}" "${OUTPUT}/dist/$ARTIFACT_PACKAGE_NAME"
+    cp "${TMP_DIR}/../${package_name}" "${OUTPUT}/dist/$ARTIFACT_NAME"
 
     clean
 }
@@ -384,16 +384,17 @@ function assemble_deb() {
 function main() {
     parse_args "${@}"
 
-    ARTIFACT_BUILD_NAME=$(ls "${OUTPUT}/dist/" | grep "wazuh-indexer-min_.*$SUFFIX.*\.$EXT")
-    # ARTIFACT_PACKAGE_NAME=${ARTIFACT_BUILD_NAME/min_/}
+    BUILD_ARTIFACT_NAME=$(ls "${OUTPUT}/dist/" | grep "wazuh-indexer-min_.*$SUFFIX.*\.$EXT")
+    # ARTIFACT_NAME=${BUILD_ARTIFACT_NAME/min_/}
 
     GIT_COMMIT=$(git rev-parse --short HEAD)
     WI_VERSION=$(<VERSION)
-    ARTIFACT_PACKAGE_NAME=wazuh-indexer-"$WI_VERSION"_"$SUFFIX"_"$GIT_COMMIT"."$EXT"
+    REVISION=$(<REVISION)
+    ARTIFACT_NAME=wazuh-indexer-"$WI_VERSION"-"$REVISION"_"$SUFFIX"_"$GIT_COMMIT"."$EXT"
 
     # Print the package name and exit
     if [ "$DRY" ]; then
-        echo "${ARTIFACT_PACKAGE_NAME}"
+        echo "${ARTIFACT_NAME}"
         exit 0
     fi
 
@@ -401,7 +402,7 @@ function main() {
     # Create temporal directory and copy the min package there for extraction
     TMP_DIR="${OUTPUT}/tmp/${TARGET}"
     mkdir -p "$TMP_DIR"
-    cp "${OUTPUT}/dist/$ARTIFACT_BUILD_NAME" "${TMP_DIR}"
+    cp "${OUTPUT}/dist/$BUILD_ARTIFACT_NAME" "${TMP_DIR}"
 
     case $PACKAGE in
     tar)

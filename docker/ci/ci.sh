@@ -36,9 +36,11 @@ function main() {
     compose_file="docker/${current}/ci.yml"
     compose_cmd="docker compose -f $compose_file"
     REPO_PATH=$(pwd)
-    VERSION=$(cat VERSION)
+    VERSION=$(<VERSION)
+    REVISION=$(<REVISION)
     export REPO_PATH
     export VERSION
+    export REVISION
 
     case $1 in
     up)

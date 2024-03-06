@@ -3,8 +3,8 @@ version: "3.9"
 services:
   # Essentially wi-dev, but doesn't expose port 9200
   wi-build:
-    image: wi-build:${VERSION}
-    container_name: wi-build_${VERSION}
+    image: wi-build:${VERSION}-${REVISION}
+    container_name: wi-build_${VERSION}-${REVISION}
     build:
       context: ./../..
       dockerfile: ${REPO_PATH}/docker/dev/images/Dockerfile
@@ -15,8 +15,8 @@ services:
     working_dir: /home/wazuh-indexer
 
   wi-assemble:
-    image: wi-assemble:${VERSION}
-    container_name: wi-assemble_${VERSION}
+    image: wi-assemble:${VERSION}-${REVISION}
+    container_name: wi-assemble_${VERSION}-${REVISION}
     build:
       context: ./../..
       dockerfile: ${REPO_PATH}/docker/ci/images/Dockerfile

@@ -5,6 +5,7 @@
 
 GIT_COMMIT=$(git rev-parse --short HEAD)
 WI_VERSION=$(<VERSION)
+REVISION=$(<REVISION)
 
 rpm_args="-v 2.11.1 -p linux -a x64 -d rpm -D"
 deb_args="-v 2.11.1 -p linux -a x64 -d deb -D"
@@ -15,7 +16,7 @@ build() {
     local success=0
 
     rpm=$(bash "scripts/build.sh" $rpm_args)
-    local artifact_name=wazuh-indexer-min_"$WI_VERSION"_x86_64_"$GIT_COMMIT".rpm
+    local artifact_name=wazuh-indexer-min_"$WI_VERSION"-"$REVISION"_x86_64_"$GIT_COMMIT".rpm
     if [ "$rpm" = "$artifact_name" ]; then
         echo -e "\t[PASSED] rpm build output has the value '$rpm'"
     else
@@ -24,7 +25,7 @@ build() {
     fi
 
     deb=$(bash "scripts/build.sh" $deb_args)
-    local artifact_name=wazuh-indexer-min_"$WI_VERSION"_amd64_"$GIT_COMMIT".deb
+    local artifact_name=wazuh-indexer-min_"$WI_VERSION"-"$REVISION"_amd64_"$GIT_COMMIT".deb
     if [ "$deb" = "$artifact_name" ]; then
         echo -e "\t[PASSED] deb build output has the value '$deb'"
     else
@@ -42,7 +43,7 @@ assemble() {
     local success=0
 
     rpm=$(bash "scripts/assemble.sh" $rpm_args)
-    local artifact_name=wazuh-indexer-"$WI_VERSION"_x86_64_"$GIT_COMMIT".rpm
+    local artifact_name=wazuh-indexer-"$WI_VERSION"-"$REVISION"_x86_64_"$GIT_COMMIT".rpm
     if [ "$rpm" = "$artifact_name" ]; then
         echo -e "\t[PASSED] rpm assemble output has the value '$rpm'"
     else
@@ -51,7 +52,7 @@ assemble() {
     fi
 
     deb=$(bash "scripts/assemble.sh" $deb_args)
-    local artifact_name=wazuh-indexer-"$WI_VERSION"_amd64_"$GIT_COMMIT".deb
+    local artifact_name=wazuh-indexer-"$WI_VERSION"-"$REVISION"_amd64_"$GIT_COMMIT".deb
     if [ "$deb" = "$artifact_name" ]; then
         echo -e "\t[PASSED] deb assemble output has the value '$deb'"
     else

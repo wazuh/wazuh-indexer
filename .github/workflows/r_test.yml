@@ -30,6 +30,6 @@ jobs:
           sudo dpkg -i "artifacts/dist/${{ inputs.package }}"
 
       - run: sudo systemctl daemon-reload
-      - run: sudo systemctl enable wazuh-indexer.service || sudo journalctl -xeu wazuh-indexer.service
-      - run: sudo systemctl start wazuh-indexer || sudo journalctl -xeu wazuh-indexer.service
+      - run: sudo systemctl enable wazuh-indexer.service || sudo journalctl --no-pager -u wazuh-indexer.service
+      - run: sudo systemctl start wazuh-indexer || sudo journalctl --no-pager -u wazuh-indexer.service
       - run: sudo systemctl status wazuh-indexer

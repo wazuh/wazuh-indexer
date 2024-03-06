@@ -27,8 +27,8 @@ jobs:
 
       - name: Run `test.sh`
         run: |
-          dpkg -i "artifacts/dist/${{ inputs.package }}"; 
-          systemctl daemon-reload;
-          systemctl enable wazuh-indexer.service;
-          systemctl start wazuh-indexer;
-          systemctl status wazuh-indexer
+          sudo dpkg -i "artifacts/dist/${{ inputs.package }}"; 
+          sudo systemctl daemon-reload;
+          sudo systemctl enable wazuh-indexer.service;
+          sudo systemctl start wazuh-indexer;
+          sudo systemctl status wazuh-indexer

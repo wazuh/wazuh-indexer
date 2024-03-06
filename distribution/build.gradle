@@ -570,6 +570,7 @@ subprojects {
     Map<String, Object> expansions = [
       'project.name': project.name,
       'project.version': version,
+      'project.revision': revision,
 
       'path.conf': [
         'deb': '/etc/wazuh-indexer',

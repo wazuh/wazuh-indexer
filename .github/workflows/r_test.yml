@@ -11,7 +11,8 @@ on:
         type: string
 
 jobs:
-  r_test:
+  r_test_rpm:
+    if: endsWith(${{ inputs.package }}, "rpm")
     runs-on: ubuntu-latest
     # Permissions to upload the package
     permissions:
@@ -24,20 +25,30 @@ jobs:
           name: ${{ inputs.package }}
           path: artifacts/dist
 
-      - name: Install package (RPM)
-        if: endsWith(${{ inputs.package }}, "rpm")
+      - name: Install package
         run: |
           sudo yum localinstall "artifacts/dist/${{ inputs.package }}"
 
-      - name: Install package (DEB)
-        if: endsWith(${{ inputs.package }}, "deb")
+  r_test_deb:
+    if: endsWith(${{ inputs.package }}, "deb")
+    runs-on: ubuntu-latest
+    # Permissions to upload the package
+    permissions:
+      packages: read
+      contents: read
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.package }}
+          path: artifacts/dist
+
+      - name: Install package
         run: |
           sudo dpkg -i "artifacts/dist/${{ inputs.package }}"
 
       - uses: actions/checkout@v4
-        if: endsWith(${{ inputs.package }}, "deb")
       - name: Generate and deploy certificates
-        if: endsWith(${{ inputs.package }}, "deb")
         uses: addnab/docker-run-action@v3
         with:
           image: wazuh/wazuh-certs-generator:0.0.1
@@ -56,21 +67,17 @@ jobs:
             ls /certs
 
       - run: sudo systemctl daemon-reload
-        if: endsWith(${{ inputs.package }}, "deb")
-      - if: endsWith(${{ inputs.package }}, "deb")
-        run: |
+      - run: |
           if ! sudo systemctl enable wazuh-indexer.service; then
               sudo journalctl --no-pager -u wazuh-indexer.service
               exit 1
           fi
-      - if: endsWith(${{ inputs.package }}, "deb")
-        run: |
+      - run: |
           if ! sudo systemctl start wazuh-indexer; then
             sudo journalctl --no-pager -u wazuh-indexer.service
             exit 1
           fi
-      - if: endsWith(${{ inputs.package }}, "deb")
-        run: |
+      - run: |
           if ! sudo systemctl status --no-pager wazuh-indexer -n 100; then
             sudo journalctl --no-pager -u wazuh-indexer.service
             exit 1

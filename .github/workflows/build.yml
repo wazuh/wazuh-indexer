@@ -14,6 +14,10 @@ on:
         type: string
         required: true
         default: "1"
+      upload:
+        description: "If set to true, packages that pass testing are uploaded to the Wazuh's S3 development artifactory bucket."
+        type: bool
+        default: false
 
 # ==========================
 # Bibliography
@@ -66,13 +70,13 @@ jobs:
       min: wazuh-indexer-min_${{ needs.version.outputs.version }}-${{ github.event_name == 'push' && '1' || inputs.revision }}-${{ matrix.architecture }}_${{ needs.commit_sha.outputs.commit_sha }}.${{ matrix.distribution }}
 
   upload:
-    # Push skipping tests until we got that working
     needs: [version, commit_sha, assemble]
+    # Upload only on 'workflow_dispatch' event and if 'upload=true'
+    if: ${{ github.event_name == 'push' && inputs.upload }}
     strategy:
       fail-fast: false
       matrix:
         os: [{ suffix: "amd64", ext: "deb" }, { suffix: "x86_64", ext: "rpm" }]
-    # needs: [version, commit_sha, test]
     uses: ./.github/workflows/r_upload.yml
     with:
       package: wazuh-indexer-${{ needs.version.outputs.version }}-${{ github.event_name == 'push' && '1' || inputs.revision }}_${{ matrix.os.suffix }}_${{ needs.commit_sha.outputs.commit_sha }}.${{ matrix.os.ext }}

@@ -18,7 +18,6 @@ jobs:
       packages: read
       contents: read
     steps:
-      - uses: actions/checkout@v4
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
@@ -29,7 +28,26 @@ jobs:
         run: |
           sudo dpkg -i "artifacts/dist/${{ inputs.package }}"
 
+      - uses: actions/checkout@v4
+      - name: Generate and deploy certificates
+        uses: addnab/docker-run-action@v3
+        with:
+          image: wazuh/wazuh-certs-generator:0.0.1
+          options: -v ${{ github.workspace }}/integrations/docker/config/certs.yml:/config/certs.yml -v /etc/wazuh-indexer/certs:/certs
+          shell: sh
+          run: |
+            mkdir -p /certificates /certs 
+            /entrypoint.sh
+            chown -R 1000:999 /certificates
+            chmod 740 /certificates
+            chmod 440 /certificates/*
+            
+            mv /certificates/wazuh.indexer-key.pem  /certs/indexer-key.pem
+            mv /certificates/wazuh.indexer.pem      /certs/indexer.pem
+            mv /certificates/root-ca.pem            /certs/root-ca.pem
+            ls /certs
+
       - run: sudo systemctl daemon-reload
-      - run: sudo systemctl enable wazuh-indexer.service || sudo journalctl --no-pager -u wazuh-indexer.service
-      - run: sudo systemctl start wazuh-indexer || sudo journalctl --no-pager -u wazuh-indexer.service
-      - run: sudo systemctl status wazuh-indexer
+      - run: sudo systemctl enable wazuh-indexer.service || sudo journalctl --no-pager -u wazuh-indexer.service && exit 1
+      - run: sudo systemctl start wazuh-indexer || sudo journalctl --no-pager -u wazuh-indexer.service && exit 1
+      - run: sudo systemctl status wazuh-indexer || sudo journalctl --no-pager -u wazuh-indexer.service && exit 1

@@ -68,6 +68,7 @@ jobs:
   test:
     needs: [version, commit_sha, assemble]
     strategy:
+      fail-fast: false
       matrix:
         os: [{ suffix: "amd64", ext: "deb" }, { suffix: "x86_64", ext: "rpm" }]
     uses: ./.github/workflows/r_test.yml

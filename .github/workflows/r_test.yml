@@ -31,7 +31,7 @@ jobs:
           image: redhat/ubi9:latest
           options: -v ${{ github.workspace }}/artifacts/dist -v /artifacts/dist
           run: |
-            yum localinstall "artifacts/dist/${{ inputs.package }}"
+            yum localinstall "/artifacts/dist/${{ inputs.package }}"
 
   r_test_deb:
     if: ${{ endsWith(inputs.package, 'deb') }}

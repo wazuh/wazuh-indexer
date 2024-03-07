@@ -10,12 +10,12 @@ on:
   workflow_dispatch:
     inputs:
       revision:
-        description: "Any string or number used to extend the package's identifier"
+        description: "Revision"
         type: string
         required: true
         default: "1"
       upload:
-        description: "If set to true, packages that pass testing are uploaded to the Wazuh's S3 development artifactory bucket."
+        description: "Upload ?"
         type: bool
         default: false
 

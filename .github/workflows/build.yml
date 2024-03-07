@@ -76,3 +76,4 @@ jobs:
     uses: ./.github/workflows/r_upload.yml
     with:
       package: wazuh-indexer-${{ needs.version.outputs.version }}-${{ github.event_name == 'push' && '1' || inputs.revision }}_${{ matrix.os.suffix }}_${{ needs.commit_sha.outputs.commit_sha }}.${{ matrix.os.ext }}
+      secrets: inherit

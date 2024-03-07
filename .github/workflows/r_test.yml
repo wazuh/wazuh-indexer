@@ -36,18 +36,30 @@ jobs:
           options: -v ${{ github.workspace }}/integrations/docker/config/certs.yml:/config/certs.yml -v /etc/wazuh-indexer/certs:/certs
           shell: sh
           run: |
-            mkdir -p /certificates /certs 
+            mkdir -p /certificates /certs
             /entrypoint.sh
             chown -R 1000:999 /certificates
             chmod 740 /certificates
             chmod 440 /certificates/*
-            
+
             mv /certificates/wazuh.indexer-key.pem  /certs/indexer-key.pem
             mv /certificates/wazuh.indexer.pem      /certs/indexer.pem
             mv /certificates/root-ca.pem            /certs/root-ca.pem
             ls /certs
 
       - run: sudo systemctl daemon-reload
-      - run: sudo systemctl enable wazuh-indexer.service || sudo journalctl --no-pager -u wazuh-indexer.service && exit 1
-      - run: sudo systemctl start wazuh-indexer || sudo journalctl --no-pager -u wazuh-indexer.service && exit 1
-      - run: sudo systemctl status wazuh-indexer || sudo journalctl --no-pager -u wazuh-indexer.service && exit 1
+      - run: |
+          if sudo systemctl enable wazuh-indexer.service; then
+            sudo journalctl --no-pager -u wazuh-indexer.service
+            exit 1
+          fi
+      - run: |
+        if sudo systemctl start wazuh-indexer; then
+          sudo journalctl --no-pager -u wazuh-indexer.service
+          exit 1
+        fi
+      - run: |
+        if sudo systemctl status wazuh-indexer; then
+          sudo journalctl --no-pager -u wazuh-indexer.service
+          exit 1
+        fi

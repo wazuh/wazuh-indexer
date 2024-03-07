@@ -12,7 +12,7 @@ on:
 
 jobs:
   r_test_rpm:
-    if: endsWith(${{ inputs.package }}, "rpm")
+    if: ${{ endsWith(${{ inputs.package }}, "rpm") }}
     runs-on: ubuntu-latest
     # Permissions to upload the package
     permissions:
@@ -30,7 +30,7 @@ jobs:
           sudo yum localinstall "artifacts/dist/${{ inputs.package }}"
 
   r_test_deb:
-    if: endsWith(${{ inputs.package }}, "deb")
+    if: ${{ endsWith(${{ inputs.package }}, "deb") }}
     runs-on: ubuntu-latest
     # Permissions to upload the package
     permissions:

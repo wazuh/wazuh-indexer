@@ -26,8 +26,11 @@ jobs:
           path: artifacts/dist
 
       - name: Install package
-        run: |
-          sudo yum localinstall "artifacts/dist/${{ inputs.package }}"
+        uses: addnab/docker-run-action@v3
+        with:
+          image: redhat/ubi9:latest
+          run: |
+            sudo yum localinstall "artifacts/dist/${{ inputs.package }}"
 
   r_test_deb:
     if: ${{ endsWith(inputs.package, 'deb') }}

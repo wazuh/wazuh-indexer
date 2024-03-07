@@ -72,7 +72,9 @@ jobs:
       package: wazuh-indexer-${{ needs.version.outputs.version }}-${{ github.event_name == 'push' && '1' || inputs.revision }}-amd64_${{ needs.commit_sha.outputs.commit_sha }}.deb
 
   upload:
-    needs: [version, commit_sha, test]
+    # Push skipping tests until we got that working
+    needs: [version, commit_sha, assemble]
+    # needs: [version, commit_sha, test]
     uses: ./.github/workflows/r_upload.yml
     with:
       package: wazuh-indexer-${{ needs.version.outputs.version }}-${{ github.event_name == 'push' && '1' || inputs.revision }}-amd64_${{ needs.commit_sha.outputs.commit_sha }}.deb

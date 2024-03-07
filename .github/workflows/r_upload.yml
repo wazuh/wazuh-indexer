@@ -9,11 +9,11 @@ on:
         description: "The name of the package to upload to Wazuh's S3 development artifactory bucket."
         required: true
         type: string
-      secrets:
-        CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY:
-          required: true
-        CI_INTERNAL_DEVELOPMENT_BUCKET_USER_SECRET_KEY:
-          required: true
+    secrets:
+      CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY:
+        required: true
+      CI_INTERNAL_DEVELOPMENT_BUCKET_USER_SECRET_KEY:
+        required: true
 
 jobs:
   r_upload:
@@ -28,7 +28,7 @@ jobs:
         with:
           name: ${{ inputs.package }}
           path: artifacts/dist
-      
+
       - name: Set up AWS CLI
         uses: aws-actions/configure-aws-credentials@v1
         with:

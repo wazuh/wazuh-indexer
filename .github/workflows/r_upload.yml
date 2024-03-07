@@ -11,7 +11,7 @@ on:
         type: string
 
 jobs:
-  r_test:
+  r_upload:
     runs-on: ubuntu-latest
     # Permissions to upload the package
     permissions:

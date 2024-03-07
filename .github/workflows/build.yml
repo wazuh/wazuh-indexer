@@ -69,6 +69,7 @@ jobs:
     # Push skipping tests until we got that working
     needs: [version, commit_sha, assemble]
     strategy:
+      fail-fast: false
       matrix:
         os: [{ suffix: "amd64", ext: "deb" }, { suffix: "x86_64", ext: "rpm" }]
     # needs: [version, commit_sha, test]

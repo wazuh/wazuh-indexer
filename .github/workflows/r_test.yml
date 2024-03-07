@@ -29,7 +29,7 @@ jobs:
         uses: addnab/docker-run-action@v3
         with:
           image: redhat/ubi9:latest
-          options: -v ${{ github.workspace }}/artifacts/dist -v /artifacts/dist
+          options: -v ${{ github.workspace }}/artifacts/dist:/artifacts/dist
           run: |
             yum localinstall "/artifacts/dist/${{ inputs.package }}" -y
 

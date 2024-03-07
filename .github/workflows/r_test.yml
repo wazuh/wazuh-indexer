@@ -54,12 +54,12 @@ jobs:
             exit 1
           fi
       - run: |
-        if sudo systemctl start wazuh-indexer; then
-          sudo journalctl --no-pager -u wazuh-indexer.service
-          exit 1
-        fi
+          if sudo systemctl start wazuh-indexer; then
+            sudo journalctl --no-pager -u wazuh-indexer.service
+            exit 1
+          fi
       - run: |
-        if sudo systemctl status wazuh-indexer; then
-          sudo journalctl --no-pager -u wazuh-indexer.service
-          exit 1
-        fi
+          if sudo systemctl status wazuh-indexer; then
+            sudo journalctl --no-pager -u wazuh-indexer.service
+            exit 1
+          fi

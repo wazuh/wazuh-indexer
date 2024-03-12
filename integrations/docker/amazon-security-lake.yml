@@ -13,7 +13,7 @@ services:
     command: bash -c "python run.py -a wazuh.indexer"
 
   wazuh.indexer:
-    image: opensearchproject/opensearch:2.11.1
+    image: opensearchproject/opensearch:2.12.0
     container_name: wazuh.indexer
     depends_on:
       wazuh-certs-generator:
@@ -56,7 +56,7 @@ services:
       - ./certs/root-ca.pem:/usr/share/opensearch/config/root-ca.pem
 
   wazuh.dashboard:
-    image: opensearchproject/opensearch-dashboards:2.11.1
+    image: opensearchproject/opensearch-dashboards:2.12.0
     container_name: wazuh.dashboard
     depends_on:
       - wazuh.indexer
@@ -77,6 +77,9 @@ services:
       - wazuh.indexer
     hostname: wazuh.integration.security.lake
     environment:
+      # TODO execution on dockerfile may be failing due to permission denied on invokation
+      INDEXER_USERNAME: admin
+      INDEXER_PASSWORD: admin
       LOG_LEVEL: trace
       LOGSTASH_KEYSTORE_PASS: "SecretPassword"
       MONITORING_ENABLED: false
@@ -88,14 +91,11 @@ services:
       - "5044:5044"
       - "9600:9600"
     volumes:
-      - ../amazon-security-lake/logstash/pipeline:/usr/share/logstash/pipeline
+      - ../amazon-security-lake/logstash/pipeline:/usr/share/logstash/pipeline # TODO has 1000:1000. logstash's uid is 999 
       - ./certs/root-ca.pem:/usr/share/logstash/root-ca.pem
-      - ../amazon-security-lake/run.py:/usr/share/logstash/bin/run.py
-      - ../amazon-security-lake/transform/:/usr/share/logstash/bin/transform/
-      - ../amazon-security-lake/ocsf/:/usr/share/logstash/bin/ocsf/
-      - ./credentials:/usr/share/logstash/.aws/credentials
-    # command: tail -f /dev/null
-    command: /usr/share/logstash/bin/logstash -f /usr/share/logstash/pipeline/indexer-to-integrator.conf --path.settings /etc/logstash --config.reload.automatic
+      - ../amazon-security-lake/src:/usr/share/logstash/amazon-security-lake
+      # - ./credentials:/usr/share/logstash/.aws/credentials # TODO credentials are not commited (missing)
+    command: tail -f /var/log/logstash/logstash-plain.log
 
   s3.ninja:
     image: scireum/s3-ninja:latest

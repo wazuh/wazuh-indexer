@@ -13,38 +13,87 @@ import transform
 from pyarrow import parquet, Table, fs
 
 
-logging.basicConfig(format='%(asctime)s %(message)s',
-                    encoding='utf-8', level=logging.DEBUG)
+logging.basicConfig(
+    format='%(asctime)s %(message)s',
+    encoding='utf-8',
+    level=logging.DEBUG
+)
 
 BLOCK_ENDING = {"block_ending": True}
 
 
 def create_arg_parser():
     parser = argparse.ArgumentParser(
-        description='STDIN to Security Lake pipeline')
-    parser.add_argument('-d', '--debug', action='store_true',
-                        help='Activate debugging')
-    parser.add_argument('-b', '--bucketname', type=str, action='store',
-                        help='S3 bucket name to write parquet files to')
-    parser.add_argument('-e', '--s3endpoint', type=str, action='store', default=None,
-                        help='Hostname and port of the S3 destination (defaults to AWS\')')
-    parser.add_argument('-i', '--pushinterval', type=int, action='store', default=299,
-                        help='Time interval in seconds for pushing data to Security Lake')
-    parser.add_argument('-l', '--logoutput', type=str, default="/tmp/stdintosecuritylake.txt",
-                        help='File path of the destination file to write to')
-    parser.add_argument('-m', '--maxlength', type=int, action='store', default=2000,
-                        help='Event number threshold for submission to Security Lake')
-    parser.add_argument('-n', '--linebuffer', type=int, action='store',
-                        default=100, help='stdin line buffer length')
-    parser.add_argument('-p', '--s3profile', type=str, action='store',
-                        default='default', help='AWS profile as stored in credentials file')
-    parser.add_argument('-s', '--sleeptime', type=int, action='store',
-                        default=5, help='Input buffer polling interval')
+        description='Wazuh\'s integrator module for Amazon Security Lake')
+    parser.add_argument(
+        '-d',
+        '--debug',
+        action='store_true',
+        help='Enable debug output'
+    )
+    parser.add_argument(
+        '-b',
+        '--bucketname',
+        type=str,
+        action='store',
+        help='S3 bucket name to write parquet files to'
+    )
+    parser.add_argument(
+        '-e',
+        '--s3endpoint',
+        type=str,
+        action='store',
+        default=None,
+        help='Hostname and port of the S3 destination (defaults to AWS\')'
+    )
+    parser.add_argument(
+        '-i',
+        '--pushinterval',
+        type=int,
+        action='store',
+        default=299,
+        help='Time interval in seconds for pushing data to Security Lake'
+    )
+    parser.add_argument(
+        '-l',
+        '--logoutput',
+        type=str,
+        default="/tmp/indexer-to-security-lake-data.txt",
+        help='File path of the destination file to write to'
+    )
+    parser.add_argument(
+        '-m',
+        '--maxlength',
+        type=int,
+        action='store',
+        default=2000,
+        help='Event number threshold for submission to Security Lake'
+    )
+    parser.add_argument(
+        '-n',
+        '--linebuffer',
+        type=int,
+        action='store',
+        default=100,
+        help='Stadndard input\'s line buffer length'
+    )
+    parser.add_argument(
+        '-p',
+        '--s3profile',
+        type=str,
+        action='store',
+        default='default',
+        help='AWS profile as stored in credentials file'
+    )
+    parser.add_argument(
+        '-s',
+        '--sleeptime',
+        type=int,
+        action='store',
+        default=5,
+        help='Input buffer polling interval'
+    )
     return parser
-
-
-def check_fd_open(file):
-    return file.closed
 
 
 def s3authenticate(profile, endpoint=None, scheme='https'):
@@ -58,7 +107,8 @@ def s3authenticate(profile, endpoint=None, scheme='https'):
         endpoint_override=endpoint,
         access_key=credentials.access_key,
         secret_key=credentials.secret_key,
-        scheme=scheme)
+        scheme=scheme
+    )
 
     return s3fs
 
@@ -66,8 +116,10 @@ def s3authenticate(profile, endpoint=None, scheme='https'):
 def encode_parquet(list, bucketname, filename, filesystem):
     try:
         table = Table.from_pylist(list)
-        parquet.write_table(table, '{}/{}'.format(bucketname,
-                            filename), filesystem=filesystem)
+        parquet.write_table(
+            table, 
+            '{}/{}'.format(bucketname, filename), filesystem=filesystem
+        )
     except Exception as e:
         logging.error(e)
         raise
@@ -75,15 +127,20 @@ def encode_parquet(list, bucketname, filename, filesystem):
 
 def map_block(fileobject, length):
     output = []
-    ocsf_mapped_alert = {}
+    ocsf_event = {}
     for line in range(0, length):
         line = fileobject.readline()
         if line == '':
             output.append(BLOCK_ENDING)
             break
-        alert = json.loads(line)
-        ocsf_mapped_alert = converter.convert(alert)
-        output.append(ocsf_mapped_alert)
+        # alert = json.loads(line)
+        # ocsf_event = converter.convert(alert)
+
+        event = transform.converter.from_json(line)
+        print(event)
+        ocsf_event = transform.converter.to_detection_finding(event)
+        
+        output.append(ocsf_event)
     return output
 
 

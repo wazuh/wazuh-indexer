@@ -17,7 +17,7 @@ RUN pip install -r /app/requirements.txt
 FROM python:3.9
 ENV LOGSTASH_KEYSTORE_PASS="SecretPassword"
 # Add the application source code.
-COPY --chown=logstash:logstash . /home/app
+COPY --chown=logstash:logstash ./src /home/app
 # Add execution persmissions.
 RUN chmod a+x /home/app/run.py
 # Copy the application's dependencies.

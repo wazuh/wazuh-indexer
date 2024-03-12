@@ -1,5 +1,6 @@
 version: "3.8"
 name: "amazon-security-lake"
+
 services:
   events-generator:
     image: wazuh/indexer-events-generator
@@ -89,6 +90,10 @@ services:
     volumes:
       - ../amazon-security-lake/logstash/pipeline:/usr/share/logstash/pipeline
       - ./certs/root-ca.pem:/usr/share/logstash/root-ca.pem
+      - ../amazon-security-lake/run.py:/usr/share/logstash/bin/run.py
+      - ../amazon-security-lake/transform/:/usr/share/logstash/bin/transform/
+      - ../amazon-security-lake/ocsf/:/usr/share/logstash/bin/ocsf/
+      - ./credentials:/usr/share/logstash/.aws/credentials
     # command: tail -f /dev/null
     command: /usr/share/logstash/bin/logstash -f /usr/share/logstash/pipeline/indexer-to-integrator.conf --path.settings /etc/logstash --config.reload.automatic
 

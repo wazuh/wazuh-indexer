@@ -77,9 +77,6 @@ services:
       - wazuh.indexer
     hostname: wazuh.integration.security.lake
     environment:
-      # TODO execution on dockerfile may be failing due to permission denied on invokation
-      INDEXER_USERNAME: admin
-      INDEXER_PASSWORD: admin
       LOG_LEVEL: trace
       LOGSTASH_KEYSTORE_PASS: "SecretPassword"
       MONITORING_ENABLED: false

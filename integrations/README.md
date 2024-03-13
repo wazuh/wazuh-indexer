@@ -41,10 +41,8 @@ Unprocessed data can be sent to a file or to an S3 bucket.
 /usr/share/logstash/bin/logstash -f /usr/share/logstash/pipeline/indexer-to-s3.conf --path.settings /etc/logstash
 ```
 
-/usr/share/logstash/bin/logstash --config.test_and_exit -f /usr/share/logstash/pipeline/indexer-to-integrator.conf
-
-For development or debugging purposes, you may want to enable hot-reload on these files, by using
-the `--config.reload.automatic`, `--config.test_and_exit` or `--debug` flags.
+For development or debugging purposes, you may want to enable hot-reload, test or debug on these files, 
+by using the `--config.reload.automatic`, `--config.test_and_exit` or `--debug` flags, respectively.
 
 For production usage, follow the instructions in our documentation page about this matter.
 (_when-its-done_)

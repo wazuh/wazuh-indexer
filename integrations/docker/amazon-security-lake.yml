@@ -82,6 +82,7 @@ services:
       MONITORING_ENABLED: false
       AWS_KEY: "AKIAIOSFODNN7EXAMPLE"
       AWS_SECRET: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+      AWS_REGION: "us-east-1"
     ports:
       - "5000:5000/tcp"
       - "5000:5000/udp"

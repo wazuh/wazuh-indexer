@@ -41,6 +41,10 @@ Unprocessed data can be sent to a file or to an S3 bucket.
 /usr/share/logstash/bin/logstash -f /usr/share/logstash/pipeline/indexer-to-s3.conf --path.settings /etc/logstash
 ```
 
+All three pipelines are configured to fetch the latest data from the *wazuh-indexer* every minute. In
+the case of `indexer-to-file`, the data is written at the same pace, whereas `indexer-to-s3`, data 
+is uploaded every 5 minutes.
+
 For development or debugging purposes, you may want to enable hot-reload, test or debug on these files, 
 by using the `--config.reload.automatic`, `--config.test_and_exit` or `--debug` flags, respectively.
 

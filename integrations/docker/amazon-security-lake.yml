@@ -80,9 +80,10 @@ services:
       LOG_LEVEL: trace
       LOGSTASH_KEYSTORE_PASS: "SecretPassword"
       MONITORING_ENABLED: false
-      AWS_KEY: "AKIAIOSFODNN7EXAMPLE"
-      AWS_SECRET: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+      AWS_ACCESS_KEY_ID: "AKIAIOSFODNN7EXAMPLE"
+      AWS_SECRET_ACCESS_KEY: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
       AWS_REGION: "us-east-1"
+      AWS_BUCKET: "wazuh-indexer-amazon-security-lake-bucket"
     ports:
       - "5000:5000/tcp"
       - "5000:5000/udp"
@@ -91,7 +92,7 @@ services:
     volumes:
       - ../amazon-security-lake/logstash/pipeline:/usr/share/logstash/pipeline # TODO has 1000:1000. logstash's uid is 999 
       - ./certs/root-ca.pem:/usr/share/logstash/root-ca.pem
-      - ../amazon-security-lake/src:/usr/share/logstash/amazon-security-lake
+      - ../amazon-security-lake/src:/usr/share/logstash/amazon-security-lake # TODO use dedicated folder
       # - ./credentials:/usr/share/logstash/.aws/credentials # TODO credentials are not commited (missing)
     command: tail -f /var/log/logstash/logstash-plain.log
 

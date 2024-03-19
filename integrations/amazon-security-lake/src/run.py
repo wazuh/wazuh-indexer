@@ -51,7 +51,6 @@ def main():
     # Generate filenames
     filename_raw = f"/tmp/integrator-raw-{timestamp}.json"
     filename_ocsf = f"/tmp/integrator-ocsf-{timestamp}.json"
-    filename_ocsf = f"/tmp/integrator-ocsf-{timestamp}.json"
     filename_parquet = f"/tmp/integrator-ocsf-{timestamp}.parquet"
 
     # 1. Extract data

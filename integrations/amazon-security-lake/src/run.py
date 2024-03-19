@@ -12,24 +12,22 @@ import boto3
 from botocore.exceptions import ClientError
 
 # NOTE work in progress
-def upload_file(file_name, bucket, object_name=None):
+def upload_file(table, file_name, bucket, object_name=None):
     """Upload a file to an S3 bucket
 
+    :param table: PyArrow table with events data
     :param file_name: File to upload
     :param bucket: Bucket to upload to
     :param object_name: S3 object name. If not specified then file_name is used
     :return: True if file was uploaded, else False
     """
 
-    # session = boto3.Session(
-    #     aws_access_key_id=os.environ['AWS_KEY'],
-    #     aws_secret_access_key=os.environ['AWS_SECRET']
-    # )
-    s3 = boto3.resource(
-        's3',
+    client = boto3.client(
+        service_name='s3',
         aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
         aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'],
-        region_name=os.environ['AWS_REGION']
+        region_name=os.environ['AWS_REGION'],
+        endpoint_url='http://s3.ninja:9000',
     )
 
     # If S3 object_name was not specified, use file_name
@@ -37,10 +35,8 @@ def upload_file(file_name, bucket, object_name=None):
         object_name = os.path.basename(file_name)
 
     # Upload the file
-    # s3_client = boto3.client('s3')
     try:
-        # s3_client.upload_file(file_name, bucket, object_name)
-        s3.Bucket(os.environ['AWS_BUCKET']).upload_file()
+        client.put_object(Bucket=bucket, Key=file_name, Body=open(file_name, 'rb'))
     except ClientError as e:
         logging.error(e)
         return False
@@ -74,9 +70,7 @@ def main():
     ocsf_data = []
     for line in raw_data:
         try:
-            # raw_event = json.loads(line)
             event = transform.converter.from_json(line)
-            # ocsf_event = transform.converter.to_detection_finding(event)
             ocsf_event = transform.converter.to_detection_finding(event)
             ocsf_data.append(ocsf_event.model_dump())
 
@@ -92,15 +86,15 @@ def main():
     try:
         table = pa.Table.from_pylist(ocsf_data)
         pq.write_table(table, filename_parquet)
-        # parquet.Parquet.to_file(table, filename_parquet)
     except AttributeError as e:
         print("Error encoding data to parquet")
         print(e)
 
-    # 3. Load data
+    # 3. Load data (upload to S3)
     #    ================
-    # parquet.parquet.Parquet.to_s3(table, filename_parquet)
-    upload_file(filename_parquet, os.environ['AWS_BUCKET'])
+    if upload_file(table, filename_parquet, os.environ['AWS_BUCKET']):
+        # Remove /tmp files
+        pass
 
 
 def _test():

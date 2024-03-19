@@ -105,6 +105,16 @@ services:
     volumes:
       - s3-data:/home/sirius/data
 
+  aws.lambda:
+    image: wazuh/indexer-security-lake-integration:lambda
+    build:
+      context: ../amazon-security-lake
+      dockerfile: ../amazon-security-lake/aws-lambda.dockerfile
+    container_name: wazuh.integration.security.lake.aws.lambda
+    hostname: wazuh.integration.security.lake.aws.lambda
+    ports:
+      - "9000:8080"
+
   wazuh-certs-generator:
     image: wazuh/wazuh-certs-generator:0.0.1
     hostname: wazuh-certs-generator

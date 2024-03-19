@@ -120,3 +120,6 @@ def _test():
 if __name__ == '__main__':
     main()
     # _test()
+
+def lambda_handler(event, context):
+    return f'Hello from run.py: {event}'

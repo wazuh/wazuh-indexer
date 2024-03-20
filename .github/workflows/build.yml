@@ -61,7 +61,6 @@ jobs:
         exclude:
           # skip arm64 until we have arm runners
           - architecture: arm64
-          - distribution: tar
 
     uses: ./.github/workflows/r_assemble.yml
     with:

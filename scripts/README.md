@@ -200,3 +200,43 @@ Pre-requisites:
 ```console
 docker exec -it wi-assemble_$(<VERSION) bash scripts/assemble.sh -v 2.11.1 -p linux -a x64 -d rpm
 ```
+
+### Bash scripts reference
+
+The packages' generation process is guided through bash scripts. This section list and describes
+them, as well as their inputs and outputs.
+
+
+```yml
+
+packages:
+  - file: build.sh
+    description: run the appropiate Gradle task depending on the parameters.
+    params:
+      - distribution: [tar, deb, rpm]
+      - revision: revision number. 0 by default.
+      # - architecture: currently we only build x86_64
+    outputs:
+      - package: minimal wazuh-indexer package for the required distribution.
+  - file: assemble.sh
+    description: assembles a minimal wazuh-indexer package with plugins, settings and demo certificates (not yet).
+    params:
+      - package: the minimal package to assemble.
+      - distribution: [tar, deb, rpm]
+      - revision: revision number. 0 by default.
+      # - opensearch_version: can be obtained from the source code
+      # - architecture: currently we only build x86_64
+    outputs:
+      - package: wazuh-indexer package.
+  - file: provision.sh
+    description: Provision script for assembly of DEB packages.
+  - file: baptizer.sh
+    description: generate the wazuh-indexer package name depending on the parameters.
+    params:
+      - distribution: [tar, deb, rpm]
+      - revision: revision number. 0 by default.
+      - is_release: set to 1 to generate the name of a release package. 0 by default.
+      - is_min: set to 1 to generate the name of a minimal package. Incompatible with is_realease. 0 by default.
+    outputs:
+      - package: the name of the wazuh-indexer package.
+```

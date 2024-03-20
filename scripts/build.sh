@@ -13,7 +13,6 @@ function usage() {
     echo "Usage: $0 [args]"
     echo ""
     echo "Arguments:"
-    echo -e "-v VERSION\t[Required] OpenSearch version."
     echo -e "-q QUALIFIER\t[Optional] Version qualifier."
     echo -e "-s SNAPSHOT\t[Optional] Build a snapshot, default is 'false'."
     echo -e "-p PLATFORM\t[Optional] Platform, default is 'uname -s'."
@@ -24,14 +23,11 @@ function usage() {
     echo -e "-h help"
 }
 
-while getopts ":h:v:q:s:o:p:a:d:r:b:" arg; do
+while getopts ":h:q:s:o:p:a:d:r:b:" arg; do
     case $arg in
     h)
         usage
         exit 1
-        ;;
-    v)
-        VERSION=$OPTARG
         ;;
     q)
         QUALIFIER=$OPTARG
@@ -68,12 +64,6 @@ while getopts ":h:v:q:s:o:p:a:d:r:b:" arg; do
         ;;
     esac
 done
-
-if [ -z "$VERSION" ]; then
-    echo "Error: You must specify the OpenSearch version"
-    usage
-    exit 1
-fi
 
 [ -z "$OUTPUT" ] && OUTPUT=artifacts
 

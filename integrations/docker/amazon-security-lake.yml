@@ -112,6 +112,8 @@ services:
       dockerfile: ../amazon-security-lake/aws-lambda.dockerfile
     container_name: wazuh.integration.security.lake.aws.lambda
     hostname: wazuh.integration.security.lake.aws.lambda
+    volumes:
+      - ../amazon-security-lake/src:/var/task
     ports:
       - "9000:8080"
 

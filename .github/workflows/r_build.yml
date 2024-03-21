@@ -11,11 +11,11 @@ on:
         default: "0"
       upload:
         description: "Uploads artifacts"
-        type: bool
+        type: boolean
         default: false
       is_release:
         description: "Uses release's nomenclature"
-        type: bool
+        type: boolean
         default: false
       distribution:
         description: One of "[ 'tar', 'rpm', 'deb', 'docker' ]"
@@ -35,7 +35,7 @@ jobs:
       architecture: ${{ matrix.architecture }}
 
   assemble:
-    needs: [build]
+    needs: [ build_min ]
     uses: ./.github/workflows/r_assemble.yml
     with:
       revision: ${{ inputs.revision }}
@@ -43,7 +43,7 @@ jobs:
       architecture: ${{ matrix.architecture }}
 
   test:
-    needs: [assemble]
+    needs: [ assemble ]
     uses: ./.github/workflows/r_test.yml
     with:
       revision: ${{ inputs.revision }}
@@ -52,7 +52,7 @@ jobs:
 
   upload:
     if: ${{ inputs.upload }}
-    needs: [test]
+    needs: [ test ]
     uses: ./.github/workflows/r_upload.yml
     with:
       revision: ${{ inputs.revision }}

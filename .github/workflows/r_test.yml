@@ -11,7 +11,7 @@ on:
         default: "0"
       is_release:
         description: "Uses release's nomenclature"
-        type: bool
+        type: boolean
         default: false
       distribution:
         description: One of "[ 'tar', 'rpm', 'deb', 'docker' ]"
@@ -25,6 +25,7 @@ on:
 jobs:
   setup:
     runs-on: ubuntu-latest
+    steps:
       - uses: actions/checkout@v4
       - name: Run `baptizer.sh` (min)
         run: |
@@ -36,8 +37,8 @@ jobs:
           )
           echo "$name" >> $GITHUB_OUTPUT
         id: package
-        outputs:
-          package_name: ${{ steps.package.outputs.name }}
+    outputs:
+      package_name: ${{ steps.package.outputs.name }}
 
   r_test_rpm:
     if: ${{ inputs.distribution == 'rpm' }}

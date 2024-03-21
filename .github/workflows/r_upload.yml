@@ -4,22 +4,23 @@ name: Upload (reusable)
 # - Run from another workflow
 on:
   workflow_call:
-    revision:
-      description: "Revision number"
-      type: string
-      default: "0"
-    is_release:
-      description: "Uses release's nomenclature"
-      type: bool
-      default: false
-    distribution:
-      description: One of "[ 'tar', 'rpm', 'deb', 'docker' ]"
-      type: string
-      required: true
-    architecture:
-      description: One of "[ 'x64', 'arm64' ]"
-      type: string
-      required: true
+    inputs:
+      revision:
+        description: "Revision number"
+        type: string
+        default: "0"
+      is_release:
+        description: "Uses release's nomenclature"
+        type: boolean
+        default: false
+      distribution:
+        description: One of "[ 'tar', 'rpm', 'deb', 'docker' ]"
+        type: string
+        required: true
+      architecture:
+        description: One of "[ 'x64', 'arm64' ]"
+        type: string
+        required: true
     secrets:
       CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY:
         required: true
@@ -36,15 +37,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run `baptizer.sh`
-          run: |
-            name=$(bash scripts/baptizer.sh \
-              ${{ inputs.is_release && '-x' }} \
-              -a ${{ inputs.architecture }} \
-              -d ${{ inputs.distribution }}  \
-              -r ${{ inputs.revision }} \
-            )
-            echo "$name" >> $GITHUB_OUTPUT
-          id: package
+        run: |
+          name=$(bash scripts/baptizer.sh \
+            ${{ inputs.is_release && '-x' }} \
+            -a ${{ inputs.architecture }} \
+            -d ${{ inputs.distribution }}  \
+            -r ${{ inputs.revision }} \
+          )
+          echo "$name" >> $GITHUB_OUTPUT
+        id: package
 
       - name: Download artifact
         uses: actions/download-artifact@v4

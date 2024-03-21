@@ -15,20 +15,20 @@ on:
         default: "0"
       upload:
         description: "Upload ?"
-        type: bool
+        type: boolean
         default: false
       is_release:
         description: "Upload ?"
-        type: bool
+        type: boolean
         default: false
       distribution:
-        description: "[ 'tar', 'rpm', 'deb', 'docker' ]"
+        description: '[ "tar", "rpm", "deb", "docker" ]'
         type: string
-        default: "[ 'rpm', 'deb' ]"
+        default: '[ "rpm", "deb" ]'
       architecture:
-        description: "[ 'x64', 'arm64' ]"
+        description: '[ "x64", "arm64" ]'
         type: string
-        default: "[ 'x64' ]"
+        default: '[ "x64" ]'
 
 # ==========================
 # Bibliography
@@ -44,15 +44,25 @@ on:
 #   | https://docs.github.com/en/actions/learn-github-actions/expressions#example
 
 jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.setup.outputs.matrix }}
+    steps:
+      - id: setup
+        run: |
+          matrix=$(jq -cn \
+              --argjson distribution ${{ inputs.distribution }} \
+              --argjson architecture ${{ inputs.architecture }} \
+              '{distribution: $distribution, architecture: $architecture}'
+          )
+          echo "$matrix" >> $GITHUB_OUTPUT
+
   build:
+    needs: [matrix]
     strategy:
-      matrix:
-        distribution: ${{ inputs.distribution }}
-        architecture: ${{ inputs.architecture }}
-        exclude:
-          # skip arm64 until we have arm runners
-          - architecture: arm64
-        fail-fast: false
+      fail-fast: false
+      matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
     uses: ./.github/workflows/r_build.yml
     with:
       revision: ${{ github.event_name == 'push' && '0' || inputs.revision }}

@@ -60,13 +60,15 @@ jobs:
 
   build:
     needs: [matrix]
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
-    uses: ./.github/workflows/r_build.yml
-    with:
-      revision: ${{ github.event_name == 'push' && '0' || inputs.revision }}
-      upload: ${{ inputs.upload }}
-      is_release: ${{ inputs.is_release }}
-      distribution: ${{ matrix.distribution }}
-      architecture: ${{ matrix.architecture }}
+    steps:
+      - uses: ./.github/workflows/r_build.yml
+        with:
+          revision: ${{ github.event_name == 'push' && '0' || inputs.revision }}
+          upload: ${{ inputs.upload }}
+          is_release: ${{ inputs.is_release }}
+          distribution: ${{ matrix.distribution }}
+          architecture: ${{ matrix.architecture }}

@@ -50,7 +50,7 @@ jobs:
 
       - name: Run `assemble.sh`
         run: |
-          bash scripts/assemble.sh -a ${{ inputs.architecture }} -d ${{ inputs.distribution }} r ${{ inputs.revision }}
+          bash scripts/assemble.sh -a ${{ inputs.architecture }} -d ${{ inputs.distribution }} -r ${{ inputs.revision }}
 
       # The package's name is stored in artifacts/artifact_name.txt.
       - name: Set package name

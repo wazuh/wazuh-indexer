@@ -208,14 +208,12 @@ function enable_performance_analyzer_rca() {
 # Install plugins
 # ====
 function install_plugins() {
-    local version
-    version=$(bash scripts/upstream_version.sh)
     echo "Install plugins"
     maven_repo_local="$HOME/maven"
     for plugin in "${plugins[@]}"; do
-        plugin_from_maven="org.opensearch.plugin:${plugin}:${version}.0"
+        plugin_from_maven="org.opensearch.plugin:${plugin}:${VERSION}.0"
         mvn -Dmaven.repo.local="${maven_repo_local}" org.apache.maven.plugins:maven-dependency-plugin:2.1:get -DrepoUrl=https://repo1.maven.org/maven2 -Dartifact="${plugin_from_maven}:zip"
-        OPENSEARCH_PATH_CONF=$PATH_CONF "${PATH_BIN}/opensearch-plugin" install --batch --verbose "file:${maven_repo_local}/org/opensearch/plugin/${plugin}/${version}.0/${plugin}-${version}.0.zip"
+        OPENSEARCH_PATH_CONF=$PATH_CONF "${PATH_BIN}/opensearch-plugin" install --batch --verbose "file:${maven_repo_local}/org/opensearch/plugin/${plugin}/${VERSION}.0/${plugin}-${VERSION}.0.zip"
     done
 }
 
@@ -377,8 +375,8 @@ function main() {
 
     echo "Assembling wazuh-indexer for $PLATFORM-$DISTRIBUTION-$ARCHITECTURE"
 
+    VERSION=$(bash scripts/upstream_version.sh)
     ARTIFACT_BUILD_NAME=$(ls "${OUTPUT}/dist/" | grep "wazuh-indexer-min_.*$SUFFIX.*\.$EXT")
-
     ARTIFACT_PACKAGE_NAME=${ARTIFACT_BUILD_NAME/-min/}
 
     # Create temporal directory and copy the min package there for extraction

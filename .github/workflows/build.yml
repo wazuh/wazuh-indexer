@@ -12,12 +12,23 @@ on:
       revision:
         description: "Revision"
         type: string
-        required: true
         default: "0"
       upload:
         description: "Upload ?"
         type: bool
         default: false
+      is_release:
+        description: "Upload ?"
+        type: bool
+        default: false
+      distribution:
+        description: "[ 'tar', 'rpm', 'deb', 'docker' ]"
+        type: string
+        default: "[ 'rpm', 'deb' ]"
+      architecture:
+        description: "[ 'x64', 'arm64' ]"
+        type: string
+        default: "[ 'x64' ]"
 
 # ==========================
 # Bibliography
@@ -33,58 +44,19 @@ on:
 #   | https://docs.github.com/en/actions/learn-github-actions/expressions#example
 
 jobs:
-  version:
-    uses: ./.github/workflows/r_version.yml
-
-  commit_sha:
-    uses: ./.github/workflows/r_commit_sha.yml
-
   build:
-    needs: [version, commit_sha]
     strategy:
       matrix:
-        distribution: [tar, rpm, deb]
-        architecture: [x64, arm64]
-    uses: ./.github/workflows/r_build.yml
-    with:
-      architecture: ${{ matrix.architecture }}
-      distribution: ${{ matrix.distribution }}
-      revision: ${{ github.event_name == 'push' && '0' || inputs.revision }}
-      name: wazuh-indexer-min_${{ needs.version.outputs.version }}-${{ github.event_name == 'push' && '0' || inputs.revision }}-${{ matrix.architecture }}_${{ needs.commit_sha.outputs.commit_sha }}.${{ matrix.distribution }}
-
-  assemble:
-    needs: [version, commit_sha, build]
-    strategy:
-      matrix:
-        distribution: [tar, rpm, deb]
-        architecture: [x64, arm64]
+        distribution: ${{ inputs.distribution }}
+        architecture: ${{ inputs.architecture }}
         exclude:
           # skip arm64 until we have arm runners
           - architecture: arm64
-          - distribution: tar
-
-    uses: ./.github/workflows/r_assemble.yml
+        fail-fast: false
+    uses: ./.github/workflows/r_build.yml
     with:
-      architecture: ${{ matrix.architecture }}
-      distribution: ${{ matrix.distribution }}
       revision: ${{ github.event_name == 'push' && '0' || inputs.revision }}
-      min: wazuh-indexer-min_${{ needs.version.outputs.version }}-${{ github.event_name == 'push' && '0' || inputs.revision }}-${{ matrix.architecture }}_${{ needs.commit_sha.outputs.commit_sha }}.${{ matrix.distribution }}
-
-  test:
-    needs: [version, commit_sha, assemble]
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [{ suffix: "amd64", ext: "deb" }, { suffix: "x86_64", ext: "rpm" }]
-    uses: ./.github/workflows/r_test.yml
-    with:
-      package: wazuh-indexer-${{ needs.version.outputs.version }}-${{ github.event_name == 'push' && '0' || inputs.revision }}_${{ matrix.os.suffix }}_${{ needs.commit_sha.outputs.commit_sha }}.${{ matrix.os.ext }}
-  
-  upload:
-    needs: [version, commit_sha, test]
-    # Upload only on 'workflow_dispatch' event and if 'upload=true'
-    if: ${{ github.event_name == 'push' && inputs.upload }}
-    uses: ./.github/workflows/r_upload.yml
-    with:
-      package: wazuh-indexer-${{ needs.version.outputs.version }}-${{ github.event_name == 'push' && '0' || inputs.revision }}_${{ matrix.os.suffix }}_${{ needs.commit_sha.outputs.commit_sha }}.${{ matrix.os.ext }}
-    secrets: inherit
+      upload: ${{ inputs.upload }}
+      is_release: ${{ inputs.is_release }}
+      distribution: ${{ matrix.distribution }}
+      architecture: ${{ matrix.architecture }}

@@ -1,60 +1,61 @@
-name: Build (reusable)
+name: Build pipeline (reusable)
 
 # This workflow runs when any of the following occur:
 # - Run from another workflow
 on:
   workflow_call:
     inputs:
-      distribution:
-        description: "One of [ 'tar', 'rpm', 'deb' ]"
-        default: "rpm"
-        required: true
-        type: string
-      architecture:
-        description: "One of [ 'x64', 'arm64' ]"
-        default: "x64"
-        required: true
-        type: string
       revision:
-        description: "Any string or number used to extend the package's identifier."
+        description: "Revision number"
         type: string
-        required: true
         default: "0"
-      name:
-        description: "The name of the package to upload."
-        required: true
+      upload:
+        description: "Uploads artifacts"
+        type: bool
+        default: false
+      is_release:
+        description: "Uses release's nomenclature"
+        type: bool
+        default: false
+      distribution:
+        description: One of "[ 'tar', 'rpm', 'deb', 'docker' ]"
         type: string
+        required: true
+      architecture:
+        description: One of "[ 'x64', 'arm64' ]"
+        type: string
+        required: true
 
 jobs:
-  r_build:
-    runs-on: ubuntu-latest
-    # Permissions to upload the package
-    permissions:
-      packages: write
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 11
+  build_min:
+    uses: ./.github/workflows/r_build_min.yml
+    with:
+      revision: ${{ inputs.revision }}
+      distribution: ${{ matrix.distribution }}
+      architecture: ${{ matrix.architecture }}
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+  assemble:
+    needs: [build]
+    uses: ./.github/workflows/r_assemble.yml
+    with:
+      revision: ${{ inputs.revision }}
+      distribution: ${{ matrix.distribution }}
+      architecture: ${{ matrix.architecture }}
 
-      - name: Run `build.sh`
-        run: |
-          bash scripts/build.sh -a ${{ inputs.architecture }} -d ${{ inputs.distribution }} -r ${{ inputs.revision }}
+  test:
+    needs: [assemble]
+    uses: ./.github/workflows/r_test.yml
+    with:
+      revision: ${{ inputs.revision }}
+      distribution: ${{ matrix.distribution }}
+      architecture: ${{ matrix.architecture }}
 
-      # The package's name is stored in artifacts/artifact_min_name.txt.
-      - name: Set package name
-        id: get_name
-        run: |
-          echo "name=$(cat artifacts/artifact_min_name.txt)" >> $GITHUB_OUTPUT
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ inputs.name }}
-          path: artifacts/dist/${{ steps.get_name.outputs.name }}
-          if-no-files-found: error
+  upload:
+    if: ${{ inputs.upload }}
+    needs: [test]
+    uses: ./.github/workflows/r_upload.yml
+    with:
+      revision: ${{ inputs.revision }}
+      distribution: ${{ matrix.distribution }}
+      architecture: ${{ matrix.architecture }}
+    secrets: inherit

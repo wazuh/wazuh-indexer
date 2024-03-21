@@ -1,4 +1,4 @@
-name: Assemble (reusable)
+name: Build minimal packages (reusable)
 
 # This workflow runs when any of the following occur:
 # - Run from another workflow
@@ -23,7 +23,7 @@ on:
         required: true
 
 jobs:
-  r_assemble:
+  r_build_min:
     runs-on: ubuntu-latest
     # Permissions to upload the package
     permissions:
@@ -31,8 +31,15 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 11
 
-      - name: Run `baptizer.sh` (min)
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Run `baptizer.sh`
         run: |
           name=$(bash scripts/baptizer.sh -m \
             ${{ inputs.is_release && '-x' }} \
@@ -41,35 +48,14 @@ jobs:
             -r ${{ inputs.revision }} \
           )
           echo "$name" >> $GITHUB_OUTPUT
-        id: min_package
-
-      - name: Run `baptizer.sh`
-        run: |
-          name=$(bash scripts/baptizer.sh \
-            ${{ inputs.is_release && '-x' }} \
-            -a ${{ inputs.architecture }} \
-            -d ${{ inputs.distribution }}  \
-            -r ${{ inputs.revision }} \
-          )
-          echo "$name" >> $GITHUB_OUTPUT
         id: package
 
-      - name: Provision
-        if: ${{ inputs.distribution == 'deb' }}
+      - name: Run `build.sh`
         run: |
-          sudo bash scripts/provision.sh
-
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ steps.min_package.outputs.name }}
-          path: artifacts/dist
-
-      - name: Run `assemble.sh`
           mkdir -p ./artifacts/dist
           touch ./artifacts/dist/${{ steps.package.outputs.name }}
         # run: |
-        #   bash scripts/assemble.sh -a ${{ inputs.architecture }} -d ${{ inputs.distribution }} -r ${{ inputs.revision }}
+        #   bash scripts/build.sh -a ${{ inputs.architecture }} -d ${{ inputs.distribution }} -r ${{ inputs.revision }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

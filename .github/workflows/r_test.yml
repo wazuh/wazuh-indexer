@@ -5,16 +5,44 @@ name: Test (reusable)
 on:
   workflow_call:
     inputs:
-      package:
-        description: "The name of the package to download."
-        required: true
+      revision:
+        description: "Revision number"
         type: string
+        default: "0"
+      is_release:
+        description: "Uses release's nomenclature"
+        type: bool
+        default: false
+      distribution:
+        description: One of "[ 'tar', 'rpm', 'deb', 'docker' ]"
+        type: string
+        required: true
+      architecture:
+        description: One of "[ 'x64', 'arm64' ]"
+        type: string
+        required: true
 
 jobs:
-  r_test_rpm:
-    if: ${{ endsWith(inputs.package, 'rpm') }}
+  setup:
     runs-on: ubuntu-latest
-    # Permissions to upload the package
+      - uses: actions/checkout@v4
+      - name: Run `baptizer.sh` (min)
+        run: |
+          name=$(bash scripts/baptizer.sh \
+            ${{ inputs.is_release && '-x' }} \
+            -a ${{ inputs.architecture }} \
+            -d ${{ inputs.distribution }}  \
+            -r ${{ inputs.revision }} \
+          )
+          echo "$name" >> $GITHUB_OUTPUT
+        id: package
+        outputs:
+          package_name: ${{ steps.package.outputs.name }}
+
+  r_test_rpm:
+    if: ${{ inputs.distribution == 'rpm' }}
+    runs-on: ubuntu-latest
+    # Permissions to download the package
     permissions:
       packages: read
       contents: read
@@ -22,7 +50,7 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: ${{ inputs.package }}
+          name: ${{ needs.setup.outputs.package_name }}
           path: artifacts/dist
 
       - name: Install package
@@ -31,12 +59,12 @@ jobs:
           image: redhat/ubi9:latest
           options: -v ${{ github.workspace }}/artifacts/dist:/artifacts/dist
           run: |
-            yum localinstall "/artifacts/dist/${{ inputs.package }}" -y
+            yum localinstall "/artifacts/dist/${{ needs.setup.outputs.package_name }}" -y
 
   r_test_deb:
-    if: ${{ endsWith(inputs.package, 'deb') }}
+    if: ${{ inputs.distribution == 'deb' }}
     runs-on: ubuntu-latest
-    # Permissions to upload the package
+    # Permissions to download the package
     permissions:
       packages: read
       contents: read
@@ -44,12 +72,12 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: ${{ inputs.package }}
+          name: ${{ needs.setup.outputs.package_name }}
           path: artifacts/dist
 
       - name: Install package
         run: |
-          sudo dpkg -i "artifacts/dist/${{ inputs.package }}"
+          sudo dpkg -i "artifacts/dist/${{ needs.setup.outputs.package_name }}"
 
       - uses: actions/checkout@v4
       - name: Generate and deploy certificates

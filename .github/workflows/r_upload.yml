@@ -4,11 +4,22 @@ name: Upload (reusable)
 # - Run from another workflow
 on:
   workflow_call:
-    inputs:
-      package:
-        description: "The name of the package to upload to Wazuh's S3 development artifactory bucket."
-        required: true
-        type: string
+    revision:
+      description: "Revision number"
+      type: string
+      default: "0"
+    is_release:
+      description: "Uses release's nomenclature"
+      type: bool
+      default: false
+    distribution:
+      description: One of "[ 'tar', 'rpm', 'deb', 'docker' ]"
+      type: string
+      required: true
+    architecture:
+      description: One of "[ 'x64', 'arm64' ]"
+      type: string
+      required: true
     secrets:
       CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY:
         required: true
@@ -23,10 +34,22 @@ jobs:
       packages: read
       contents: read
     steps:
+      - uses: actions/checkout@v4
+      - name: Run `baptizer.sh`
+          run: |
+            name=$(bash scripts/baptizer.sh \
+              ${{ inputs.is_release && '-x' }} \
+              -a ${{ inputs.architecture }} \
+              -d ${{ inputs.distribution }}  \
+              -r ${{ inputs.revision }} \
+            )
+            echo "$name" >> $GITHUB_OUTPUT
+          id: package
+
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: ${{ inputs.package }}
+          name: ${{ steps.package.outputs.name }}
           path: artifacts/dist
 
       - name: Set up AWS CLI
@@ -38,4 +61,4 @@ jobs:
 
       - name: Upload package to S3
         run: |
-          aws s3 cp artifacts/dist/${{ inputs.package }} s3://packages-dev.internal.wazuh.com/development/wazuh/4.x/main/packages/
+          aws s3 cp artifacts/dist/${{ steps.package.outputs.name }} s3://packages-dev.internal.wazuh.com/development/wazuh/4.x/main/packages/

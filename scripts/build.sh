@@ -18,7 +18,7 @@ function usage() {
     echo -e "-p PLATFORM\t[Optional] Platform, default is 'uname -s'."
     echo -e "-a ARCHITECTURE\t[Optional] Build architecture, default is 'uname -m'."
     echo -e "-d DISTRIBUTION\t[Optional] Distribution, default is 'tar'."
-    echo -e "-d REVISION\t[Optional] Package revision, default is '1'."
+    echo -e "-r REVISION\t[Optional] Package revision, default is '0'."
     echo -e "-o OUTPUT\t[Optional] Output path, default is 'artifacts'."
     echo -e "-h help"
 }
@@ -66,6 +66,7 @@ while getopts ":h:q:s:o:p:a:d:r:b:" arg; do
 done
 
 [ -z "$OUTPUT" ] && OUTPUT=artifacts
+[ -z "$SNAPSHOT" ] && SNAPSHOT=false
 
 echo "Creating output directory $OUTPUT/maven/org/opensearch if it doesn't already exist"
 mkdir -p "$OUTPUT/maven/org/opensearch"

@@ -13,7 +13,7 @@ on:
         description: "Revision"
         type: string
         required: true
-        default: "1"
+        default: "0"
       upload:
         description: "Upload ?"
         type: bool
@@ -49,8 +49,8 @@ jobs:
     with:
       architecture: ${{ matrix.architecture }}
       distribution: ${{ matrix.distribution }}
-      revision: ${{ github.event_name == 'push' && '1' || inputs.revision }}
-      name: wazuh-indexer-min_${{ needs.version.outputs.version }}-${{ github.event_name == 'push' && '1' || inputs.revision }}-${{ matrix.architecture }}_${{ needs.commit_sha.outputs.commit_sha }}.${{ matrix.distribution }}
+      revision: ${{ github.event_name == 'push' && '0' || inputs.revision }}
+      name: wazuh-indexer-min_${{ needs.version.outputs.version }}-${{ github.event_name == 'push' && '0' || inputs.revision }}-${{ matrix.architecture }}_${{ needs.commit_sha.outputs.commit_sha }}.${{ matrix.distribution }}
 
   assemble:
     needs: [version, commit_sha, build]
@@ -67,7 +67,8 @@ jobs:
     with:
       architecture: ${{ matrix.architecture }}
       distribution: ${{ matrix.distribution }}
-      min: wazuh-indexer-min_${{ needs.version.outputs.version }}-${{ github.event_name == 'push' && '1' || inputs.revision }}-${{ matrix.architecture }}_${{ needs.commit_sha.outputs.commit_sha }}.${{ matrix.distribution }}
+      revision: ${{ github.event_name == 'push' && '0' || inputs.revision }}
+      min: wazuh-indexer-min_${{ needs.version.outputs.version }}-${{ github.event_name == 'push' && '0' || inputs.revision }}-${{ matrix.architecture }}_${{ needs.commit_sha.outputs.commit_sha }}.${{ matrix.distribution }}
 
   test:
     needs: [version, commit_sha, assemble]
@@ -77,7 +78,7 @@ jobs:
         os: [{ suffix: "amd64", ext: "deb" }, { suffix: "x86_64", ext: "rpm" }]
     uses: ./.github/workflows/r_test.yml
     with:
-      package: wazuh-indexer-${{ needs.version.outputs.version }}-${{ github.event_name == 'push' && '1' || inputs.revision }}_${{ matrix.os.suffix }}_${{ needs.commit_sha.outputs.commit_sha }}.${{ matrix.os.ext }}
+      package: wazuh-indexer-${{ needs.version.outputs.version }}-${{ github.event_name == 'push' && '0' || inputs.revision }}_${{ matrix.os.suffix }}_${{ needs.commit_sha.outputs.commit_sha }}.${{ matrix.os.ext }}
   
   upload:
     needs: [version, commit_sha, test]
@@ -85,5 +86,5 @@ jobs:
     if: ${{ github.event_name == 'push' && inputs.upload }}
     uses: ./.github/workflows/r_upload.yml
     with:
-      package: wazuh-indexer-${{ needs.version.outputs.version }}-${{ github.event_name == 'push' && '1' || inputs.revision }}_${{ matrix.os.suffix }}_${{ needs.commit_sha.outputs.commit_sha }}.${{ matrix.os.ext }}
+      package: wazuh-indexer-${{ needs.version.outputs.version }}-${{ github.event_name == 'push' && '0' || inputs.revision }}_${{ matrix.os.suffix }}_${{ needs.commit_sha.outputs.commit_sha }}.${{ matrix.os.ext }}
     secrets: inherit

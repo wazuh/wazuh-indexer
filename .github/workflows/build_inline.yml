@@ -55,8 +55,6 @@ on:
         required: true
         description: "AWS user secret key"
 
-env:
-  TEST: true
 
 # ==========================
 # Bibliography

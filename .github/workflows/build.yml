@@ -75,7 +75,7 @@ jobs:
               --argjson architecture '${{ inputs.architecture }}' \
               '{distribution: $distribution, architecture: $architecture}'
           )
-          echo "$matrix" >> $GITHUB_OUTPUT
+          echo "matrix=$matrix" >> $GITHUB_OUTPUT
 
   build:
     name: Run build pipeline

@@ -1,0 +1,141 @@
+name: Build packages (on demand)
+
+# This workflow runs when any of the following occur:
+# - Run manually
+on:
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: "Revision"
+        type: string
+        default: "0"
+      upload:
+        description: "Upload ?"
+        type: boolean
+        default: false
+      is_release:
+        description: "Is release ?"
+        type: boolean
+        default: false
+      distribution:
+        description: '[ "tar", "rpm", "deb", "docker" ]'
+        type: string
+        default: '[ "rpm", "deb" ]'
+      architecture:
+        description: '[ "x64", "arm64" ]'
+        type: string
+        default: '[ "x64" ]'
+  workflow_call:
+    inputs:
+      revision:
+        description: "Revision"
+        type: string
+        default: "0"
+      upload:
+        description: "Upload ?"
+        type: boolean
+        default: false
+      is_release:
+        description: "Is release ?"
+        type: boolean
+        default: false
+      distribution:
+        description: '[ "tar", "rpm", "deb", "docker" ]'
+        type: string
+        default: '[ "rpm", "deb" ]'
+      architecture:
+        description: '[ "x64", "arm64" ]'
+        type: string
+        default: '[ "x64" ]'
+
+# ==========================
+# Bibliography
+# ==========================
+#
+# * Reusable workflows: limitations
+#   | https://docs.github.com/en/actions/using-workflows/reusing-workflows#limitations
+# * Using matrix in reusable workflows:
+#   | https://docs.github.com/en/actions/using-workflows/reusing-workflows#using-a-matrix-strategy-with-a-reusable-workflow
+# * Reading input from the called workflow
+#   | https://docs.github.com/en/enterprise-cloud@latest/actions/using-workflows/workflow-syntax-for-github-actions#onworkflow_callinputs
+# * Ternary operator
+#   | https://docs.github.com/en/actions/learn-github-actions/expressions#example
+
+jobs:
+  matrix:
+    name: Set matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.setup.outputs.matrix }}
+    steps:
+      - id: setup
+        run: |
+          matrix=$(jq -cn \
+              --argjson distribution '${{ inputs.distribution }}' \
+              --argjson architecture '${{ inputs.architecture }}' \
+              '{distribution: $distribution, architecture: $architecture}'
+          )
+          echo "matrix=$matrix" >> $GITHUB_OUTPUT
+
+  build:
+    name: Run build pipeline
+    needs: [matrix]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.matrix.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 11
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Provision
+        if: ${{ matrix.distribution == 'deb' }}
+        run: |
+          sudo bash scripts/provision.sh
+
+      - name: Run `baptizer.sh` (min)
+        run: |
+          name=$(bash scripts/baptizer.sh -m \
+            ${{ inputs.is_release && '-x' }} \
+            -a ${{ matrix.architecture }} \
+            -d ${{ matrix.distribution }}  \
+            -r ${{ inputs.revision }} \
+          )
+          echo "$name" >> $GITHUB_OUTPUT
+        id: min_package
+
+      - name: Run `baptizer.sh`
+        run: |
+          name=$(bash scripts/baptizer.sh \
+            ${{ inputs.is_release && '-x' }} \
+            -a ${{ matrix.architecture }} \
+            -d ${{ matrix.distribution }}  \
+            -r ${{ inputs.revision }} \
+          )
+          echo "$name" >> $GITHUB_OUTPUT
+        id: package
+
+      - name: Run `build.sh`
+        run: |
+          mkdir -p ./artifacts/dist
+          touch ./artifacts/dist/${{ steps.min_package.outputs.name }}
+
+      - name: Run `assemble.sh`
+        run: |
+          mkdir -p ./artifacts/dist
+          touch ./artifacts/dist/${{ steps.package.outputs.name }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.package.outputs.name }}
+          path: artifacts/dist/${{ steps.package.outputs.name }}
+          if-no-files-found: error
+
+        

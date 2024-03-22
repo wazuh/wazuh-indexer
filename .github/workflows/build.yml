@@ -40,7 +40,7 @@ on:
         type: boolean
         default: false
       distribution:
-        description: '[ "tar", "rpm", "deb", "docker" ]'
+        description: '[ "tar", "rpm", "deb" ]'
         type: string
         default: '[ "rpm", "deb" ]'
       architecture:

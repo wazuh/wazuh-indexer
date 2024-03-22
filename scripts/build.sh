@@ -9,6 +9,9 @@
 
 set -ex
 
+# ====
+# Usage
+# ====
 function usage() {
     echo "Usage: $0 [args]"
     echo ""
@@ -18,97 +21,67 @@ function usage() {
     echo -e "-p PLATFORM\t[Optional] Platform, default is 'uname -s'."
     echo -e "-a ARCHITECTURE\t[Optional] Build architecture, default is 'uname -m'."
     echo -e "-d DISTRIBUTION\t[Optional] Distribution, default is 'tar'."
-    echo -e "-r REVISION\t[Optional] Package revision, default is '0'."
+    echo -e "-b BRANCH\t[Optional] Branch from wazuh/wazuh to download the index template from, default is '<VERSION'"
+    echo -e "-n NAME\t[optional] Package name, default is set automatically."
     echo -e "-o OUTPUT\t[Optional] Output path, default is 'artifacts'."
     echo -e "-h help"
 }
 
-while getopts ":h:q:s:o:p:a:d:r:b:" arg; do
-    case $arg in
-    h)
-        usage
-        exit 1
-        ;;
-    q)
-        QUALIFIER=$OPTARG
-        ;;
-    s)
-        SNAPSHOT=$OPTARG
-        ;;
-    o)
-        OUTPUT=$OPTARG
-        ;;
-    p)
-        PLATFORM=$OPTARG
-        ;;
-    a)
-        ARCHITECTURE=$OPTARG
-        ;;
-    d)
-        DISTRIBUTION=$OPTARG
-        ;;
-    r)
-        REVISION=$OPTARG
-        ;;
-    b)
-        BRANCH=$OPTARG
-        ;;
-    :)
-        echo "Error: -${OPTARG} requires an argument"
-        usage
-        exit 1
-        ;;
-    ?)
-        echo "Invalid option: -${arg}"
-        exit 1
-        ;;
-    esac
-done
-
-[ -z "$OUTPUT" ] && OUTPUT=artifacts
-[ -z "$SNAPSHOT" ] && SNAPSHOT=false
-
-echo "Creating output directory $OUTPUT/maven/org/opensearch if it doesn't already exist"
-mkdir -p "$OUTPUT/maven/org/opensearch"
-
-# Build project and publish to maven local.
-echo "Building and publishing OpenSearch project to Maven Local"
-./gradlew publishToMavenLocal -Dbuild.snapshot="$SNAPSHOT" -Dbuild.version_qualifier="$QUALIFIER"
-
-# Publish to existing test repo, using this to stage release versions of the artifacts that can be released from the same build.
-echo "Publishing OpenSearch to Test Repository"
-./gradlew publishNebulaPublicationToTestRepository -Dbuild.snapshot="$SNAPSHOT" -Dbuild.version_qualifier="$QUALIFIER"
-
-# Copy maven publications to be promoted
-echo "Copying Maven publications to $OUTPUT/maven/org"
-cp -r ./build/local-test-repo/org/opensearch "${OUTPUT}"/maven/org
-
-# Assemble distribution artifact
-# see https://github.com/opensearch-project/OpenSearch/blob/main/settings.gradle#L34 for other distribution targets
-
-[ -z "$PLATFORM" ] && PLATFORM=$(uname -s | awk '{print tolower($0)}')
-[ -z "$ARCHITECTURE" ] && ARCHITECTURE=$(uname -m)
-[ -z "$DISTRIBUTION" ] && DISTRIBUTION="tar"
-[ -z "$REVISION" ] && REVISION="1"
-[ -z "$BRANCH" ] && BRANCH="master"
-
 # ====
-# Function to download the alerts template
+# Parse arguments
 # ====
-function download_template() {
-    echo "Downloading wazuh-template.json"
-    local download_url="https://raw.githubusercontent.com/wazuh/wazuh/${BRANCH}/extensions/elasticsearch/7.x/wazuh-template.json"
+function parse_args() {
 
-    if ! curl -s "${download_url}" -o distribution/src/config/wazuh-template.json; then
-        echo "Unable to download wazuh-template.json"
-        return 1
-    fi
+    while getopts ":h:q:s:o:p:a:d:r:b:n:" arg; do
+        case $arg in
+        h)
+            usage
+            exit 1
+            ;;
+        q)
+            QUALIFIER=$OPTARG
+            ;;
+        s)
+            SNAPSHOT=$OPTARG
+            ;;
+        o)
+            OUTPUT=$OPTARG
+            ;;
+        p)
+            PLATFORM=$OPTARG
+            ;;
+        a)
+            ARCHITECTURE=$OPTARG
+            ;;
+        d)
+            DISTRIBUTION=$OPTARG
+            ;;
+        n)
+            NAME=$OPTARG
+            ;;
+        b)
+            BRANCH=$OPTARG
+            ;;
+        :)
+            echo "Error: -${OPTARG} requires an argument"
+            usage
+            exit 1
+            ;;
+        ?)
+            echo "Invalid option: -${arg}"
+            exit 1
+            ;;
+        esac
+    done
 
-    echo "Successfully downloaded wazuh-template.json"
-    return 0
-}
+    [ -z "$OUTPUT" ] && OUTPUT=artifacts
+    [ -z "$SNAPSHOT" ] && SNAPSHOT=false
+    [ -z "$PLATFORM" ] && PLATFORM=$(uname -s | awk '{print tolower($0)}')
+    [ -z "$ARCHITECTURE" ] && ARCHITECTURE=$(uname -m)
+    [ -z "$DISTRIBUTION" ] && DISTRIBUTION="tar"
+    [ -z "$BRANCH" ] && BRANCH=$(<VERSION)
 
-case $PLATFORM-$DISTRIBUTION-$ARCHITECTURE in
+    case $PLATFORM-$DISTRIBUTION-$ARCHITECTURE in
     linux-tar-x64 | darwin-tar-x64)
         PACKAGE="tar"
         EXT="tar.gz"
@@ -169,26 +142,68 @@ case $PLATFORM-$DISTRIBUTION-$ARCHITECTURE in
         echo "Unsupported platform-distribution-architecture combination: $PLATFORM-$DISTRIBUTION-$ARCHITECTURE"
         exit 1
         ;;
-esac
+    esac
+}
 
-echo "Building OpenSearch for $PLATFORM-$DISTRIBUTION-$ARCHITECTURE"
+# ====
+# Function to download the alerts template
+# ====
+function download_template() {
+    echo "Downloading wazuh-template.json"
+    local download_url="https://raw.githubusercontent.com/wazuh/wazuh/${BRANCH}/extensions/elasticsearch/7.x/wazuh-template.json"
 
-if ! download_template; then
-    exit 1
-fi
+    if ! curl -s "${download_url}" -o distribution/src/config/wazuh-template.json; then
+        echo "Unable to download wazuh-template.json"
+        return 1
+    fi
 
-./gradlew ":distribution:$TYPE:$TARGET:assemble" -Dbuild.snapshot="$SNAPSHOT" -Dbuild.version_qualifier="$QUALIFIER"
+    echo "Successfully downloaded wazuh-template.json"
+    return 0
+}
 
-# Copy artifact to dist folder in bundle build output
-echo "Copying artifact to ${OUTPUT}/dist"
+# ====
+# Build function
+# ====
+function build() {
+    echo "Creating output directory $OUTPUT/maven/org/opensearch if it doesn't already exist"
+    mkdir -p "$OUTPUT/maven/org/opensearch"
 
-ARTIFACT_BUILD_NAME=$(ls "distribution/$TYPE/$TARGET/build/distributions/" | grep "wazuh-indexer-min.*$SUFFIX.$EXT")
-GIT_COMMIT=$(git rev-parse --short HEAD)
-WI_VERSION=$(<VERSION)
-ARTIFACT_PACKAGE_NAME=wazuh-indexer-min_"$WI_VERSION"-"$REVISION"_"$SUFFIX"_"$GIT_COMMIT"."$EXT"
+    # Build project and publish to maven local.
+    echo "Building and publishing OpenSearch project to Maven Local"
+    ./gradlew publishToMavenLocal -Dbuild.snapshot="$SNAPSHOT" -Dbuild.version_qualifier="$QUALIFIER"
 
-# Used by the GH workflow to upload the artifact
-echo "$ARTIFACT_PACKAGE_NAME" >"$OUTPUT/artifact_min_name.txt"
+    # Publish to existing test repo, using this to stage release versions of the artifacts that can be released from the same build.
+    echo "Publishing OpenSearch to Test Repository"
+    ./gradlew publishNebulaPublicationToTestRepository -Dbuild.snapshot="$SNAPSHOT" -Dbuild.version_qualifier="$QUALIFIER"
 
-mkdir -p "${OUTPUT}/dist"
-cp "distribution/$TYPE/$TARGET/build/distributions/$ARTIFACT_BUILD_NAME" "${OUTPUT}/dist/$ARTIFACT_PACKAGE_NAME"
+    # Copy maven publications to be promoted
+    echo "Copying Maven publications to $OUTPUT/maven/org"
+    cp -r ./build/local-test-repo/org/opensearch "${OUTPUT}"/maven/org
+
+    # Assemble distribution artifact
+    # see https://github.com/opensearch-project/OpenSearch/blob/main/settings.gradle#L34 for other distribution targets
+    ./gradlew ":distribution:$TYPE:$TARGET:assemble" -Dbuild.snapshot="$SNAPSHOT" -Dbuild.version_qualifier="$QUALIFIER"
+}
+
+# ====
+# Main function
+# ====
+function main() {
+    parse_args "${@}"
+
+    echo "Building OpenSearch for $PLATFORM-$DISTRIBUTION-$ARCHITECTURE"
+    if ! download_template; then
+        exit 1
+    fi
+    build
+
+    # Copy artifact to dist folder in bundle build output
+    echo "Copying artifact to ${OUTPUT}/dist"
+    local build_name
+    build_name=$(ls "distribution/$TYPE/$TARGET/build/distributions/" | grep "wazuh-indexer-min.*$SUFFIX.$EXT")
+    local package_name=${NAME:-$build_name}
+    mkdir -p "${OUTPUT}/dist"
+    cp "distribution/$TYPE/$TARGET/build/distributions/$build_name" "${OUTPUT}/dist/$package_name"
+}
+
+main "${@}"

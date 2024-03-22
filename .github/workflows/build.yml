@@ -1,12 +1,8 @@
-name: Build packages
+name: Build packages (on demand)
 
 # This workflow runs when any of the following occur:
 # - Run manually
 on:
-  push:
-    # Sequence of patterns matched against refs/heads
-    branches:
-      - "ci/*"
   workflow_dispatch:
     inputs:
       revision:
@@ -18,7 +14,29 @@ on:
         type: boolean
         default: false
       is_release:
+        description: "Is release ?"
+        type: boolean
+        default: false
+      distribution:
+        description: '[ "tar", "rpm", "deb", "docker" ]'
+        type: string
+        default: '[ "rpm", "deb" ]'
+      architecture:
+        description: '[ "x64", "arm64" ]'
+        type: string
+        default: '[ "x64" ]'
+  workflow_call:
+    inputs:
+      revision:
+        description: "Revision"
+        type: string
+        default: "0"
+      upload:
         description: "Upload ?"
+        type: boolean
+        default: false
+      is_release:
+        description: "Is release ?"
         type: boolean
         default: false
       distribution:
@@ -45,6 +63,7 @@ on:
 
 jobs:
   matrix:
+    name: Set matrix
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.setup.outputs.matrix }}
@@ -59,6 +78,7 @@ jobs:
           echo "$matrix" >> $GITHUB_OUTPUT
 
   build:
+    name: Run build pipeline
     needs: [matrix]
     runs-on: ubuntu-latest
     strategy:

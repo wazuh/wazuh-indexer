@@ -1,0 +1,11 @@
+name: Build packages (on push )
+
+on:
+  push:
+    # Sequence of patterns matched against refs/heads
+    branches:
+      - "ci/*"
+
+jobs:
+  call-build-workflow:
+    uses: ./build.yml

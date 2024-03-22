@@ -71,8 +71,8 @@ jobs:
       - id: setup
         run: |
           matrix=$(jq -cn \
-              --argjson distribution ${{ inputs.distribution }} \
-              --argjson architecture ${{ inputs.architecture }} \
+              --argjson distribution '${{ inputs.distribution }}' \
+              --argjson architecture '${{ inputs.architecture }}' \
               '{distribution: $distribution, architecture: $architecture}'
           )
           echo "$matrix" >> $GITHUB_OUTPUT

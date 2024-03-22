@@ -107,7 +107,7 @@ jobs:
             -d ${{ matrix.distribution }}  \
             -r ${{ inputs.revision }} \
           )
-          echo "$name" >> $GITHUB_OUTPUT
+          echo "name=$name" >> $GITHUB_OUTPUT
         id: min_package
 
       - name: Run `baptizer.sh`
@@ -118,7 +118,7 @@ jobs:
             -d ${{ matrix.distribution }}  \
             -r ${{ inputs.revision }} \
           )
-          echo "$name" >> $GITHUB_OUTPUT
+          echo "name=$name" >> $GITHUB_OUTPUT
         id: package
 
       - name: Run `build.sh`
@@ -137,5 +137,3 @@ jobs:
           name: ${{ steps.package.outputs.name }}
           path: artifacts/dist/${{ steps.package.outputs.name }}
           if-no-files-found: error
-
-        

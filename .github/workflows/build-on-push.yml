@@ -9,3 +9,4 @@ on:
 jobs:
   call-build-workflow:
     uses: ./.github/workflows/build_inline.yml
+    secrets: inherit

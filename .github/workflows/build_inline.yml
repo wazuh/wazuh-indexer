@@ -47,6 +47,13 @@ on:
         description: '[ "x64", "arm64" ]'
         type: string
         default: '[ "x64" ]'
+    secrets:
+      CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY:
+        required: true
+        description: "AWS user access key"
+      CI_INTERNAL_DEVELOPMENT_BUCKET_USER_SECRET_KEY:
+        required: true
+        description: "AWS user secret key"
 
 # ==========================
 # Bibliography
@@ -63,7 +70,7 @@ on:
 
 jobs:
   matrix:
-    name: Set matrix
+    name: Set up matrix
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.setup.outputs.matrix }}
@@ -78,7 +85,6 @@ jobs:
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
 
   build:
-    name: Run build pipeline
     needs: [matrix]
     runs-on: ubuntu-latest
     strategy:
@@ -99,17 +105,6 @@ jobs:
         run: |
           sudo bash scripts/provision.sh
 
-      - name: Run `baptizer.sh` (min)
-        run: |
-          name=$(bash scripts/baptizer.sh -m \
-            -a ${{ matrix.architecture }} \
-            -d ${{ matrix.distribution }}  \
-            -r ${{ inputs.revision }} \
-            ${{ inputs.is_release && '-x' || '' }} \
-          )
-          echo "name=$name" >> $GITHUB_OUTPUT
-        id: min_package
-
       - name: Run `baptizer.sh`
         run: |
           name=$(bash scripts/baptizer.sh \
@@ -123,13 +118,31 @@ jobs:
 
       - name: Run `build.sh`
         run: |
-          mkdir -p ./artifacts/dist
-          touch ./artifacts/dist/${{ steps.min_package.outputs.name }}
+          bash scripts/build.sh \
+            -a ${{ matrix.architecture }} \
+            -d ${{ matrix.distribution }} \
+            -r ${{ inputs.revision }}
 
       - name: Run `assemble.sh`
         run: |
-          mkdir -p ./artifacts/dist
-          touch ./artifacts/dist/${{ steps.package.outputs.name }}
+          bash scripts/assemble.sh \
+            -a ${{ matrix.architecture }} \
+            -d ${{ matrix.distribution }} \
+            -r ${{ inputs.revision }}
+
+      - name: Test RPM package
+        if: ${{ matrix.distribution == 'rpm' }}
+        uses: addnab/docker-run-action@v3
+        with:
+          image: redhat/ubi9:latest
+          options: -v ${{ github.workspace }}/artifacts/dist:/artifacts/dist
+          run: |
+            yum localinstall "/artifacts/dist/${{ steps.package.outputs.name }}" -y
+
+      - name: Test DEB package
+        if: ${{ matrix.distribution == 'deb' }}
+        run: |
+          sudo dpkg -i "artifacts/dist/${{ steps.package.outputs.name }}" -y
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -137,3 +150,16 @@ jobs:
           name: ${{ steps.package.outputs.name }}
           path: artifacts/dist/${{ steps.package.outputs.name }}
           if-no-files-found: error
+
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.CI_INTERNAL_DEVELOPMENT_BUCKET_USER_SECRET_KEY }}
+          aws-region: us-east-1
+
+      - name: Upload package to S3
+        run: |
+          src="artifacts/dist/${{ steps.package.outputs.name }}"
+          dest="s3://packages-dev.internal.wazuh.com/development/wazuh/4.x/main/packages/"
+          aws s3 cp "$src" "$dest"

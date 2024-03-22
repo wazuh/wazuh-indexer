@@ -102,10 +102,10 @@ jobs:
       - name: Run `baptizer.sh` (min)
         run: |
           name=$(bash scripts/baptizer.sh -m \
-            ${{ inputs.is_release && '-x' }} \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }}  \
             -r ${{ inputs.revision }} \
+            ${{ inputs.is_release && '-x' || '' }} \
           )
           echo "name=$name" >> $GITHUB_OUTPUT
         id: min_package
@@ -113,10 +113,10 @@ jobs:
       - name: Run `baptizer.sh`
         run: |
           name=$(bash scripts/baptizer.sh \
-            ${{ inputs.is_release && '-x' }} \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }}  \
             -r ${{ inputs.revision }} \
+            ${{ inputs.is_release && '-x' || '' }} \
           )
           echo "name=$name" >> $GITHUB_OUTPUT
         id: package

@@ -285,7 +285,7 @@ function assemble_rpm() {
     version=$(cat ./usr/share/wazuh-indexer/VERSION)
 
     # Install plugins
-    # install_plugins
+    install_plugins
     enable_performance_analyzer_rca ${src_path}
     # Swap configuration files
     add_configuration_files

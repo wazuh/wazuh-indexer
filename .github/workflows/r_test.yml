@@ -41,6 +41,7 @@ jobs:
       package_name: ${{ steps.package.outputs.name }}
 
   r_test_rpm:
+    needs: [setup]
     if: ${{ inputs.distribution == 'rpm' }}
     runs-on: ubuntu-latest
     # Permissions to download the package
@@ -63,6 +64,7 @@ jobs:
             yum localinstall "/artifacts/dist/${{ needs.setup.outputs.package_name }}" -y
 
   r_test_deb:
+    needs: [setup]
     if: ${{ inputs.distribution == 'deb' }}
     runs-on: ubuntu-latest
     # Permissions to download the package

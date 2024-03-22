@@ -31,24 +31,24 @@ jobs:
     uses: ./.github/workflows/r_build_min.yml
     with:
       revision: ${{ inputs.revision }}
-      distribution: ${{ matrix.distribution }}
-      architecture: ${{ matrix.architecture }}
+      distribution: ${{ inputs.distribution }}
+      architecture: ${{ inputs.architecture }}
 
   assemble:
     needs: [ build_min ]
     uses: ./.github/workflows/r_assemble.yml
     with:
       revision: ${{ inputs.revision }}
-      distribution: ${{ matrix.distribution }}
-      architecture: ${{ matrix.architecture }}
+      distribution: ${{ inputs.distribution }}
+      architecture: ${{ inputs.architecture }}
 
   test:
     needs: [ assemble ]
     uses: ./.github/workflows/r_test.yml
     with:
       revision: ${{ inputs.revision }}
-      distribution: ${{ matrix.distribution }}
-      architecture: ${{ matrix.architecture }}
+      distribution: ${{ inputs.distribution }}
+      architecture: ${{ inputs.architecture }}
 
   upload:
     if: ${{ inputs.upload }}
@@ -56,6 +56,6 @@ jobs:
     uses: ./.github/workflows/r_upload.yml
     with:
       revision: ${{ inputs.revision }}
-      distribution: ${{ matrix.distribution }}
-      architecture: ${{ matrix.architecture }}
+      distribution: ${{ inputs.distribution }}
+      architecture: ${{ inputs.architecture }}
     secrets: inherit

@@ -83,7 +83,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
+      matrix: ${{ fromJson(needs.matrix.outputs.matrix) }}
     steps:
       - uses: ./.github/workflows/r_build.yml
         with:

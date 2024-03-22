@@ -66,6 +66,7 @@ jobs:
           path: artifacts/dist
 
       - name: Run `assemble.sh`
+        run: |
           mkdir -p ./artifacts/dist
           touch ./artifacts/dist/${{ steps.package.outputs.name }}
         # run: |

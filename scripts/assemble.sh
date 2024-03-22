@@ -285,7 +285,7 @@ function assemble_rpm() {
     version=$(cat ./usr/share/wazuh-indexer/VERSION)
 
     # Install plugins
-    install_plugins
+    # install_plugins
     enable_performance_analyzer_rca ${src_path}
     # Swap configuration files
     add_configuration_files
@@ -305,7 +305,7 @@ function assemble_rpm() {
 
     # Move to the root folder, copy the package and clean.
     cd ../../..
-    package_name="wazuh-indexer-${version}-1.${SUFFIX}.${EXT}"
+    package_name="wazuh-indexer-${version}-${REVISION}.${SUFFIX}.${EXT}"
     cp "${TMP_DIR}/RPMS/${SUFFIX}/${package_name}" "${OUTPUT}/dist/$ARTIFACT_PACKAGE_NAME"
 
     clean

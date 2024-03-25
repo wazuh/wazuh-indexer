@@ -108,6 +108,17 @@ jobs:
 
       - name: Run `baptizer.sh`
         run: |
+          name=$(bash scripts/baptizer.sh -m \
+            -a ${{ matrix.architecture }} \
+            -d ${{ matrix.distribution }}  \
+            -r ${{ inputs.revision }} \
+            ${{ inputs.is_release && '-x' || '' }} \
+          )
+          echo "name=$name" >> $GITHUB_OUTPUT
+        id: min_package
+
+      - name: Run `baptizer.sh`
+        run: |
           name=$(bash scripts/baptizer.sh \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }}  \
@@ -122,7 +133,7 @@ jobs:
           bash scripts/build.sh \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }} \
-            -n ${{ steps.package.outputs.name }}
+            -n ${{ steps.min_package.outputs.name }}
 
       - name: Run `assemble.sh`
         run: |

@@ -43,6 +43,7 @@ function parse_args() {
             ;;
         x)
             IS_RELEASE=true
+            REVISION="1"
             ;;
         :)
             echo "Error: -${OPTARG} requires an argument"
@@ -112,6 +113,9 @@ function get_release_name() {
         PACKAGE_NAME=wazuh-indexer-"$VERSION"-"$REVISION"."$SUFFIX"."$EXT"
     else
         PACKAGE_NAME=wazuh-indexer_"$VERSION"-"$REVISION"_"$SUFFIX"."$EXT"
+    fi
+    if "$IS_MIN"; then
+        PACKAGE_NAME=${PACKAGE_NAME/wazuh-indexer/wazuh-indexer-min}
     fi
 }
 

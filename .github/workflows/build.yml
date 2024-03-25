@@ -122,7 +122,7 @@ jobs:
           bash scripts/build.sh \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }} \
-            -r ${{ inputs.revision }}
+            -n ${{ steps.package.outputs.name }}
 
       - name: Run `assemble.sh`
         run: |

@@ -393,6 +393,9 @@ function main() {
         assemble_deb
         ;;
     esac
+
+    # Create checksum
+    sha512sum "${OUTPUT}/dist/$ARTIFACT_PACKAGE_NAME" > "${OUTPUT}/dist/$ARTIFACT_PACKAGE_NAME".sha512
 }
 
 main "${@}"

@@ -43,7 +43,7 @@ function parse_args() {
             ;;
         x)
             IS_RELEASE=true
-            REVISION="1"
+            # REVISION="1"
             ;;
         :)
             echo "Error: -${OPTARG} requires an argument"

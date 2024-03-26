@@ -13,8 +13,8 @@ on:
         description: "Upload ?"
         type: boolean
         default: false
-      is_release:
-        description: "Is release ?"
+      is_stage:
+        description: "Is stage ?"
         type: boolean
         default: false
       distribution:
@@ -25,6 +25,10 @@ on:
         description: '[ "x64", "arm64" ]'
         type: string
         default: '[ "x64" ]'
+      checksum:
+        description: "Checksum ?"
+        type: boolean
+        default: false
   workflow_call:
     inputs:
       revision:
@@ -35,8 +39,8 @@ on:
         description: "Upload ?"
         type: boolean
         default: false
-      is_release:
-        description: "Is release ?"
+      is_stage:
+        description: "Is stage ?"
         type: boolean
         default: false
       distribution:
@@ -47,6 +51,10 @@ on:
         description: '[ "x64", "arm64" ]'
         type: string
         default: '[ "x64" ]'
+      checksum:
+        description: "Checksum ?"
+        type: boolean
+        default: false
     secrets:
       CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY:
         required: true
@@ -111,7 +119,7 @@ jobs:
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }}  \
             -r ${{ inputs.revision }} \
-            ${{ inputs.is_release && '-x' || '' }} \
+            ${{ inputs.is_stage && '-x' || '' }} \
           )
           echo "name=$name" >> $GITHUB_OUTPUT
         id: min_package
@@ -122,7 +130,7 @@ jobs:
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }}  \
             -r ${{ inputs.revision }} \
-            ${{ inputs.is_release && '-x' || '' }} \
+            ${{ inputs.is_stage && '-x' || '' }} \
           )
           echo "name=$name" >> $GITHUB_OUTPUT
         id: package

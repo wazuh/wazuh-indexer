@@ -1,0 +1,37 @@
+name: Build packages (single)
+
+on:
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: "Revision"
+        type: string
+        default: "0"
+      checksum:
+        description: "Checksum ?"
+        type: boolean
+        default: false
+      is_stage:
+        description: "Is stage ?"
+        type: boolean
+        default: false
+      system:
+        description: "One of 'tar', 'rpm', 'deb'"
+        type: string
+        default: "rpm"
+      architecture:
+        description: "One of 'amd64', 'x86_64'"
+        type: string
+        default: "x86_64"
+
+jobs:
+  call-build-workflow:
+    uses: ./.github/workflows/build.yml
+    with:
+      revision: ${{ inputs.revision }}
+      checksum: ${{ inputs.checksum }}
+      is_stage: ${{ inputs.is_stage }}
+      distribution: '[ "${{ inputs.system }}" ]'
+      # Architecture is always 'x64', which is the default value in ./build.yml
+      # It is an input just for convenience and standardisation.
+    secrets: inherit

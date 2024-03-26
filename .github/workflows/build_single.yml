@@ -38,6 +38,7 @@ jobs:
       checksum: ${{ inputs.checksum }}
       is_stage: ${{ inputs.is_stage }}
       distribution: '[ "${{ inputs.system }}" ]'
+      upload: true
       # Architecture is always 'x64', which is the default value in ./build.yml
       # It is an input just for convenience and standardisation.
     secrets: inherit

@@ -16,13 +16,19 @@ on:
         type: boolean
         default: false
       system:
-        description: "One of 'tar', 'rpm', 'deb'"
-        type: string
-        default: "rpm"
+        description: "Package OS"
+        type: choice
+        options:
+          - rpm
+          - deb
+        default: deb
       architecture:
-        description: "One of 'amd64', 'x86_64'"
-        type: string
-        default: "x86_64"
+        description: "Package architecture"
+        type: choice
+        options:
+          - amd64
+          - x86_64
+        default: amd64
 
 jobs:
   call-build-workflow:

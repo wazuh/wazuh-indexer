@@ -224,8 +224,6 @@ function clean() {
     echo "Cleaning temporary ${TMP_DIR} folder"
     rm -r "${OUTPUT}/tmp"
     echo "After execution, shell path is $(pwd)"
-    # Store package's name to file. Used by GH Action.
-    echo "${ARTIFACT_PACKAGE_NAME}" >"${OUTPUT}/artifact_name.txt"
 }
 
 # ====

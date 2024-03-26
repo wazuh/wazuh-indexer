@@ -122,7 +122,6 @@ function get_release_name() {
 # ====
 # Naming convention for pre-release packages
 # ====
-# TODO wazuh-indexer_$VERSION != wazuh-indexer-$VERSION
 function get_devel_name() {
     if "$IS_MIN"; then
         PACKAGE_NAME=wazuh-indexer-min_"$VERSION"-"$REVISION"_"$SUFFIX"_"$GIT_COMMIT"."$EXT"

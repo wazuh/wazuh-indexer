@@ -1,5 +1,7 @@
 name: Build packages (single)
 
+# This workflow runs when any of the following occur:
+# - Run manually
 on:
   workflow_dispatch:
     inputs:

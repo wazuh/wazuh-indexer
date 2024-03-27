@@ -14,10 +14,16 @@ Each section includes instructions to generate packages locally, using Act or Do
 
 - [Install Act](https://github.com/nektos/act)
 
+The names of the packages are managed by the `baptizer.sh` script.
+
 ## Build
 
-...
-...
+For local package generation, use the `build.sh` script. Take a look at the `build.yml` 
+workflow file for an example of usage.
+
+```bash
+bash scripts/build.sh -a x64 -d tar -n $(bash scripts/baptizer.sh -a x64 -d tar -m)
+```
 
 #### Act (GitHub Workflow locally)
 
@@ -32,89 +38,101 @@ act -j build -W .github/workflows/build.yml --artifact-server-path ./artifacts
 Using the [Docker environment](../docker):
 
 ```console
-docker exec -it wi-build_$(<VERSION) bash scripts/build.sh -v 2.11.1 -s false -p linux -a {x64|arm64} -d {rpm|deb|tar}
+docker exec -it wi-build_$(<VERSION) bash scripts/build.sh -a {x64|arm64} -d {rpm|deb|tar}
 ```
 
-The generated package is sent to `artifacts/`
+The generated package is sent to the `wazuh-indexer/artifacts` folder.
 
 ## Assemble
 
 **Note:** set the environment variable `TEST=true` to assemble a package with the required plugins only,
 speeding up the assembly process.
 
-<!--
+
 ### TAR
--->
+
+The assembly process for tarballs consists on:
+
+1. Extract.
+2. Install plugins.
+3. Add Wazuh's configuration files and tools.
+4. Compress.
+
+```console
+bash scripts/assemble.sh -a x64 -d tar -r 1
+```
 
 ### DEB
 
-The script will:
+For DEB packages, the `assemble.sh` script will perform the following operations:
 
-- Extract the deb package using `ar` and `tar` tools.
+1. Extract the deb package using `ar` and `tar` tools.
 
-  > By default, `ar` and `tar` tools expect the package to be in `wazuh-indexer/artifacts/tmp/deb`. The script takes care of creating the required folder structure, copying also the min package and the Makefile.
+    > By default, `ar` and `tar` tools expect the package to be in `wazuh-indexer/artifacts/tmp/deb`. 
+    > The script takes care of creating the required folder structure, copying also the min package 
+    > and the Makefile.
 
-  Current folder loadout at this stage:
+    Current folder loadout at this stage:
 
-  ```
-  artifacts/
-  |-- dist
-  |   |-- wazuh-indexer-min_4.9.0_amd64.deb
-  `-- tmp
-      `-- deb
-          |-- Makefile
-          |-- data.tar.gz
-          |-- debmake_install.sh
-          |-- etc
-          |-- usr
-          |-- var
-          `-- wazuh-indexer-min_4.9.0_amd64.deb
-  ```
+    ```
+    artifacts/
+    |-- dist
+    |   |-- wazuh-indexer-min_4.9.0_amd64.deb
+    `-- tmp
+        `-- deb
+            |-- Makefile
+            |-- data.tar.gz
+            |-- debmake_install.sh
+            |-- etc
+            |-- usr
+            |-- var
+            `-- wazuh-indexer-min_4.9.0_amd64.deb
+    ```
 
-  `usr`, `etc` and `var` folders contain `wazuh-indexer` files, extracted from `wazuh-indexer-min-*.deb`.
-  `Makefile` and the `debmake_install` are copied over from `wazuh-indexer/distribution/packages/src/deb`.
-  The `wazuh-indexer-performance-analyzer.service` file is also copied from the same folder. It is a dependency of the SPEC file.
+    `usr`, `etc` and `var` folders contain `wazuh-indexer` files, extracted from `wazuh-indexer-min-*.deb`.
+    `Makefile` and the `debmake_install` are copied over from `wazuh-indexer/distribution/packages/src/deb`.
+    The `wazuh-indexer-performance-analyzer.service` file is also copied from the same folder. It is a dependency of the SPEC file.
 
-- Install the plugins using the `opensearch-plugin` CLI tool.
-- Set up configuration files.
+2. Install the plugins using the `opensearch-plugin` CLI tool.
+3. Set up configuration files.
 
-  > Included in `min-package`. Default files are overwritten.
+    > Included in `min-package`. Default files are overwritten.
 
-- Bundle a DEB file with `debmake` and the `Makefile`.
+4. Bundle a DEB file with `debmake` and the `Makefile`.
 
-  > `debmake` and other dependencies can be installed using the provision.sh script. The
-  > script is invoked by the GitHub Workflow.
+    > `debmake` and other dependencies can be installed using the `provision.sh` script.
+    > The script is invoked by the GitHub Workflow.
 
-  Current folder loadout at this stage:
+    Current folder loadout at this stage:
 
-  ```
-  artifacts/
-  |-- artifact_name.txt
-  |-- dist
-  |   |-- wazuh-indexer-min_4.9.0_amd64.deb
-  |   `-- wazuh-indexer_4.9.0_amd64.deb
-  `-- tmp
-      `-- deb
-          |-- Makefile
-          |-- data.tar.gz
-          |-- debmake_install.sh
-          |-- etc
-          |-- usr
-          |-- var
-          |-- wazuh-indexer-min_4.9.0_amd64.deb
-          `-- debian/
-              | -- control
-              | -- copyright
-              | -- rules
-              | -- preinst
-              | -- prerm
-              | -- postinst
-  ```
+    ```
+    artifacts/
+    |-- artifact_name.txt
+    |-- dist
+    |   |-- wazuh-indexer-min_4.9.0_amd64.deb
+    |   `-- wazuh-indexer_4.9.0_amd64.deb
+    `-- tmp
+        `-- deb
+            |-- Makefile
+            |-- data.tar.gz
+            |-- debmake_install.sh
+            |-- etc
+            |-- usr
+            |-- var
+            |-- wazuh-indexer-min_4.9.0_amd64.deb
+            `-- debian/
+                | -- control
+                | -- copyright
+                | -- rules
+                | -- preinst
+                | -- prerm
+                | -- postinst
+    ```
 
-### Running in Act
+#### Running in Act
 
 ```console
-act -j assemble -W .github/workflows/build.yml --artifact-server-path ./artifacts --matrix distribution:deb --matrix architecture:x64 --var OPENSEARCH_VERSION=2.11.1
+act -j assemble -W .github/workflows/build.yml --artifact-server-path ./artifacts --matrix distribution:deb --matrix architecture:x64
 
 [Build slim packages/build] 🏁  Job succeeded
 ```
@@ -128,7 +146,7 @@ Pre-requisites:
 - Using the [Docker environment](../docker):
 
 ```console
-docker exec -it wi-assemble_$(<VERSION) bash scripts/assemble.sh -v 2.11.1 -p linux -a x64 -d deb
+docker exec -it wi-assemble_$(<VERSION) bash scripts/assemble.sh -a x64 -d deb
 ```
 
 ### RPM
@@ -139,49 +157,49 @@ and the service files.
 
 The script will:
 
-- Extract the rpm package using `rpm2cpio` and `cpio` tools.
+1. Extract the RPM package using `rpm2cpio` and `cpio` tools.
 
-  > By default, `rpm2cpio` and `cpio` tools expect the package to be in `wazuh-indexer/artifacts/tmp/rpm`. The script takes care of creating the required folder structure, copying also the min package and the SPEC file.
+    > By default, `rpm2cpio` and `cpio` tools expect the package to be in `wazuh-indexer/artifacts/tmp/rpm`.The script takes care of creating the required folder structure, copying also the min package and the SPEC file.
 
-  Current folder loadout at this stage:
+    Current folder loadout at this stage:
 
-  ```
-  /rpm/$ARCH
-      /etc
-      /usr
-      /var
-      wazuh-indexer-min-*.rpm
-      wazuh-indexer.rpm.spec
-  ```
+    ```
+    /rpm/$ARCH
+        /etc
+        /usr
+        /var
+        wazuh-indexer-min-*.rpm
+        wazuh-indexer.rpm.spec
+    ```
 
-  `usr`, `etc` and `var` folders contain `wazuh-indexer` files, extracted from `wazuh-indexer-min-*.rpm`.
-  `wazuh-indexer.rpm.spec` is copied over from `wazuh-indexer/distribution/packages/src/rpm/wazuh-indexer.rpm.spec`.
-  The `wazuh-indexer-performance-analyzer.service` file is also copied from the same folder. It is a dependency of the SPEC file.
+    `usr`, `etc` and `var` folders contain `wazuh-indexer` files, extracted from `wazuh-indexer-min-*.rpm`.
+    `wazuh-indexer.rpm.spec` is copied over from `wazuh-indexer/distribution/packages/src/rpm/wazuh-indexer.rpm.spec`.
+    The `wazuh-indexer-performance-analyzer.service` file is also copied from the same folder. It is a dependency of the SPEC file.
 
-- Install the plugins using the `opensearch-plugin` CLI tool.
-- Set up configuration files.
+2. Install the plugins using the `opensearch-plugin` CLI tool.
+3. Set up configuration files.
 
-  > Included in `min-package`. Default files are overwritten.
+    > Included in `min-package`. Default files are overwritten.
 
-- Bundle an RPM file with `rpmbuild` and the SPEC file `wazuh-indexer.rpm.spec`.
+4. Bundle an RPM file with `rpmbuild` and the SPEC file `wazuh-indexer.rpm.spec`.
 
-  - `rpmbuild` is part of the `rpm` OS package.
+    > `rpmbuild` is part of the `rpm` OS package.
 
-  > `rpmbuild` is invoked from `wazuh-indexer/artifacts/tmp/rpm`. It creates the {BUILD,RPMS,SOURCES,SRPMS,SPECS,TMP} folders and applies the rules in the SPEC file. If successful, `rpmbuild` will generate the package in the `RPMS/` folder. The script will copy it to `wazuh-indexer/artifacts/dist` and clean: remove the `tmp\` folder and its contents.
+    > `rpmbuild` is invoked from `wazuh-indexer/artifacts/tmp/rpm`. It creates the {BUILD,RPMS,SOURCES,SRPMS,SPECS,TMP} folders and applies the rules in the SPEC file. If successful, `rpmbuild` will generate the package in the `RPMS/` folder. The script will copy it to `wazuh-indexer/artifacts/dist` and clean: remove the `tmp\` folder and its contents.
 
-  Current folder loadout at this stage:
+    Current folder loadout at this stage:
 
-  ```
-  /rpm/$ARCH
-      /{BUILD,RPMS,SOURCES,SRPMS,SPECS,TMP}
-      /etc
-      /usr
-      /var
-      wazuh-indexer-min-*.rpm
-      wazuh-indexer.rpm.spec
-  ```
+    ```
+    /rpm/$ARCH
+        /{BUILD,RPMS,SOURCES,SRPMS,SPECS,TMP}
+        /etc
+        /usr
+        /var
+        wazuh-indexer-min-*.rpm
+        wazuh-indexer.rpm.spec
+    ```
 
-### Running in Act
+#### Running in Act
 
 ```console
 act -j assemble -W .github/workflows/build.yml --artifact-server-path ./artifacts --matrix distribution:rpm --matrix architecture:x64 --var OPENSEARCH_VERSION=2.11.1
@@ -198,45 +216,49 @@ Pre-requisites:
 - Using the [Docker environment](../docker):
 
 ```console
-docker exec -it wi-assemble_$(<VERSION) bash scripts/assemble.sh -v 2.11.1 -p linux -a x64 -d rpm
+docker exec -it wi-assemble_$(<VERSION) bash scripts/assemble.sh -a x64 -d rpm
 ```
 
-### Bash scripts reference
+## Bash scripts reference
 
 The packages' generation process is guided through bash scripts. This section list and describes
 them, as well as their inputs and outputs.
 
-
 ```yml
-
-packages:
+scripts:
   - file: build.sh
-    description: run the appropiate Gradle task depending on the parameters.
-    params:
-      - distribution: [tar, deb, rpm]
-      - revision: revision number. 0 by default.
-      # - architecture: currently we only build x86_64
+    description: |
+      generates a distribution package by running the appropiate Gradle task 
+      depending on the parameters.
+    inputs:
+      architecture: [x64, arm64] # Note: we only build x86_64 packages
+      distribution: [tar, deb, rpm]
+      name: the name of the package to be generated.
     outputs:
-      - package: minimal wazuh-indexer package for the required distribution.
+      package: minimal wazuh-indexer package for the required distribution.
+  
   - file: assemble.sh
-    description: assembles a minimal wazuh-indexer package with plugins, settings and demo certificates (not yet).
-    params:
-      - package: the minimal package to assemble.
-      - distribution: [tar, deb, rpm]
-      - revision: revision number. 0 by default.
-      # - opensearch_version: can be obtained from the source code
-      # - architecture: currently we only build x86_64
+    description: |
+      bundles the wazuh-indexer package generated in by build.sh with plugins, 
+      configuration files and demo certificates (certificates yet to come).
+    inputs:
+      architecture: [x64, arm64] # Note: we only build x86_64 packages
+      distribution: [tar, deb, rpm]
+      revision: revision number. 0 by default.
     outputs:
-      - package: wazuh-indexer package.
+      package: wazuh-indexer package.
+  
   - file: provision.sh
-    description: Provision script for assembly of DEB packages.
+    description: Provision script for the assembly of DEB packages.
+  
   - file: baptizer.sh
     description: generate the wazuh-indexer package name depending on the parameters.
-    params:
-      - distribution: [tar, deb, rpm]
-      - revision: revision number. 0 by default.
-      - is_release: set to 1 to generate the name of a release package. 0 by default.
-      - is_min: set to 1 to generate the name of a minimal package. Incompatible with is_realease. 0 by default.
+    inputs:
+      architecture: [x64, arm64] # Note: we only build x86_64 packages
+      distribution: [tar, deb, rpm]
+      revision: revision number. 0 by default.
+      is_release: if set, uses release naming convention.
+      is_min: if set, the package name will start by `wazuh-indexer-min`. Used on the build stage.
     outputs:
-      - package: the name of the wazuh-indexer package.
+      package: the name of the wazuh-indexer package.
 ```

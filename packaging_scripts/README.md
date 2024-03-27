@@ -22,7 +22,7 @@ For local package generation, use the `build.sh` script. Take a look at the `bui
 workflow file for an example of usage.
 
 ```bash
-bash scripts/build.sh -a x64 -d tar -n $(bash scripts/baptizer.sh -a x64 -d tar -m)
+bash packaging_scripts/build.sh -a x64 -d tar -n $(bash packaging_scripts/baptizer.sh -a x64 -d tar -m)
 ```
 
 #### Act (GitHub Workflow locally)
@@ -38,7 +38,7 @@ act -j build -W .github/workflows/build.yml --artifact-server-path ./artifacts
 Using the [Docker environment](../docker):
 
 ```console
-docker exec -it wi-build_$(<VERSION) bash scripts/build.sh -a {x64|arm64} -d {rpm|deb|tar}
+docker exec -it wi-build_$(<VERSION) bash packaging_scripts/build.sh -a {x64|arm64} -d {rpm|deb|tar}
 ```
 
 The generated package is sent to the `wazuh-indexer/artifacts` folder.
@@ -59,7 +59,7 @@ The assembly process for tarballs consists on:
 4. Compress.
 
 ```console
-bash scripts/assemble.sh -a x64 -d tar -r 1
+bash packaging_scripts/assemble.sh -a x64 -d tar -r 1
 ```
 
 ### DEB
@@ -146,7 +146,7 @@ Pre-requisites:
 - Using the [Docker environment](../docker):
 
 ```console
-docker exec -it wi-assemble_$(<VERSION) bash scripts/assemble.sh -a x64 -d deb
+docker exec -it wi-assemble_$(<VERSION) bash packaging_scripts/assemble.sh -a x64 -d deb
 ```
 
 ### RPM
@@ -216,7 +216,7 @@ Pre-requisites:
 - Using the [Docker environment](../docker):
 
 ```console
-docker exec -it wi-assemble_$(<VERSION) bash scripts/assemble.sh -a x64 -d rpm
+docker exec -it wi-assemble_$(<VERSION) bash packaging_scripts/assemble.sh -a x64 -d rpm
 ```
 
 ## Bash scripts reference

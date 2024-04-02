@@ -2,22 +2,11 @@
 FROM amazonlinux:2023.3.20240219.0 AS builder
 
 ARG WAZUH_VERSION
-# ARG WAZUH_TAG_REVISION
 ARG WAZUH_INDEXER_TAR_NAME
 
 RUN yum install curl-minimal openssl xz tar findutils shadow-utils -y
 
 COPY ${WAZUH_INDEXER_TAR_NAME} /
-
-# COPY ../../distribution/src/config/opensearch.prod.yml /
-
-# COPY ../../distribution/src/config/security/action_groups.yml /
-
-# COPY ../../distribution/src/config/security/internal_users.yml /
-
-# COPY ../../distribution/src/config/security/roles_mapping.yml /
-
-# COPY ../../distribution/src/config/security/roles.yml /
 
 COPY config/opensearch.yml /
 

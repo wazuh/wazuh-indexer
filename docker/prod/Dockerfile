@@ -19,9 +19,11 @@ COPY ${WAZUH_INDEXER_TAR_NAME} /
 
 # COPY ../../distribution/src/config/security/roles.yml /
 
-COPY config.yml /
+COPY config/opensearch.yml /
 
-COPY config.sh /
+COPY config/config.yml /
+
+COPY config/config.sh /
 
 RUN bash config.sh
 

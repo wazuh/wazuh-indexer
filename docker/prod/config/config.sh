@@ -30,7 +30,7 @@ chmod 755 wazuh-certs-tool.sh && bash wazuh-certs-tool.sh -A
 
 # copy to target
 mkdir -p ${TARGET_DIR}${INSTALLATION_DIR}
-mkdir -p ${TARGET_DIR}${INSTALLATION_DIR}/opensearch-security/
+# mkdir -p ${TARGET_DIR}${INSTALLATION_DIR}/opensearch-security/ <-- empty dir
 mkdir -p ${TARGET_DIR}${CONFIG_DIR}
 mkdir -p ${TARGET_DIR}${LIB_DIR}
 mkdir -p ${TARGET_DIR}${LOG_DIR}
@@ -51,9 +51,7 @@ cp -pr /wazuh-certificates/root-ca.pem ${TARGET_DIR}${CONFIG_DIR}/certs/root-ca.
 cp -pr /wazuh-certificates/admin.pem ${TARGET_DIR}${CONFIG_DIR}/certs/admin.pem
 cp -pr /wazuh-certificates/admin-key.pem ${TARGET_DIR}${CONFIG_DIR}/certs/admin-key.pem
 
-# Delete xms and xmx parameters in jvm.options
-sed '/-Xms/d' -i ${TARGET_DIR}${CONFIG_DIR}/jvm.options
-sed '/-Xmx/d' -i ${TARGET_DIR}${CONFIG_DIR}/jvm.options
+# Set path to indexer home directory
 sed -i 's/-Djava.security.policy=file:\/\/\/etc\/wazuh-indexer\/opensearch-performance-analyzer\/opensearch_security.policy/-Djava.security.policy=file:\/\/\/usr\/share\/wazuh-indexer\/opensearch-performance-analyzer\/opensearch_security.policy/g' ${TARGET_DIR}${CONFIG_DIR}/jvm.options
 
 chmod -R 500 ${TARGET_DIR}${CONFIG_DIR}/certs

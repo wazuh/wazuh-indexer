@@ -35,22 +35,21 @@ RUN yum install curl-minimal shadow-utils findutils hostname -y
 RUN getent group $GROUP || groupadd -r -g 1000 $GROUP
 
 RUN useradd --system \
-            --uid 1000 \
-            --no-create-home \
-            --home-dir $INSTALL_DIR \
-            --gid $GROUP \
-            --shell /sbin/nologin \
-            --comment "$USER user" \
-            $USER
+    --uid 1000 \
+    --no-create-home \
+    --home-dir $INSTALL_DIR \
+    --gid $GROUP \
+    --shell /sbin/nologin \
+    --comment "$USER user" \
+    $USER
 
 WORKDIR $INSTALL_DIR
 
 COPY entrypoint.sh /
 
-# COPY config/securityadmin.sh /
+COPY config/securityadmin.sh /
 
-RUN chmod 700 /entrypoint.sh
-# RUN chmod 700 /entrypoint.sh && chmod 700 /securityadmin.sh
+RUN chmod 700 /entrypoint.sh && chmod 700 /securityadmin.sh
 
 RUN chown 1000:1000 /*.sh
 

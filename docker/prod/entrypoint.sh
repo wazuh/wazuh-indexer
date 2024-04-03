@@ -4,14 +4,17 @@ set -e
 
 umask 0002
 
-export USER=wazuh-indexer
-export INSTALLATION_DIR=/usr/share/wazuh-indexer
-export OPENSEARCH_PATH_CONF=${INSTALLATION_DIR}/config
-export JAVA_HOME=${INSTALLATION_DIR}/jdk
-export DISCOVERY=$(grep -oP "(?<=discovery.type: ).*" ${OPENSEARCH_PATH_CONF}/opensearch.yml)
-export CACERT=$(grep -oP "(?<=plugins.security.ssl.transport.pemtrustedcas_filepath: ).*" ${OPENSEARCH_PATH_CONF}/opensearch.yml)
-export CERT="${OPENSEARCH_PATH_CONF}/certs/admin.pem"
-export KEY="${OPENSEARCH_PATH_CONF}/certs/admin-key.pem"
+# Constants
+INDEXER_HOME=/usr/share/wazuh-indexer
+OPENSEARCH_PATH_CONF=${INDEXER_HOME}/config
+JAVA_HOME=${INDEXER_HOME}/jdk
+
+# DISCOVERY=$(grep -oP "(?<=discovery.type: ).*" ${OPENSEARCH_PATH_CONF}/opensearch.yml)
+
+# Export variables to environment
+export INDEXER_HOME
+export OPENSEARCH_PATH_CONF
+export JAVA_HOME
 
 run_as_other_user_if_needed() {
   if [[ "$(id -u)" == "0" ]]; then
@@ -60,15 +63,15 @@ if [[ -f bin/opensearch-users ]]; then
   # honor the variable if it's present.
   if [[ -n "$INDEXER_PASSWORD" ]]; then
     [[ -f /usr/share/wazuh-indexer/opensearch.keystore ]] || (run_as_other_user_if_needed opensearch-keystore create)
-    if ! (run_as_other_user_if_needed opensearch-keystore has-passwd --silent) ; then
+    if ! (run_as_other_user_if_needed opensearch-keystore has-passwd --silent); then
       # keystore is unencrypted
       if ! (run_as_other_user_if_needed opensearch-keystore list | grep -q '^bootstrap.password$'); then
         (run_as_other_user_if_needed echo "$INDEXER_PASSWORD" | opensearch-keystore add -x 'bootstrap.password')
       fi
     else
       # keystore requires password
-      if ! (run_as_other_user_if_needed echo "$KEYSTORE_PASSWORD" \
-          | opensearch-keystore list | grep -q '^bootstrap.password$') ; then
+      if ! (run_as_other_user_if_needed echo "$KEYSTORE_PASSWORD" |
+        opensearch-keystore list | grep -q '^bootstrap.password$'); then
         COMMANDS="$(printf "%s\n%s" "$KEYSTORE_PASSWORD" "$INDEXER_PASSWORD")"
         (run_as_other_user_if_needed echo "$COMMANDS" | opensearch-keystore add -x 'bootstrap.password')
       fi
@@ -83,9 +86,11 @@ if [[ "$(id -u)" == "0" ]]; then
   fi
 fi
 
+# Initialize security
+nohup /securityadmin.sh &
 
 #if [[ "$DISCOVERY" == "single-node" ]] && [[ ! -f "/var/lib/wazuh-indexer/.flag" ]]; then
-  # run securityadmin.sh for single node with CACERT, CERT and KEY parameter
+# run securityadmin.sh for single node with CACERT, CERT and KEY parameter
 #  nohup /securityadmin.sh &
 #  touch "/var/lib/wazuh-indexer/.flag"
 #fi

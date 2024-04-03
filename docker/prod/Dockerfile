@@ -1,12 +1,12 @@
 # Wazuh Docker Copyright (C) 2017, Wazuh Inc. (License GPLv2)
 FROM amazonlinux:2023.3.20240219.0 AS builder
 
-ARG WAZUH_VERSION
-ARG WAZUH_INDEXER_TAR_NAME
+ARG VERSION
+ARG INDEXER_TAR_NAME
 
 RUN yum install curl-minimal openssl xz tar findutils shadow-utils -y
 
-COPY ${WAZUH_INDEXER_TAR_NAME} /
+COPY ${INDEXER_TAR_NAME} /
 
 COPY config/opensearch.yml /
 

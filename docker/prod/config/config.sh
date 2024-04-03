@@ -11,17 +11,17 @@ export TARGET_DIR=${CURDIR}/debian/${NAME}
 export LOG_DIR=/var/log/${NAME}
 export LIB_DIR=/var/lib/${NAME}
 export PID_DIR=/run/${NAME}
-export INSTALLATION_DIR=/usr/share/${NAME}
-export CONFIG_DIR=${INSTALLATION_DIR}/config
+export INDEXER_HOME=/usr/share/${NAME}
+export CONFIG_DIR=${INDEXER_HOME}/config
 export BASE_DIR=${NAME}-*
 
-rm -rf ${INSTALLATION_DIR:?}/
-tar -xf "${WAZUH_INDEXER_TAR_NAME}"
+rm -rf ${INDEXER_HOME:?}/
+tar -xf "${INDEXER_TAR_NAME}"
 
 ## TOOLS
 
 ## Variables
-TOOLS_PATH=${NAME}-${WAZUH_VERSION}/plugins/opensearch-security/tools
+TOOLS_PATH=${NAME}-${VERSION}/plugins/opensearch-security/tools
 CERT_TOOL=${TOOLS_PATH}/wazuh-certs-tool.sh
 
 # generate certificates
@@ -29,8 +29,8 @@ cp $CERT_TOOL .
 chmod 755 wazuh-certs-tool.sh && bash wazuh-certs-tool.sh -A
 
 # copy to target
-mkdir -p ${TARGET_DIR}${INSTALLATION_DIR}
-# mkdir -p ${TARGET_DIR}${INSTALLATION_DIR}/opensearch-security/ <-- empty dir
+mkdir -p ${TARGET_DIR}${INDEXER_HOME}
+# mkdir -p ${TARGET_DIR}${INDEXER_HOME}/opensearch-security/ <-- empty dir
 mkdir -p ${TARGET_DIR}${CONFIG_DIR}
 mkdir -p ${TARGET_DIR}${LIB_DIR}
 mkdir -p ${TARGET_DIR}${LOG_DIR}
@@ -41,7 +41,7 @@ mkdir -p ${TARGET_DIR}/usr/lib/sysctl.d
 mkdir -p ${TARGET_DIR}/usr/lib/systemd/system
 mkdir -p ${TARGET_DIR}${CONFIG_DIR}/certs
 # Copy installation files to final location
-cp -pr ${BASE_DIR}/* ${TARGET_DIR}${INSTALLATION_DIR}
+cp -pr ${BASE_DIR}/* ${TARGET_DIR}${INDEXER_HOME}
 cp -pr /opensearch.yml ${TARGET_DIR}${CONFIG_DIR}
 # Copy Wazuh indexer's certificates
 cp -pr /wazuh-certificates/demo.indexer.pem ${TARGET_DIR}${CONFIG_DIR}/certs/indexer.pem

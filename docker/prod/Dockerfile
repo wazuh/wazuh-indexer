@@ -4,7 +4,7 @@ FROM amazonlinux:2023.3.20240219.0 AS builder
 ARG VERSION
 ARG INDEXER_TAR_NAME
 
-RUN yum install curl-minimal openssl xz tar findutils shadow-utils -y
+RUN yum install openssl tar findutils shadow-utils -y
 
 COPY ${INDEXER_TAR_NAME} /
 

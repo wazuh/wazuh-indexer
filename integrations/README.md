@@ -34,4 +34,6 @@ As a last note, we would like to point out that we also use this Docker environm
 
 ### Other integrations
 
-TBD
+#### Integrations with Splunk, Elastic and OpenSearch
+
+Check the [external](./external) folder.

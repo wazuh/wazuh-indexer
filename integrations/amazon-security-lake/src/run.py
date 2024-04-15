@@ -10,6 +10,8 @@ import pyarrow.parquet as pq
 import logging
 import boto3
 from botocore.exceptions import ClientError
+import urllib.parse
+import json
 
 # NOTE work in progress
 def upload_file(table, file_name, bucket, object_name=None):
@@ -122,4 +124,67 @@ if __name__ == '__main__':
     # _test()
 
 def lambda_handler(event, context):
-    return f'Hello from run.py: {event}'
+    logging.basicConfig(filename='lambda.log', encoding='utf-8', level=logging.DEBUG)
+    print(event)
+    print(context)
+
+    # Constants : bucket names
+    # src_bucket = "wazuh-indexer-amazon-security-lake-bucket"
+    dst_bucket = "final-bucket"
+
+    # Variables : object name -> uploaded log file
+    # - From https://docs.aws.amazon.com/lambda/latest/dg/with-s3-example.html#with-s3-example-create-function
+    src_bucket = event['Records'][0]['s3']['bucket']['name']
+    key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')
+    logging.info(f"Lambda function invoked due to {key}.")
+    logging.info(f"Source bucket name is {src_bucket}. Destination bucket is {dst_bucket}.")
+
+    # boto3 client setup
+    logging.info("Initializing boto3 client.")
+    client = boto3.client(
+        service_name='s3',
+        aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+        aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'],
+        region_name=os.environ['AWS_REGION'],
+        endpoint_url='http://s3.ninja:9000',
+    )
+    logging.info("boto3 client initialized.")
+
+    # Read from bucket A
+    logging.info(f"Reading {key}.")
+    response = client.get_object(
+        Bucket=src_bucket,
+        Key=key
+    )
+    data = response['Body'].read().decode('utf-8')
+    raw_events = data.splitlines()
+
+    # Transform data
+    logging.info("Transforming data.")
+    ocsf_events = []
+    for line in raw_events:
+        try:
+            event = transform.converter.from_json(line)
+            ocsf_event = transform.converter.to_detection_finding(event)
+            ocsf_events.append(ocsf_event.model_dump())
+
+            # Temporal disk storage
+            with open('tmp.json', "a") as fd:
+                fd.write(str(ocsf_event) + "\n")
+        except AttributeError as e:
+            print("Error transforming line to OCSF")
+            print(event)
+            print(e)
+
+    table = pa.Table.from_pylist(ocsf_events)
+    pq.write_table(table, 'tmp.parquet')
+
+    # Upload to bucket B
+    logging.info(f"Uploading data to {dst_bucket}.")
+    response = client.put_object(
+        Bucket=dst_bucket, 
+        Key=key.replace('.txt', '.parquet'), 
+        Body=open('tmp.parquet', 'rb')
+    )
+
+    return json.dumps({ 'size': len(raw_events), 'response': response})

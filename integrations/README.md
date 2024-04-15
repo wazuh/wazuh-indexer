@@ -53,6 +53,20 @@ For production usage, follow the instructions in our documentation page about th
 
 As a last note, we would like to point out that we also use this Docker environment for development.
 
+###### Integration through an AWS Lambda function
+
+Start the integration by sending log data to an S3 bucket.
+
+```console
+/usr/share/logstash/bin/logstash -f /usr/share/logstash/pipeline/indexer-to-s3.conf --path.settings /etc/logstash
+```
+
+Once there is data in the source bucket, you can invoke the lambda function manually using an HTTP API request, as follows:
+
+```
+curl -X POST "http://localhost:9000/2015-03-31/functions/function/invocations" -d '{"Resources":"hello world!"}'
+```
+
 ### Other integrations
 
 TBD

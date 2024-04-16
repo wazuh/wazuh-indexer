@@ -21,29 +21,41 @@ docker compose -f ./docker/amazon-security-lake.yml up -d
 ```
 
 This docker compose project will bring a *wazuh-indexer* node, a *wazuh-dashboard* node, 
-a *logstash* node and our event generator. On the one hand, the event generator will push events 
+a *logstash* node, our event generator and an AWS Lambda Python container. On the one hand, the event generator will push events 
 constantly to the indexer, on the `wazuh-alerts-4.x-sample` index by default (refer to the [events 
-generator](./tools/events-generator/README.md) documentation for customization options). 
-On the other hand, logstash will constantly query for new data and deliver it to the integration 
-Python program, also present in that node. Finally, the integration module will prepare and send the 
-data to the Amazon Security Lake's S3 bucket.
+generator](./tools/events-generator/README.md) documentation for customization options).
+On the other hand, logstash will constantly query for new data and deliver it to output configured in the 
+pipeline, which can be one of `indexer-to-s3`, `indexer-to-file` or `indexer-to-integrator`.
+
+The `indexer-to-s3` pipeline is the method used by the integration. This pipeline delivers
+the data to an S3 bucket, from which the data is processed using a Lambda function, to finally
+be sent to the Amazon Security Lake bucket in Parquet format.
 <!-- TODO continue with S3 credentials setup -->
 
 Attach a terminal to the container and start the integration by starting logstash, as follows:
 
 ```console
-/usr/share/logstash/bin/logstash -f /usr/share/logstash/pipeline/indexer-to-integrator.conf --path.settings /etc/logstash
-```
-
-Unprocessed data can be sent to a file or to an S3 bucket.
-```console
-/usr/share/logstash/bin/logstash -f /usr/share/logstash/pipeline/indexer-to-file.conf --path.settings /etc/logstash
 /usr/share/logstash/bin/logstash -f /usr/share/logstash/pipeline/indexer-to-s3.conf --path.settings /etc/logstash
 ```
 
-All three pipelines are configured to fetch the latest data from the *wazuh-indexer* every minute. In
-the case of `indexer-to-file`, the data is written at the same pace, whereas `indexer-to-s3`, data 
-is uploaded every 5 minutes.
+After 5 minutes, the first batch of data will show up in http://localhost:9444/ui/wazuh-indexer-aux-bucket.
+You'll need to invoke the Lambda function manually, selecting the log file to process.
+
+```bash
+export AWS_BUCKET=wazuh-indexer-aux-bucket
+
+bash amazon-security-lake/src/invoke-lambda.sh <file>
+```
+
+Processed data will be uploaded to http://localhost:9444/ui/wazuh-indexer-amazon-security-lake-bucket. Click on any file to download it,
+and check it's content using `parquet-tools`. Just make sure of installing the virtual environment first, through [requirements.txt](./amazon-security-lake/).
+
+```bash
+parquet-tools show <parquet-file>
+```
+
+Bucket names can be configured editing the [amazon-security-lake.yml](./docker/amazon-security-lake.yml) file.
+
 
 For development or debugging purposes, you may want to enable hot-reload, test or debug on these files, 
 by using the `--config.reload.automatic`, `--config.test_and_exit` or `--debug` flags, respectively.
@@ -52,20 +64,6 @@ For production usage, follow the instructions in our documentation page about th
 (_when-its-done_)
 
 As a last note, we would like to point out that we also use this Docker environment for development.
-
-###### Integration through an AWS Lambda function
-
-Start the integration by sending log data to an S3 bucket.
-
-```console
-/usr/share/logstash/bin/logstash -f /usr/share/logstash/pipeline/indexer-to-s3.conf --path.settings /etc/logstash
-```
-
-Once there is data in the source bucket, you can invoke the lambda function manually using an HTTP API request, as follows:
-
-```
-curl -X POST "http://localhost:9000/2015-03-31/functions/function/invocations" -d '{"Resources":"hello world!"}'
-```
 
 ### Other integrations
 

@@ -83,7 +83,8 @@ services:
       AWS_ACCESS_KEY_ID: "AKIAIOSFODNN7EXAMPLE"
       AWS_SECRET_ACCESS_KEY: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
       AWS_REGION: "us-east-1"
-      AWS_BUCKET: "wazuh-indexer-amazon-security-lake-bucket"
+      AWS_BUCKET: "wazuh-indexer-aux-bucket"
+      ASL_BUCKET: "wazuh-indexer-amazon-security-lake-bucket"
     ports:
       - "5000:5000/tcp"
       - "5000:5000/udp"

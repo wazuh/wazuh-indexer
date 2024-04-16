@@ -22,14 +22,14 @@ curl -X POST "http://localhost:9000/2015-03-31/functions/function/invocations" -
         "s3SchemaVersion": "1.0",
         "configurationId": "testConfigRule",
         "bucket": {
-          "name": "wazuh-indexer-amazon-security-lake-bucket",
+          "name": "wazuh-indexer-aux-bucket",
           "ownerIdentity": {
             "principalId":"A3NL1KOZZKExample"
           },
-          "arn": "arn:aws:s3:::wazuh-indexer-amazon-security-lake-bucket"
+          "arn": "arn:aws:s3:::wazuh-indexer-aux-bucket"
         },
         "object": {
-          "key": "2024/04/11/ls.s3.f6e2a1b2-4ea5-47b6-be32-3a6746a48187.2024-04-11T17.10.part14.txt",
+          "key": "2024/04/16/ls.s3.0906d6d6-e4ca-4db8-b445-b3c572425ee1.2024-04-16T09.15.part3.txt",
           "size": 1024,
           "eTag":"d41d8cd98f00b204e9800998ecf8427e",
           "versionId":"096fKKXTRTtl3on89fVO.nfljtsv6qko"

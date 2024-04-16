@@ -123,23 +123,14 @@ if __name__ == '__main__':
     main()
     # _test()
 
-def lambda_handler(event, context):
-    logging.basicConfig(filename='lambda.log', encoding='utf-8', level=logging.DEBUG)
-    print(event)
-    print(context)
+# ================================================ #
+#   AWS LAMBDA method
+# ================================================ #
 
-    # Constants : bucket names
-    # src_bucket = "wazuh-indexer-amazon-security-lake-bucket"
-    dst_bucket = "final-bucket"
-
-    # Variables : object name -> uploaded log file
-    # - From https://docs.aws.amazon.com/lambda/latest/dg/with-s3-example.html#with-s3-example-create-function
-    src_bucket = event['Records'][0]['s3']['bucket']['name']
-    key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')
-    logging.info(f"Lambda function invoked due to {key}.")
-    logging.info(f"Source bucket name is {src_bucket}. Destination bucket is {dst_bucket}.")
-
-    # boto3 client setup
+def init_aws_client():
+    '''
+    boto3 client setup
+    '''
     logging.info("Initializing boto3 client.")
     client = boto3.client(
         service_name='s3',
@@ -149,37 +140,82 @@ def lambda_handler(event, context):
         endpoint_url='http://s3.ninja:9000',
     )
     logging.info("boto3 client initialized.")
+    return client
 
-    # Read from bucket A
+
+def get_events(bucket: str, key: str):
+    '''
+    '''
     logging.info(f"Reading {key}.")
     response = client.get_object(
-        Bucket=src_bucket,
+        Bucket=bucket,
         Key=key
     )
     data = response['Body'].read().decode('utf-8')
-    raw_events = data.splitlines()
+    return data.splitlines()
+
+
+def transform_events_to_ocsf(events):
+    '''
+    '''
+    logging.info("Transforming Wazuh security events to OCSF.")
+    ocsf_events = []
+    for line in events:
+        try:
+            # Validate event using a model
+            event = transform.converter.from_json(line)
+            # Transform to OCSF
+            ocsf_event = transform.converter.to_detection_finding(event).model_dump()
+            # Append
+            ocsf_events.append(ocsf_event)
+        except AttributeError as e:
+            logging.error("Error transforming line to OCSF")
+            logging.error(event)
+            logging.error(e)
+    return ocsf_events
+
+
+def to_parquet(ocsf_events):
+    '''
+
+    '''
+    table = pa.Table.from_pylist(ocsf_events)
+
+    # Write to file.
+    to_parquet_file(table)
+
+
+def to_parquet_file(pa_table, filename='tmp'):
+    '''
+    Write data to file.
+    '''
+    pq.write_table(pa_table, f'{filename}.parquet', compression='ZSTD')
+
+    
+# "Initialize SDK clients and database connections outside of the function handler"
+client = init_aws_client() 
+
+def lambda_handler(event, context):
+    logging.basicConfig(filename='lambda.log', encoding='utf-8', level=logging.DEBUG)
+
+    # Variables: get the object name and bucket name from the event 
+    # - From https://docs.aws.amazon.com/lambda/latest/dg/with-s3-example.html#with-s3-example-create-function
+    src_bucket = event['Records'][0]['s3']['bucket']['name']
+    key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')
+    dst_bucket = os.environ['AWS_BUCKET']
+    logging.info(f"Lambda function invoked due to {key}.")
+    logging.info(f"Source bucket name is {src_bucket}. Destination bucket is {dst_bucket}.")
+   
+    # Read events from the source (aux) bucket 
+    raw_events = get_events(src_bucket, key)
 
     # Transform data
-    logging.info("Transforming data.")
-    ocsf_events = []
-    for line in raw_events:
-        try:
-            event = transform.converter.from_json(line)
-            ocsf_event = transform.converter.to_detection_finding(event)
-            ocsf_events.append(ocsf_event.model_dump())
+    ocsf_events = transform_events_to_ocsf(raw_events)
 
-            # Temporal disk storage
-            with open('tmp.json', "a") as fd:
-                fd.write(str(ocsf_event) + "\n")
-        except AttributeError as e:
-            print("Error transforming line to OCSF")
-            print(event)
-            print(e)
+    # Encode events as parquet
+    to_parquet(ocsf_events)
 
-    table = pa.Table.from_pylist(ocsf_events)
-    pq.write_table(table, 'tmp.parquet')
-
-    # Upload to bucket B
+    # Upload to destination bucket B
     logging.info(f"Uploading data to {dst_bucket}.")
     response = client.put_object(
         Bucket=dst_bucket, 

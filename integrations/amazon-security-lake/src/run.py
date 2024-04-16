@@ -6,7 +6,7 @@ import boto3
 import pyarrow as pa
 import pyarrow.parquet as pq
 from botocore.exceptions import ClientError
-from transform import converter  # Assuming transform module exists for event transformation
+from transform import converter
 
 # Initialize boto3 client outside the handler
 s3_client = boto3.client(

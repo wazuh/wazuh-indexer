@@ -6,7 +6,7 @@ import boto3
 import pyarrow as pa
 import pyarrow.parquet as pq
 from botocore.exceptions import ClientError
-from transform import converter
+import wazuh_ocsf_converter
 
 # Initialize boto3 client outside the handler
 s3_client = boto3.client(
@@ -29,21 +29,6 @@ def get_events(bucket: str, key: str) -> list:
     except ClientError as e:
         logging.error(f"Failed to read S3 object {key} from bucket {bucket}: {e}")
         return []
-
-def transform_events_to_ocsf(events: list) -> list:
-    """
-    Transform Wazuh security events to OCSF format.
-    """
-    logging.info("Transforming Wazuh security events to OCSF.")
-    ocsf_events = []
-    for line in events:
-        try:
-            event = converter.from_json(line)  # Assuming this function exists
-            ocsf_event = converter.to_detection_finding(event).model_dump()
-            ocsf_events.append(ocsf_event)
-        except (AttributeError, json.JSONDecodeError) as e:
-            logging.error(f"Error transforming line to OCSF: {e}")
-    return ocsf_events
 
 def write_parquet_file(ocsf_events: list, filename: str) -> None:
     """
@@ -79,7 +64,7 @@ def lambda_handler(event, context):
     raw_events = get_events(src_bucket, key)
 
     # Transform events to OCSF format
-    ocsf_events = transform_events_to_ocsf(raw_events)
+    ocsf_events = wazuh_ocsf_converter.transform_events(raw_events)
 
     # Write OCSF events to Parquet file
     tmp_filename = '/tmp/tmp.parquet'

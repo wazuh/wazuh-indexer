@@ -12,7 +12,7 @@ also improve the protection of your workloads, applications, and data. Security 
 Open Cybersecurity Schema Framework (OCSF), an open standard. With OCSF support, the service normalizes 
 and combines security data from AWS and a broad range of enterprise security data sources.
 
-##### Usage
+#### Usage
 
 A demo of the integration can be started using the content of this folder and Docker.
 
@@ -56,7 +56,6 @@ parquet-tools show <parquet-file>
 
 Bucket names can be configured editing the [amazon-security-lake.yml](./docker/amazon-security-lake.yml) file.
 
-
 For development or debugging purposes, you may want to enable hot-reload, test or debug on these files, 
 by using the `--config.reload.automatic`, `--config.test_and_exit` or `--debug` flags, respectively.
 
@@ -64,6 +63,56 @@ For production usage, follow the instructions in our documentation page about th
 (_when-its-done_)
 
 As a last note, we would like to point out that we also use this Docker environment for development.
+
+#### Deployment on AWS Lambda
+
+##### Creating a .zip deployment package with dependencies
+
+To automatically generate the zip file, run steps 1 and 2 and the run `make`. If you don't
+have `make` install, you can continue with the steps to create the package manually.
+
+1. Create and activate a virtual environment in our project directory.
+    ```bash
+    cd amazon-security-lake
+    python3 -m venv .venv
+    source .venv/bin/activate
+    ```
+
+2. Install the required libraries using pip.
+    ```console
+    (.venv) pip install -r requirements.txt
+    ```
+
+3. Use `pip show` to find the location in your virtual environment where pip has installed your dependencies.
+    ```console
+    (.venv) ~/src$ pip show <package_name>
+    ```
+    The folder in which pip installs your libraries may be named `site-packages` or `dist-packages`. This folder may be located in either the `lib/python3.x` or `lib64/python3.x` directory (where python3.x represents the version of Python you are using).
+
+4. Deactivate the virtual environment
+    ```console
+    (.venv) ~/src$ deactivate
+    ```
+
+5. Navigate into the directory containing the dependencies installed with pip and create a .zip file in the project directory with the installed dependencies at the root.
+    ```console
+    ~/src$ cd .venv/lib/python3.12/site-packages
+    ~/src/.venv/lib/python3.12/site-packages$ zip -r ../../../../wazuh_to_amazon_security_lake.zip .
+    ```
+
+6. Navigate to the root of the project directory where the `run.py` file containing the handler code is located and add that file to the root of the .zip package. 
+    ```console
+    ~/src/.venv/lib/python3.12/site-packages$ cd ../../../../src
+    ~/src$ zip ../wazuh_to_amazon_security_lake.zip run.py wazuh_ocsf_converter.py
+    ~/src$ zip ../wazuh_to_amazon_security_lake.zip models -r
+    ```
+
+The instructions on this section have been based on the following AWS tutorials and documentation. 
+
+* [Tutorial: Using an Amazon S3 trigger to create thumbnail images](https://docs.aws.amazon.com/lambda/latest/dg/with-s3-tutorial.html)
+* [Tutorial: Using an Amazon S3 trigger to invoke a Lambda function](https://docs.aws.amazon.com/lambda/latest/dg/with-s3-example.html)
+* [Working with .zip file archives for Python Lambda functions](https://docs.aws.amazon.com/lambda/latest/dg/python-package.html)
+* [Best practices for working with AWS Lambda functions](https://docs.aws.amazon.com/lambda/latest/dg/best-practices.html)
 
 ### Other integrations
 

@@ -8,13 +8,15 @@ import pyarrow.parquet as pq
 from botocore.exceptions import ClientError
 import wazuh_ocsf_converter
 
+no_dst_bucket_msg="Destination bucket not set. Please, set the AWS_BUCKET environment variable with the name of the Amazon Security Lake dedicated S3 bucket." 
+
 # Initialize boto3 client outside the handler
 s3_client = boto3.client(
     service_name='s3',
-    aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
-    aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'],
-    region_name=os.environ['AWS_DEFAULT_REGION'],
-    endpoint_url='http://s3.ninja:9000',
+    aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),
+    aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY'),
+    region_name=os.environ.get('AWS_DEFAULT_REGION'),
+    endpoint_url=os.environ.get('AWS_ENDPOINT'),
 )
 
 def get_events(bucket: str, key: str) -> list:
@@ -56,9 +58,15 @@ def lambda_handler(event, context):
     # Extract bucket and key from S3 event
     src_bucket = event['Records'][0]['s3']['bucket']['name']
     key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')
-    dst_bucket = os.environ['AWS_BUCKET']
+    dst_bucket = os.environ.get('AWS_BUCKET')
     logging.info(f"Lambda function invoked due to {key}.")
     logging.info(f"Source bucket name is {src_bucket}. Destination bucket is {dst_bucket}.")
+
+    if not dst_bucket:
+        logging.error(no_dst_bucket_msg)
+        return {
+            'success': False
+        }
 
     # Read events from source S3 bucket
     raw_events = get_events(src_bucket, key)

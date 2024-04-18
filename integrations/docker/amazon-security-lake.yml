@@ -118,6 +118,7 @@ services:
       AWS_SECRET_ACCESS_KEY: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
       AWS_DEFAULT_REGION: "us-east-1"
       AWS_BUCKET: "wazuh-indexer-amazon-security-lake-bucket"
+      AWS_ENDPOINT: "http://s3.ninja:9000"
     volumes:
       - ../amazon-security-lake/src:/var/task
     ports:

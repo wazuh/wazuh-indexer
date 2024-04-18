@@ -82,7 +82,7 @@ services:
       MONITORING_ENABLED: false
       AWS_ACCESS_KEY_ID: "AKIAIOSFODNN7EXAMPLE"
       AWS_SECRET_ACCESS_KEY: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-      AWS_REGION: "us-east-1"
+      AWS_DEFAULT_REGION: "us-east-1"
       AWS_BUCKET: "wazuh-indexer-aux-bucket"
       ASL_BUCKET: "wazuh-indexer-amazon-security-lake-bucket"
     ports:
@@ -116,7 +116,7 @@ services:
     environment:
       AWS_ACCESS_KEY_ID: "AKIAIOSFODNN7EXAMPLE"
       AWS_SECRET_ACCESS_KEY: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-      AWS_REGION: "us-east-1"
+      AWS_DEFAULT_REGION: "us-east-1"
       AWS_BUCKET: "wazuh-indexer-amazon-security-lake-bucket"
     volumes:
       - ../amazon-security-lake/src:/var/task

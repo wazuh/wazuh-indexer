@@ -21,8 +21,9 @@ $(VIRTUAL_ENV):
 .ONESHELL:
 pack_src:
 	@cd src
-	@zip ../$(ZIP_NAME).zip run.py wazuh_ocsf_converter.py
+	@zip ../$(ZIP_NAME).zip lambda_function.py wazuh_ocsf_converter.py
 	@zip ../$(ZIP_NAME).zip models -r
 
 clean:
 	@rm -rf $(VIRTUAL_ENV)
+	@py3clean .

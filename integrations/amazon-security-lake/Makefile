@@ -15,7 +15,7 @@ $(VIRTUAL_ENV):
 	$(error Missing virtual environment, please install it with:
 		python3 -m venv $(VIRTUAL_ENV)
 		source $(VIRTUAL_ENV)/bin/activate
-		pip install -r requirements.txt
+		pip install -r requirements.aws.txt
 	)
 
 .ONESHELL:

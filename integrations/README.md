@@ -80,7 +80,7 @@ have `make` install, you can continue with the steps to create the package manua
 
 2. Install the required libraries using pip.
     ```console
-    (.venv) pip install -r requirements.txt
+    (.venv) pip install -r requirements.aws.txt
     ```
 
 3. Use `pip show` to find the location in your virtual environment where pip has installed your dependencies.

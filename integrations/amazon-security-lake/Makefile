@@ -1,22 +1,26 @@
 
 ZIP_NAME = wazuh_to_amazon_security_lake
-VIRTUAL_ENV = .venv
+TARGET = package
 
 # Main target
 pack: pack_deps pack_src
 
 .ONESHELL:
-pack_deps: $(VIRTUAL_ENV)
-	@cd .venv/lib/python3.9/site-packages
-	@zip -r ../../../../$(ZIP_NAME).zip .
+pack_deps: $(TARGET)
+	cd $(TARGET)
+	zip -r ../$(ZIP_NAME).zip .
 
 .ONESHELL:
-$(VIRTUAL_ENV):
-	$(error Missing virtual environment, please install it with:
-		python3 -m venv $(VIRTUAL_ENV)
-		source $(VIRTUAL_ENV)/bin/activate
-		pip install -r requirements.aws.txt
-	)
+$(TARGET):
+	docker run -v `pwd`:/src -w /src \
+		python:3.12 \
+		pip install \
+		--platform manylinux2014_x86_64 \
+		--target=$(TARGET) \
+		--implementation cp \
+		--python-version 3.12 \
+		--only-binary=:all: --upgrade \
+		-r requirements.aws.txt
 
 .ONESHELL:
 pack_src:
@@ -25,5 +29,5 @@ pack_src:
 	@zip ../$(ZIP_NAME).zip models -r
 
 clean:
-	@rm -rf $(VIRTUAL_ENV)
+	@rm -rf $(TARGET)
 	@py3clean .

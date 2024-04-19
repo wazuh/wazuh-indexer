@@ -119,6 +119,10 @@ services:
       AWS_DEFAULT_REGION: "us-east-1"
       AWS_BUCKET: "wazuh-indexer-amazon-security-lake-bucket"
       AWS_ENDPOINT: "http://s3.ninja:9000"
+      SOURCE_LOCATION: "wazuh"
+      ACCOUNT_ID: "567970947422"
+      IAM_ROLE_ARN: ""
+      IS_DEV: true
     volumes:
       - ../amazon-security-lake/src:/var/task
     ports:

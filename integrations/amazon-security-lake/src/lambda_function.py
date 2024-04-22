@@ -8,8 +8,6 @@ import pyarrow.parquet as pq
 from botocore.exceptions import ClientError
 import wazuh_ocsf_converter
 
-no_dst_bucket_msg = "Destination bucket not set. Please, set the AWS_BUCKET environment variable with the name of the Amazon Security Lake dedicated S3 bucket."
-
 # Initialize boto3 client outside the handler
 if os.environ.get('IS_DEV'):
     s3_client = boto3.client(

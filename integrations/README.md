@@ -42,7 +42,7 @@ After 5 minutes, the first batch of data will show up in http://localhost:9444/u
 You'll need to invoke the Lambda function manually, selecting the log file to process.
 
 ```bash
-export AWS_BUCKET=wazuh-indexer-aux-bucket
+export AUX_BUCKET=wazuh-indexer-aux-bucket
 
 bash amazon-security-lake/src/invoke-lambda.sh <file>
 ```

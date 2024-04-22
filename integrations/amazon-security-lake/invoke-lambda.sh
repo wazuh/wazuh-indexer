@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export AWS_BUCKET=wazuh-indexer-aux-bucket
+export AUX_BUCKET=wazuh-indexer-aux-bucket
 
 curl -X POST "http://localhost:9000/2015-03-31/functions/function/invocations" -d '{
   "Records": [
@@ -24,11 +24,11 @@ curl -X POST "http://localhost:9000/2015-03-31/functions/function/invocations" -
         "s3SchemaVersion": "1.0",
         "configurationId": "testConfigRule",
         "bucket": {
-          "name": "'"${AWS_BUCKET}"'",
+          "name": "'"${AUX_BUCKET}"'",
           "ownerIdentity": {
             "principalId":"A3NL1KOZZKExample"
           },
-          "arn": "'"arn:aws:s3:::${AWS_BUCKET}"'"
+          "arn": "'"arn:aws:s3:::${AUX_BUCKET}"'"
         },
         "object": {
           "key": "'"${1}"'",

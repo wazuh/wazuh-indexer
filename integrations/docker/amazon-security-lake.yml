@@ -80,9 +80,9 @@ services:
       LOG_LEVEL: trace
       LOGSTASH_KEYSTORE_PASS: "SecretPassword"
       MONITORING_ENABLED: false
-      AWS_ACCESS_KEY_ID: "AKIAIOSFODNN7EXAMPLE"
+      AWS_ACCESS_KEY_ID: "AKIAYIPNU4FPODY4DHNS"
       AWS_SECRET_ACCESS_KEY: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-      AWS_DEFAULT_REGION: "us-east-1"
+      AWS_REGION: "us-east-1"
       AUX_BUCKET: "wazuh-indexer-aux-bucket"
       AWS_BUCKET: "wazuh-indexer-amazon-security-lake-bucket"
       AWS_ENDPOINT: "http://s3.ninja:9000"
@@ -117,7 +117,7 @@ services:
     environment:
       AWS_ACCESS_KEY_ID: "AKIAIOSFODNN7EXAMPLE"
       AWS_SECRET_ACCESS_KEY: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-      AWS_DEFAULT_REGION: "us-east-1"
+      AWS_REGION: "us-east-1"
       AWS_BUCKET: "wazuh-indexer-amazon-security-lake-bucket"
       AWS_ENDPOINT: "http://s3.ninja:9000"
       SOURCE_LOCATION: "wazuh"

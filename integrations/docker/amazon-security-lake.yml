@@ -83,8 +83,7 @@ services:
       AWS_ACCESS_KEY_ID: "AKIAYIPNU4FPODY4DHNS"
       AWS_SECRET_ACCESS_KEY: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
       AWS_REGION: "us-east-1"
-      AUX_BUCKET: "wazuh-indexer-aux-bucket"
-      AWS_BUCKET: "wazuh-indexer-amazon-security-lake-bucket"
+      AUX_BUCKET: "indexer-amazon-security-lake-bucket"
       AWS_ENDPOINT: "http://s3.ninja:9000"
     ports:
       - "5000:5000/tcp"
@@ -122,7 +121,6 @@ services:
       AWS_ENDPOINT: "http://s3.ninja:9000"
       SOURCE_LOCATION: "wazuh"
       ACCOUNT_ID: "567970947422"
-      IAM_ROLE_ARN: ""
       IS_DEV: true
     volumes:
       - ../amazon-security-lake/src:/var/task

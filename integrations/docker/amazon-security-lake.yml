@@ -80,7 +80,7 @@ services:
       LOG_LEVEL: trace
       LOGSTASH_KEYSTORE_PASS: "SecretPassword"
       MONITORING_ENABLED: false
-      AWS_ACCESS_KEY_ID: "AKIAYIPNU4FPODY4DHNS"
+      AWS_ACCESS_KEY_ID: "AKIAIOSFODNN7EXAMPLE"
       AWS_SECRET_ACCESS_KEY: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
       AWS_REGION: "us-east-1"
       AUX_BUCKET: "indexer-amazon-security-lake-bucket"
@@ -120,7 +120,7 @@ services:
       AWS_BUCKET: "wazuh-indexer-amazon-security-lake-bucket"
       AWS_ENDPOINT: "http://s3.ninja:9000"
       SOURCE_LOCATION: "wazuh"
-      ACCOUNT_ID: "567970947422"
+      ACCOUNT_ID: "111111111111"
       IS_DEV: true
     volumes:
       - ../amazon-security-lake/src:/var/task

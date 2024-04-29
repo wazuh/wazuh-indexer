@@ -75,7 +75,7 @@ class FindingABC(pydantic.BaseModel, abc.ABC):
     class_uid: int
     count: int
     message: str
-    metadata: Metadata
+    metadata: Metadata = Metadata()
     raw_data: str
     resources: typing.List[Resource]
     risk_score: int

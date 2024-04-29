@@ -9,6 +9,15 @@ class AnalyticInfo(pydantic.BaseModel):
     uid: str
 
 
+# Deprecated since v1.1.0. Use AnalyticInfo instead.
+class Analytic(pydantic.BaseModel):
+    category: str
+    name: str
+    type: str = "Rule"
+    type_id: int = 1
+    uid: str
+
+
 class TechniqueInfo(pydantic.BaseModel):
     name: str
     uid: str
@@ -23,6 +32,13 @@ class AttackInfo(pydantic.BaseModel):
 class FindingInfo(pydantic.BaseModel):
     analytic: AnalyticInfo
     attacks: typing.List[AttackInfo]
+    title: str
+    types: typing.List[str]
+    uid: str
+
+
+# Deprecated since v1.1.0. Use FindingInfo instead.
+class Finding(pydantic.BaseModel):
     title: str
     types: typing.List[str]
     uid: str
@@ -63,4 +79,28 @@ class DetectionFinding(pydantic.BaseModel):
     status_id: int = 99
     time: int
     type_uid: int = 200401
+    unmapped: typing.Dict[str, typing.List[str]] = pydantic.Field()
+
+
+# Deprecated since v1.1.0. Use DetectionFinding instead.
+class SecurityFinding(pydantic.BaseModel):
+    activity_id: int = 1
+    analytic: Analytic
+    attacks: typing.List[AttackInfo]
+    category_name: str = "Findings"
+    category_uid: int = 2
+    class_name: str = "Security Finding"
+    class_uid: int = 2001
+    count: int
+    message: str
+    finding: Finding
+    metadata: Metadata
+    raw_data: str
+    resources: typing.List[Resource]
+    risk_score: int
+    severity_id: int
+    state_id: int = 1
+    status_id: int = 99
+    time: int
+    type_uid: int = 200101
     unmapped: typing.Dict[str, typing.List[str]] = pydantic.Field()

@@ -194,7 +194,7 @@ def from_json(json_line: str) -> models.wazuh.Event:
         print(e)
 
 
-def transform_events(events: list) -> list:
+def transform_events(events: list, ocsf_class: str) -> list:
     """
     Transform a list of Wazuh security events (json string) to OCSF format.
     """
@@ -203,8 +203,10 @@ def transform_events(events: list) -> list:
     for event in events:
         try:
             wazuh_event = from_json(event)
-            # ocsf_event = to_detection_finding(wazuh_event).model_dump()
-            ocsf_event = to_security_finding(wazuh_event).model_dump()
+            if ocsf_class == 'DETECTION_FINDING':
+                ocsf_event = to_detection_finding(wazuh_event).model_dump()
+            else:
+                ocsf_event = to_security_finding(wazuh_event).model_dump()
             ocsf_events.append(ocsf_event)
         except Exception as e:
             logging.error(f"Error transforming line to OCSF: {e}")

@@ -1,5 +1,6 @@
 import pydantic
 import typing
+import abc
 
 
 class AnalyticInfo(pydantic.BaseModel):
@@ -62,15 +63,14 @@ class Resource(pydantic.BaseModel):
     uid: str
 
 
-class DetectionFinding(pydantic.BaseModel):
+class FindingABC(pydantic.BaseModel, abc.ABC):
     activity_id: int = 1
     category_name: str = "Findings"
     category_uid: int = 2
-    class_name: str = "Detection Finding"
-    class_uid: int = 2004
+    class_name: str
+    class_uid: int
     count: int
     message: str
-    finding_info: FindingInfo
     metadata: Metadata
     raw_data: str
     resources: typing.List[Resource]
@@ -78,29 +78,23 @@ class DetectionFinding(pydantic.BaseModel):
     severity_id: int
     status_id: int = 99
     time: int
-    type_uid: int = 200401
+    type_uid: int
     unmapped: typing.Dict[str, typing.List[str]] = pydantic.Field()
+
+
+class DetectionFinding(FindingABC):
+    class_name: str = "Detection Finding"
+    class_uid: int = 2004
+    finding_info: FindingInfo
+    type_uid: int = 200401
 
 
 # Deprecated since v1.1.0. Use DetectionFinding instead.
-class SecurityFinding(pydantic.BaseModel):
-    activity_id: int = 1
+class SecurityFinding(FindingABC):
     analytic: Analytic
     attacks: typing.List[AttackInfo]
-    category_name: str = "Findings"
-    category_uid: int = 2
     class_name: str = "Security Finding"
     class_uid: int = 2001
-    count: int
-    message: str
     finding: Finding
-    metadata: Metadata
-    raw_data: str
-    resources: typing.List[Resource]
-    risk_score: int
-    severity_id: int
     state_id: int = 1
-    status_id: int = 99
-    time: int
     type_uid: int = 200101
-    unmapped: typing.Dict[str, typing.List[str]] = pydantic.Field()

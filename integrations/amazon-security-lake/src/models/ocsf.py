@@ -6,7 +6,7 @@ import abc
 class AnalyticInfo(pydantic.BaseModel):
     category: str
     name: str
-    type_id: int
+    type_id: int = 1
     uid: str
 
 
@@ -27,7 +27,7 @@ class TechniqueInfo(pydantic.BaseModel):
 class AttackInfo(pydantic.BaseModel):
     tactic: TechniqueInfo
     technique: TechniqueInfo
-    version: str
+    version: str = "v13.1"
 
 
 class FindingInfo(pydantic.BaseModel):
@@ -52,10 +52,14 @@ class ProductInfo(pydantic.BaseModel):
 
 
 class Metadata(pydantic.BaseModel):
-    log_name: str
-    log_provider: str
-    product: ProductInfo
-    version: str
+    log_name: str = "Security events"
+    log_provider: str = "Wazuh"
+    product: ProductInfo = ProductInfo(
+        name="Wazuh",
+        lang="en",
+        vendor_name="Wazuh, Inc,."
+    )
+    version: str = "1.1.0"
 
 
 class Resource(pydantic.BaseModel):

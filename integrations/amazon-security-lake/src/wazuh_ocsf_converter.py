@@ -41,7 +41,6 @@ def to_detection_finding(event: models.wazuh.Event) -> models.ocsf.DetectionFind
             analytic=models.ocsf.AnalyticInfo(
                 category=", ".join(event.rule.groups),
                 name=event.decoder.name,
-                type_id=1,
                 uid=event.rule.id
             ),
             attacks=[
@@ -53,24 +52,12 @@ def to_detection_finding(event: models.wazuh.Event) -> models.ocsf.DetectionFind
                     technique=models.ocsf.TechniqueInfo(
                         name=", ".join(event.rule.mitre.technique),
                         uid=", ".join(event.rule.mitre.id)
-                    ),
-                    version="v13.1"
+                    )
                 )
             ],
             title=event.rule.description,
             types=[event.input.type],
             uid=event.id
-        )
-
-        metadata = models.ocsf.Metadata(
-            log_name="Security events",
-            log_provider="Wazuh",
-            product=models.ocsf.ProductInfo(
-                name="Wazuh",
-                lang="en",
-                vendor_name="Wazuh, Inc,."
-            ),
-            version="1.1.0"
         )
 
         resources = [models.ocsf.Resource(
@@ -90,7 +77,6 @@ def to_detection_finding(event: models.wazuh.Event) -> models.ocsf.DetectionFind
             count=event.rule.firedtimes,
             message=event.rule.description,
             finding_info=finding_info,
-            metadata=metadata,
             raw_data=event.full_log,
             resources=resources,
             risk_score=event.rule.level,
@@ -112,7 +98,6 @@ def to_security_finding(event: models.wazuh.Event) -> models.ocsf.SecurityFindin
         analytic = models.ocsf.Analytic(
             category=", ".join(event.rule.groups),
             name=event.decoder.name,
-            type_id=1,
             uid=event.rule.id
         )
 
@@ -125,8 +110,7 @@ def to_security_finding(event: models.wazuh.Event) -> models.ocsf.SecurityFindin
                 technique=models.ocsf.TechniqueInfo(
                     name=", ".join(event.rule.mitre.technique),
                     uid=", ".join(event.rule.mitre.id)
-                ),
-                version="v13.1"
+                )
             )
         ]
 
@@ -134,17 +118,6 @@ def to_security_finding(event: models.wazuh.Event) -> models.ocsf.SecurityFindin
             title=event.rule.description,
             types=[event.input.type],
             uid=event.id
-        )
-
-        metadata = models.ocsf.Metadata(
-            log_name="Security events",
-            log_provider="Wazuh",
-            product=models.ocsf.ProductInfo(
-                name="Wazuh",
-                lang="en",
-                vendor_name="Wazuh, Inc,."
-            ),
-            version="1.1.0"
         )
 
         resources = [models.ocsf.Resource(
@@ -166,7 +139,6 @@ def to_security_finding(event: models.wazuh.Event) -> models.ocsf.SecurityFindin
             count=event.rule.firedtimes,
             message=event.rule.description,
             finding=finding,
-            metadata=metadata,
             raw_data=event.full_log,
             resources=resources,
             risk_score=event.rule.level,

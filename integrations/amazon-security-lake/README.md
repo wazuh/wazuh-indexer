@@ -42,7 +42,7 @@ A properly configured Logstash instance can send the Wazuh Security events to an
 
 The diagram below illustrates the process of converting Wazuh Security Events to OCSF events and to Parquet format for Amazon Security Lake:
 
-![Overview diagram of the Wazuh integration with Amazon Security Lake](./images/asl-overview.png)
+![Overview diagram of the Wazuh integration with Amazon Security Lake](./images/asl-overview.jpeg)
 
 ## Prerequisites
 
@@ -71,9 +71,9 @@ To create the custom source:
 4. Select "Security Finding" as the _OCSF Event class_.
 5. For _AWS account with permission to write data_, enter the AWS account ID and External ID of the custom source that will write logs and events to the data lake.
 6. For _Service Access_, create and use a new service role or use an existing service role that gives Security Lake permission to invoke AWS Glue.
-   ![*Custom source* creation form](./images/asl-custom-source-form.png)
+   ![*Custom source* creation form](./images/asl-custom-source-form.jpeg)
 7. Choose _Create_. Upon creation, Amazon Security Lake automatically creates an AWS Service Role with permissions to push files into the Security Lake bucket, under the proper prefix named after the custom source name. An AWS Glue Crawler is also created to populate the AWS Glue Data Catalog automatically.
-   ![*Custom source* after creation](./images/asl-custom-source.png)
+   ![*Custom source* after creation](./images/asl-custom-source.jpeg)
 8. Finally, collect the S3 bucket details, as these will be needed in the next step. Make sure you have the following information:
    - The Amazon Security Lake S3 region.
    - The S3 bucket name (e.g, `aws-security-data-lake-us-east-1-AAABBBCCCDDD`).
@@ -89,7 +89,7 @@ Follow the [official documentation](https://docs.aws.amazon.com/lambda/latest/dg
 - Select Python 3.12 as the runtime.
 - Configure the runtime to have 512 MB of memory and 30 seconds timeout.
 - Configure a trigger so every object with `.txt` extension uploaded to the S3 bucket created previously invokes the Lambda.
-  ![AWS Lambda trigger](./images/asl-lambda-trigger.png)
+  ![AWS Lambda trigger](./images/asl-lambda-trigger.jpeg)
 - Download the zip containing the integration's code (**insert url**) and upload it to the S3 bucket created previously as per [these instructions](https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-package.html#gettingstarted-package-zip). You can also generate the zip deployment package manually by using the [Makefile](./Makefile) for this purpose (see [CONTRIBUTING](./CONTRIBUTING.md)).
 - Configure the Lambda with the at least the required _Environment Variables_ below:
 

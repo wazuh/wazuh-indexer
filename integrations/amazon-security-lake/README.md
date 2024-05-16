@@ -38,7 +38,7 @@ Wazuh uses rules to monitor the events and logs in your network to detect securi
 
 Wazuh Security Events can be converted to OCSF events and Parquet format, required by Amazon Security Lake, by using an AWS Lambda Python function, a Logstash instance and an AWS S3 bucket.
 
-A properly configured Logstash instance can send the Wazuh Security events to an AWS S3 bucket, invoking the AWS Lambda function that will transform and send the events to the Amazon Security lake dedicated S3 bucket.
+A properly configured Logstash instance can send the Wazuh Security events to an AWS S3 bucket, automatically invoking the AWS Lambda function that will transform and send the events to the Amazon Security lake dedicated S3 bucket.
 
 The diagram below illustrates the process of converting Wazuh Security Events to OCSF events and to Parquet format for Amazon Security Lake:
 
@@ -80,7 +80,7 @@ To create the custom source:
 
 ### Create an S3 bucket to store events
 
-Follow the [official documentation](https://docs.aws.amazon.com/AmazonS3/latest/userguide/create-bucket-overview.html) to create an S3 bucket withing your organization. Use a descriptive name, for example: `wazuh-aws-security-lake-raw`.
+Follow the [official documentation](https://docs.aws.amazon.com/AmazonS3/latest/userguide/create-bucket-overview.html) to create an S3 bucket within your organization. Use a descriptive name, for example: `wazuh-aws-security-lake-raw`.
 
 ### Create an AWS Lambda function
 

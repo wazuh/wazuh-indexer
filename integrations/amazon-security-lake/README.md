@@ -2,17 +2,28 @@
 
 ## Table of Contents
 
-- [Introduction](#introduction)
-- [Prerequisites](#prerequisites)
-- [Integration guide](#integration-guide)
-  - [Configure Amazon Security Lake](#configure-amazon-security-lake)
-  - [Create an AWS S3 bucket](#create-an-s3-bucket-to-store-events)
-  - [Configure the AWS Lambda function](#create-an-aws-lambda-function)
-  - [Validation](#validation)
-  - [Install and configure Logstash](#install-and-configure-logstash)
-- [OCSF mapping](#ocsf-mapping)
-- [Troubleshooting](#troubleshooting)
-- [Support](#support)
+- [Wazuh to Amazon Security Lake Integration Guide](#wazuh-to-amazon-security-lake-integration-guide)
+  - [Table of Contents](#table-of-contents)
+  - [Introduction](#introduction)
+    - [Amazon Security Lake](#amazon-security-lake)
+    - [Open Cybersecurity Schema Framework](#open-cybersecurity-schema-framework)
+    - [Wazuh Security Events](#wazuh-security-events)
+    - [Wazuh Security Events to Amazon Security Lake](#wazuh-security-events-to-amazon-security-lake)
+  - [Prerequisites](#prerequisites)
+  - [Integration guide](#integration-guide)
+    - [Configure Amazon Security Lake](#configure-amazon-security-lake)
+      - [Create a custom source for Wazuh](#create-a-custom-source-for-wazuh)
+    - [Create an S3 bucket to store events](#create-an-s3-bucket-to-store-events)
+    - [Create an AWS Lambda function](#create-an-aws-lambda-function)
+    - [Validation](#validation)
+    - [Install and configure Logstash](#install-and-configure-logstash)
+      - [Configure the Logstash pipeline](#configure-the-logstash-pipeline)
+      - [Running Logstash](#running-logstash)
+  - [OCSF Mapping](#ocsf-mapping)
+    - [Metadata](#metadata)
+      - [Security events](#security-events)
+  - [Troubleshooting](#troubleshooting)
+  - [Support](#support)
 
 ## Introduction
 
@@ -98,7 +109,7 @@ Follow the [official documentation](https://docs.aws.amazon.com/lambda/latest/dg
   | AWS_BUCKET           | True     | The name of the Amazon S3 bucket in which Security Lake stores your custom source data             |
   | SOURCE_LOCATION      | True     | The _Data source name_ of the _Custom Source_                                                      |
   | ACCOUNT_ID           | True     | Enter the ID that you specified when creating your Amazon Security Lake custom source              |
-  | REGION               | True     | AWS Region to which the data is written                                                            |
+  | AWS_REGION           | True     | AWS Region to which the data is written                                                            |
   | S3_BUCKET_OCSF       | False    | S3 bucket to which the mapped events are written                                                   |
   | OCSF_CLASS           | False    | The OCSF class to map the events into. Can be "SECURITY_FINDING" (default) or "DETECTION_FINDING". |
 

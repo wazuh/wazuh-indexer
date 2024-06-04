@@ -116,7 +116,7 @@ services:
           unzip config/certs/certs.zip -d config/certs;
         fi;
         echo "Setting file permissions"
-        chown -R root:root config/certs;
+        chown -R 1000:1000 config/certs;
         find . -type d -exec chmod 750 \{\} \;;
         find . -type f -exec chmod 640 \{\} \;;
         echo "Waiting for Elasticsearch availability";
@@ -184,7 +184,7 @@ services:
     environment:
       - SERVERNAME=kibana
       - ELASTICSEARCH_HOSTS=https://es01:9200
-      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_USERNAME=admin
       - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD}
       - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=config/certs/ca/ca.crt
     mem_limit: ${MEM_LIMIT}
@@ -208,18 +208,18 @@ services:
       context: ../elastic
     environment:
       LOG_LEVEL: trace
-      LOGSTASH_KEYSTORE_PASS: "SecretPassword"
+      # LOGSTASH_KEYSTORE_PASS: "SecretPassword"
       MONITORING_ENABLED: false
     volumes:
       - ../elastic/logstash/pipeline:/usr/share/logstash/pipeline
-      - ./config/logstash/es_template.json:/etc/logstash/es_template.json
-    # command: tail -f /var/log/logstash/logstash-plain.log
-    # command: logstash -f /etc/logstash/conf.d/indexer-to-elastic.conf
-    command: |
-      bash -c "
-        bin/logstash-plugin install logstash-input-opensearch logstash-output-opensearch && 
-        logstash -f /etc/logstash/conf.d/indexer-to-elastic.conf
-      "
+      - ./certs/root-ca.pem:/usr/share/logstash/root-ca.pem
+      - es_certs:/etc/certs/elastic
+    command: tail -f /dev/null
+    # command: logstash -f /usr/share/logstash/pipeline/indexer-to-elastic.conf
+    # command: |
+    #   bash -c "
+    #     bin/logstash-plugin install logstash-input-opensearch logstash-output-opensearch
+    #   "
 
 volumes:
   data:

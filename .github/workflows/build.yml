@@ -1,4 +1,4 @@
-name: Build packages (on demand) | ${{ inputs.id }}
+run-name: Build packages (on demand) ${{ inputs.distribution }} wazuh-indexer on ${{ inputs.architecture }} | ${{ inputs.id }}
 
 # This workflow runs when any of the following occur:
 # - Run manually

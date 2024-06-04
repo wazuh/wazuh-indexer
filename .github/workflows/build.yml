@@ -1,4 +1,4 @@
-name: Build packages (on demand)
+name: Build packages (on demand) | ${{ inputs.id }}
 
 # This workflow runs when any of the following occur:
 # - Run manually
@@ -30,6 +30,9 @@ on:
         description: "Checksum ?"
         type: boolean
         default: false
+      id:
+        type: string
+        required: false
   workflow_call:
     inputs:
       revision:
@@ -56,6 +59,9 @@ on:
         description: "Checksum ?"
         type: boolean
         default: false
+      id:
+        type: string
+        required: false
     secrets:
       CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY:
         required: true

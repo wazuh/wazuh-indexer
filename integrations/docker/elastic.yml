@@ -21,10 +21,8 @@ services:
     ports:
       - 9200:9200
     environment:
-      # - cluster.name=opensearch-cluster
       - node.name=wazuh.indexer
       - discovery.type=single-node
-      # - cluster.initial_cluster_manager_nodes=opensearch-node
       - bootstrap.memory_lock=true
       - "DISABLE_INSTALL_DEMO_CONFIG=true"
       - plugins.security.ssl.http.enabled=true
@@ -202,24 +200,17 @@ services:
     depends_on:
       es01:
         condition: service_healthy
-    # image: docker.elastic.co/logstash/logstash:8.6.2
     image: logstash-oss:8.6.2
     build:
       context: ../elastic
     environment:
-      LOG_LEVEL: trace
-      # LOGSTASH_KEYSTORE_PASS: "SecretPassword"
+      LOG_LEVEL: info
       MONITORING_ENABLED: false
     volumes:
       - ../elastic/logstash/pipeline:/usr/share/logstash/pipeline
       - ./certs/root-ca.pem:/usr/share/logstash/root-ca.pem
       - es_certs:/etc/certs/elastic
-    command: tail -f /dev/null
-    # command: logstash -f /usr/share/logstash/pipeline/indexer-to-elastic.conf
-    # command: |
-    #   bash -c "
-    #     bin/logstash-plugin install logstash-input-opensearch logstash-output-opensearch
-    #   "
+    command: logstash -f /usr/share/logstash/pipeline/indexer-to-elastic.conf
 
 volumes:
   data:

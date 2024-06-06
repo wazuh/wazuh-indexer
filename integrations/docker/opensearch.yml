@@ -1,0 +1,153 @@
+name: "opensearch-integration"
+
+services:
+  events-generator:
+    image: wazuh/indexer-events-generator
+    build:
+      context: ../tools/events-generator
+    container_name: events-generator
+    depends_on:
+      wazuh.indexer:
+        condition: service_healthy
+    command: bash -c "python run.py -a wazuh.indexer"
+
+  wazuh.indexer:
+    image: opensearchproject/opensearch:2.12.0
+    container_name: wazuh.indexer
+    depends_on:
+      wazuh-certs-generator:
+        condition: service_completed_successfully
+    hostname: wazuh.indexer
+    ports:
+      - 9200:9200
+    environment:
+      - node.name=wazuh.indexer
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "DISABLE_INSTALL_DEMO_CONFIG=true"
+      - plugins.security.ssl.http.enabled=true
+      - plugins.security.allow_default_init_securityindex=true
+      - plugins.security.ssl.http.pemcert_filepath=/usr/share/opensearch/config/wazuh.indexer.pem
+      - plugins.security.ssl.transport.pemcert_filepath=/usr/share/opensearch/config/wazuh.indexer.pem
+      - plugins.security.ssl.http.pemkey_filepath=/usr/share/opensearch/config/wazuh.indexer-key.pem
+      - plugins.security.ssl.transport.pemkey_filepath=/usr/share/opensearch/config/wazuh.indexer-key.pem
+      - plugins.security.ssl.http.pemtrustedcas_filepath=/usr/share/opensearch/config/root-ca.pem
+      - plugins.security.ssl.transport.pemtrustedcas_filepath=/usr/share/opensearch/config/root-ca.pem
+      - plugins.security.authcz.admin_dn="CN=wazuh.indexer,OU=Wazuh,O=Wazuh,L=California, C=US"
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    healthcheck:
+      test: curl -sku admin:admin https://localhost:9200/_cat/health | grep -q docker-cluster
+      start_period: 10s
+      start_interval: 3s
+    volumes:
+      - data:/usr/share/opensearch/data
+      - ./certs/wazuh.indexer.pem:/usr/share/opensearch/config/wazuh.indexer.pem
+      - ./certs/wazuh.indexer-key.pem:/usr/share/opensearch/config/wazuh.indexer-key.pem
+      - ./certs/root-ca.pem:/usr/share/opensearch/config/root-ca.pem
+
+  wazuh.dashboard:
+    image: opensearchproject/opensearch-dashboards:2.12.0
+    container_name: wazuh.dashboard
+    depends_on:
+      - wazuh.indexer
+    hostname: wazuh.dashboard
+    ports:
+      - 5601:5601 # Map host port 5601 to container port 5601
+    expose:
+      - "5601" # Expose port 5601 for web access to OpenSearch Dashboards
+    environment:
+      OPENSEARCH_HOSTS: '["https://wazuh.indexer:9200"]' # Define the OpenSearch nodes that OpenSearch Dashboards will query
+
+  wazuh-certs-generator:
+    image: wazuh/wazuh-certs-generator:0.0.1
+    hostname: wazuh-certs-generator
+    container_name: wazuh-certs-generator
+    entrypoint: sh -c "/entrypoint.sh; chown -R 1000:999 /certificates; chmod 740 /certificates; chmod 440 /certificates/*"
+    volumes:
+      - ./certs/:/certificates/
+      - ./config/certs.yml:/config/certs.yml
+
+
+  ## OPENSEARCH STACK
+  opensearch.node:
+    image: opensearchproject/opensearch:${OS_VERSION}
+    depends_on:
+      wazuh-certs-generator:
+        condition: service_completed_successfully
+    container_name: opensearch.node
+    environment:
+      - cluster.name=opensearch-cluster
+      - node.name=opensearch.node
+      - discovery.seed_hosts=opensearch.node
+      - cluster.initial_master_nodes=opensearch.node
+      - bootstrap.memory_lock=true # along with the memlock settings below, disables swapping
+      - 'OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m' # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
+      - "DISABLE_INSTALL_DEMO_CONFIG=true"
+    volumes:
+      - ./config/opensearch/opensearch.yml:/usr/share/opensearch/config/opensearch.yml
+      - ./certs/opensearch.node-key.pem:/usr/share/opensearch/config/certs/opensearch.key
+      - ./certs/opensearch.node.pem:/usr/share/opensearch/config/certs/opensearch.pem
+      - ./certs/root-ca.pem:/usr/share/opensearch/config/certs/root-ca.pem
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536 # maximum number of open files for the OpenSearch user, set to at least 65536 on modern systems
+        hard: 65536
+    ports:
+      - 9203:9200
+      - 9600:9600 # required for Performance Analyzer
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          "curl -sku admin:admin https://opensearch.node:9200 2>&1 | grep -q 'The OpenSearch Project: https://opensearch.org/'",
+        ]
+      interval: 1s
+      timeout: 5s
+      retries: 120
+
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:${OS_VERSION}
+    depends_on:
+      opensearch.node:
+        condition: service_healthy
+    container_name: opensearch-dashboards
+    ports:
+      - 5603:5601
+    expose:
+      - '5603'
+        #volumes:
+        #  - os_config:/usr/share/opensearch-dashboards/config/certs/
+        #  - ./config/opensearch_dashboards/opensearch_dashboards.yml:/usr/share/opensearch-dashboards/config/opensearch_dashboards.yml
+    environment:
+      - 'OPENSEARCH_HOSTS="https://opensearch.node:9200"'
+        #- "DISABLE_SECURITY_DASHBOARDS_PLUGIN=true" # disables security dashboards plugin in OpenSearch Dashboards
+
+  logstash:
+    image: logstash-oss:8.6.2
+    depends_on:
+      opensearch.node:
+        condition: service_healthy
+    container_name: logstash
+    build:
+      context: ../opensearch
+    environment:
+      LOG_LEVEL: info
+      MONITORING_ENABLED: false
+    volumes:
+      - ../opensearch/logstash/pipeline:/usr/share/logstash/pipeline
+      - ./certs/root-ca.pem:/etc/ssl/root-ca.pem
+    command: logstash -f /usr/share/logstash/pipeline/indexer-to-opensearch.conf
+
+volumes:
+  data:
+  os_config:

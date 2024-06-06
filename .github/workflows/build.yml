@@ -32,6 +32,7 @@ on:
         type: boolean
         default: false
       id:
+        description: "ID used to identify the workflow uniquely."
         type: string
         required: false
   workflow_call:

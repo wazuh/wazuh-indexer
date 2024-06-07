@@ -89,8 +89,8 @@ services:
       - ./certs/:/certs/
     entrypoint: >
       sh -c "
-        openssl req -x509 -newkey rsa:4096 -passout pass:abcd1234 -keyout /certs/splunk.key -out /certs/splunk.pem -days 365 -subj '/CN=Wazuh' &&
-        cat /certs/splunk.pem /certs/splunk.key /certs/root-ca.pem > /certs/splunkhec.pem
+        openssl req -x509 -newkey rsa:4096 -passout pass:abcd1234 -keyout /certs/splunk.key -out /certs/splunk.pem -days 365 -subj '/CN=splunk'
+        chmod a+r /certs/splunk.{key,pem}
       "
     # entrypoint: >
     #   sh -c "
@@ -102,9 +102,11 @@ services:
   splunk:
     image: splunk/splunk:9.0.4
     volumes:
-      - ./certs:/opt/splunk/etc/auth/custom
-      - ../splunk/config/default.yml:/tmp/defaults/default.yml
+      - ./certs/splunk.key:/home/splunk.key
+      - ./certs/splunk.pem:/home/splunk.pem
       - ../splunk/config/indexes.conf:/opt/splunk/etc/system/local/indexes.conf
+    #  - ./certs:/opt/splunk/etc/auth/custom
+    #  - ../splunk/config/default.yml:/tmp/defaults/default.yml
     depends_on:
       wazuh-certs-generator:
         condition: service_completed_successfully
@@ -114,13 +116,13 @@ services:
     environment:
       SPLUNK_START_ARGS: --accept-license
       SPLUNK_HTTP_ENABLESSL: 'true'
-      # SPLUNK_HTTP_ENABLESSL_CERT: /opt/splunk/etc/auth/custom/splunk.pem
-      # SPLUNK_HTTP_ENABLESSL_PRIVKEY: /opt/splunk/etc/auth/custom/splunk.key
-      # SPLUNK_HTTP_ENABLESSL_PRIVKEY_PASSWORD: "abcd1234"
-      # SPLUNK_HEC_TOKEN: "abcd1234"
-      SPLUNK_PASSWORD: password
-      SPLUNK_HOSTNAME: splunk
-      SPLUNK_STANDALONE_URL: https://splunk:8080
+      SPLUNK_HTTP_ENABLESSL_CERT: /home/splunk.pem
+      SPLUNK_HTTP_ENABLESSL_PRIVKEY: /home/splunk.key
+      SPLUNK_HTTP_ENABLESSL_PRIVKEY_PASSWORD: "abcd1234"
+      SPLUNK_HEC_TOKEN: "abcd1234"
+      SPLUNK_PASSWORD: Password.1234
+      #SPLUNK_HOSTNAME: splunk
+      #SPLUNK_STANDALONE_URL: https://splunk:8080
   
   logstash:
     depends_on:

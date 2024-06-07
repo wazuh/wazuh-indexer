@@ -62,8 +62,19 @@ services:
       - 5601:5601
     expose:
       - "5601"
+    volumes:
+      - ../opensearch/opensearch_dashboards.yml:/usr/share/opensearch-dashboards/config/opensearch_dashboards.yml
+      - ./certs/:/usr/share/opensearch-dashboards/config/certs/
+      - ./certs/opensearch.dashboards-key.pem:/usr/share/opensearch-dashboards/config/certs/opensearch.key
+      - ./certs/opensearch.dashboards.pem:/usr/share/opensearch-dashboards/config/certs/opensearch.pem
+      - ./certs/root-ca.pem:/usr/share/opensearch-dashboards/config/certs/root-ca.pem
     environment:
       OPENSEARCH_HOSTS: '["https://wazuh.indexer:9200"]'
+      SERVER_SSL_ENABLED: 'true'
+      SERVER_SSL_KEY: '/usr/share/opensearch-dashboards/config/certs/opensearch.key'
+      SERVER.SSL_CERTIFICATE: '/usr/share/opensearch-dashboards/config/certs/opensearch.pem'
+      OPENSEARCH_SSL_CERTIFICATEAUTHORITIES: '/usr/share/opensearch-dashboards/config/certs/root-ca.pem'
+
 
   wazuh-certs-generator:
     image: wazuh/wazuh-certs-generator:0.0.1
@@ -127,9 +138,13 @@ services:
       - 5602:5601
     expose:
       - '5602'
-        #volumes:
-        #  - os_config:/usr/share/opensearch-dashboards/config/certs/
-        #  - ./config/opensearch_dashboards/opensearch_dashboards.yml:/usr/share/opensearch-dashboards/config/opensearch_dashboards.yml
+    volumes:
+      - ../opensearch/opensearch_dashboards.yml:/usr/share/opensearch-dashboards/config/opensearch_dashboards.yml
+      - ./certs/:/usr/share/opensearch-dashboards/config/certs/
+      - ./certs/opensearch.dashboards-key.pem:/usr/share/opensearch-dashboards/config/certs/opensearch.key
+      - ./certs/opensearch.dashboards.pem:/usr/share/opensearch-dashboards/config/certs/opensearch.pem
+      - ./certs/root-ca.pem:/usr/share/opensearch-dashboards/config/certs/root-ca.pem
+
     environment:
       - 'OPENSEARCH_HOSTS="https://opensearch.node:9200"'
 

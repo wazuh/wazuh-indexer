@@ -5,7 +5,7 @@ splunk:
         directory: /opt/splunk/etc/system/local
         content:
           settings:
-            #enablesSplunkWebSSL: true
+            enablesSplunkWebSSL: true
             privKeyPath: /opt/splunk/etc/auth/custom/splunk.key
             serverCert: /opt/splunk/etc/auth/custom/splunk.pem
     - key: server

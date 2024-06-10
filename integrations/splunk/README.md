@@ -1,6 +1,6 @@
 # Wazuh to Splunk Integration Developer Guide
 
-This document describes how to prepare a Docker Compose environment to test the integration between Wazuh and the Elastic Stack. For a detailed guide on how to integrate Wazuh with Elastic Stack, please refer to the [Wazuh documentation](https://documentation.wazuh.com/current/integrations-guide/elastic-stack/index.html).
+This document describes how to prepare a Docker Compose environment to test the integration between Wazuh and Splunk. For a detailed guide on how to integrate Wazuh with Splunk, please refer to the [Wazuh documentation](https://documentation.wazuh.com/current/integrations-guide/splunk/index.html).
 
 ## Requirements
 
@@ -11,7 +11,7 @@ This document describes how to prepare a Docker Compose environment to test the 
 1. Clone the Wazuh repository and navigate to the `integrations/` folder.
 2. Run the following command to start the environment:
    ```bash
-   docker compose -f ./docker/elastic.yml up -d
+   docker compose -f ./docker/splunk.yml up -d
    ```
 
 The Docker Compose project will bring up the following services:
@@ -24,25 +24,26 @@ The Docker Compose project will bring up the following services:
 
 For custom configurations, you may need to modify these files:
 
-- [docker/elastic.yml](../docker/elastic.yml): Docker Compose file.
+- [docker/splunk.yml](../docker/splunk.yml): Docker Compose file.
 - [docker/.env](../docker/.env): Environment variables file.
-- [elastic/logstash/pipeline/indexer-to-elastic.conf](./logstash/pipeline/indexer-to-elastic.conf): Logstash Pipeline configuration file.
+- [splunk/logstash/pipeline/indexer-to-splunk.conf](./logstash/pipeline/indexer-to-splunk.conf): Logstash Pipeline configuration file.
 
 Check the files above for **credentials**, ports, and other configurations.
 
-| Service          | Address                | Credentials     |
-| ---------------- | ---------------------- | --------------- |
-| Wazuh Indexer    | https://localhost:9200 | admin:admin     |
-| Wazuh Dashboards | https://localhost:5601 | admin:admin     |
-| Elastic          | https://localhost:9201 | elastic:elastic |
-| Kibana           | https://localhost:5602 | elastic:elastic |
+| Service          | Address                | Credentials         |
+| ---------------- | ---------------------- | ------------------- |
+| Wazuh Indexer    | https://localhost:9200 | admin:admin         |
+| Wazuh Dashboards | https://localhost:5601 | admin:admin         |
+| Splunk           | https://localhost:8000 | admin:Password.1234 |
 
 ## Importing the dashboards
 
-The dashboards for Elastic are included in [dashboards.ndjson](./dashboards.ndjson). The steps to import them to Elastic are the following:
+The dashboards for Splunk are included in this folder. The steps to import them to Splunk are the following:
 
-- On Kibana, expand the left menu, and go to `Stack management`.
-- Click on `Saved Objects`, select `Import`, click on the `Import` icon and browse the dashboard file.
-- Click on Import and complete the process.
+- In the Splunk UI, go to `Settings` > `Data Inputs` > `HTTP Event Collector` and make sure that the `hec` token is enabled and uses the `wazuh-alerts` index. 
+- Open a dashboard file and copy all its content.
+- In the Splunk UI, navigate to `Search & Reporting`, `Dashboards`, click `Create New Dashboard`, write the title and select `Dashboard Studio`, select `Grid` and click on `Create`.
+- On the top menu, there is a `Source` icon. Click on it, and replace all the content with the copied content from the dashboard file. After that, click on `Back` and click on `Save`.
+- Repeat the steps for all the desired dashboards.
 
-Imported dashboards will appear in the `Dashboards` app on the left menu.
+Imported dashboards will appear under `Search & Reporting` > `Dashboards`.

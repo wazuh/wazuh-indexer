@@ -1,3 +1,4 @@
-opensearch
 external
+common
+config
 docker/certs

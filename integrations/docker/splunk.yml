@@ -80,48 +80,77 @@ services:
   # =================================
   # https://www.elastic.co/guide/en/elastic-stack-get-started/current/get-started-docker.html
 
+  #generator:
+  #  image: alpine/openssl:latest
+  #  depends_on:
+  #    wazuh-certs-generator:
+  #      condition: service_completed_successfully
+  #  volumes:
+  #    - ./certs/:/certs/
+  #  entrypoint: >
+  #    sh -c "
+  #      openssl req -x509 -newkey rsa:4096 -passout pass:abcd1234 -keyout /certs/splunk.key -out /certs/splunk.pem -days 365 -subj '/CN=splunk'
+  #      chmod a+r /certs/splunk.{key,pem}
+  #    "
+  #  # entrypoint: >
+  #  #   sh -c "
+  #  #     cat /certs/splunk.pem /certs/splunk-key.pem /certs/root-ca.pem > /sp_certs/splunkhec.pem &&
+  #  #     cp /certs/splunk.pem /sp_certs/splunk.pem &&
+  #  #     cp /certs/splunk-key.pem /sp_certs/splunk-key.pem
+  #  #   "
   generator:
-    image: alpine/openssl:latest
+    image: cfssl/cfssl
     depends_on:
       wazuh-certs-generator:
         condition: service_completed_successfully
     volumes:
       - ./certs/:/certs/
-    entrypoint: >
-      sh -c "
-        openssl req -x509 -newkey rsa:4096 -passout pass:abcd1234 -keyout /certs/splunk.key -out /certs/splunk.pem -days 365 -subj '/CN=splunk'
-        chmod a+r /certs/splunk.{key,pem}
-      "
-    # entrypoint: >
-    #   sh -c "
-    #     cat /certs/splunk.pem /certs/splunk-key.pem /certs/root-ca.pem > /sp_certs/splunkhec.pem &&
-    #     cp /certs/splunk.pem /sp_certs/splunk.pem &&
-    #     cp /certs/splunk-key.pem /sp_certs/splunk-key.pem
-    #   "
+      - ../splunk/cfssl/:/conf/
+    entrypoint: /bin/bash
+    command: >
+      -c '
+        cd /certs
+      	cat /conf/host.json | \
+      	cfssl gencert \
+      		-ca root-ca.pem \
+      		-ca-key root-ca.key \
+      		-config /conf/cfssl.json \
+      		-profile=server - | \
+      	cfssljson -bare splunk
+      	openssl pkcs8 -topk8 -inform pem -in splunk-key.pem -outform pem -nocrypt -out splunk.key
+        rm splunk.csr
+        cat splunk.pem splunk-key.pem root-ca.pem > splunkhec.pem
+        chown -R 1000:1000 /certs/splunk*
+      '
 
   splunk:
     image: splunk/splunk:9.0.4
     volumes:
-      - ./certs/splunk.key:/home/splunk.key
-      - ./certs/splunk.pem:/home/splunk.pem
+      - ./certs/splunk.key:/opt/splunk/etc/auth/custom/splunk.key
+      - ./certs/splunk.pem:/opt/splunk/etc/auth/custom/splunk.pem
+      - ./certs/splunkhec.pem:/opt/splunk/etc/auth/custom/splunkhec.pem
       - ../splunk/config/indexes.conf:/opt/splunk/etc/system/local/indexes.conf
+      - ../splunk/config/default.yml:/tmp/defaults/default.yml
     #  - ./certs:/opt/splunk/etc/auth/custom
-    #  - ../splunk/config/default.yml:/tmp/defaults/default.yml
     depends_on:
       wazuh-certs-generator:
+        condition: service_completed_successfully
+      generator:
         condition: service_completed_successfully
     ports:
       - '8000:8000'
       - '8088:8088'
     environment:
-      SPLUNK_START_ARGS: --accept-license
-      SPLUNK_HTTP_ENABLESSL: 'true'
-      SPLUNK_HTTP_ENABLESSL_CERT: /home/splunk.pem
-      SPLUNK_HTTP_ENABLESSL_PRIVKEY: /home/splunk.key
-      SPLUNK_HTTP_ENABLESSL_PRIVKEY_PASSWORD: "abcd1234"
       SPLUNK_HEC_TOKEN: "abcd1234"
+      SPLUNK_HOSTNAME: splunk
+      SPLUNK_HTTP_ENABLESSL: 'true'
       SPLUNK_PASSWORD: Password.1234
+      SPLUNK_STANDALONE_URL: https://splunk:8080
+      SPLUNK_START_ARGS: --accept-license
       #SPLUNK_HOSTNAME: splunk
+      #SPLUNK_HTTP_ENABLESSL_CERT: /opt/splunk/etc/auth/custom/splunk.pem
+      #SPLUNK_HTTP_ENABLESSL_PRIVKEY: /opt/splunk/etc/auth/custom/splunk.key
+      #SPLUNK_HTTP_ENABLESSL_PRIVKEY_PASSWORD: "abcd1234"
       #SPLUNK_STANDALONE_URL: https://splunk:8080
   
   logstash:

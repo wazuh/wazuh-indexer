@@ -14,8 +14,6 @@ services:
 
   wazuh.manager:
     image: wazuh/wazuh-manager:${WAZUH_VERSION}
-      #build:
-      #  dockerfile: manager-logstash.Dockerfile
     hostname: wazuh.manager
     restart: always
     ulimits:
@@ -50,7 +48,6 @@ services:
       - ../elastic/logstash/pipeline:/usr/share/logstash/pipeline
       - es_certs:/etc/certs/elastic
       - alerts:/var/ossec/logs/alerts/
-        #command: logstash -f /usr/share/logstash/pipeline/manager-to-elastic.conf
 
   wazuh.indexer:
     image: opensearchproject/opensearch:2.12.0

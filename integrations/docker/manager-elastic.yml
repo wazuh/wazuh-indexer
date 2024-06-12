@@ -10,12 +10,12 @@ services:
         condition: service_healthy
     command: bash -c "python run.py -o filebeat"
     volumes:
-      - alerts:/var/ossec/logs/alerts/alerts.json
+      - alerts:/var/ossec/logs/alerts/
 
   wazuh.manager:
     image: wazuh/wazuh-manager:${WAZUH_VERSION}
-    build:
-      dockerfile: manager-logstash.Dockerfile
+      #build:
+      #  dockerfile: manager-logstash.Dockerfile
     hostname: wazuh.manager
     restart: always
     ulimits:
@@ -33,7 +33,7 @@ services:
     environment:
       - INDEXER_URL=https://wazuh.indexer:9200
       - INDEXER_USERNAME=admin
-      - INDEXER_PASSWORD=SecretPassword
+      - INDEXER_PASSWORD=admin
       - FILEBEAT_SSL_VERIFICATION_MODE=full
       - SSL_CERTIFICATE_AUTHORITIES=/etc/ssl/root-ca.pem
       - SSL_CERTIFICATE=/etc/ssl/filebeat.pem
@@ -49,8 +49,8 @@ services:
       - ./certs/root-ca.pem:/usr/share/logstash/root-ca.pem
       - ../elastic/logstash/pipeline:/usr/share/logstash/pipeline
       - es_certs:/etc/certs/elastic
-      - alerts:/var/ossec/logs/alerts/alerts.json 
-    command: logstash -f /usr/share/logstash/pipeline/manager-to-elastic.conf
+      - alerts:/var/ossec/logs/alerts/
+        #command: logstash -f /usr/share/logstash/pipeline/manager-to-elastic.conf
 
   wazuh.indexer:
     image: opensearchproject/opensearch:2.12.0
@@ -75,6 +75,7 @@ services:
       - plugins.security.ssl.transport.pemtrustedcas_filepath=/usr/share/opensearch/config/root-ca.pem
       - plugins.security.authcz.admin_dn="CN=wazuh.indexer,OU=Wazuh,O=Wazuh,L=California, C=US"
       - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - compatibility.override_main_response_version=true
     ulimits:
       memlock:
         soft: -1
@@ -99,6 +100,25 @@ services:
     volumes:
       - ./certs/:/certificates/
       - ./config/certs.yml:/config/certs.yml
+  
+  logstash:
+    depends_on:
+      es01:
+        condition: service_healthy
+      wazuh-certs-generator:
+        condition: service_completed_successfully
+    image: logstash-oss:8.6.2
+    build:
+      context: ../elastic
+    environment:
+      LOG_LEVEL: info
+      MONITORING_ENABLED: false
+    volumes:
+      - ../elastic/logstash/pipeline:/usr/share/logstash/pipeline
+      - es_certs:/usr/share/logstash/es_certs
+      - alerts:/var/ossec/logs/alerts/
+    command: logstash -f /usr/share/logstash/pipeline/manager-to-elastic.conf
+
 
 
   # =================================

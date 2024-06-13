@@ -42,7 +42,6 @@ Check the files above for **credentials**, ports, and other configurations.
 | Service          | Address                | Credentials     |
 | ---------------- | ---------------------- | --------------- |
 | Wazuh Indexer    | https://localhost:9200 | admin:admin     |
-| Wazuh Dashboards | https://localhost:5601 | admin:admin     |
 | Elastic          | https://localhost:9201 | elastic:elastic |
 | Kibana           | https://localhost:5602 | elastic:elastic |
 

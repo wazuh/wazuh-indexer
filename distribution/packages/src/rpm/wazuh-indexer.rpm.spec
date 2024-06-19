@@ -265,6 +265,8 @@ exit 0
 %attr(660, %{name}, %{name}) %{config_dir}/wazuh-template.json
 
 %changelog
+* Wed Jun 19 2024 support <info@wazuh.com> - 4.10.0
+- More info: https://documentation.wazuh.com/current/release-notes/release-4-10-0.html
 * Thu Mar 28 2024 support <info@wazuh.com> - 4.9.0
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-9-0.html
 * Tue Jan 30 2024 support <info@wazuh.com> - 4.8.1

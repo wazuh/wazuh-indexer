@@ -358,7 +358,7 @@ function assemble_deb() {
     add_wazuh_tools "${version}"
 
     # Configure debmake to only generate binaries
-    echo 'DEBUILD_DPKG_BUILDPACKAGE_OPTS="-us -uc -ui -b"' >~/.devscripts
+    echo 'DEBUILD_DPKG_BUILDPACKAGE_OPTS="-us -uc -b"' >~/.devscripts
 
     # Generate final package
     debmake \

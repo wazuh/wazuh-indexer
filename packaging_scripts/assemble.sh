@@ -368,7 +368,7 @@ function assemble_deb() {
         --package wazuh-indexer \
         --native \
         --revision "${REVISION}" \
-        --upstreamversion "${version}"
+        --upstreamversion "${version}-${REVISION}"
 
     # Move to the root folder, copy the package and clean.
     cd ../../..

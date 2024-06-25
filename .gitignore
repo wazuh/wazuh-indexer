@@ -77,6 +77,3 @@ testfixtures_shared/
 # build files generated
 doc-tools/missing-doclet/bin/
 /sandbox/plugins/engine-datafusion/target/
-
-# Wazuh template (currently downloaded from the wazuh/wazuh repo directly)
-distribution/src/config/wazuh-template.json

@@ -24,7 +24,7 @@ product_dir="/usr/share/${name}"
 config_dir="/etc/${name}"
 # data_dir="/var/lib/${name}"
 # log_dir="/var/log/${name}"
-pid_dir="/run/${name}"
+pid_dir="/var/run/${name}"
 service_dir="/usr/lib/systemd/system"
 
 buildroot="${curdir}/debian/${name}"

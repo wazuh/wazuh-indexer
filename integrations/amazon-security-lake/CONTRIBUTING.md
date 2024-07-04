@@ -1,11 +1,11 @@
-# Wazuh to Amazon Security Lake Integration Development Guide
+#/ Wazuh to Amazon Security Lake Integration Development Guide
 
 ## Deployment guide on Docker
 
 A demo of the integration can be started using the content of this folder and Docker. Open a terminal in the `wazuh-indexer/integrations` folder and start the environment.
 
 ```console
-docker compose -f ./docker/amazon-security-lake.yml up -d
+docker compose -f ./docker/compose.amazon-security-lake.yml up -d
 ```
 
 This Docker Compose project will bring up these services:
@@ -39,7 +39,7 @@ Processed data will be uploaded to http://localhost:9444/ui/wazuh-aws-security-l
 parquet-tools show <parquet-file>
 ```
 
-If the `S3_BUCKET_OCSF` variable is set in the container running the AWS Lambda function, intermediate data in OCSF and JSON format will be written to a dedicated bucket. This is enabled by default, writing to the `wazuh-aws-security-lake-ocsf` bucket. Bucket names and additional environment variables can be configured editing the [amazon-security-lake.yml](./docker/amazon-security-lake.yml) file.
+If the `S3_BUCKET_OCSF` variable is set in the container running the AWS Lambda function, intermediate data in OCSF and JSON format will be written to a dedicated bucket. This is enabled by default, writing to the `wazuh-aws-security-lake-ocsf` bucket. Bucket names and additional environment variables can be configured editing the [compose.amazon-security-lake.yml](./docker/compose.amazon-security-lake.yml) file.
 
 For development or debugging purposes, you may want to enable hot-reload, test or debug on these files, by using the `--config.reload.automatic`, `--config.test_and_exit` or `--debug` flags, respectively.
 

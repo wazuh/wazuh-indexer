@@ -11,11 +11,11 @@ This document describes how to prepare a Docker Compose environment to test the 
 1. Clone the Wazuh repository and navigate to the `integrations/` folder.
 2. Run the following command to start the environment:
    ```bash
-   docker compose -f ./docker/splunk.yml up -d
+   docker compose -f ./docker/compose.indexer-splunk.yml up -d
    ```
 3. If you prefer, you can start the integration with the Wazuh Manager as data source:
    ```bash
-   docker compose -f ./docker/manager-splunk.yml up -d
+   docker compose -f ./docker/compose.manager-splunk.yml up -d
    ```
 
 The Docker Compose project will bring up the following services:
@@ -28,12 +28,12 @@ The Docker Compose project will bring up the following services:
 
 For custom configurations, you may need to modify these files:
 
-- [docker/splunk.yml](../docker/splunk.yml): Docker Compose file.
+- [docker/compose.indexer-splunk.yml](../docker/compose.indexer-splunk.yml): Docker Compose file.
 - [docker/.env](../docker/.env): Environment variables file.
 - [splunk/logstash/pipeline/indexer-to-splunk.conf](./logstash/pipeline/indexer-to-splunk.conf): Logstash Pipeline configuration file.
 
 If you opted to start the integration with the Wazuh Manager, you can modify the following files:
-- [docker/manager-splunk.yml](../docker/manager-splunk.yml): Docker Compose file.
+- [docker/compose.manager-splunk.yml](../docker/compose.manager-splunk.yml): Docker Compose file.
 - [splunk/logstash/pipeline/manager-to-splunk.conf](./logstash/pipeline/manager-to-splunk.conf): Logstash Pipeline configuration file.
 
 Check the files above for **credentials**, ports, and other configurations.

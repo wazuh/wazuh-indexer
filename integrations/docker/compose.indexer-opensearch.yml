@@ -174,7 +174,7 @@ services:
       opensearch.node:
         condition: service_healthy
     build:
-      context: ../opensearch
+      context: ../logstash
     environment:
       LOG_LEVEL: info
       MONITORING_ENABLED: false

@@ -104,7 +104,7 @@ services:
         condition: service_completed_successfully
     image: logstash-oss:8.6.2
     build:
-      context: ../elastic
+      context: ../logstash
     environment:
       LOG_LEVEL: info
       MONITORING_ENABLED: false

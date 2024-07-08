@@ -239,7 +239,7 @@ services:
         condition: service_healthy
     image: logstash-oss:8.6.2
     build:
-      context: ../elastic
+      context: ../logstash
     environment:
       LOG_LEVEL: info
       MONITORING_ENABLED: false

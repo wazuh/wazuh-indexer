@@ -105,7 +105,7 @@ services:
     image: logstash-oss:8.6.2
     build:
       dockerfile: ../elastic/Dockerfile
-      context: ../opensearch
+      context: ../logstash
     environment:
       LOG_LEVEL: info
       MONITORING_ENABLED: false

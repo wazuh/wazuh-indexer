@@ -1,4 +1,4 @@
-#/ Wazuh to Amazon Security Lake Integration Development Guide
+# Wazuh to Amazon Security Lake Integration Development Guide
 
 ## Deployment guide on Docker
 
@@ -13,10 +13,10 @@ This Docker Compose project will bring up these services:
 - a _wazuh-indexer_ node
 - a _wazuh-dashboard_ node
 - a _logstash_ node
-- our [events generator](./tools/events-generator/README.md)
+- our [events generator](../tools/events-generator/README.md)
 - an AWS Lambda Python container.
 
-On the one hand, the event generator will push events constantly to the indexer, to the `wazuh-alerts-4.x-sample` index by default (refer to the [events generator](./tools/events-generator/README.md) documentation for customization options). On the other hand, Logstash will query for new data and deliver it to output configured in the pipeline, which can be one of `indexer-to-s3` or `indexer-to-file`.
+On the one hand, the event generator will push events constantly to the indexer, to the `wazuh-alerts-4.x-sample` index by default (refer to the [events generator](../tools/events-generator/README.md) documentation for customization options). On the other hand, Logstash will query for new data and deliver it to output configured in the pipeline, which can be one of `indexer-to-s3` or `indexer-to-file`.
 
 The `indexer-to-s3` pipeline is the method used by the integration. This pipeline delivers the data to an S3 bucket, from which the data is processed using a Lambda function, to finally be sent to the Amazon Security Lake bucket in Parquet format.
 
@@ -33,13 +33,13 @@ After 5 minutes, the first batch of data will show up in http://localhost:9444/u
 bash amazon-security-lake/src/invoke-lambda.sh <file>
 ```
 
-Processed data will be uploaded to http://localhost:9444/ui/wazuh-aws-security-lake-parquet. Click on any file to download it, and check it's content using `parquet-tools`. Just make sure of installing the virtual environment first, through [requirements.txt](./amazon-security-lake/).
+Processed data will be uploaded to http://localhost:9444/ui/wazuh-aws-security-lake-parquet. Click on any file to download it, and check it's content using `parquet-tools`. Just make sure of installing the virtual environment first, through [requirements.txt](./requirements.txt).
 
 ```bash
 parquet-tools show <parquet-file>
 ```
 
-If the `S3_BUCKET_OCSF` variable is set in the container running the AWS Lambda function, intermediate data in OCSF and JSON format will be written to a dedicated bucket. This is enabled by default, writing to the `wazuh-aws-security-lake-ocsf` bucket. Bucket names and additional environment variables can be configured editing the [compose.amazon-security-lake.yml](./docker/compose.amazon-security-lake.yml) file.
+If the `S3_BUCKET_OCSF` variable is set in the container running the AWS Lambda function, intermediate data in OCSF and JSON format will be written to a dedicated bucket. This is enabled by default, writing to the `wazuh-aws-security-lake-ocsf` bucket. Bucket names and additional environment variables can be configured editing the [compose.amazon-security-lake.yml](../docker/compose.amazon-security-lake.yml) file.
 
 For development or debugging purposes, you may want to enable hot-reload, test or debug on these files, by using the `--config.reload.automatic`, `--config.test_and_exit` or `--debug` flags, respectively.
 

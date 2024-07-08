@@ -72,10 +72,36 @@ services:
       SERVER.SSL_CERTIFICATE: '/usr/share/opensearch-dashboards/config/certs/opensearch.pem'
       OPENSEARCH_SSL_CERTIFICATEAUTHORITIES: '/usr/share/opensearch-dashboards/config/certs/root-ca.pem'
 
+  generate-certs-config:
+    image: alpine:latest
+    volumes:
+      - ./config:/config
+    command: |
+      sh -c "
+      echo '
+      nodes:
+        indexer:
+          - name: wazuh.indexer
+            ip: \"wazuh.indexer\"
+          - name: opensearch.node
+            ip: \"opensearch.node\"
+        server:
+          - name: wazuh.manager
+            ip: \"wazuh.manager\"
+        dashboard:
+          - name: wazuh.dashboard
+            ip: \"wazuh.dashboard\"
+          - name: opensearch.dashboards
+            ip: \"opensearch.dashboards\"
+      ' > /config/certs.yml
+      "
 
   wazuh-certs-generator:
     image: wazuh/wazuh-certs-generator:0.0.1
     hostname: wazuh-certs-generator
+    depends_on:
+      generate-certs-config:
+        condition: service_completed_successfully
     entrypoint: sh -c "/entrypoint.sh; chown -R 1000:999 /certificates; chmod 740 /certificates; chmod 440 /certificates/*"
     volumes:
       - ./certs/:/certificates/

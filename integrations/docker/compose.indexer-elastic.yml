@@ -59,12 +59,44 @@ services:
       - 5601:5601 # Map host port 5601 to container port 5601
     expose:
       - "5601" # Expose port 5601 for web access to OpenSearch Dashboards
+    volumes:
+      - ./certs/:/usr/share/opensearch-dashboards/config/certs/
+      - ./certs/wazuh.dashboard-key.pem:/usr/share/opensearch-dashboards/config/certs/opensearch.key
+      - ./certs/wazuh.dashboard.pem:/usr/share/opensearch-dashboards/config/certs/opensearch.pem
+      - ./certs/root-ca.pem:/usr/share/opensearch-dashboards/config/certs/root-ca.pem
     environment:
       OPENSEARCH_HOSTS: '["https://wazuh.indexer:9200"]' # Define the OpenSearch nodes that OpenSearch Dashboards will query
+      SERVER_SSL_ENABLED: 'true'
+      SERVER_SSL_KEY: '/usr/share/opensearch-dashboards/config/certs/opensearch.key'
+      SERVER_SSL_CERTIFICATE: '/usr/share/opensearch-dashboards/config/certs/opensearch.pem'
+      OPENSEARCH_SSL_CERTIFICATEAUTHORITIES: '/usr/share/opensearch-dashboards/config/certs/root-ca.pem'
+ 
+  generate-certs-config:
+    image: alpine:latest
+    volumes:
+      - ./config:/config
+    command: |
+      sh -c "
+      echo '
+      nodes:
+        indexer:
+          - name: wazuh.indexer
+            ip: \"wazuh.indexer\"
+        server:
+          - name: wazuh.manager
+            ip: \"wazuh.manager\"
+        dashboard:
+          - name: wazuh.dashboard
+            ip: \"wazuh.dashboard\"
+      ' > /config/certs.yml
+      "
 
   wazuh-certs-generator:
     image: wazuh/wazuh-certs-generator:0.0.1
     hostname: wazuh-certs-generator
+    depends_on:
+      generate-certs-config:
+        condition: service_completed_successfully
     entrypoint: sh -c "/entrypoint.sh; chown -R 1000:999 /certificates; chmod 740 /certificates; chmod 440 /certificates/*"
     volumes:
       - ./certs/:/certificates/
@@ -102,6 +134,12 @@ services:
           "  - name: es01\n"\
           "    dns:\n"\
           "      - es01\n"\
+          "      - localhost\n"\
+          "    ip:\n"\
+          "      - 127.0.0.1\n"\
+          "  - name: kibana\n"\
+          "    dns:\n"\
+          "      - kibana\n"\
           "      - localhost\n"\
           "    ip:\n"\
           "      - 127.0.0.1\n"\
@@ -181,12 +219,15 @@ services:
       - ELASTICSEARCH_USERNAME=kibana_system
       - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD}
       - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=config/certs/ca/ca.crt
+      - SERVER_SSL_ENABLED=true
+      - SERVER_SSL_KEY=/usr/share/kibana/config/certs/kibana/kibana.key
+      - SERVER_SSL_CERTIFICATE=/usr/share/kibana/config/certs/kibana/kibana.crt
     mem_limit: ${MEM_LIMIT}
     healthcheck:
       test:
         [
           'CMD-SHELL',
-          "curl -s -I http://localhost:5601 | grep -q 'HTTP/1.1 302 Found'",
+          "curl -s -I https://localhost:5601 | grep -q 'HTTP/1.1 302 Found'",
         ]
       interval: 10s
       timeout: 10s

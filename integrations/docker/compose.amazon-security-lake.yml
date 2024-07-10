@@ -80,7 +80,7 @@ services:
   wazuh.integration.security.lake:
     image: wazuh/indexer-security-lake-integration
     build:
-      context: ../amazon-security-lake
+      context: ../logstash
     container_name: wazuh.integration.security.lake
     depends_on:
       - wazuh.indexer
@@ -104,7 +104,6 @@ services:
       - ./certs/root-ca.pem:/usr/share/logstash/root-ca.pem
       - ../amazon-security-lake/src:/usr/share/logstash/amazon-security-lake # TODO use dedicated folder
       # - ./credentials:/usr/share/logstash/.aws/credentials # TODO credentials are not commited (missing)
-    command: tail -f /var/log/logstash/logstash-plain.log
 
   s3.ninja:
     image: scireum/s3-ninja:latest

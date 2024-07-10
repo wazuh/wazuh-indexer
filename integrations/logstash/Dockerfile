@@ -8,7 +8,6 @@ USER logstash
 # Install plugin
 RUN LS_JAVA_OPTS="-Xms1024m -Xmx1024m" logstash-plugin install logstash-input-opensearch
 
-COPY --chown=logstash:logstash logstash/pipeline /usr/share/logstash/pipeline
 # Copy and run the setup.sh script to create and configure a keystore for Logstash.
 COPY --chown=logstash:logstash ./setup.sh /usr/share/logstash/bin/setup.sh
 RUN bash /usr/share/logstash/bin/setup.sh

@@ -107,8 +107,9 @@ services:
         condition: service_completed_successfully
     image: logstash-oss:${STACK_VERSION}
     build:
-      dockerfile: ../logstash/Dockerfile
       context: ../logstash
+      args:
+        - LOGSTASH_OSS_VERSION=${LOGSTASH_OSS_VERSION}
     environment:
       STACK_VERSION: ${STACK_VERSION}
       LOG_LEVEL: info

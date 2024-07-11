@@ -83,6 +83,8 @@ services:
     image: wazuh/indexer-security-lake-integration
     build:
       context: ../logstash
+      args:
+        - LOGSTASH_OSS_VERSION=${LOGSTASH_OSS_VERSION}
     container_name: wazuh.integration.security.lake
     depends_on:
       - wazuh.indexer

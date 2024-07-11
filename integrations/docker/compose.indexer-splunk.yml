@@ -165,9 +165,9 @@ services:
     depends_on:
       splunk:
         condition: service_healthy
-    image: logstash-oss:${STACK_VERSION}
+    image: logstash-oss:${LOGSTASH_OSS_VERSION}
     environment:
-      STACK_VERSION: ${STACK_VERSION}
+      LOGSTASH_OSS_VERSION: ${LOGSTASH_OSS_VERSION}
       LOG_LEVEL: info
       MONITORING_ENABLED: false
     volumes:

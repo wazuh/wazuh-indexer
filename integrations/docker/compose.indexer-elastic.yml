@@ -241,9 +241,11 @@ services:
     depends_on:
       es01:
         condition: service_healthy
-    image: logstash-oss:8.6.2
+    image: logstash-oss:${LOGSTASH_OSS_VERSION}
     build:
       context: ../logstash
+      args:
+        - LOGSTASH_OSS_VERSION=${LOGSTASH_OSS_VERSION}
     environment:
       LOG_LEVEL: info
       MONITORING_ENABLED: false

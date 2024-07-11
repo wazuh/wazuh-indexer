@@ -1,4 +1,5 @@
-FROM opensearchproject/logstash-oss-with-opensearch-output-plugin:latest
+ARG LOGSTASH_OSS_VERSION
+FROM opensearchproject/logstash-oss-with-opensearch-output-plugin:${LOGSTASH_OSS_VERSION}
 
 ENV LOGSTASH_KEYSTORE_PASS "SecretPassword"
 ENV LS_PATH "/usr/share/logstash"

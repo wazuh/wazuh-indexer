@@ -173,12 +173,14 @@ services:
       - 'OPENSEARCH_HOSTS="https://opensearch.node:9200"'
 
   logstash:
-    image: logstash-oss:${STACK_VERSION}
+    image: logstash-oss:${LOGSTASH_OSS_VERSION}
     depends_on:
       opensearch.node:
         condition: service_healthy
     build:
       context: ../logstash
+      args:
+        - LOGSTASH_OSS_VERSION=${LOGSTASH_OSS_VERSION}
     environment:
       STACK_VERSION: ${STACK_VERSION}
       LOG_LEVEL: info

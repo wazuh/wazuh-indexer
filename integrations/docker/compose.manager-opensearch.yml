@@ -105,12 +105,13 @@ services:
         condition: service_healthy
       wazuh-certs-generator:
         condition: service_completed_successfully
-    image: logstash-oss:${STACK_VERSION}
+    image: logstash-oss:${LOGSTASH_OSS_VERSION}
     build:
-      dockerfile: ../elastic/Dockerfile
       context: ../logstash
+      args:
+        - LOGSTASH_OSS_VERSION=${LOGSTASH_OSS_VERSION}
     environment:
-      STACK_VERSION: ${STACK_VERSION}
+      LOGSTASH_OSS_VERSION: ${LOGSTASH_OSS_VERSION}
       LOG_LEVEL: info
       MONITORING_ENABLED: false
     volumes:

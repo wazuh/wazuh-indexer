@@ -111,7 +111,7 @@ services:
       args:
         - LOGSTASH_OSS_VERSION=${LOGSTASH_OSS_VERSION}
     environment:
-      LOGSTASH_OSS_VERSION=${LOGSTASH_OSS_VERSION}
+      LOGSTASH_OSS_VERSION: ${LOGSTASH_OSS_VERSION}
       LOG_LEVEL: info
       MONITORING_ENABLED: false
     volumes:

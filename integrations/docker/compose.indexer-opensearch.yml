@@ -11,7 +11,7 @@ services:
     command: bash -c "python run.py -a wazuh.indexer"
 
   wazuh.indexer:
-    image: opensearchproject/opensearch:2.12.0
+    image: opensearchproject/opensearch:${WAZUH_INDEXER_VERSION}
     depends_on:
       wazuh-certs-generator:
         condition: service_completed_successfully
@@ -19,6 +19,7 @@ services:
     ports:
       - 9200:9200
     environment:
+      - WAZUH_INDEXER_VERSION=${WAZUH_INDEXER_VERSION}
       - node.name=wazuh.indexer
       - discovery.type=single-node
       - bootstrap.memory_lock=true
@@ -51,7 +52,7 @@ services:
       - ./certs/root-ca.pem:/usr/share/opensearch/config/root-ca.pem
 
   wazuh.dashboard:
-    image: opensearchproject/opensearch-dashboards:2.12.0
+    image: opensearchproject/opensearch-dashboards:${WAZUH_DASHBOARD_VERSION}
     depends_on:
       - wazuh.indexer
     hostname: wazuh.dashboard
@@ -66,6 +67,7 @@ services:
       - ./certs/opensearch.dashboards.pem:/usr/share/opensearch-dashboards/config/certs/opensearch.pem
       - ./certs/root-ca.pem:/usr/share/opensearch-dashboards/config/certs/root-ca.pem
     environment:
+      WAZUH_DASHBOARD_VERSION: ${WAZUH_DASHBOARD_VERSION}
       OPENSEARCH_HOSTS: '["https://wazuh.indexer:9200"]'
       SERVER_SSL_ENABLED: 'true'
       SERVER_SSL_KEY: '/usr/share/opensearch-dashboards/config/certs/opensearch.key'
@@ -97,8 +99,10 @@ services:
       "
 
   wazuh-certs-generator:
-    image: wazuh/wazuh-certs-generator:0.0.1
+    image: wazuh/wazuh-certs-generator:${WAZUH_CERTS_GENERATOR_VERSION}
     hostname: wazuh-certs-generator
+    environment:
+      - WAZUH_CERTS_GENERATOR_VERSION=${WAZUH_CERTS_GENERATOR_VERSION}
     depends_on:
       generate-certs-config:
         condition: service_completed_successfully
@@ -169,13 +173,14 @@ services:
       - 'OPENSEARCH_HOSTS="https://opensearch.node:9200"'
 
   logstash:
-    image: logstash-oss:8.6.2
+    image: logstash-oss:${STACK_VERSION}
     depends_on:
       opensearch.node:
         condition: service_healthy
     build:
       context: ../logstash
     environment:
+      STACK_VERSION: ${STACK_VERSION}
       LOG_LEVEL: info
       MONITORING_ENABLED: false
     volumes:

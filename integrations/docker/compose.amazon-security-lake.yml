@@ -125,6 +125,7 @@ services:
       AWS_ACCESS_KEY_ID: "AKIAIOSFODNN7EXAMPLE"
       AWS_SECRET_ACCESS_KEY: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
       AWS_REGION: "us-east-1"
+      REGION: "us-east-1"
       AWS_BUCKET: "wazuh-aws-security-lake-parquet"
       S3_BUCKET_OCSF: "wazuh-aws-security-lake-ocsf"
       AWS_ENDPOINT: "http://s3.ninja:9000"

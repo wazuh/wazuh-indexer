@@ -1,0 +1,17 @@
+---
+name: agent
+fields:
+  base:
+    fields: 
+      tags: []
+      message: ""
+  agent:
+    fields:
+      id: {}
+      name: {}
+      type: {}
+      version: {}
+      groups: {}
+      key: {}
+      last_login: {}
+      persistent_connection_node: {}

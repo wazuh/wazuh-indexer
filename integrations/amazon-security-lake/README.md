@@ -234,7 +234,7 @@ The tables below represent how the Wazuh Security Events are mapped into the OCS
 | type_uid                     | Long                | 200101             |
 | metadata.product.name        | String              | "Wazuh"            |
 | metadata.product.vendor_name | String              | "Wazuh, Inc."      |
-| metadata.product.version     | String              | "4.9.0"            |
+| metadata.product.version     | String              | "4.9.1"            |
 | metadata.product.lang        | String              | "en"               |
 | metadata.log_name            | String              | "Security events"  |
 | metadata.log_provider        | String              | "Wazuh"            |

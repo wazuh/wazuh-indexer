@@ -233,7 +233,6 @@ exit 0
 # Service files
 %attr(0644, root, root) %{_prefix}/lib/systemd/system/%{name}.service
 %attr(0644, root, root) %{_prefix}/lib/systemd/system/%{name}-performance-analyzer.service
-%attr(0644, root, root) %{_sysconfdir}/init.d/%{name}
 %attr(0644, root, root) %config(noreplace) %{_prefix}/lib/sysctl.d/%{name}.conf
 %attr(0644, root, root) %config(noreplace) %{_prefix}/lib/tmpfiles.d/%{name}.conf
 

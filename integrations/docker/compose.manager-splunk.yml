@@ -161,13 +161,13 @@ services:
       generator:
         condition: service_completed_successfully
     ports:
-      - '8000:8000'
-      - '8088:8088'
+      - "8000:8000"
+      - "8088:8088"
     environment:
       SPLUNK_VERSION: ${SPLUNK_VERSION}
       SPLUNK_HEC_TOKEN: "abcd1234"
       SPLUNK_HOSTNAME: splunk
-      SPLUNK_HTTP_ENABLESSL: 'true'
+      SPLUNK_HTTP_ENABLESSL: "true"
       SPLUNK_PASSWORD: Password.1234
       SPLUNK_STANDALONE_URL: https://splunk:8080
       SPLUNK_START_ARGS: --accept-license

@@ -69,10 +69,10 @@ services:
     environment:
       WAZUH_DASHBOARD_VERSION: ${WAZUH_DASHBOARD_VERSION}
       OPENSEARCH_HOSTS: '["https://wazuh.indexer:9200"]'
-      SERVER_SSL_ENABLED: 'true'
-      SERVER_SSL_KEY: '/usr/share/opensearch-dashboards/config/certs/opensearch.key'
-      SERVER.SSL_CERTIFICATE: '/usr/share/opensearch-dashboards/config/certs/opensearch.pem'
-      OPENSEARCH_SSL_CERTIFICATEAUTHORITIES: '/usr/share/opensearch-dashboards/config/certs/root-ca.pem'
+      SERVER_SSL_ENABLED: "true"
+      SERVER_SSL_KEY: "/usr/share/opensearch-dashboards/config/certs/opensearch.key"
+      SERVER.SSL_CERTIFICATE: "/usr/share/opensearch-dashboards/config/certs/opensearch.pem"
+      OPENSEARCH_SSL_CERTIFICATEAUTHORITIES: "/usr/share/opensearch-dashboards/config/certs/root-ca.pem"
 
   generate-certs-config:
     image: alpine:latest
@@ -111,7 +111,6 @@ services:
       - ./certs/:/certificates/
       - ./config/certs.yml:/config/certs.yml
 
-
   # ================================================
   # OpenSearch, OpenSearch Dashboards and Logstash
   # ================================================
@@ -126,7 +125,7 @@ services:
       - node.name=opensearch.node
       - discovery.type=single-node
       - bootstrap.memory_lock=true
-      - 'OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m'
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
       - "DISABLE_INSTALL_DEMO_CONFIG=true"
     volumes:
       - ../opensearch/opensearch.yml:/usr/share/opensearch/config/opensearch.yml
@@ -146,7 +145,7 @@ services:
     healthcheck:
       test:
         [
-          'CMD-SHELL',
+          "CMD-SHELL",
           "curl -sku admin:admin https://opensearch.node:9200 2>&1 | grep -q 'The OpenSearch Project: https://opensearch.org/'",
         ]
       interval: 1s
@@ -161,7 +160,7 @@ services:
     ports:
       - 5602:5601
     expose:
-      - '5602'
+      - "5602"
     volumes:
       - ../opensearch/opensearch_dashboards.yml:/usr/share/opensearch-dashboards/config/opensearch_dashboards.yml
       - ./certs/:/usr/share/opensearch-dashboards/config/certs/

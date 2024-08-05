@@ -20,7 +20,6 @@ On the one hand, the event generator will push events constantly to the indexer,
 
 The `indexer-to-s3` pipeline is the method used by the integration. This pipeline delivers the data to an S3 bucket, from which the data is processed using a Lambda function, to finally be sent to the Amazon Security Lake bucket in Parquet format.
 
-
 Attach a terminal to the container and start the integration by starting Logstash, as follows:
 
 ```console
@@ -56,4 +55,3 @@ See [README.md](README.md). The instructions on that section have been based on 
 **Docker is required**.
 
 The [Makefile](./Makefile) in this folder automates the generation of a zip deployment package containing the source code and the required dependencies for the AWS Lambda function. Simply run `make` and it will generate the `wazuh_to_amazon_security_lake.zip` file. The main target runs a Docker container to install the Python3 dependencies locally, and zips the source code and the dependencies together.
-

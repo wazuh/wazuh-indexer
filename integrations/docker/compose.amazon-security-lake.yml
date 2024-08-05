@@ -74,10 +74,10 @@ services:
     environment:
       WAZUH_DASHBOARD_VERSION: ${WAZUH_DASHBOARD_VERSION}
       OPENSEARCH_HOSTS: '["https://wazuh.indexer:9200"]' # Define the OpenSearch nodes that OpenSearch Dashboards will query
-      SERVER_SSL_ENABLED: 'true'
-      SERVER_SSL_KEY: '/usr/share/opensearch-dashboards/config/certs/opensearch.key'
-      SERVER_SSL_CERTIFICATE: '/usr/share/opensearch-dashboards/config/certs/opensearch.pem'
-      OPENSEARCH_SSL_CERTIFICATEAUTHORITIES: '/usr/share/opensearch-dashboards/config/certs/root-ca.pem'
+      SERVER_SSL_ENABLED: "true"
+      SERVER_SSL_KEY: "/usr/share/opensearch-dashboards/config/certs/opensearch.key"
+      SERVER_SSL_CERTIFICATE: "/usr/share/opensearch-dashboards/config/certs/opensearch.pem"
+      OPENSEARCH_SSL_CERTIFICATEAUTHORITIES: "/usr/share/opensearch-dashboards/config/certs/root-ca.pem"
 
   wazuh.integration.security.lake:
     image: wazuh/indexer-security-lake-integration
@@ -104,7 +104,7 @@ services:
       - "5044:5044"
       - "9600:9600"
     volumes:
-      - ../amazon-security-lake/logstash/pipeline:/usr/share/logstash/pipeline # TODO has 1000:1000. logstash's uid is 999 
+      - ../amazon-security-lake/logstash/pipeline:/usr/share/logstash/pipeline # TODO has 1000:1000. logstash's uid is 999
       - ./certs/root-ca.pem:/usr/share/logstash/root-ca.pem
       - ../amazon-security-lake/src:/usr/share/logstash/amazon-security-lake # TODO use dedicated folder
       # - ./credentials:/usr/share/logstash/.aws/credentials # TODO credentials are not commited (missing)
@@ -141,7 +141,7 @@ services:
       - ../amazon-security-lake/src:/var/task
     ports:
       - "9000:8080"
- 
+
   generate-certs-config:
     image: alpine:latest
     volumes:

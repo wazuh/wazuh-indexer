@@ -68,11 +68,11 @@ services:
     environment:
       WAZUH_DASHBOARD_VERSION: ${WAZUH_DASHBOARD_VERSION}
       OPENSEARCH_HOSTS: '["https://wazuh.indexer:9200"]' # Define the OpenSearch nodes that OpenSearch Dashboards will query
-      SERVER_SSL_ENABLED: 'true'
-      SERVER_SSL_KEY: '/usr/share/opensearch-dashboards/config/certs/opensearch.key'
-      SERVER_SSL_CERTIFICATE: '/usr/share/opensearch-dashboards/config/certs/opensearch.pem'
-      OPENSEARCH_SSL_CERTIFICATEAUTHORITIES: '/usr/share/opensearch-dashboards/config/certs/root-ca.pem'
- 
+      SERVER_SSL_ENABLED: "true"
+      SERVER_SSL_KEY: "/usr/share/opensearch-dashboards/config/certs/opensearch.key"
+      SERVER_SSL_CERTIFICATE: "/usr/share/opensearch-dashboards/config/certs/opensearch.pem"
+      OPENSEARCH_SSL_CERTIFICATEAUTHORITIES: "/usr/share/opensearch-dashboards/config/certs/root-ca.pem"
+
   generate-certs-config:
     image: alpine:latest
     volumes:
@@ -105,7 +105,6 @@ services:
     volumes:
       - ./certs/:/certificates/
       - ./config/certs.yml:/config/certs.yml
-
 
   # =================================
   # Splunk and Logstash
@@ -150,13 +149,13 @@ services:
       generator:
         condition: service_completed_successfully
     ports:
-      - '8000:8000'
-      - '8088:8088'
+      - "8000:8000"
+      - "8088:8088"
     environment:
       SPLUNK_VERSION: ${SPLUNK_VERSION}
       SPLUNK_HEC_TOKEN: "abcd1234"
       SPLUNK_HOSTNAME: splunk
-      SPLUNK_HTTP_ENABLESSL: 'true'
+      SPLUNK_HTTP_ENABLESSL: "true"
       SPLUNK_PASSWORD: Password.1234
       SPLUNK_STANDALONE_URL: https://splunk:8080
       SPLUNK_START_ARGS: --accept-license

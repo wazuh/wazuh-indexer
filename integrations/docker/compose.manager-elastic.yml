@@ -98,7 +98,7 @@ services:
     volumes:
       - ./certs/:/certificates/
       - ./config/certs.yml:/config/certs.yml
-  
+
   logstash:
     depends_on:
       es01:
@@ -120,8 +120,6 @@ services:
       - alerts:/var/ossec/logs/alerts/
     command: logstash -f /usr/share/logstash/pipeline/manager-to-elastic.conf
 
-
-
   # =================================
   # Elasticsearch and Kibana
   # =================================
@@ -131,7 +129,7 @@ services:
     image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
     volumes:
       - es_certs:/usr/share/elasticsearch/config/certs
-    user: '0'
+    user: "0"
     command: >
       bash -c '
         if [ x${ELASTIC_PASSWORD} == x ]; then
@@ -177,11 +175,11 @@ services:
         echo "All done!";
       '
     healthcheck:
-      test: ['CMD-SHELL', '[ -f config/certs/es01/es01.crt ]']
+      test: ["CMD-SHELL", "[ -f config/certs/es01/es01.crt ]"]
       interval: 1s
       timeout: 5s
       retries: 120
-  
+
   es01:
     depends_on:
       setup:
@@ -216,13 +214,13 @@ services:
     healthcheck:
       test:
         [
-          'CMD-SHELL',
+          "CMD-SHELL",
           "curl -s --cacert config/certs/ca/ca.crt https://localhost:9200 | grep -q 'missing authentication credentials'",
         ]
       interval: 10s
       timeout: 10s
       retries: 120
-  
+
   kibana:
     depends_on:
       es01:
@@ -245,7 +243,7 @@ services:
     healthcheck:
       test:
         [
-          'CMD-SHELL',
+          "CMD-SHELL",
           "curl -s -I https://localhost:5601 | grep -q 'HTTP/1.1 302 Found'",
         ]
       interval: 10s

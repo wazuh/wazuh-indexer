@@ -34,6 +34,7 @@ For custom configurations, you may need to modify these files:
 - [opensearch/logstash/pipeline/indexer-to-opensearch.conf](./logstash/pipeline/indexer-to-opensearch.conf): Logstash Pipeline configuration file.
 
 If you opted to start the integration with the Wazuh Manager, you can modify the following files:
+
 - [docker/compose.manager-opensearch.yml](../docker/compose.manager-opensearch.yml): Docker Compose file.
 - [opensearch/logstash/pipeline/manager-to-opensearch.conf](./logstash/pipeline/manager-to-opensearch.conf): Logstash Pipeline configuration file.
 

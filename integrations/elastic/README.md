@@ -34,16 +34,17 @@ For custom configurations, you may need to modify these files:
 - [elastic/logstash/pipeline/indexer-to-elastic.conf](./logstash/pipeline/indexer-to-elastic.conf): Logstash Pipeline configuration file.
 
 If you opted to start the integration with the Wazuh Manager, you can modify the following files:
+
 - [docker/compose.manager-elastic.yml](../docker/compose.manager-elastic.yml): Docker Compose file.
 - [elastic/logstash/pipeline/manager-to-elastic.conf](./logstash/pipeline/manager-to-elastic.conf): Logstash Pipeline configuration file.
 
 Check the files above for **credentials**, ports, and other configurations.
 
-| Service          | Address                | Credentials     |
-| ---------------- | ---------------------- | --------------- |
-| Wazuh Indexer    | https://localhost:9200 | admin:admin     |
-| Elastic          | https://localhost:9201 | elastic:elastic |
-| Kibana           | https://localhost:5602 | elastic:elastic |
+| Service       | Address                | Credentials     |
+| ------------- | ---------------------- | --------------- |
+| Wazuh Indexer | https://localhost:9200 | admin:admin     |
+| Elastic       | https://localhost:9201 | elastic:elastic |
+| Kibana        | https://localhost:5602 | elastic:elastic |
 
 ## Importing the dashboards
 

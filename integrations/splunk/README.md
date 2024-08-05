@@ -33,21 +33,22 @@ For custom configurations, you may need to modify these files:
 - [splunk/logstash/pipeline/indexer-to-splunk.conf](./logstash/pipeline/indexer-to-splunk.conf): Logstash Pipeline configuration file.
 
 If you opted to start the integration with the Wazuh Manager, you can modify the following files:
+
 - [docker/compose.manager-splunk.yml](../docker/compose.manager-splunk.yml): Docker Compose file.
 - [splunk/logstash/pipeline/manager-to-splunk.conf](./logstash/pipeline/manager-to-splunk.conf): Logstash Pipeline configuration file.
 
 Check the files above for **credentials**, ports, and other configurations.
 
-| Service          | Address                | Credentials         |
-| ---------------- | ---------------------- | ------------------- |
-| Wazuh Indexer    | https://localhost:9200 | admin:admin         |
-| Splunk           | https://localhost:8000 | admin:Password.1234 |
+| Service       | Address                | Credentials         |
+| ------------- | ---------------------- | ------------------- |
+| Wazuh Indexer | https://localhost:9200 | admin:admin         |
+| Splunk        | https://localhost:8000 | admin:Password.1234 |
 
 ## Importing the dashboards
 
 The dashboards for Splunk are included in this folder. The steps to import them to Splunk are the following:
 
-- In the Splunk UI, go to `Settings` > `Data Inputs` > `HTTP Event Collector` and make sure that the `hec` token is enabled and uses the `wazuh-alerts` index. 
+- In the Splunk UI, go to `Settings` > `Data Inputs` > `HTTP Event Collector` and make sure that the `hec` token is enabled and uses the `wazuh-alerts` index.
 - Open a dashboard file and copy all its content.
 - In the Splunk UI, navigate to `Search & Reporting`, `Dashboards`, click `Create New Dashboard`, write the title and select `Dashboard Studio`, select `Grid` and click on `Create`.
 - On the top menu, there is a `Source` icon. Click on it, and replace all the content with the copied content from the dashboard file. After that, click on `Back` and click on `Save`.

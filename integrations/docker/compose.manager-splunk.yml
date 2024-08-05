@@ -48,7 +48,7 @@ services:
       - alerts:/var/ossec/logs/alerts/
 
   wazuh.indexer:
-    image: opensearchproject/opensearch:2.12.0
+    image: opensearchproject/opensearch:${WAZUH_INDEXER_VERSION}
     depends_on:
       wazuh-certs-generator:
         condition: service_completed_successfully
@@ -56,6 +56,7 @@ services:
     ports:
       - 9200:9200
     environment:
+      - WAZUH_INDEXER_VERSION=${WAZUH_INDEXER_VERSION}
       - node.name=wazuh.indexer
       - discovery.type=single-node
       - bootstrap.memory_lock=true
@@ -89,8 +90,10 @@ services:
       - ./certs/root-ca.pem:/usr/share/opensearch/config/root-ca.pem
 
   wazuh-certs-generator:
-    image: wazuh/wazuh-certs-generator:0.0.1
+    image: wazuh/wazuh-certs-generator:${WAZUH_CERTS_GENERATOR_VERSION}
     hostname: wazuh-certs-generator
+    environment:
+      - WAZUH_CERTS_GENERATOR_VERSION=${WAZUH_CERTS_GENERATOR_VERSION}
     entrypoint: sh -c "/entrypoint.sh; chown -R 1000:999 /certificates; chmod 740 /certificates; chmod 440 /certificates/*"
     volumes:
       - ./certs/:/certificates/
@@ -102,11 +105,13 @@ services:
         condition: service_healthy
       wazuh-certs-generator:
         condition: service_completed_successfully
-    image: logstash-oss:8.6.2
+    image: logstash-oss:${LOGSTASH_OSS_VERSION}
     build:
-      dockerfile: ../elastic/Dockerfile
-      context: ../splunk
+      context: ../logstash
+      args:
+        - LOGSTASH_OSS_VERSION=${LOGSTASH_OSS_VERSION}
     environment:
+      LOGSTASH_OSS_VERSION: ${LOGSTASH_OSS_VERSION}
       LOG_LEVEL: info
       MONITORING_ENABLED: false
     volumes:
@@ -145,7 +150,7 @@ services:
       '
 
   splunk:
-    image: splunk/splunk:9.0.4
+    image: splunk/splunk:${SPLUNK_VERSION}
     volumes:
       - ./certs/splunk.key:/opt/splunk/etc/auth/custom/splunk.key
       - ./certs/splunk.pem:/opt/splunk/etc/auth/custom/splunk.pem
@@ -156,12 +161,13 @@ services:
       generator:
         condition: service_completed_successfully
     ports:
-      - '8000:8000'
-      - '8088:8088'
+      - "8000:8000"
+      - "8088:8088"
     environment:
+      SPLUNK_VERSION: ${SPLUNK_VERSION}
       SPLUNK_HEC_TOKEN: "abcd1234"
       SPLUNK_HOSTNAME: splunk
-      SPLUNK_HTTP_ENABLESSL: 'true'
+      SPLUNK_HTTP_ENABLESSL: "true"
       SPLUNK_PASSWORD: Password.1234
       SPLUNK_STANDALONE_URL: https://splunk:8080
       SPLUNK_START_ARGS: --accept-license

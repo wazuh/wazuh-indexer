@@ -1,4 +1,3 @@
-version: "3.8"
 name: "amazon-security-lake"
 
 services:
@@ -79,16 +78,17 @@ services:
       SERVER_SSL_CERTIFICATE: "/usr/share/opensearch-dashboards/config/certs/opensearch.pem"
       OPENSEARCH_SSL_CERTIFICATEAUTHORITIES: "/usr/share/opensearch-dashboards/config/certs/root-ca.pem"
 
-  wazuh.integration.security.lake:
-    image: wazuh/indexer-security-lake-integration
+  logstash:
+    depends_on:
+      - wazuh.indexer
+    # image: wazuh/indexer-security-lake-integration
+    image: logstash-oss:${LOGSTASH_OSS_VERSION}
     build:
       context: ../logstash
       args:
         - LOGSTASH_OSS_VERSION=${LOGSTASH_OSS_VERSION}
-    container_name: wazuh.integration.security.lake
-    depends_on:
-      - wazuh.indexer
-    hostname: wazuh.integration.security.lake
+    # container_name: wazuh.integration.security.lake
+    # hostname: wazuh.integration.security.lake
     environment:
       LOG_LEVEL: trace
       LOGSTASH_KEYSTORE_PASS: "SecretPassword"
@@ -104,10 +104,8 @@ services:
       - "5044:5044"
       - "9600:9600"
     volumes:
-      - ../amazon-security-lake/logstash/pipeline:/usr/share/logstash/pipeline # TODO has 1000:1000. logstash's uid is 999
+      - ../amazon-security-lake/logstash/pipeline:/usr/share/logstash/pipeline
       - ./certs/root-ca.pem:/usr/share/logstash/root-ca.pem
-      - ../amazon-security-lake/src:/usr/share/logstash/amazon-security-lake # TODO use dedicated folder
-      # - ./credentials:/usr/share/logstash/.aws/credentials # TODO credentials are not commited (missing)
 
   s3.ninja:
     image: scireum/s3-ninja:latest
@@ -122,13 +120,9 @@ services:
     image: wazuh/indexer-security-lake-integration:lambda
     build:
       context: ../amazon-security-lake
-      dockerfile: ../amazon-security-lake/aws-lambda.dockerfile
-    container_name: wazuh.integration.security.lake.aws.lambda
-    hostname: wazuh.integration.security.lake.aws.lambda
     environment:
       AWS_ACCESS_KEY_ID: "AKIAIOSFODNN7EXAMPLE"
       AWS_SECRET_ACCESS_KEY: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-      AWS_REGION: "us-east-1"
       REGION: "us-east-1"
       AWS_BUCKET: "wazuh-aws-security-lake-parquet"
       S3_BUCKET_OCSF: "wazuh-aws-security-lake-ocsf"

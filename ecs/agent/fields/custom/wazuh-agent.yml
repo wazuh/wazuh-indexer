@@ -1,0 +1,27 @@
+---
+- name: agent
+  title: Wazuh Agents
+  short: Wazuh Inc. custom fields.
+  type: group
+  group: 2
+  fields:
+    - name: groups
+      type: keyword
+      level: custom
+      description: >
+        The groups the agent belongs to.
+    - name: key
+      type: keyword
+      level: custom
+      description: >
+        The agent's registration key.
+    - name: last_login
+      type: date
+      level: custom
+      description: >
+        The agent's last login.
+    - name: persistent_connection_node
+      type: keyword
+      level: custom
+      description: >
+        The Wazuh Server node with which the agent has a persistent connection.

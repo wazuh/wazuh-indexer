@@ -176,8 +176,8 @@ exit 0
 
 %post
 set -e
-chown -R %{name}.%{name} %{config_dir}
-chown -R %{name}.%{name} %{log_dir}
+chown -R %{name}:%{name} %{config_dir}
+chown -R %{name}:%{name} %{log_dir}
 
 # Apply PerformanceAnalyzer Settings
 chmod a+rw /tmp

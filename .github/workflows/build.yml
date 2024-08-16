@@ -161,9 +161,6 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJson(needs.matrix.outputs.matrix) }}
     steps:
-      - name: Display structure of Maven local repository
-        run: ls -R ~/.m2/repository/org/wazuh
-
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with:

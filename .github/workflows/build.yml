@@ -39,6 +39,10 @@ on:
         description: "Build plugins ?"
         type: boolean
         default: true
+      plugins_reference:
+        description: "Branch, commit or tag for the plugins repository"
+        type: string
+        default: "master"
   workflow_call:
     inputs:
       revision:
@@ -72,6 +76,10 @@ on:
         description: "Build plugins ?"
         type: boolean
         default: true
+      plugins_reference:
+        description: "Branch, commit or tag for the plugins repository"
+        type: string
+        default: "master"
     secrets:
       CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY:
         required: true
@@ -109,17 +117,45 @@ jobs:
           )
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
 
-  build-setup-plugin:
-    if: ${{ inputs.build_plugins }}
-    name: Build wazuh-indexer-setup plugin
-    uses: wazuh/wazuh-indexer-plugins/.github/workflows/build.yml@ci/13-add-build-workflow
-    with:
-      revision: ${{ inputs.revision }}
-      plugin: wazuh-indexer-setup
-      id: ${{ inputs.id }}
+  # build-setup-plugin:
+  #   if: ${{ inputs.build_plugins }}
+  #   name: Build wazuh-indexer-setup plugin
+  #   uses: wazuh/wazuh-indexer-plugins/.github/workflows/build.yml@ci/13-add-build-workflow
+  #   with:
+  #     revision: ${{ inputs.revision }}
+  #     plugin: wazuh-indexer-setup
+  #     id: ${{ inputs.id }}
+
+  build-plugins:
+    strategy:
+      fail-fast: false
+      matrix:
+        plugins: [ "wazuh-indexer-setup" ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: wazuh/wazuh-indexer-plugins
+          ref: ${{ inputs.plugins_reference }}
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Get version
+        id: version
+        run: echo "version=$(<VERSION)" >> "$GITHUB_OUTPUT"
+
+      - name: Build with Gradle
+        working-directory: ./plugins/${{ matrix.plugins }}
+        run: |
+          ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }} && ./gradlew publishToMavenLocal
 
   build:
-    needs: [matrix, build-setup-plugin]
+    needs: [matrix, build-plugins]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

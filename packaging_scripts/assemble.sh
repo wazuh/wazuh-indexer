@@ -19,6 +19,7 @@ if ($TEST); then
         "performance-analyzer"
         "opensearch-security"
     )
+    wazuh_plugins=()
 else
     plugins=(
         "alerting" # "opensearch-alerting"
@@ -39,6 +40,9 @@ else
         "opensearch-security"
         "opensearch-security-analytics"
         "opensearch-sql-plugin" # "opensearch-sql"
+    )
+    wazuh_plugins=(
+        "wazuh-indexer-setup"
     )
 fi
 
@@ -219,12 +223,18 @@ function enable_performance_analyzer_rca() {
 # Install plugins
 # ====
 function install_plugins() {
-    echo "Install plugins"
+    echo "Installing OpenSearch plugins"
     maven_repo_local="$HOME/maven"
     for plugin in "${plugins[@]}"; do
         plugin_from_maven="org.opensearch.plugin:${plugin}:${VERSION}.0"
         mvn -Dmaven.repo.local="${maven_repo_local}" org.apache.maven.plugins:maven-dependency-plugin:2.1:get -DrepoUrl=https://repo1.maven.org/maven2 -Dartifact="${plugin_from_maven}:zip"
         OPENSEARCH_PATH_CONF=$PATH_CONF "${PATH_BIN}/opensearch-plugin" install --batch --verbose "file:${maven_repo_local}/org/opensearch/plugin/${plugin}/${VERSION}.0/${plugin}-${VERSION}.0.zip"
+    done
+
+    echo "Installing Wazuh plugins"
+    indexer_plugins_folder="$HOME/artifacts/plugins"
+    for plugin in "${wazuh_plugins[@]}"; do
+        OPENSEARCH_PATH_CONF=$PATH_CONF "${PATH_BIN}/opensearch-plugin" install --batch --verbose "file:${indexer_plugins_folder}/${plugin}-${VERSION}-${REVISION}.zip"
     done
 }
 

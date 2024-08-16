@@ -161,13 +161,8 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJson(needs.matrix.outputs.matrix) }}
     steps:
-      - name: Download setup-plugin artifact
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts/plugins
-      - name: Display structure of downloaded files
-        working-directory: ./artifacts/plugins
-        run: ls -R
+      - name: Display structure of Maven local repository
+        run: ls -R ~/.m2/repository/org/wazuh
 
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4

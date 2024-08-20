@@ -109,6 +109,7 @@ set -- "$@" "%%dir /usr/lib/tmpfiles.d"
 set -- "$@" "%%dir /usr/share"
 set -- "$@" "%%dir /var"
 set -- "$@" "%%dir /var/run"
+set -- "$@" "%%dir /var/run/%{name}"
 set -- "$@" "%%dir /run"
 set -- "$@" "%%dir /var/lib"
 set -- "$@" "%%dir /var/log"
@@ -175,8 +176,8 @@ exit 0
 
 %post
 set -e
-chown -R %{name}.%{name} %{config_dir}
-chown -R %{name}.%{name} %{log_dir}
+chown -R %{name}:%{name} %{config_dir}
+chown -R %{name}:%{name} %{log_dir}
 
 # Apply PerformanceAnalyzer Settings
 chmod a+rw /tmp
@@ -233,7 +234,7 @@ exit 0
 # Service files
 %attr(0644, root, root) %{_prefix}/lib/systemd/system/%{name}.service
 %attr(0644, root, root) %{_prefix}/lib/systemd/system/%{name}-performance-analyzer.service
-%attr(0644, root, root) %{_sysconfdir}/init.d/%{name}
+%attr(0750, root, root) %{_sysconfdir}/init.d/%{name}
 %attr(0644, root, root) %config(noreplace) %{_prefix}/lib/sysctl.d/%{name}.conf
 %attr(0644, root, root) %config(noreplace) %{_prefix}/lib/tmpfiles.d/%{name}.conf
 

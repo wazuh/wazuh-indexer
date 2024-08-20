@@ -11,7 +11,7 @@ services:
     command: bash -c "python run.py -a wazuh.indexer"
 
   wazuh.indexer:
-    image: opensearchproject/opensearch:2.12.0
+    image: opensearchproject/opensearch:${WAZUH_INDEXER_VERSION}
     depends_on:
       wazuh-certs-generator:
         condition: service_completed_successfully
@@ -19,6 +19,7 @@ services:
     ports:
       - 9200:9200
     environment:
+      - WAZUH_INDEXER_VERSION=${WAZUH_INDEXER_VERSION}
       - node.name=wazuh.indexer
       - discovery.type=single-node
       - bootstrap.memory_lock=true
@@ -51,7 +52,7 @@ services:
       - ./certs/root-ca.pem:/usr/share/opensearch/config/root-ca.pem
 
   wazuh.dashboard:
-    image: opensearchproject/opensearch-dashboards:2.12.0
+    image: opensearchproject/opensearch-dashboards:${WAZUH_DASHBOARD_VERSION}
     depends_on:
       - wazuh.indexer
     hostname: wazuh.dashboard
@@ -65,12 +66,13 @@ services:
       - ./certs/wazuh.dashboard.pem:/usr/share/opensearch-dashboards/config/certs/opensearch.pem
       - ./certs/root-ca.pem:/usr/share/opensearch-dashboards/config/certs/root-ca.pem
     environment:
+      WAZUH_DASHBOARD_VERSION: ${WAZUH_DASHBOARD_VERSION}
       OPENSEARCH_HOSTS: '["https://wazuh.indexer:9200"]' # Define the OpenSearch nodes that OpenSearch Dashboards will query
-      SERVER_SSL_ENABLED: 'true'
-      SERVER_SSL_KEY: '/usr/share/opensearch-dashboards/config/certs/opensearch.key'
-      SERVER_SSL_CERTIFICATE: '/usr/share/opensearch-dashboards/config/certs/opensearch.pem'
-      OPENSEARCH_SSL_CERTIFICATEAUTHORITIES: '/usr/share/opensearch-dashboards/config/certs/root-ca.pem'
- 
+      SERVER_SSL_ENABLED: "true"
+      SERVER_SSL_KEY: "/usr/share/opensearch-dashboards/config/certs/opensearch.key"
+      SERVER_SSL_CERTIFICATE: "/usr/share/opensearch-dashboards/config/certs/opensearch.pem"
+      OPENSEARCH_SSL_CERTIFICATEAUTHORITIES: "/usr/share/opensearch-dashboards/config/certs/root-ca.pem"
+
   generate-certs-config:
     image: alpine:latest
     volumes:
@@ -92,8 +94,10 @@ services:
       "
 
   wazuh-certs-generator:
-    image: wazuh/wazuh-certs-generator:0.0.1
+    image: wazuh/wazuh-certs-generator:${WAZUH_CERTS_GENERATOR_VERSION}
     hostname: wazuh-certs-generator
+    environment:
+      - WAZUH_CERTS_GENERATOR_VERSION=${WAZUH_CERTS_GENERATOR_VERSION}
     depends_on:
       generate-certs-config:
         condition: service_completed_successfully
@@ -101,7 +105,6 @@ services:
     volumes:
       - ./certs/:/certificates/
       - ./config/certs.yml:/config/certs.yml
-
 
   # =================================
   # Elasticsearch, Kibana and Logstash
@@ -112,7 +115,7 @@ services:
     image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
     volumes:
       - es_certs:/usr/share/elasticsearch/config/certs
-    user: '0'
+    user: "0"
     command: >
       bash -c '
         if [ x${ELASTIC_PASSWORD} == x ]; then
@@ -158,11 +161,11 @@ services:
         echo "All done!";
       '
     healthcheck:
-      test: ['CMD-SHELL', '[ -f config/certs/es01/es01.crt ]']
+      test: ["CMD-SHELL", "[ -f config/certs/es01/es01.crt ]"]
       interval: 1s
       timeout: 5s
       retries: 120
-  
+
   es01:
     depends_on:
       setup:
@@ -197,13 +200,13 @@ services:
     healthcheck:
       test:
         [
-          'CMD-SHELL',
+          "CMD-SHELL",
           "curl -s --cacert config/certs/ca/ca.crt https://localhost:9200 | grep -q 'missing authentication credentials'",
         ]
       interval: 10s
       timeout: 10s
       retries: 120
-  
+
   kibana:
     depends_on:
       es01:
@@ -226,20 +229,22 @@ services:
     healthcheck:
       test:
         [
-          'CMD-SHELL',
+          "CMD-SHELL",
           "curl -s -I https://localhost:5601 | grep -q 'HTTP/1.1 302 Found'",
         ]
       interval: 10s
       timeout: 10s
       retries: 120
-  
+
   logstash:
     depends_on:
       es01:
         condition: service_healthy
-    image: logstash-oss:8.6.2
+    image: logstash-oss:${LOGSTASH_OSS_VERSION}
     build:
-      context: ../elastic
+      context: ../logstash
+      args:
+        - LOGSTASH_OSS_VERSION=${LOGSTASH_OSS_VERSION}
     environment:
       LOG_LEVEL: info
       MONITORING_ENABLED: false

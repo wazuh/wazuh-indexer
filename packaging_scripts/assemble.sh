@@ -224,7 +224,7 @@ function enable_performance_analyzer_rca() {
 # ====
 function install_plugins() {
     echo "Installing OpenSearch plugins"
-    maven_repo_local="$HOME/maven"
+    maven_repo_local="$HOME/.m2"
     for plugin in "${plugins[@]}"; do
         plugin_from_maven="org.opensearch.plugin:${plugin}:${VERSION}.0"
         mvn -Dmaven.repo.local="${maven_repo_local}" org.apache.maven.plugins:maven-dependency-plugin:2.1:get -DrepoUrl=https://repo1.maven.org/maven2 -Dartifact="${plugin_from_maven}:zip"
@@ -234,7 +234,7 @@ function install_plugins() {
     echo "Installing Wazuh plugins"
     for plugin in "${wazuh_plugins[@]}"; do
         plugin_from_maven="org.wazuh.plugin:${plugin}:${VERSION}.${REVISION}"
-        mvn -Dmaven.repo.local="${maven_repo_local}" org.apache.maven.plugins:maven-dependency-plugin:2.1:get -DrepoUrl=https://repo1.maven.org/maven2 -Dartifact="${plugin_from_maven}:zip"
+        mvn -Dmaven.repo.local="${maven_repo_local}" org.apache.maven.plugins:maven-dependency-plugin:2.1:get -Dartifact="${plugin_from_maven}:zip"
         OPENSEARCH_PATH_CONF=$PATH_CONF "${PATH_BIN}/opensearch-plugin" install --batch --verbose "file:${maven_repo_local}/org/wazuh/plugin/${plugin}/${VERSION}.${REVISION}/${plugin}-${VERSION}.${REVISION}.zip"
     done
 }

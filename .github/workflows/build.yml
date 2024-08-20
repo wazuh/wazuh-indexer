@@ -152,7 +152,11 @@ jobs:
       - name: Build with Gradle
         working-directory: ./plugins/${{ matrix.plugins }}
         run: |
-          ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }} && ./gradlew publishToMavenLocal
+          ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }}
+    
+      - name: Publish to Maven local
+        working-directory: ./plugins/${{ matrix.plugins }}
+        run: ./gradlew publishToMavenLocal && ls -l "${HOME}/.m2/repository/org/wazuh/${{ matrix.plugins }}"
 
   build:
     needs: [matrix, build-plugins]

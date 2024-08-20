@@ -233,7 +233,7 @@ function install_plugins() {
 
     echo "Installing Wazuh plugins"
     for plugin in "${wazuh_plugins[@]}"; do
-        plugin_from_maven="org.wazuh.plugin:${plugin}:${VERSION}.${REVISION}"
+        plugin_from_maven="org.wazuh.plugin:${plugin}:${1}.${REVISION}"
         mvn -Dmaven.repo.local="${maven_repo_local}" org.apache.maven.plugins:maven-dependency-plugin:2.1:get -Dartifact="${plugin_from_maven}:zip"
         OPENSEARCH_PATH_CONF=$PATH_CONF "${PATH_BIN}/opensearch-plugin" install --batch --verbose "file:${maven_repo_local}/org/wazuh/plugin/${plugin}/${VERSION}.${REVISION}/${plugin}-${VERSION}.${REVISION}.zip"
     done
@@ -266,7 +266,7 @@ function assemble_tar() {
     version=$(cat VERSION)
 
     # Install plugins
-    install_plugins
+    install_plugins "${version}"
     fix_log_rotation ${PATH_CONF}
     # Swap configuration files
     add_configuration_files
@@ -306,7 +306,7 @@ function assemble_rpm() {
     version=$(cat ./usr/share/wazuh-indexer/VERSION)
 
     # Install plugins
-    install_plugins
+    install_plugins "${version}"
     fix_log_rotation ${PATH_CONF}
     enable_performance_analyzer_rca ${src_path}
     # Swap configuration files
@@ -360,7 +360,7 @@ function assemble_deb() {
     version=$(cat ./usr/share/wazuh-indexer/VERSION)
 
     # Install plugins
-    install_plugins
+    install_plugins "${version}"
     fix_log_rotation ${PATH_CONF}
     enable_performance_analyzer_rca ${src_path}
     # Swap configuration files

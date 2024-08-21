@@ -1,4 +1,3 @@
-version: "3.8"
 name: "amazon-security-lake"
 
 services:
@@ -13,7 +12,7 @@ services:
     command: bash -c "python run.py -a wazuh.indexer"
 
   wazuh.indexer:
-    image: opensearchproject/opensearch:2.12.0
+    image: opensearchproject/opensearch:${WAZUH_INDEXER_VERSION}
     container_name: wazuh.indexer
     depends_on:
       wazuh-certs-generator:
@@ -22,6 +21,7 @@ services:
     ports:
       - 9200:9200
     environment:
+      - WAZUH_INDEXER_VERSION=${WAZUH_INDEXER_VERSION}
       # - cluster.name=opensearch-cluster
       - node.name=wazuh.indexer
       - discovery.type=single-node
@@ -56,7 +56,7 @@ services:
       - ./certs/root-ca.pem:/usr/share/opensearch/config/root-ca.pem
 
   wazuh.dashboard:
-    image: opensearchproject/opensearch-dashboards:2.12.0
+    image: opensearchproject/opensearch-dashboards:${WAZUH_DASHBOARD_VERSION}
     container_name: wazuh.dashboard
     depends_on:
       - wazuh.indexer
@@ -71,20 +71,24 @@ services:
       - ./certs/wazuh.dashboard.pem:/usr/share/opensearch-dashboards/config/certs/opensearch.pem
       - ./certs/root-ca.pem:/usr/share/opensearch-dashboards/config/certs/root-ca.pem
     environment:
+      WAZUH_DASHBOARD_VERSION: ${WAZUH_DASHBOARD_VERSION}
       OPENSEARCH_HOSTS: '["https://wazuh.indexer:9200"]' # Define the OpenSearch nodes that OpenSearch Dashboards will query
-      SERVER_SSL_ENABLED: 'true'
-      SERVER_SSL_KEY: '/usr/share/opensearch-dashboards/config/certs/opensearch.key'
-      SERVER_SSL_CERTIFICATE: '/usr/share/opensearch-dashboards/config/certs/opensearch.pem'
-      OPENSEARCH_SSL_CERTIFICATEAUTHORITIES: '/usr/share/opensearch-dashboards/config/certs/root-ca.pem'
+      SERVER_SSL_ENABLED: "true"
+      SERVER_SSL_KEY: "/usr/share/opensearch-dashboards/config/certs/opensearch.key"
+      SERVER_SSL_CERTIFICATE: "/usr/share/opensearch-dashboards/config/certs/opensearch.pem"
+      OPENSEARCH_SSL_CERTIFICATEAUTHORITIES: "/usr/share/opensearch-dashboards/config/certs/root-ca.pem"
 
-  wazuh.integration.security.lake:
-    image: wazuh/indexer-security-lake-integration
-    build:
-      context: ../amazon-security-lake
-    container_name: wazuh.integration.security.lake
+  logstash:
     depends_on:
       - wazuh.indexer
-    hostname: wazuh.integration.security.lake
+    # image: wazuh/indexer-security-lake-integration
+    image: logstash-oss:${LOGSTASH_OSS_VERSION}
+    build:
+      context: ../logstash
+      args:
+        - LOGSTASH_OSS_VERSION=${LOGSTASH_OSS_VERSION}
+    # container_name: wazuh.integration.security.lake
+    # hostname: wazuh.integration.security.lake
     environment:
       LOG_LEVEL: trace
       LOGSTASH_KEYSTORE_PASS: "SecretPassword"
@@ -100,11 +104,8 @@ services:
       - "5044:5044"
       - "9600:9600"
     volumes:
-      - ../amazon-security-lake/logstash/pipeline:/usr/share/logstash/pipeline # TODO has 1000:1000. logstash's uid is 999 
+      - ../amazon-security-lake/logstash/pipeline:/usr/share/logstash/pipeline
       - ./certs/root-ca.pem:/usr/share/logstash/root-ca.pem
-      - ../amazon-security-lake/src:/usr/share/logstash/amazon-security-lake # TODO use dedicated folder
-      # - ./credentials:/usr/share/logstash/.aws/credentials # TODO credentials are not commited (missing)
-    command: tail -f /var/log/logstash/logstash-plain.log
 
   s3.ninja:
     image: scireum/s3-ninja:latest
@@ -119,13 +120,10 @@ services:
     image: wazuh/indexer-security-lake-integration:lambda
     build:
       context: ../amazon-security-lake
-      dockerfile: ../amazon-security-lake/aws-lambda.dockerfile
-    container_name: wazuh.integration.security.lake.aws.lambda
-    hostname: wazuh.integration.security.lake.aws.lambda
     environment:
       AWS_ACCESS_KEY_ID: "AKIAIOSFODNN7EXAMPLE"
       AWS_SECRET_ACCESS_KEY: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-      AWS_REGION: "us-east-1"
+      REGION: "us-east-1"
       AWS_BUCKET: "wazuh-aws-security-lake-parquet"
       S3_BUCKET_OCSF: "wazuh-aws-security-lake-ocsf"
       AWS_ENDPOINT: "http://s3.ninja:9000"
@@ -137,7 +135,7 @@ services:
       - ../amazon-security-lake/src:/var/task
     ports:
       - "9000:8080"
- 
+
   generate-certs-config:
     image: alpine:latest
     volumes:
@@ -159,12 +157,14 @@ services:
       "
 
   wazuh-certs-generator:
-    image: wazuh/wazuh-certs-generator:0.0.1
+    image: wazuh/wazuh-certs-generator:${WAZUH_CERTS_GENERATOR_VERSION}
     hostname: wazuh-certs-generator
     depends_on:
       generate-certs-config:
         condition: service_completed_successfully
     container_name: wazuh-certs-generator
+    environment:
+      - WAZUH_CERTS_GENERATOR_VERSION=${WAZUH_CERTS_GENERATOR_VERSION}
     entrypoint: sh -c "/entrypoint.sh; chown -R 1000:999 /certificates; chmod 740 /certificates; chmod 440 /certificates/*"
     volumes:
       - ./certs/:/certificates/

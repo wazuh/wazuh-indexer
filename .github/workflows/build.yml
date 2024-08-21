@@ -117,20 +117,11 @@ jobs:
           )
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
 
-  # build-setup-plugin:
-  #   if: ${{ inputs.build_plugins }}
-  #   name: Build wazuh-indexer-setup plugin
-  #   uses: wazuh/wazuh-indexer-plugins/.github/workflows/build.yml@ci/13-add-build-workflow
-  #   with:
-  #     revision: ${{ inputs.revision }}
-  #     plugin: wazuh-indexer-setup
-  #     id: ${{ inputs.id }}
-
   build-plugins:
     strategy:
       fail-fast: false
       matrix:
-        plugins: [ "wazuh-indexer-setup" ]
+        plugins: ["wazuh-indexer-setup"]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -153,10 +144,10 @@ jobs:
         working-directory: ./plugins/${{ matrix.plugins }}
         run: |
           ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }}
-    
+
       - name: Publish to Maven local
         working-directory: ./plugins/${{ matrix.plugins }}
-        run: | 
+        run: |
           ./gradlew publishToMavenLocal -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }}
           ls -lR "${HOME}/.m2/repository/org/wazuh/"
 
@@ -174,7 +165,7 @@ jobs:
           java-version: 21
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4          
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Provision
         if: ${{ matrix.distribution == 'deb' }}

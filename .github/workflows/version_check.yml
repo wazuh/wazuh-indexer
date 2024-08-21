@@ -1,0 +1,15 @@
+name: Version check
+
+on:
+  push:
+    paths:
+      - "VERSION"
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check version
+        run: bash packaging_scripts/check_version.sh

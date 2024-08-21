@@ -207,7 +207,7 @@ function fix_log_rotation() {
         echo 'grant {'
         echo '  permission java.lang.RuntimePermission "accessUserInformation";'
         echo '};'
-    } >> "${1}/opensearch-performance-analyzer/opensearch_security.policy"
+    } >>"${1}/opensearch-performance-analyzer/opensearch_security.policy"
 }
 
 # ====
@@ -422,7 +422,7 @@ function main() {
     esac
 
     # Create checksum
-    sha512sum "${OUTPUT}/dist/$ARTIFACT_PACKAGE_NAME" > "${OUTPUT}/dist/$ARTIFACT_PACKAGE_NAME".sha512
+    sha512sum "${OUTPUT}/dist/$ARTIFACT_PACKAGE_NAME" >"${OUTPUT}/dist/$ARTIFACT_PACKAGE_NAME".sha512
 }
 
 main "${@}"

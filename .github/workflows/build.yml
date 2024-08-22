@@ -171,12 +171,11 @@ jobs:
       # Download plugins
       - uses: actions/download-artifact@v4
         with:
-          path: $GITHUB_WORKSPACE/artifacts/plugins
+          path: ./artifacts/plugins
           merge-multiple: true
       
       - name: Display structure of downloaded files
-        working-directory: $GITHUB_WORKSPACE
-        run: ls -R artifacts/plugins && exit 1
+        run: ls -lR ./artifacts/plugins
 
       - uses: actions/setup-java@v4
         with:

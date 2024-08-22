@@ -141,7 +141,7 @@ jobs:
         run: echo "version=$(<VERSION)" >> "$GITHUB_OUTPUT"
 
       - name: Build with Gradle
-        working-directory: ./plugins/${{ matrix.plugins }}
+        working-directory: $GITHUB_WORKSPACE/plugins/${{ matrix.plugins }}
         run: |
           ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ github.event.inputs.revision }}
           ls -lR build/distributions/
@@ -156,7 +156,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.plugins }}
-          path: "./plugins/${{ matrix.plugins }}/build/distributions/${{ matrix.plugins }}-plugin-${{ steps.version.outputs.version }}.${{ github.event.inputs.revision }}.zip"
+          path: "$GITHUB_WORKSPACE/plugins/${{ matrix.plugins }}/build/distributions/${{ matrix.plugins }}-${{ steps.version.outputs.version }}.${{ github.event.inputs.revision }}.zip"
+          if-no-files-found: error
 
   build:
     needs: [matrix, build-plugins]

@@ -1,5 +1,9 @@
 # `wazuh-indexer` packages generation guide
 
+> [!NOTE]
+>
+> Outdated information. This document is pending a review.
+
 The packages' generation process consists on 2 steps:
 
 - **Build**: compiles the Java application and bundles it into a package.
@@ -15,6 +19,16 @@ Each section includes instructions to generate packages locally, using Act or Do
 - [Install Act](https://github.com/nektos/act)
 
 The names of the packages are managed by the `baptizer.sh` script.
+
+## Build and Assemble in Act
+
+Use Act to run the `build.yml` workflow locally. The `act.input.env` file contains the inputs 
+for the workflow. As the workflow clones the `wazuh-indexer-plugins` repository, the `GITHUB_TOKEN`
+is required. You can use the `gh` CLI to authenticate, as seen in the example below.
+
+```console
+act -j build -W .github/workflows/build.yml --artifact-server-path ./artifacts --input-file packaging_scripts/act.input.env -s GITHUB_TOKEN="$(gh auth token)"
+```
 
 ## Build
 
@@ -129,14 +143,6 @@ For DEB packages, the `assemble.sh` script will perform the following operations
                 | -- postinst
     ```
 
-#### Running in Act
-
-```console
-act -j assemble -W .github/workflows/build.yml --artifact-server-path ./artifacts --matrix distribution:deb --matrix architecture:x64
-
-[Build slim packages/build] 🏁  Job succeeded
-```
-
 #### Running in Docker
 
 Pre-requisites:
@@ -198,14 +204,6 @@ The script will:
         wazuh-indexer-min-*.rpm
         wazuh-indexer.rpm.spec
     ```
-
-#### Running in Act
-
-```console
-act -j assemble -W .github/workflows/build.yml --artifact-server-path ./artifacts --matrix distribution:rpm --matrix architecture:x64 --var OPENSEARCH_VERSION=2.11.1
-
-[Build slim packages/build] 🏁  Job succeeded
-```
 
 #### Running in Docker
 

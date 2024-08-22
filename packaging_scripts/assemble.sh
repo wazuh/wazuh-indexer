@@ -241,6 +241,8 @@ function install_plugins() {
         # Otherwise, search for the plugins in the output folder.
         if [ -z "${plugin_from_maven_local}" ]; then
             echo "Plugin ${plugin_name} not found in local maven repository. Searching on ./${OUTPUT}/plugins"
+            pwd
+            ls -lR ./${OUTPUT}/plugins
             plugin_path="./${OUTPUT}/plugins/${plugin_name}-${indexer_plugin_version}.zip"
         fi
     

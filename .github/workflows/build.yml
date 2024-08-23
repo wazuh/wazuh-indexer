@@ -173,7 +173,7 @@ jobs:
         with:
           path: ./artifacts/plugins
           merge-multiple: true
-      
+
       - name: Display structure of downloaded files
         run: ls -lR ./artifacts/plugins
 

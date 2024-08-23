@@ -234,19 +234,17 @@ function install_plugins() {
     echo "Installing Wazuh plugins"
     local indexer_plugin_version="${1}.${REVISION}"
     for plugin_name in "${wazuh_plugins[@]}"; do
-        # Check if the plugin is in the local maven repository. This is usually 
+        # Check if the plugin is in the local maven repository. This is usually
         # case for local executions.
         local plugin_path="${maven_repo_local}/repository/org/wazuh/${plugin_name}-plugin/${indexer_plugin_version}/${plugin_name}-${indexer_plugin_version}.zip"
 
         # Otherwise, search for the plugins in the output folder.
         if [ -z "${plugin_from_maven_local}" ]; then
             echo "Plugin ${plugin_name} not found in local maven repository. Searching on ./${OUTPUT}/plugins"
-            pwd
-            ls -lR ../../plugins
             # Working directory at this point is: wazuh-indexer/artifacts/tmp/{rpm|deb|tar}
             plugin_path="$(pwd)/../../plugins/${plugin_name}-${indexer_plugin_version}.zip"
         fi
-    
+
         OPENSEARCH_PATH_CONF=$PATH_CONF "${PATH_BIN}/opensearch-plugin" install --batch --verbose "file:${plugin_path}"
     done
 }

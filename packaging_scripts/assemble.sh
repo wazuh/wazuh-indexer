@@ -244,7 +244,7 @@ function install_plugins() {
             pwd
             ls -lR ../../plugins
             # Working directory at this point is: wazuh-indexer/artifacts/tmp/{rpm|deb|tar}
-            plugin_path="../../plugins/${plugin_name}-${indexer_plugin_version}.zip"
+            plugin_path="$(pwd)/../../plugins/${plugin_name}-${indexer_plugin_version}.zip"
         fi
     
         OPENSEARCH_PATH_CONF=$PATH_CONF "${PATH_BIN}/opensearch-plugin" install --batch --verbose "file:${plugin_path}"

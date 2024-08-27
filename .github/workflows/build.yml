@@ -188,11 +188,11 @@ jobs:
       - name: Provision
         if: ${{ matrix.distribution == 'deb' }}
         run: |
-          sudo bash packaging_scripts/provision.sh
+          sudo bash build-scripts/provision.sh
 
       - name: Run `baptizer.sh` (min)
         run: |
-          name=$(bash packaging_scripts/baptizer.sh -m \
+          name=$(bash build-scripts/baptizer.sh -m \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }}  \
             -r ${{ github.event.inputs.revision }} \
@@ -203,7 +203,7 @@ jobs:
 
       - name: Run `baptizer.sh`
         run: |
-          name=$(bash packaging_scripts/baptizer.sh \
+          name=$(bash build-scripts/baptizer.sh \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }}  \
             -r ${{ github.event.inputs.revision }} \
@@ -214,14 +214,14 @@ jobs:
 
       - name: Run `build.sh`
         run: |
-          bash packaging_scripts/build.sh \
+          bash build-scripts/build.sh \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }} \
             -n ${{ steps.min_package.outputs.name }}
 
       - name: Run `assemble.sh`
         run: |
-          bash packaging_scripts/assemble.sh \
+          bash build-scripts/assemble.sh \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }} \
             -r ${{ github.event.inputs.revision }}

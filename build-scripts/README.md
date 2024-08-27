@@ -1,8 +1,9 @@
-# `wazuh-indexer` packages generation guide
+# How to Build `wazuh-indexer` DEB and RPM Packages
 
-> [!NOTE]
+> [!CAUTION]
 >
-> Outdated information. This document is pending a review.
+> Be aware that there might be some problems while following the steps in this guide due to outdated information. 
+> This document is pending a review. Let us know if you find any issues.
 
 The packages' generation process consists on 2 steps:
 
@@ -19,6 +20,14 @@ Each section includes instructions to generate packages locally, using Act or Do
 - [Install Act](https://github.com/nektos/act)
 
 The names of the packages are managed by the `baptizer.sh` script.
+
+## Building the plugins
+
+Follow the [DEVELOPER_GUIDE.md](https://github.com/wazuh/wazuh-indexer-plugins/blob/master/DEVELOPER_GUIDE.md) instructions to build the plugins. The build scripts expect the plugins under the `artifacts/plugins` folder.
+
+1. Build the plugins.
+2. Copy the generated zip files to the `artifacts/plugins` folder.
+3. Build and Assemble the `wazuh-indexer` package.
 
 ## Build and Assemble in Act
 

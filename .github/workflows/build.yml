@@ -110,7 +110,7 @@ jobs:
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
 
   build-plugins:
-    if: ${{ github.event.inputs.plugins_reference }}
+    if: ${{ github.event.inputs.plugins_reference != '' }}
     strategy:
       fail-fast: false
       matrix:
@@ -157,11 +157,13 @@ jobs:
 
       # Download plugins
       - uses: actions/download-artifact@v4
+        if: ${{ github.event.inputs.plugins_reference != '' }}
         with:
           path: ./artifacts/plugins
           merge-multiple: true
 
       - name: Display structure of downloaded files
+        if: ${{ github.event.inputs.plugins_reference != '' }}
         run: ls -lR ./artifacts/plugins
 
       - uses: actions/setup-java@v4

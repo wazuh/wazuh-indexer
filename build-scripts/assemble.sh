@@ -19,6 +19,7 @@ if ($TEST); then
         "performance-analyzer"
         "opensearch-security"
     )
+    wazuh_plugins=()
 else
     plugins=(
         "alerting" # "opensearch-alerting"
@@ -39,6 +40,9 @@ else
         "opensearch-security"
         "opensearch-security-analytics"
         "opensearch-sql-plugin" # "opensearch-sql"
+    )
+    wazuh_plugins=(
+        "wazuh-indexer-setup"
     )
 fi
 
@@ -203,7 +207,7 @@ function fix_log_rotation() {
         echo 'grant {'
         echo '  permission java.lang.RuntimePermission "accessUserInformation";'
         echo '};'
-    } >> "${1}/opensearch-performance-analyzer/opensearch_security.policy"
+    } >>"${1}/opensearch-performance-analyzer/opensearch_security.policy"
 }
 
 # ====
@@ -219,12 +223,29 @@ function enable_performance_analyzer_rca() {
 # Install plugins
 # ====
 function install_plugins() {
-    echo "Install plugins"
-    maven_repo_local="$HOME/maven"
+    echo "Installing OpenSearch plugins"
+    local maven_repo_local="$HOME/.m2"
     for plugin in "${plugins[@]}"; do
-        plugin_from_maven="org.opensearch.plugin:${plugin}:${VERSION}.0"
+        local plugin_from_maven="org.opensearch.plugin:${plugin}:${VERSION}.0"
         mvn -Dmaven.repo.local="${maven_repo_local}" org.apache.maven.plugins:maven-dependency-plugin:2.1:get -DrepoUrl=https://repo1.maven.org/maven2 -Dartifact="${plugin_from_maven}:zip"
         OPENSEARCH_PATH_CONF=$PATH_CONF "${PATH_BIN}/opensearch-plugin" install --batch --verbose "file:${maven_repo_local}/org/opensearch/plugin/${plugin}/${VERSION}.0/${plugin}-${VERSION}.0.zip"
+    done
+
+    echo "Installing Wazuh plugins"
+    local indexer_plugin_version="${1}.${REVISION}"
+    for plugin_name in "${wazuh_plugins[@]}"; do
+        # Check if the plugin is in the local maven repository. This is usually
+        # case for local executions.
+        local plugin_path="${maven_repo_local}/repository/org/wazuh/${plugin_name}-plugin/${indexer_plugin_version}/${plugin_name}-${indexer_plugin_version}.zip"
+
+        # Otherwise, search for the plugins in the output folder.
+        if [ -z "${plugin_from_maven_local}" ]; then
+            echo "Plugin ${plugin_name} not found in local maven repository. Searching on ./${OUTPUT}/plugins"
+            # Working directory at this point is: wazuh-indexer/artifacts/tmp/{rpm|deb|tar}
+            plugin_path="$(pwd)/../../plugins/${plugin_name}-${indexer_plugin_version}.zip"
+        fi
+
+        OPENSEARCH_PATH_CONF=$PATH_CONF "${PATH_BIN}/opensearch-plugin" install --batch --verbose "file:${plugin_path}"
     done
 }
 
@@ -255,7 +276,7 @@ function assemble_tar() {
     version=$(cat VERSION)
 
     # Install plugins
-    install_plugins
+    install_plugins "${version}"
     fix_log_rotation ${PATH_CONF}
     # Swap configuration files
     add_configuration_files
@@ -295,7 +316,7 @@ function assemble_rpm() {
     version=$(cat ./usr/share/wazuh-indexer/VERSION)
 
     # Install plugins
-    install_plugins
+    install_plugins "${version}"
     fix_log_rotation ${PATH_CONF}
     enable_performance_analyzer_rca ${src_path}
     # Swap configuration files
@@ -349,7 +370,7 @@ function assemble_deb() {
     version=$(cat ./usr/share/wazuh-indexer/VERSION)
 
     # Install plugins
-    install_plugins
+    install_plugins "${version}"
     fix_log_rotation ${PATH_CONF}
     enable_performance_analyzer_rca ${src_path}
     # Swap configuration files
@@ -389,7 +410,7 @@ function main() {
 
     echo "Assembling wazuh-indexer for $PLATFORM-$DISTRIBUTION-$ARCHITECTURE"
 
-    VERSION=$(bash packaging_scripts/upstream_version.sh)
+    VERSION=$(bash build-scripts/upstream-version.sh)
     ARTIFACT_BUILD_NAME=$(ls "${OUTPUT}/dist/" | grep "wazuh-indexer-min.*$SUFFIX.*\.$EXT")
     ARTIFACT_PACKAGE_NAME=${ARTIFACT_BUILD_NAME/-min/}
 
@@ -411,7 +432,7 @@ function main() {
     esac
 
     # Create checksum
-    sha512sum "${OUTPUT}/dist/$ARTIFACT_PACKAGE_NAME" > "${OUTPUT}/dist/$ARTIFACT_PACKAGE_NAME".sha512
+    sha512sum "${OUTPUT}/dist/$ARTIFACT_PACKAGE_NAME" >"${OUTPUT}/dist/$ARTIFACT_PACKAGE_NAME".sha512
 }
 
 main "${@}"

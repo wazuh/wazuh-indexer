@@ -147,7 +147,7 @@ jobs:
           if-no-files-found: error
 
   build:
-    needs: [ matrix ]
+    needs: [matrix, build-plugins]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

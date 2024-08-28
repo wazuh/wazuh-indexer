@@ -410,7 +410,7 @@ function main() {
 
     echo "Assembling wazuh-indexer for $PLATFORM-$DISTRIBUTION-$ARCHITECTURE"
 
-    VERSION=$(bash packaging_scripts/upstream_version.sh)
+    VERSION=$(bash build-scripts/upstream-version.sh)
     ARTIFACT_BUILD_NAME=$(ls "${OUTPUT}/dist/" | grep "wazuh-indexer-min.*$SUFFIX.*\.$EXT")
     ARTIFACT_PACKAGE_NAME=${ARTIFACT_BUILD_NAME/-min/}
 

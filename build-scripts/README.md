@@ -23,10 +23,11 @@ The names of the packages are managed by the `baptizer.sh` script.
 
 ## Building the plugins
 
-Follow the [DEVELOPER_GUIDE.md](https://github.com/wazuh/wazuh-indexer-plugins/blob/master/DEVELOPER_GUIDE.md) instructions to build the plugins. The build scripts expect the plugins under the `artifacts/plugins` folder.
+Follow the [DEVELOPER_GUIDE.md](https://github.com/wazuh/wazuh-indexer-plugins/blob/master/DEVELOPER_GUIDE.md) instructions to build the plugins. The build scripts expect the plugins in the Maven local repository or under the `artifacts/plugins` folder.
 
 1. Build the plugins.
-2. Copy the generated zip files to the `artifacts/plugins` folder.
+2. Publish the plugins to the local Maven repository: run `./gradlew publishToMavenLocal`.
+    - Alternatively, copy the generated zip files to the `artifacts/plugins` folder.
 3. Build and Assemble the `wazuh-indexer` package.
 
 ## Build and Assemble in Act
@@ -36,7 +37,7 @@ for the workflow. As the workflow clones the `wazuh-indexer-plugins` repository,
 is required. You can use the `gh` CLI to authenticate, as seen in the example below.
 
 ```console
-act -j build -W .github/workflows/build.yml --artifact-server-path ./artifacts --input-file packaging_scripts/act.input.env -s GITHUB_TOKEN="$(gh auth token)"
+act -j build -W .github/workflows/build.yml --artifact-server-path ./artifacts --input-file build-scripts/act.input.env -s GITHUB_TOKEN="$(gh auth token)"
 ```
 
 ## Build
@@ -45,7 +46,7 @@ For local package generation, use the `build.sh` script. Take a look at the `bui
 workflow file for an example of usage.
 
 ```bash
-bash packaging_scripts/build.sh -a x64 -d tar -n $(bash packaging_scripts/baptizer.sh -a x64 -d tar -m)
+bash build-scripts/build.sh -a x64 -d tar -n $(bash build-scripts/baptizer.sh -a x64 -d tar -m)
 ```
 
 #### Act (GitHub Workflow locally)
@@ -61,7 +62,7 @@ act -j build -W .github/workflows/build.yml --artifact-server-path ./artifacts
 Using the [Docker environment](../docker):
 
 ```console
-docker exec -it wi-build_$(<VERSION) bash packaging_scripts/build.sh -a x64 -d tar -n $(bash packaging_scripts/baptizer.sh -a x64 -d tar -m)
+docker exec -it wi-build_$(<VERSION) bash build-scripts/build.sh -a x64 -d tar -n $(bash build-scripts/baptizer.sh -a x64 -d tar -m)
 ```
 
 The generated package is sent to the `wazuh-indexer/artifacts` folder.
@@ -81,7 +82,7 @@ The assembly process for tarballs consists on:
 4. Compress.
 
 ```console
-bash packaging_scripts/assemble.sh -a x64 -d tar -r 1
+bash build-scripts/assemble.sh -a x64 -d tar -r 1
 ```
 
 ### DEB
@@ -160,7 +161,7 @@ Pre-requisites:
 - Using the [Docker environment](../docker):
 
 ```console
-docker exec -it wi-assemble_$(<VERSION) bash packaging_scripts/assemble.sh -a x64 -d deb -r 1
+docker exec -it wi-assemble_$(<VERSION) bash build-scripts/assemble.sh -a x64 -d deb -r 1
 ```
 
 ### RPM
@@ -222,7 +223,7 @@ Pre-requisites:
 - Using the [Docker environment](../docker):
 
 ```console
-docker exec -it wi-assemble_$(<VERSION) bash packaging_scripts/assemble.sh -a x64 -d rpm -r 1
+docker exec -it wi-assemble_$(<VERSION) bash build-scripts/assemble.sh -a x64 -d rpm -r 1
 ```
 
 ## Bash scripts reference

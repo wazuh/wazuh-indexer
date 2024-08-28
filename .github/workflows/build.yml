@@ -35,10 +35,6 @@ on:
         description: "ID used to identify the workflow uniquely."
         type: string
         required: false
-      build_plugins:
-        description: "Build plugins ?"
-        type: boolean
-        default: true
       plugins_reference:
         description: "Branch, commit or tag for the plugins repository"
         type: string
@@ -72,10 +68,6 @@ on:
       id:
         type: string
         required: false
-      build_plugins:
-        description: "Build plugins ?"
-        type: boolean
-        default: true
       plugins_reference:
         description: "Branch, commit or tag for the plugins repository"
         type: string
@@ -118,6 +110,7 @@ jobs:
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
 
   build-plugins:
+    if: ${{ github.event.inputs.plugins_reference }}
     strategy:
       fail-fast: false
       matrix:
@@ -145,12 +138,6 @@ jobs:
         run: |
           ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ github.event.inputs.revision }}
           ls -lR build/distributions/
-
-      # - name: Publish to Maven local
-      #   working-directory: ./plugins/${{ matrix.plugins }}
-      #   run: |
-      #     ./gradlew publishToMavenLocal -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ github.event.inputs.revision }}
-      #     ls -lR "${HOME}/.m2/repository/org/wazuh/"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

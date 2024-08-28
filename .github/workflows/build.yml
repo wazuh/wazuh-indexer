@@ -35,6 +35,10 @@ on:
         description: "ID used to identify the workflow uniquely."
         type: string
         required: false
+      plugins_reference:
+        description: "Branch, commit or tag for the plugins repository"
+        type: string
+        default: "master"
   workflow_call:
     inputs:
       revision:
@@ -64,6 +68,10 @@ on:
       id:
         type: string
         required: false
+      plugins_reference:
+        description: "Branch, commit or tag for the plugins repository"
+        type: string
+        default: "master"
     secrets:
       CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY:
         required: true
@@ -95,68 +103,117 @@ jobs:
       - id: setup
         run: |
           matrix=$(jq -cn \
-              --argjson distribution '${{ inputs.distribution }}' \
-              --argjson architecture '${{ inputs.architecture }}' \
+              --argjson distribution '${{ github.event.inputs.distribution }}' \
+              --argjson architecture '${{ github.event.inputs.architecture }}' \
               '{distribution: $distribution, architecture: $architecture}'
           )
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
 
+  build-plugins:
+    if: ${{ github.event.inputs.plugins_reference != '' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        plugins: ["wazuh-indexer-setup"]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: wazuh/wazuh-indexer-plugins
+          ref: ${{ github.event.inputs.plugins_reference }}
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Get version
+        id: version
+        run: echo "version=$(<VERSION)" >> "$GITHUB_OUTPUT"
+
+      - name: Build with Gradle
+        working-directory: .//plugins/${{ matrix.plugins }}
+        run: |
+          ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ github.event.inputs.revision }}
+          ls -lR build/distributions/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.plugins }}
+          path: "./plugins/${{ matrix.plugins }}/build/distributions/${{ matrix.plugins }}-${{ steps.version.outputs.version }}.${{ github.event.inputs.revision }}.zip"
+          if-no-files-found: error
+
   build:
-    needs: [matrix]
+    needs: [matrix, build-plugins]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.matrix.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v4
+
+      # Download plugins
+      - uses: actions/download-artifact@v4
+        if: ${{ github.event.inputs.plugins_reference != '' }}
+        with:
+          path: ./artifacts/plugins
+          merge-multiple: true
+
+      - name: Display structure of downloaded files
+        if: ${{ github.event.inputs.plugins_reference != '' }}
+        run: ls -lR ./artifacts/plugins
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 11
+          java-version: 21
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Provision
         if: ${{ matrix.distribution == 'deb' }}
         run: |
-          sudo bash packaging_scripts/provision.sh
+          sudo bash build-scripts/provision.sh
 
       - name: Run `baptizer.sh` (min)
         run: |
-          name=$(bash packaging_scripts/baptizer.sh -m \
+          name=$(bash build-scripts/baptizer.sh -m \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }}  \
-            -r ${{ inputs.revision }} \
-            ${{ inputs.is_stage && '-x' || '' }} \
+            -r ${{ github.event.inputs.revision }} \
+            ${{ github.event.inputs.is_stage && '-x' || '' }} \
           )
           echo "name=$name" >> $GITHUB_OUTPUT
         id: min_package
 
       - name: Run `baptizer.sh`
         run: |
-          name=$(bash packaging_scripts/baptizer.sh \
+          name=$(bash build-scripts/baptizer.sh \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }}  \
-            -r ${{ inputs.revision }} \
-            ${{ inputs.is_stage && '-x' || '' }} \
+            -r ${{ github.event.inputs.revision }} \
+            ${{ github.event.inputs.is_stage && '-x' || '' }} \
           )
           echo "name=$name" >> $GITHUB_OUTPUT
         id: package
 
       - name: Run `build.sh`
         run: |
-          bash packaging_scripts/build.sh \
+          bash build-scripts/build.sh \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }} \
             -n ${{ steps.min_package.outputs.name }}
 
       - name: Run `assemble.sh`
         run: |
-          bash packaging_scripts/assemble.sh \
+          bash build-scripts/assemble.sh \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }} \
-            -r ${{ inputs.revision }}
+            -r ${{ github.event.inputs.revision }}
 
       - name: Test RPM package
         if: ${{ matrix.distribution == 'rpm' }}
@@ -180,7 +237,7 @@ jobs:
           if-no-files-found: error
 
       - name: Set up AWS CLI
-        if: ${{ inputs.upload }}
+        if: ${{ github.event.inputs.upload }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY }}
@@ -188,7 +245,7 @@ jobs:
           aws-region: ${{ secrets.CI_AWS_REGION }}
 
       - name: Upload package to S3
-        if: ${{ inputs.upload }}
+        if: ${{ github.event.inputs.upload }}
         run: |
           src="artifacts/dist/${{ steps.package.outputs.name }}"
           dest="s3://packages-dev.internal.wazuh.com/development/wazuh/4.x/main/packages/"
@@ -197,7 +254,7 @@ jobs:
           echo "S3 URI: ${s3uri}"
 
       - name: Upload checksum to S3
-        if: ${{ inputs.upload && inputs.checksum }}
+        if: ${{ github.event.inputs.upload && github.event.inputs.checksum }}
         run: |
           src="artifacts/dist/${{ steps.package.outputs.name }}.sha512"
           dest="s3://packages-dev.internal.wazuh.com/development/wazuh/4.x/main/packages/"

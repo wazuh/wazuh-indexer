@@ -2,7 +2,7 @@
 name: agent
 fields:
   base:
-    fields: 
+    fields:
       tags: []
       message: ""
   agent:
@@ -14,4 +14,10 @@ fields:
       groups: {}
       key: {}
       last_login: {}
-      persistent_connection_node: {}
+      is_connected: {}
+  host:
+    fields:
+      ip: {}
+      os:
+        fields:
+          full: {}

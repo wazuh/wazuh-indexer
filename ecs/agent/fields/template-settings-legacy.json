@@ -1,11 +1,11 @@
 {
   "index_patterns": [
-    ".agents"
+    ".agents*"
   ],
   "order": 1,
   "settings": {
     "index": {
-      "codec": "zstd",
+      "hidden": true,
       "number_of_shards": "1",
       "number_of_replicas": "0",
       "refresh_interval": "5s",
@@ -14,7 +14,9 @@
         "agent.name",
         "agent.type",
         "agent.version",
-        "agent.name"
+        "agent.name",
+        "host.os.full",
+        "host.ip"
       ]
     }
   }

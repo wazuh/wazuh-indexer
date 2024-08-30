@@ -20,8 +20,8 @@
       level: custom
       description: >
         The agent's last login.
-    - name: persistent_connection_node
-      type: keyword
+    - name: is_connected
+      type: boolean
       level: custom
       description: >
-        The Wazuh Server node with which the agent has a persistent connection.
+        Agents' interpreted connection status depending on `agent.last_login`.

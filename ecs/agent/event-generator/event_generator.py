@@ -52,19 +52,12 @@ def generate_random_host():
     return host
 
 
-def generate_random_tags():
-    tags = [f'tag{random.randint(0, 99)}' for _ in range(random.randint(0, 5))]
-    return tags
-
-
 def generate_random_data(number):
     data = []
     for _ in range(number):
         event_data = {
             'agent': generate_random_agent(),
             'host': generate_random_host(),
-            'message': f'message{random.randint(0, 99999)}',
-            'tags': generate_random_tags()
         }
         data.append(event_data)
     return data

@@ -34,6 +34,11 @@ generate_mappings() {
   echo "Replacing \"match_only_text\" type with \"text\""
   find "$OUT_DIR" -type f -exec sed -i 's/match_only_text/text/g' {} \;
 
+  # Delete the "tags" field from the index template
+  jq 'del(.mappings.properties.tags)' "$OUT_DIR/generated/elasticsearch/legacy/template.json" >"$OUT_DIR/generated/elasticsearch/legacy/template.json.tmp"
+  rm "$OUT_DIR/generated/elasticsearch/legacy/template.json"
+  mv "$OUT_DIR/generated/elasticsearch/legacy/template.json.tmp" "$OUT_DIR/generated/elasticsearch/legacy/template.json"
+
   # Transform legacy index template for OpenSearch compatibility
   cat "$OUT_DIR/generated/elasticsearch/legacy/template.json" | jq '{
     "index_patterns": .index_patterns,

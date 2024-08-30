@@ -4,7 +4,6 @@ fields:
   base:
     fields:
       tags: []
-      message: ""
   agent:
     fields:
       id: {}

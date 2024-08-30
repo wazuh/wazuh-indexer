@@ -34,7 +34,7 @@ def generate_random_agent():
         'version': f'v{random.randint(0, 9)}-stable',
         'is_connected': random.choice([True, False]),
         'last_login': generate_random_date(),
-        'groups': f'group{random.randint(0, 99)}',
+        'groups': [f'group{random.randint(0, 99)}', f'group{random.randint(0, 99)}'],
         'key': f'key{random.randint(0, 999)}'
     }
     return agent

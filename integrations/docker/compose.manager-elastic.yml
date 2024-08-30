@@ -48,7 +48,7 @@ services:
       - alerts:/var/ossec/logs/alerts/
 
   wazuh.indexer:
-    image: opensearchproject/opensearch:2.12.0
+    image: opensearchproject/opensearch:${WAZUH_INDEXER_VERSION}
     depends_on:
       wazuh-certs-generator:
         condition: service_completed_successfully
@@ -56,6 +56,7 @@ services:
     ports:
       - 9200:9200
     environment:
+      - WAZUH_INDEXER_VERSION=${WAZUH_INDEXER_VERSION}
       - node.name=wazuh.indexer
       - discovery.type=single-node
       - bootstrap.memory_lock=true
@@ -89,23 +90,28 @@ services:
       - ./certs/root-ca.pem:/usr/share/opensearch/config/root-ca.pem
 
   wazuh-certs-generator:
-    image: wazuh/wazuh-certs-generator:0.0.1
+    image: wazuh/wazuh-certs-generator:${WAZUH_CERTS_GENERATOR_VERSION}
     hostname: wazuh-certs-generator
+    environment:
+      - WAZUH_CERTS_GENERATOR_VERSION=${WAZUH_CERTS_GENERATOR_VERSION}
     entrypoint: sh -c "/entrypoint.sh; chown -R 1000:999 /certificates; chmod 740 /certificates; chmod 440 /certificates/*"
     volumes:
       - ./certs/:/certificates/
       - ./config/certs.yml:/config/certs.yml
-  
+
   logstash:
     depends_on:
       es01:
         condition: service_healthy
       wazuh-certs-generator:
         condition: service_completed_successfully
-    image: logstash-oss:8.6.2
+    image: logstash-oss:${LOGSTASH_OSS_VERSION}
     build:
-      context: ../elastic
+      context: ../logstash
+      args:
+        - LOGSTASH_OSS_VERSION=${LOGSTASH_OSS_VERSION}
     environment:
+      LOGSTASH_OSS_VERSION: ${LOGSTASH_OSS_VERSION}
       LOG_LEVEL: info
       MONITORING_ENABLED: false
     volumes:
@@ -113,8 +119,6 @@ services:
       - es_certs:/usr/share/logstash/es_certs
       - alerts:/var/ossec/logs/alerts/
     command: logstash -f /usr/share/logstash/pipeline/manager-to-elastic.conf
-
-
 
   # =================================
   # Elasticsearch and Kibana
@@ -125,7 +129,7 @@ services:
     image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
     volumes:
       - es_certs:/usr/share/elasticsearch/config/certs
-    user: '0'
+    user: "0"
     command: >
       bash -c '
         if [ x${ELASTIC_PASSWORD} == x ]; then
@@ -171,11 +175,11 @@ services:
         echo "All done!";
       '
     healthcheck:
-      test: ['CMD-SHELL', '[ -f config/certs/es01/es01.crt ]']
+      test: ["CMD-SHELL", "[ -f config/certs/es01/es01.crt ]"]
       interval: 1s
       timeout: 5s
       retries: 120
-  
+
   es01:
     depends_on:
       setup:
@@ -210,13 +214,13 @@ services:
     healthcheck:
       test:
         [
-          'CMD-SHELL',
+          "CMD-SHELL",
           "curl -s --cacert config/certs/ca/ca.crt https://localhost:9200 | grep -q 'missing authentication credentials'",
         ]
       interval: 10s
       timeout: 10s
       retries: 120
-  
+
   kibana:
     depends_on:
       es01:
@@ -239,7 +243,7 @@ services:
     healthcheck:
       test:
         [
-          'CMD-SHELL',
+          "CMD-SHELL",
           "curl -s -I https://localhost:5601 | grep -q 'HTTP/1.1 302 Found'",
         ]
       interval: 10s

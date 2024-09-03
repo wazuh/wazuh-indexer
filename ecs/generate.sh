@@ -13,6 +13,19 @@ show_usage() {
   echo "Example: $0 v8.10.0 ~/wazuh-indexer vulnerability-detector --upload https://indexer:9200"
 }
 
+# Function to remove multi-fields from the generated index template
+remove_multi_fields() {
+  local IN_FILE="$1"
+  local OUT_FILE="$2"
+
+  jq 'del(
+    .template.mappings.properties.host.properties.os.properties.full.fields,
+    .template.mappings.properties.host.properties.os.properties.name.fields,
+    .template.mappings.properties.vulnerability.properties.description.fields
+  )' "$IN_FILE" > "$OUT_FILE"
+}
+
+
 # Function to generate mappings
 generate_mappings() {
   local IN_FILES_DIR="$INDEXER_SRC/ecs/$MODULE/fields"
@@ -33,6 +46,20 @@ generate_mappings() {
   # Replace "match_only_text" type (not supported by OpenSearch) with "text"
   echo "Replacing \"match_only_text\" type with \"text\""
   find "$OUT_DIR" -type f -exec sed -i 's/match_only_text/text/g' {} \;
+
+  # Delete the "tags" field from the index template
+  echo "Deleting the \"tags\" field from the index template"
+  jq 'del(.mappings.properties.tags)' "$OUT_DIR/generated/elasticsearch/legacy/template.json" > "$OUT_DIR/generated/elasticsearch/legacy/template-tmp.json"
+  mv "$OUT_DIR/generated/elasticsearch/legacy/template-tmp.json" "$OUT_DIR/generated/elasticsearch/legacy/template.json"
+
+  # Remove multi-fields from the generated index template
+  echo "Removing multi-fields from the index template"
+  jq 'del(
+    .mappings.properties.host.properties.os.properties.full.fields,
+    .mappings.properties.host.properties.os.properties.name.fields,
+    .mappings.properties.vulnerability.properties.description.fields
+  )' "$OUT_DIR/generated/elasticsearch/legacy/template.json" > "$OUT_DIR/generated/elasticsearch/legacy/template-tmp.json"
+  mv "$OUT_DIR/generated/elasticsearch/legacy/template-tmp.json" "$OUT_DIR/generated/elasticsearch/legacy/template.json"
 
   # Transform legacy index template for OpenSearch compatibility
   cat "$OUT_DIR/generated/elasticsearch/legacy/template.json" | jq '{

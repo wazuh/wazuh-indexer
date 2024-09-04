@@ -1,0 +1,22 @@
+---
+name: agent
+fields:
+  base:
+    fields:
+      tags: []
+  agent:
+    fields:
+      id: {}
+      name: {}
+      type: {}
+      version: {}
+      groups: {}
+      key: {}
+      last_login: {}
+      is_connected: {}
+  host:
+    fields:
+      ip: {}
+      os:
+        fields:
+          full: {}

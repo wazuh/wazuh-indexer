@@ -1,0 +1,25 @@
+{
+  "index_patterns": [
+    ".agents*"
+  ],
+  "priority": 1,
+  "template": {
+    "settings": {
+      "index": {
+        "hidden": true,
+        "number_of_shards": "1",
+        "number_of_replicas": "0",
+        "refresh_interval": "5s",
+        "query.default_field": [
+          "agent.id",
+          "agent.name",
+          "agent.type",
+          "agent.version",
+          "agent.name",
+          "host.os.full",
+          "host.ip"
+        ]
+      }
+    }
+  }
+}

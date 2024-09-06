@@ -3,7 +3,7 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See the [CONTRIBUTING guide](./CONTRIBUTING.md#Changelog) for instructions on how to add changelog entries.
 
-## [Unreleased 2.15.x]
+## [Unreleased 4.9.x]
 ### Added
 
 ### Dependencies
@@ -18,4 +18,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Security
 
-[Unreleased 2.15.x]: https://github.com/opensearch-project/OpenSearch/compare/0fb7c7389e69005ec581de5433861afdbeb54b4b...2.15
+[Unreleased 4.9.x]: https://github.com/wazuh/wazuh-indexer/compare/5a53a90d05a7bad0ca5803ac70025dea744d789a...4.10.0

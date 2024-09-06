@@ -3,7 +3,7 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See the [CONTRIBUTING guide](./CONTRIBUTING.md#Changelog) for instructions on how to add changelog entries.
 
-## [Unreleased 3.x]
+## [Unreleased 4.10.x]
 ### Added
 - Add bitmap64 query support ([#20606](https://github.com/opensearch-project/OpenSearch/pull/20606))
 - Add ProfilingWrapper interface for plugin access to delegates in profiling decorators ([#20607](https://github.com/opensearch-project/OpenSearch/pull/20607))
@@ -96,4 +96,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Removed
 
-[Unreleased 3.x]: https://github.com/opensearch-project/OpenSearch/compare/3.6...main
+- Remove identity-shiro from plugins folder ([#20305](https://github.com/opensearch-project/OpenSearch/pull/20305))
+
+[Unreleased 4.10.x]: https://github.com/wazuh/wazuh-indexer/compare/5a53a90d05a7bad0ca5803ac70025dea744d789a...4.10.0

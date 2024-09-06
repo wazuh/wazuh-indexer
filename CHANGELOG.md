@@ -3,7 +3,7 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See the [CONTRIBUTING guide](./CONTRIBUTING.md#Changelog) for instructions on how to add changelog entries.
 
-## [Unreleased 2.x]
+## [Unreleased 4.10.x]
 ### Added
 - Reject close index requests, while remote store migration is in progress.([#18327](https://github.com/opensearch-project/OpenSearch/pull/18327))
 
@@ -25,8 +25,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Security
 
-### Changed
-
-- Change single shard assignment log message from warn to debug ([#18186](https://github.com/opensearch-project/OpenSearch/pull/18186))
-
-[Unreleased 2.19.x]: https://github.com/opensearch-project/OpenSearch/compare/fd9a9d90df25bea1af2c6a85039692e815b894f5...2.19
+[Unreleased 4.10.x]: https://github.com/wazuh/wazuh-indexer/compare/5a53a90d05a7bad0ca5803ac70025dea744d789a...4.10.0

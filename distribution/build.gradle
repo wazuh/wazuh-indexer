@@ -381,7 +381,9 @@ configure(subprojects.findAll { ['archives', 'packages'].contains(it.name) }) {
           rename("opensearch-agent-${project.version}.jar", "opensearch-agent.jar")
         }
         from(rootProject.file('VERSION'))
-        fileMode 0644
+        filePermissions{
+          unix 0644
+        }
       }
     }
 

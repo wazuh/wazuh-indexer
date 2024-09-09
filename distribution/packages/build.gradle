@@ -343,14 +343,9 @@ ospackage {
 
   // version found on oldest supported distro, centos-6
   requires('coreutils', '8.4', GREATER | EQUAL)
-  
-  
-  filePermissions{
-    unix 0644
-  }
-  dirPermissions {
-    unix 0755
-  }
+
+  fileMode 0644
+  dirMode 0755
   user 'root'
   permissionGroup 'root'
 

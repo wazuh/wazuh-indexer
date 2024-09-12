@@ -1,0 +1,21 @@
+---
+name: wazuh-states-inventory-packages
+fields:
+  base:
+    fields:
+      "@timestamp": {}
+      tags: []
+  agent:
+    fields:
+      id: {}
+      groups: {}
+  package:
+    fields:
+      architecture: ""
+      description: ""
+      installed: {}
+      name: ""
+      path: ""
+      size: {}
+      type: ""
+      version: ""

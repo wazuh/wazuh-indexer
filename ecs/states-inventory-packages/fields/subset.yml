@@ -5,17 +5,17 @@ fields:
     fields:
       "@timestamp": {}
       tags: []
-    agent:
-      fields:
-        id: {}
-        groups: {}
-    package:
-      fields:
-        architecture: ""
-        description: ""
-        installed: {}
-        name: ""
-        path: ""
-        size: {}
-        type: ""
-        version: ""
+  agent:
+    fields:
+      id: {}
+      groups: {}
+  package:
+    fields:
+      architecture: ""
+      description: ""
+      installed: {}
+      name: ""
+      path: ""
+      size: {}
+      type: ""
+      version: ""

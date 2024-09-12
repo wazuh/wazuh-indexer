@@ -1,0 +1,18 @@
+{
+  "index_patterns": [
+    "wazuh-alerts-5.x-*"
+  ],
+  "order": 1,
+  "settings": {
+    "index": {
+      "number_of_shards": "1",
+      "number_of_replicas": "0",
+      "refresh_interval": "5s",
+      "mapping": {
+        "total_fields": {
+          "limit": 2500
+        }
+      }
+    }
+  }
+}

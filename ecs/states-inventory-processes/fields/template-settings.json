@@ -1,0 +1,20 @@
+{
+  "index_patterns": ["wazuh-states-inventory-processes*"],
+  "priority": 1,
+  "template": {
+    "settings": {
+      "index": {
+        "number_of_shards": "1",
+        "number_of_replicas": "0",
+        "refresh_interval": "5s",
+        "query.default_field": [
+          "agent.id",
+          "agent.groups",
+          "process.name",
+          "process.pid",
+          "process.command_line"
+        ]
+      }
+    }
+  }
+}

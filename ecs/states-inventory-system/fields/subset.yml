@@ -5,19 +5,19 @@ fields:
     fields:
       tags: []
       "@timestamp": {}
-    agent:
-      fields:
-        id: {}
-        groups: {}
-    host:
-      fields:
-        architecture: {}
-        hostname: {}
-        name: {}
-        os:
-          fields:
-            kernel: {}
-            full: {}
-            platform: {}
-            version: {}
-            type: {}
+  agent:
+    fields:
+      id: {}
+      groups: {}
+  host:
+    fields:
+      architecture: {}
+      hostname: {}
+      name: {}
+      os:
+        fields:
+          kernel: {}
+          full: {}
+          platform: {}
+          version: {}
+          type: {}

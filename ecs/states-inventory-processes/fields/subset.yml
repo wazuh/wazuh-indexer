@@ -5,40 +5,39 @@ fields:
     fields:
       "@timestamp": {}
       tags: []
-    agent:
-      fields:
-        id: {}
-        groups: {}
-    process:
-      fields:
-        pid: {}
-        name: ""
-        parent:
-          fields:
-            pid: {}
-            command_line: ""
-            args: ""
-            user:
-              fields:
-                id: ""
-            real_user:
-              fields:
-                id: ""
-            saved_user:
-              fields:
-                id: ""
-            group:
-              fields:
-                id: ""
-            real_group:
-              fields:
-                id: ""
-            saved_group:
-              fields:
-                id: ""
-            start: {}
-            thread:
-              fields:
-                id: ""
-            tty: {}
-
+  agent:
+    fields:
+      id: {}
+      groups: {}
+  process:
+    fields:
+      pid: {}
+      name: ""
+      parent:
+        fields:
+          pid: {}
+      command_line: ""
+      args: ""
+      user:
+        fields:
+          id: ""
+      real_user:
+        fields:
+          id: ""
+      saved_user:
+        fields:
+          id: ""
+      group:
+        fields:
+          id: ""
+      real_group:
+        fields:
+          id: ""
+      saved_group:
+        fields:
+          id: ""
+      start: {}
+      thread:
+        fields:
+          id: ""
+      tty: ""

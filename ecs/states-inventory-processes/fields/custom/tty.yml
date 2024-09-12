@@ -1,0 +1,12 @@
+---
+- name: process
+  title: Wazuh Agents
+  short: Wazuh Inc. custom fields.
+  type: group
+  group: 2
+  fields:
+    - name: tty
+      type: keyword
+      level: custom
+      description: >
+        The groups the agent belongs to.

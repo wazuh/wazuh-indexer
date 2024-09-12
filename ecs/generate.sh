@@ -51,7 +51,7 @@ generate_mappings() {
   echo "Replacing \"flattened\" type with \"flat_object\""
   find "$OUT_DIR" -type f -exec sed -i 's/flattened/flat_object/g' {} \;
 
-  # Replace "scaled_floar" type with "float"
+  # Replace "scaled_float" type with "float"
   echo "Replacing \"scaled_float\" type with \"float\""
   find "$OUT_DIR" -type f -exec sed -i 's/scaled_float/float/g' {} \;
   echo "Removing scaling_factor lines"

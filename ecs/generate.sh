@@ -44,8 +44,8 @@ generate_mappings() {
     --out "$OUT_DIR" || exit 1
 
   # Replace "match_only_text" type (not supported by OpenSearch) with "text"
-  echo "Replacing \"match_only_text\" type with \"text\""
-  find "$OUT_DIR" -type f -exec sed -i 's/match_only_text/text/g' {} \;
+  # echo "Replacing \"match_only_text\" type with \"text\""
+  # find "$OUT_DIR" -type f -exec sed -i 's/match_only_text/text/g' {} \;
 
   # Replace "constant_keyword" type (not supported by OpenSearch) with "keyword"
   echo "Replacing \"constant_keyword\" type with \"keyword\""
@@ -54,6 +54,12 @@ generate_mappings() {
   # Replace "flattened" type (not supported by OpenSearch) with "flat_object"
   echo "Replacing \"flattened\" type with \"flat_object\""
   find "$OUT_DIR" -type f -exec sed -i 's/flattened/flat_object/g' {} \;
+
+  # Replace "scaled_floar" type with "float"
+  echo "Replacing \"scaled_float\" type with \"float\""
+  find "$OUT_DIR" -type f -exec sed -i 's/scaled_float/float/g' {} \;
+  echo "Removing scaling_factor lines"
+  find "$OUT_DIR" -type f -exec sed -i '/scaling_factor/d' {} \;
 
   local IN_FILE="$OUT_DIR/generated/elasticsearch/legacy/template.json"
   local OUT_FILE="$OUT_DIR/generated/elasticsearch/legacy/template-tmp.json"

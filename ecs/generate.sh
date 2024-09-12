@@ -43,10 +43,6 @@ generate_mappings() {
     --mapping-settings "$IN_FILES_DIR/mapping-settings.json" \
     --out "$OUT_DIR" || exit 1
 
-  # Replace "match_only_text" type (not supported by OpenSearch) with "text"
-  # echo "Replacing \"match_only_text\" type with \"text\""
-  # find "$OUT_DIR" -type f -exec sed -i 's/match_only_text/text/g' {} \;
-
   # Replace "constant_keyword" type (not supported by OpenSearch) with "keyword"
   echo "Replacing \"constant_keyword\" type with \"keyword\""
   find "$OUT_DIR" -type f -exec sed -i 's/constant_keyword/keyword/g' {} \;

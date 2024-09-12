@@ -4,21 +4,21 @@ fields:
   base:
     fields:
       tags: []
-    agent:
-      fields: "*"
-    package:
-      fields: "*"
-    host:
-      fields:
-        os:
-          fields:
-            full: ""
-            kernel: ""
-            name: ""
-            platform: ""
-            type: ""
-            version: ""
-    vulnerability:
-      fields: "*"
-    wazuh:
-      fields: "*"
+  agent:
+    fields: "*"
+  package:
+    fields: "*"
+  host:
+    fields:
+      os:
+        fields:
+          full: ""
+          kernel: ""
+          name: ""
+          platform: ""
+          type: ""
+          version: ""
+  vulnerability:
+    fields: "*"
+  wazuh:
+    fields: "*"

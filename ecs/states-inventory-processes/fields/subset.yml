@@ -40,4 +40,3 @@ fields:
       thread:
         fields:
           id: ""
-      tty: ""

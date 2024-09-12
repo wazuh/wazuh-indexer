@@ -45,25 +45,25 @@ files to generate the mappings. These are the inputs for the ECS generator.
       * INDEXER_SRC: Path to the wazuh-indexer repository
       * MODULE: Module to generate mappings for
       * --upload <URL>: Upload generated index template to the OpenSearch cluster. Defaults to https://localhost:9200
-    Example: generate.sh v8.10.0 ~/wazuh-indexer vulnerability-detector --upload https://indexer:9200
+    Example: generate.sh v8.11.0 ~/wazuh-indexer vulnerability-detector --upload https://indexer:9200
     ```
 
 3. Use the `generate.sh` script to generate the mappings for a module. The script takes 3 arguments,
 plus 2 optional arguments to upload the mappings to the `wazuh-indexer`. Both, composable and legacy mappings
 are generated. For example, to generate the mappings for the `vulnerability-detector` module using the
-    ECS version `v8.10.0` and assuming that path of this repository is `~/wazuh/wazuh-indexer`:
+    ECS version `v8.11.0` and assuming that path of this repository is `~/wazuh/wazuh-indexer`:
 
     ```bash
-    ./generate.sh v8.10.0 ~/wazuh/wazuh-indexer vulnerability-detector
+    ./generate.sh v8.11.0 ~/wazuh/wazuh-indexer vulnerability-detector
     ```
 
     The tool will output the folder where they have been generated.
 
     ```console
-    Loading schemas from git ref v8.10.0
-    Running generator. ECS version 8.10.0
+    Loading schemas from git ref v8.11.0
+    Running generator. ECS version 8.11.0
     Replacing "match_only_text" type with "text"
-    Mappings saved to ~/wazuh/wazuh-indexer/ecs/vulnerability-detector/mappings/v8.10.0
+    Mappings saved to ~/wazuh/wazuh-indexer/ecs/vulnerability-detector/mappings/v8.11.0
     ```
 
 4. When you are done. Exit the virtual environment.

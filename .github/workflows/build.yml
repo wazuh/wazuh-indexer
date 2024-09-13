@@ -103,14 +103,14 @@ jobs:
       - id: setup
         run: |
           matrix=$(jq -cn \
-              --argjson distribution '${{ github.event.inputs.distribution }}' \
-              --argjson architecture '${{ github.event.inputs.architecture }}' \
+              --argjson distribution '${{ inputs.distribution }}' \
+              --argjson architecture '${{ inputs.architecture }}' \
               '{distribution: $distribution, architecture: $architecture}'
           )
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
 
   build-plugins:
-    if: ${{ github.event.inputs.plugins_reference != '' }}
+    if: ${{ inputs.plugins_reference != '' }}
     strategy:
       fail-fast: false
       matrix:
@@ -120,7 +120,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: wazuh/wazuh-indexer-plugins
-          ref: ${{ github.event.inputs.plugins_reference }}
+          ref: ${{ inputs.plugins_reference }}
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -136,14 +136,14 @@ jobs:
       - name: Build with Gradle
         working-directory: .//plugins/${{ matrix.plugins }}
         run: |
-          ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ github.event.inputs.revision }}
+          ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }}
           ls -lR build/distributions/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.plugins }}
-          path: "./plugins/${{ matrix.plugins }}/build/distributions/${{ matrix.plugins }}-${{ steps.version.outputs.version }}.${{ github.event.inputs.revision }}.zip"
+          path: "./plugins/${{ matrix.plugins }}/build/distributions/${{ matrix.plugins }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip"
           if-no-files-found: error
 
   build:
@@ -157,13 +157,13 @@ jobs:
 
       # Download plugins
       - uses: actions/download-artifact@v4
-        if: ${{ github.event.inputs.plugins_reference != '' }}
+        if: ${{ inputs.plugins_reference != '' }}
         with:
           path: ./artifacts/plugins
           merge-multiple: true
 
       - name: Display structure of downloaded files
-        if: ${{ github.event.inputs.plugins_reference != '' }}
+        if: ${{ inputs.plugins_reference != '' }}
         run: ls -lR ./artifacts/plugins
 
       - uses: actions/setup-java@v4
@@ -184,8 +184,8 @@ jobs:
           name=$(bash build-scripts/baptizer.sh -m \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }}  \
-            -r ${{ github.event.inputs.revision }} \
-            ${{ github.event.inputs.is_stage && '-x' || '' }} \
+            -r ${{ inputs.revision }} \
+            ${{ inputs.is_stage && '-x' || '' }} \
           )
           echo "name=$name" >> $GITHUB_OUTPUT
         id: min_package
@@ -195,8 +195,8 @@ jobs:
           name=$(bash build-scripts/baptizer.sh \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }}  \
-            -r ${{ github.event.inputs.revision }} \
-            ${{ github.event.inputs.is_stage && '-x' || '' }} \
+            -r ${{ inputs.revision }} \
+            ${{ inputs.is_stage && '-x' || '' }} \
           )
           echo "name=$name" >> $GITHUB_OUTPUT
         id: package
@@ -213,7 +213,7 @@ jobs:
           bash build-scripts/assemble.sh \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }} \
-            -r ${{ github.event.inputs.revision }}
+            -r ${{ inputs.revision }}
 
       - name: Test RPM package
         if: ${{ matrix.distribution == 'rpm' }}
@@ -237,7 +237,7 @@ jobs:
           if-no-files-found: error
 
       - name: Set up AWS CLI
-        if: ${{ github.event.inputs.upload }}
+        if: ${{ inputs.upload }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY }}
@@ -245,7 +245,7 @@ jobs:
           aws-region: ${{ secrets.CI_AWS_REGION }}
 
       - name: Upload package to S3
-        if: ${{ github.event.inputs.upload }}
+        if: ${{ inputs.upload }}
         run: |
           src="artifacts/dist/${{ steps.package.outputs.name }}"
           dest="s3://packages-dev.internal.wazuh.com/development/wazuh/4.x/main/packages/"
@@ -254,7 +254,7 @@ jobs:
           echo "S3 URI: ${s3uri}"
 
       - name: Upload checksum to S3
-        if: ${{ github.event.inputs.upload && github.event.inputs.checksum }}
+        if: ${{ inputs.upload && inputs.checksum }}
         run: |
           src="artifacts/dist/${{ steps.package.outputs.name }}.sha512"
           dest="s3://packages-dev.internal.wazuh.com/development/wazuh/4.x/main/packages/"

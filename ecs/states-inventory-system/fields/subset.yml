@@ -1,0 +1,23 @@
+---
+name: wazuh-states-inventory-system
+fields:
+  base:
+    fields:
+      tags: []
+      "@timestamp": {}
+  agent:
+    fields:
+      id: {}
+      groups: {}
+  host:
+    fields:
+      architecture: {}
+      hostname: {}
+      name: {}
+      os:
+        fields:
+          kernel: {}
+          full: {}
+          platform: {}
+          version: {}
+          type: {}

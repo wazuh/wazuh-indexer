@@ -1,5 +1,5 @@
 ---
-name: wazuh-states-inventory-vulnerability
+name: wazuh-inventory-vulnerabilities
 fields:
   base:
     fields:

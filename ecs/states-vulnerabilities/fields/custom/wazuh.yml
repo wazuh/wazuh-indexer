@@ -1,4 +1,3 @@
----
 - name: wazuh
   title: Wazuh
   description: >
@@ -14,11 +13,6 @@
       level: custom
       description: >
         Wazuh cluster node name.
-    - name: manager.name
-      type: keyword
-      level: custom
-      description: >
-        Wazuh manager name. Used by dashboards to filter results on single node deployments.
     - name: schema.version
       type: keyword
       level: custom

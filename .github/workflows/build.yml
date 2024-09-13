@@ -134,7 +134,7 @@ jobs:
         run: echo "version=$(<VERSION)" >> "$GITHUB_OUTPUT"
 
       - name: Build with Gradle
-        working-directory: .//plugins/${{ matrix.plugins }}
+        working-directory: ./plugins/${{ matrix.plugins }}
         run: |
           ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }}
           ls -lR build/distributions/

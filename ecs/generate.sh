@@ -57,14 +57,6 @@ generate_mappings() {
   echo "Removing scaling_factor lines"
   find "$OUT_DIR" -type f -exec sed -i '/scaling_factor/d' {} \;
 
-  # Replace "constant_keyword" type (not supported by OpenSearch) with "keyword"
-  echo "Replacing \"constant_keyword\" type with \"keyword\""
-  find "$OUT_DIR" -type f -exec sed -i 's/constant_keyword/keyword/g' {} \;
-
-  # Replace "flattened" type (not supported by OpenSearch) with "flat_object"
-  echo "Replacing \"flattened\" type with \"flat_object\""
-  find "$OUT_DIR" -type f -exec sed -i 's/flattened/flat_object/g' {} \;
-
   local IN_FILE="$OUT_DIR/generated/elasticsearch/legacy/template.json"
   local OUT_FILE="$OUT_DIR/generated/elasticsearch/legacy/template-tmp.json"
 

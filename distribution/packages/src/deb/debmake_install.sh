@@ -90,5 +90,18 @@ for i in "${binary_files[@]}"; do
 	chmod -c 750 "$i"
 done
 
+# Append ".new" to configuration file names
+dot_new_config_files=()
+dot_new_config_files+=("${buildroot}/${config_dir}/jvm.options")
+dot_new_config_files+=("${buildroot}/${config_dir}/opensearch.yml")
+dot_new_config_files+=("${buildroot}/${config_dir}/opensearch-security/roles.yml")
+dot_new_config_files+=("${buildroot}/${config_dir}/opensearch-security/internal_users.yml")
+
+for i in "${dot_new_config_files}"
+do
+  mv "$i" "$i".new
+done
+
+
 
 exit 0

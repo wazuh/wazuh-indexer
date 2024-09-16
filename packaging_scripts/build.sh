@@ -181,7 +181,7 @@ function main() {
     # Copy artifact to dist folder in bundle build output
     echo "Copying artifact to ${OUTPUT}/dist"
     local build_name
-    build_name=$(ls "distribution/$TYPE/$TARGET/build/distributions/" | grep "wazuh-indexer-min.*$SUFFIX.$EXT")
+    build_name=$(ls "distribution/$TYPE/$TARGET/build/distributions/" | grep "wazuh-indexer-min-$(<VERSION).*$SUFFIX.$EXT" | tr -d "\n")
     local package_name=${NAME:-$build_name}
     mkdir -p "${OUTPUT}/dist"
     cp "distribution/$TYPE/$TARGET/build/distributions/$build_name" "${OUTPUT}/dist/$package_name"

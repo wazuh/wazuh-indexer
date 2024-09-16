@@ -88,6 +88,13 @@ if [ ! -f %{buildroot}%{data_dir}/performance_analyzer_enabled.conf ]; then
     echo 'true' > %{buildroot}%{data_dir}/performance_analyzer_enabled.conf
 fi
 
+# Append ".new" to configuration file names
+mv "%{buildroot}/etc/init.d/%{name}" "%{buildroot}/etc/init.d/%{name}.new"
+mv "%{buildroot}/%{config_dir}/jvm.options" "%{buildroot}/%{config_dir}/jvm.options.new"
+mv "%{buildroot}/%{config_dir}/opensearch.yml" "%{buildroot}/%{config_dir}/opensearch.yml.new"
+mv "%{buildroot}/%{config_dir}/opensearch-security/roles.yml" "%{buildroot}/%{config_dir}/opensearch-security/roles.yml.new"
+mv "%{buildroot}/%{config_dir}/opensearch-security/internal_users.yml" "%{buildroot}/%{config_dir}/opensearch-security/internal_users.yml.new"
+
 # Build a filelist to be included in the %files section
 echo '%defattr(640, %{name}, %{name}, 750)' > filelist.txt
 find %{buildroot} -type d >> filelist.txt
@@ -117,8 +124,8 @@ set -- "$@" "%%dir /usr/lib/sysctl.d"
 set -- "$@" "%%dir /usr/lib/systemd"
 set -- "$@" "%{_sysconfdir}/sysconfig/%{name}"
 set -- "$@" "%{config_dir}/log4j2.properties"
-set -- "$@" "%{config_dir}/jvm.options"
-set -- "$@" "%{config_dir}/opensearch.yml"
+set -- "$@" "%{config_dir}/jvm.options.new"
+set -- "$@" "%{config_dir}/opensearch.yml.new"
 set -- "$@" "%{product_dir}/VERSION"
 set -- "$@" "%{product_dir}/plugins/opensearch-security/tools/.*\.sh"
 set -- "$@" "%{product_dir}/bin/.*"
@@ -131,7 +138,7 @@ set -- "$@" "%{product_dir}/README.md"
 set -- "$@" "%{product_dir}/LICENSE.txt"
 set -- "$@" "%{_prefix}/lib/systemd/system/%{name}.service"
 set -- "$@" "%{_prefix}/lib/systemd/system/%{name}-performance-analyzer.service"
-set -- "$@" "%{_sysconfdir}/init.d/%{name}"
+set -- "$@" "%{_sysconfdir}/init.d/%{name}.new"
 set -- "$@" "%{_sysconfdir}/sysconfig/%{name}"
 set -- "$@" "%{_prefix}/lib/sysctl.d/%{name}.conf"
 set -- "$@" "%{_prefix}/lib/tmpfiles.d/%{name}.conf"
@@ -191,6 +198,14 @@ if ! grep -q '## OpenSearch Performance Analyzer' %{config_dir}/jvm.options; the
    echo "-Djava.security.policy=file://%{config_dir}/opensearch-performance-analyzer/opensearch_security.policy" >> %{config_dir}/jvm.options
    echo "--add-opens=jdk.attach/sun.tools.attach=ALL-UNNAMED" >> %{config_dir}/jvm.options
 fi
+
+# Create config files only if not already present
+cp -n /etc/init.d/wazuh-indexer.new /etc/init.d/wazuh-indexer
+cp -n %{config_dir}/jvm.options.new %{config_dir}/jvm.options
+cp -n %{config_dir}/opensearch.yml.new %{config_dir}/opensearch.yml
+cp -n %{config_dir}/opensearch-security/roles.yml.new %{config_dir}/opensearch-security/roles.yml
+cp -n %{config_dir}/opensearch-security/internal_users.yml.new %{config_dir}/opensearch-security/internal_users.yml
+
 # Reload systemctl daemon
 if command -v systemctl > /dev/null; then
     systemctl daemon-reload
@@ -234,16 +249,16 @@ exit 0
 # Service files
 %attr(0644, root, root) %{_prefix}/lib/systemd/system/%{name}.service
 %attr(0644, root, root) %{_prefix}/lib/systemd/system/%{name}-performance-analyzer.service
-%attr(0750, root, root) %{_sysconfdir}/init.d/%{name}
+%attr(0750, root, root) %{_sysconfdir}/init.d/%{name}.new
 %attr(0644, root, root) %config(noreplace) %{_prefix}/lib/sysctl.d/%{name}.conf
 %attr(0644, root, root) %config(noreplace) %{_prefix}/lib/tmpfiles.d/%{name}.conf
 
 
 # Configuration files
+%attr(660, %{name}, %{name}) %{config_dir}/jvm.options.new
+%attr(660, %{name}, %{name}) %{config_dir}/opensearch.yml.new
 %config(noreplace) %attr(0660, root, %{name}) "%{_sysconfdir}/sysconfig/%{name}"
 %config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/log4j2.properties
-%config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/jvm.options
-%config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/opensearch.yml
 
 
 %if %observability_plugin

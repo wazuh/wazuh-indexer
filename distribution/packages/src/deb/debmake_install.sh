@@ -91,12 +91,13 @@ for i in "${binary_files[@]}"; do
 done
 
 # Append ".new" to configuration file names
-dot_new_config_files=()
-dot_new_config_files+=("${buildroot}/etc/init.d/${name}")
-dot_new_config_files+=("${buildroot}/${config_dir}/jvm.options")
-dot_new_config_files+=("${buildroot}/${config_dir}/opensearch.yml")
-dot_new_config_files+=("${buildroot}/${config_dir}/opensearch-security/roles.yml")
-dot_new_config_files+=("${buildroot}/${config_dir}/opensearch-security/internal_users.yml")
+dot_new_config_files=(
+  "${buildroot}/etc/init.d/${name}"
+  "${buildroot}/${config_dir}/jvm.options"
+  "${buildroot}/${config_dir}/opensearch.yml"
+  "${buildroot}/${config_dir}/opensearch-security/roles.yml"
+  "${buildroot}/${config_dir}/opensearch-security/internal_users.yml"
+)
 
 for i in "${dot_new_config_files[@]}"
 do

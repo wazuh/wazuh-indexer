@@ -24,13 +24,6 @@ tmp_dir=/var/log/wazuh-indexer/tmp
 # Create needed directories
 mkdir -p ${tmp_dir}
 
-# Create config files only if not already present
-cp -n /etc/init.d/wazuh-indexer.new /etc/init.d/wazuh-indexer
-cp -n ${config_dir}/jvm.options.new ${config_dir}/jvm.options
-cp -n ${config_dir}/opensearch.yml.new ${config_dir}/opensearch.yml
-cp -n ${config_dir}/opensearch-security/roles.yml.new ${config_dir}/opensearch-security/roles.yml
-cp -n ${config_dir}/opensearch-security/internal_users.yml.new ${config_dir}/opensearch-security/internal_users.yml
-
 # Set owner
 chown -R wazuh-indexer:wazuh-indexer ${product_dir}
 chown -R wazuh-indexer:wazuh-indexer ${config_dir}

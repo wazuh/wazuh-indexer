@@ -6,7 +6,7 @@ Version: 2023-06-12
 This document outlines the Security Policy for Wazuh's open source projects. It emphasizes our commitment to maintain a secure environment for our users and contributors, and reflects our belief in the power of collaboration to identify and resolve security vulnerabilities.
 
 ## Scope
-This policy applies to all open source projects developed, maintained, or hosted by Wazuh. In this case, as this project is a fork, we may forward the reported vulnerability to the upstream.
+This policy applies to all open source projects developed, maintained, or hosted by Wazuh.
 
 ## Reporting Security Vulnerabilities
 If you believe you've discovered a potential security vulnerability in one of our open source projects, we strongly encourage you to report it to us responsibly.
@@ -33,7 +33,7 @@ We believe in giving credit where credit is due. If you report a security vulner
 We do appreciate and encourage feedback from our community, but currently we do not have a bounty program. We might start bounty programs in the future.
 
 ## Compliance with this Policy
-We consider the discovery and reporting of security vulnerabilities an important public service. We encourage responsible reporting of any vulnerabilities that may be found in our site or applications. 
+We consider the discovery and reporting of security vulnerabilities an important public service. We encourage responsible reporting of any vulnerabilities that may be found in our site or applications.
 
 Furthermore, we will not take legal action against or suspend or terminate access to the site or services of those who discover and report security vulnerabilities in accordance with this policy because of the fact.
 

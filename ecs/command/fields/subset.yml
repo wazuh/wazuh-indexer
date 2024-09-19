@@ -1,0 +1,8 @@
+---
+name: command
+fields:
+  base:
+    fields:
+      tags: []
+  command:
+    fields: "*"

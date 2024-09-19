@@ -244,6 +244,7 @@ exit 0
 %config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/log4j2.properties
 %config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/jvm.options
 %config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/opensearch.yml
+%config(noreplace) %attr(640, %{name}, %{name}) %{config_dir}/opensearch-security/*
 
 
 %if %observability_plugin

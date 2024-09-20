@@ -6,14 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased 4.9.x]
 ### Added
 
-- [Amazon Security Lake integration as source](https://github.com/wazuh/wazuh-indexer/issues/128)
-- [Splunk, OpenSearch and Elastic integrations](https://github.com/wazuh/wazuh-indexer/issues/250)
-
 ### Dependencies
 
 ### Changed
-
-- [Wazuh indexer fork update](https://github.com/wazuh/wazuh-indexer/issues/54)
 
 ### Deprecated
 
@@ -23,4 +18,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Security
 
-[Unreleased 4.9.x]: https://github.com/wazuh/wazuh-indexer/compare/BASE...4.9.0
+[Unreleased 4.9.x]: https://github.com/wazuh/wazuh-indexer/compare/v4.9.0...4.9.1

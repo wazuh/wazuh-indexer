@@ -36,13 +36,14 @@ else
         "notifications" # "opensearch-notifications". Requires "opensearch-notifications-core"
         "opensearch-observability"
         "performance-analyzer" # "opensearch-performance-analyzer"
-        "opensearch-reports-scheduler"
         "opensearch-security"
         "opensearch-security-analytics"
         "opensearch-sql-plugin" # "opensearch-sql"
     )
     wazuh_plugins=(
         "wazuh-indexer-setup"
+        "wazuh-indexer-command-manager"
+        "wazuh-indexer-reports-scheduler"
     )
 fi
 

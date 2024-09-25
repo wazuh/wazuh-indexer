@@ -57,7 +57,7 @@ For more information, see: https://www.wazuh.com/
 %build
 
 %define observability_plugin %( if [ -f %{_topdir}/etc/wazuh-indexer/opensearch-observability/observability.yml ]; then echo "1" ; else echo "0"; fi )
-%define reportsscheduler_plugin %( if [ -f %{_topdir}/etc/wazuh-indexer/opensearch-reports-scheduler/reports-scheduler.yml ]; then echo "1" ; else echo "0"; fi )
+%define reportsscheduler_plugin %( if [ -f %{_topdir}/etc/wazuh-indexer/wazuh-indexer-reports-scheduler/reports-scheduler.yml ]; then echo "1" ; else echo "0"; fi )
 
 %install
 set -e
@@ -77,7 +77,7 @@ fi
 
 # Pre-populate the folders to ensure rpm build success even without all plugins
 mkdir -p %{buildroot}%{config_dir}/opensearch-observability
-mkdir -p %{buildroot}%{config_dir}/opensearch-reports-scheduler
+mkdir -p %{buildroot}%{config_dir}/wazuh-indexer-reports-scheduler
 mkdir -p %{buildroot}%{product_dir}/performance-analyzer-rca
 
 # Pre-populate PA configs if not present
@@ -144,7 +144,7 @@ if [ %observability_plugin -eq 1 ]; then
 fi
 
 if [ %reportsscheduler_plugin -eq 1 ]; then
-    set -- "$@" "%{config_dir}/opensearch-reports-scheduler/reports-scheduler.yml"
+    set -- "$@" "%{config_dir}/wazuh-indexer-reports-scheduler/reports-scheduler.yml"
 fi
 
 for i in "$@"
@@ -251,7 +251,7 @@ exit 0
 %endif
 
 %if %reportsscheduler_plugin
-%config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/opensearch-reports-scheduler/reports-scheduler.yml
+%config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/wazuh-indexer-reports-scheduler/reports-scheduler.yml
 %endif
 
 

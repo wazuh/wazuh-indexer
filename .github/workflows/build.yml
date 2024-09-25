@@ -35,8 +35,12 @@ on:
         description: "ID used to identify the workflow uniquely."
         type: string
         required: false
-      plugins_reference:
-        description: "Branch, commit or tag for the plugins repository"
+      wazuh_plugins_ref:
+        description: "Branch, commit or tag for the wazuh-indexer-plugins repository"
+        type: string
+        default: "master"
+      reporting_plugin_ref:
+        description: "Branch, commit or tag for the wazuh-indexer-reporting repository"
         type: string
         default: "master"
   workflow_call:
@@ -68,8 +72,12 @@ on:
       id:
         type: string
         required: false
-      plugins_reference:
-        description: "Branch, commit or tag for the plugins repository"
+      wazuh_plugins_ref:
+        description: "Branch, commit or tag for the wazuh-indexer-plugins repository"
+        type: string
+        default: "master"
+      reporting_plugin_ref:
+        description: "Branch, commit or tag for the wazuh-indexer-reporting repository"
         type: string
         default: "master"
     secrets:
@@ -109,18 +117,21 @@ jobs:
           )
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
 
-  build-plugins:
-    if: ${{ inputs.plugins_reference != '' }}
+  build-wazuh-plugins:
+    if: ${{ inputs.wazuh_plugins_ref != '' }}
     strategy:
       fail-fast: false
       matrix:
         plugins: ["setup", "command-manager"]
     runs-on: ubuntu-latest
+    env:
+      plugin_name: wazuh-indexer-${{ matrix.plugins }}
     steps:
       - uses: actions/checkout@v4
         with:
           repository: wazuh/wazuh-indexer-plugins
-          ref: ${{ inputs.plugins_reference }}
+          ref: ${{ inputs.wazuh_plugins_ref }}
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -135,19 +146,55 @@ jobs:
 
       - name: Build with Gradle
         working-directory: ./plugins/${{ matrix.plugins }}
-        run: |
-          ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }}
-          ls -lR build/distributions/
+        run: ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }}
+
+      - run: ls -lR build/distributions
+        working-directory: ./plugins/${{ matrix.plugins }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.plugins }}
-          path: "./plugins/${{ matrix.plugins }}/build/distributions/wazuh-indexer-${{ matrix.plugins }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip"
+          name: ${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
+          path: "./plugins/${{ matrix.plugins }}/build/distributions/${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip"
+          if-no-files-found: error
+
+  build-reporting-plugin:
+    if: ${{ inputs.reporting_plugin_ref != '' }}
+    runs-on: ubuntu-latest
+    env:
+      plugin_name: wazuh-indexer-reports-scheduler
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: wazuh/wazuh-indexer-reporting
+          ref: ${{ inputs.reporting_plugin_ref }}
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle # Used for caching
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Get version
+        id: version
+        run: echo "version=$(<VERSION)" >> "$GITHUB_OUTPUT"
+
+      - name: Build with Gradle
+        run: ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }}
+
+      - run: ls -lR build/distributions
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
+          path: build/distributions/${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
           if-no-files-found: error
 
   build:
-    needs: [matrix, build-plugins]
+    needs: [matrix, build-wazuh-plugins, build-reporting-plugin]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -156,14 +203,15 @@ jobs:
       - uses: actions/checkout@v4
 
       # Download plugins
-      - uses: actions/download-artifact@v4
-        if: ${{ inputs.plugins_reference != '' }}
+      - name: Download plugins
+        uses: actions/download-artifact@v4
+        if: ${{ inputs.wazuh_plugins_ref != '' || inputs.reporting_plugin_ref != ''}}
         with:
           path: ./artifacts/plugins
           merge-multiple: true
 
       - name: Display structure of downloaded files
-        if: ${{ inputs.plugins_reference != '' }}
+        if: ${{ inputs.wazuh_plugins_ref != '' || inputs.reporting_plugin_ref != ''}}
         run: ls -lR ./artifacts/plugins
 
       - uses: actions/setup-java@v4

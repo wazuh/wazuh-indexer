@@ -69,8 +69,8 @@ if [ -e "${buildroot}/${config_dir}/opensearch-observability/observability.yml" 
 	chmod -c 660 "${buildroot}/${config_dir}/opensearch-observability/observability.yml"
 fi
 
-if [ -e "${buildroot}/${config_dir}/opensearch-reports-scheduler/reports-scheduler.yml" ]; then
-	chmod -c 660 "${buildroot}/${config_dir}/opensearch-reports-scheduler/reports-scheduler.yml"
+if [ -e "${buildroot}/${config_dir}/wazuh-indexer-reports-scheduler/reports-scheduler.yml" ]; then
+	chmod -c 660 "${buildroot}/${config_dir}/wazuh-indexer-reports-scheduler/reports-scheduler.yml"
 fi
 
 # Files that need other permissions

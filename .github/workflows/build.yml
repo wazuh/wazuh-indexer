@@ -152,7 +152,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.plugins }}
+          name: ${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
           path: "./plugins/${{ matrix.plugins }}/build/distributions/wazuh-indexer-${{ matrix.plugins }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip"
           if-no-files-found: error
 

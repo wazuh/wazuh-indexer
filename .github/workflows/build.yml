@@ -124,6 +124,8 @@ jobs:
       matrix:
         plugins: ["setup", "command-manager"]
     runs-on: ubuntu-latest
+    env:
+      plugin_name: wazuh-indexer-${{ matrix.plugins }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -153,7 +155,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
-          path: "./plugins/${{ matrix.plugins }}/build/distributions/wazuh-indexer-${{ matrix.plugins }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip"
+          path: "./plugins/${{ matrix.plugins }}/build/distributions/${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip"
           if-no-files-found: error
 
   build-reporting-plugin:

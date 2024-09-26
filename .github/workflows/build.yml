@@ -123,9 +123,7 @@ jobs:
       fail-fast: false
       matrix:
         plugins: ["setup", "command-manager"]
-        architecture: ${{ fromJson(needs.matrix.outputs.matrix.architecture) }}
-    needs: [matrix]
-    runs-on: ${{ matrix.architecture == 'arm64' && 'wz-linux-arm64' || 'ubuntu-22.04' }}
+    runs-on: ubuntu-22.04
     env:
       plugin_name: wazuh-indexer-${{ matrix.plugins }}
     steps:
@@ -163,10 +161,7 @@ jobs:
   build-reporting-plugin:
     if: ${{ inputs.reporting_plugin_ref != '' }}
     needs: [matrix]
-    runs-on: ${{ matrix.architecture == 'arm64' && 'wz-linux-arm64' || 'ubuntu-22.04' }}
-    strategy:
-      fail-fast: false
-      matrix: ${{ fromJson(needs.matrix.outputs.matrix) }}
+    runs-on: ubuntu-22.04
     env:
       plugin_name: wazuh-indexer-reports-scheduler
     steps:

@@ -26,7 +26,7 @@ on:
       architecture:
         description: '[ "x64", "arm64" ]'
         type: string
-        default: '[ "x64" ]'
+        default: '[ "arm64" ]'
       checksum:
         description: "Checksum ?"
         type: boolean
@@ -160,7 +160,6 @@ jobs:
 
   build-reporting-plugin:
     if: ${{ inputs.reporting_plugin_ref != '' }}
-    needs: [matrix]
     runs-on: ubuntu-22.04
     env:
       plugin_name: wazuh-indexer-reports-scheduler

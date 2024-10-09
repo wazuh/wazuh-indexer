@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Dependencies
 
 ### Changed
+-Change versions of integration, the final versions are in integrations/README.md
 
 ### Deprecated
 

@@ -7,7 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 
 ### Dependencies
-- Updated Netty to 4.1.135.Final ([#21491](https://github.com/opensearch-project/OpenSearch/pull/21491), [#21968](https://github.com/opensearch-project/OpenSearch/pull/21968))
+
+### Changed
+- Upgrade third-party integrations to the latest versions ([#447](https://github.com/wazuh/wazuh-indexer/pull/447))
 
 ### Deprecated
 

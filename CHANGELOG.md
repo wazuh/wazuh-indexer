@@ -12,6 +12,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Update bundled JDK to 21.0.12.1+1 ([#22572](https://github.com/opensearch-project/OpenSearch/issues/22572), [#22809](https://github.com/opensearch-project/OpenSearch/issues/22809))
 - Update OpenTelemetry to 1.67.0 ([#23363](https://github.com/opensearch-project/OpenSearch/issues/23363))
 
+### Changed
+- Upgrade third-party integrations to the latest versions ([#447](https://github.com/wazuh/wazuh-indexer/pull/447))
+
 ### Deprecated
 
 ### Removed

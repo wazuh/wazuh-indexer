@@ -19,10 +19,7 @@ warnings.filterwarnings("ignore")
 
 
 def generate_random_command(include_all_fields=False):
-    command = {
-        "agent": {
-            "groups": [f"group{random.randint(1, 5)}"]
-        },
+    document = {
         "command": {
             "source": random.choice(["Users/Services", "Engine", "Content manager"]),
             "user": f"user{random.randint(1, 100)}",
@@ -40,18 +37,19 @@ def generate_random_command(include_all_fields=False):
     }
 
     if include_all_fields:
-        command["command"]["status"] = random.choice(
+        document["agent"]["groups"] = [f"group{random.randint(1, 5)}"],
+        document["command"]["status"] = random.choice(
             ["pending", "sent", "success", "failure"])
-        command["command"]["result"] = {
+        document["command"]["result"] = {
             "code": random.randint(0, 255),
             "message": f"Result message {random.randint(1, 1000)}",
             "data": f"Result data {random.randint(1, 100)}"
         }
         # Generate UUIDs for request_id and order_id
-        command["command"]["request_id"] = str(uuid.uuid4())
-        command["command"]["order_id"] = str(uuid.uuid4())
+        document["command"]["request_id"] = str(uuid.uuid4())
+        document["command"]["order_id"] = str(uuid.uuid4())
 
-    return command
+    return document
 
 
 def generate_random_data(number, include_all_fields=False):

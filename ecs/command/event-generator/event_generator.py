@@ -1,15 +1,12 @@
 #!/bin/python3
 
-# This script generates sample events and injects them into an OpenSearch index.
-# The events follow the provided template structure with command-related data fields.
-# Additional fields are generated when the --index option is passed.
-
 import random
 import json
 import requests
 import warnings
 import logging
 import argparse
+import uuid
 
 LOG_FILE = 'generate_data.log'
 GENERATED_DATA_FILE = 'generatedData.json'
@@ -23,29 +20,36 @@ warnings.filterwarnings("ignore")
 
 def generate_random_command(include_all_fields=False):
     command = {
-        "source": random.choice(["Users/Services", "Engine", "Content manager"]),
-        "user": f"user{random.randint(1, 100)}",
-        "target": f"WazuhServerCluster{random.randint(1, 10)}",
-        "type": random.choice(["agent_group", "agent", "wazuh_server"]),
-        "action": {
-            "type": random.choice(["Agent groups", "Agent", "Server cluster"]),
-            "args": [f"/path/to/executable/arg{random.randint(1, 10)}"],
-            "version": f"v{random.randint(1, 10)}"
+        "agent": {
+            "groups": [f"group{random.randint(1, 5)}"]
         },
-        "timeout": random.randint(10, 100)
+        "command": {
+            "source": random.choice(["Users/Services", "Engine", "Content manager"]),
+            "user": f"user{random.randint(1, 100)}",
+            "target": {
+                "id": f"target{random.randint(1, 10)}",
+                "type": random.choice(["agent", "group", "server"])
+            },
+            "action": {
+                "name": random.choice(["restart", "update", "change_group", "apply_policy"]),
+                "args": [f"/path/to/executable/arg{random.randint(1, 10)}"],
+                "version": f"v{random.randint(1, 5)}"
+            },
+            "timeout": random.randint(10, 100)
+        }
     }
 
     if include_all_fields:
-        command["status"] = random.choice(
-            ["pending", "sent", "success", "failure"]
-        )
-        command["result"] = {
+        command["command"]["status"] = random.choice(
+            ["pending", "sent", "success", "failure"])
+        command["command"]["result"] = {
             "code": random.randint(0, 255),
             "message": f"Result message {random.randint(1, 1000)}",
             "data": f"Result data {random.randint(1, 100)}"
         }
-        command["request_id"] = random.randint(1000, 9999)
-        command["order_id"] = random.randint(1000, 9999)
+        # Generate UUIDs for request_id and order_id
+        command["command"]["request_id"] = str(uuid.uuid4())
+        command["command"]["order_id"] = str(uuid.uuid4())
 
     return command
 
@@ -58,8 +62,6 @@ def generate_random_data(number, include_all_fields=False):
 
 
 def inject_events(ip, port, index, username, password, data, use_index=False):
-    url = f'https://{ip}:{port}/_plugins/_commandmanager'
-
     session = requests.Session()
     session.auth = (username, password)
     session.verify = False
@@ -68,8 +70,12 @@ def inject_events(ip, port, index, username, password, data, use_index=False):
     try:
         for event_data in data:
             if use_index:
-                id = event_data["request_id"] + event_data["order_id"]
-                url = f'https://{ip}:{port}/{index}/_doc/{id}'
+                # Generate UUIDs for the document id
+                doc_id = str(uuid.uuid4())
+                url = f'https://{ip}:{port}/{index}/_doc/{doc_id}'
+            else:
+                # Default URL for command manager API without the index
+                url = f'https://{ip}:{port}/_plugins/_commandmanager'
 
             response = session.post(url, json=event_data, headers=headers)
             if response.status_code != 201:
@@ -83,7 +89,8 @@ def inject_events(ip, port, index, username, password, data, use_index=False):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Generate and optionally inject events into an OpenSearch index or Command Manager.")
+        description="Generate and optionally inject events into an OpenSearch index or Command Manager."
+    )
     parser.add_argument(
         "--index",
         action="store_true",
@@ -108,7 +115,8 @@ def main():
     logging.info('Data generation completed.')
 
     inject = input(
-        "Do you want to inject the generated data into your indexer/command manager? (y/n) ").strip().lower()
+        "Do you want to inject the generated data into your indexer/command manager? (y/n) "
+    ).strip().lower()
     if inject == 'y':
         ip = input("Enter the IP of your Indexer: ")
         port = input("Enter the port of your Indexer: ")

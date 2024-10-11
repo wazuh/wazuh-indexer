@@ -12,9 +12,9 @@
         "refresh_interval": "5s",
         "query.default_field": [
           "command.source",
-          "command.target",
+          "command.target.type",
           "command.status",
-          "command.type"
+          "command.action.name"
         ]
       }
     }

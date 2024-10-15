@@ -1,0 +1,131 @@
+## `wazuh-states-inventory-processes` index data model
+
+### Fields summary
+
+The fields are based on https://github.com/wazuh/wazuh-indexer/issues/282#issuecomment-2189837612
+
+Based on ECS:
+
+-   [Process Fields](https://www.elastic.co/guide/en/ecs/current/ecs-process.html).
+
+|     | Field name       | ECS field name           | Data type          | Description                                                                                                   | Comments                                                   |
+| --- | ---------------- | ------------------------ | ------------------ | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+|     | `agent.id`       | keyword                  | Agent's ID         |
+|     | \*`agent.groups` | keyword                  | Agent's groups     |
+|     | scan_time        | `@timestamp`             | date               | Date/time when the event originated.                                                                          |                                                            |
+|     | pid              | `process.pid`            | long               | Process ID.                                                                                                   |                                                            |
+|     | name             | `process.name`           | keyword            | Process name.                                                                                                 |                                                            |
+|     | ppid             | `process.parent.pid`     | long               | Parent process ID.                                                                                            |                                                            |
+|     | cmd              | `process.command_line`   | wildcard           | Full command line that started the process, including the absolute path to the executable, and all arguments. |                                                            |
+|     | argvs            | `process.args`           | keyword            | Array of process arguments, starting with the absolute path to the executable.                                |                                                            |
+|     | euser            | `process.user.id`        | keyword            | Unique identifier of the effective user.                                                                      |                                                            |
+|     | ruser            | `process.real_user.id`   | keyword            | Unique identifier of the real user.                                                                           |                                                            |
+|     | suser            | `process.saved_user.id`  | keyword            | Unique identifier of the saved user.                                                                          |                                                            |
+|     | egroup           | `process.group.id`       | keyword            | Unique identifier for the effective group on the system/platform.                                             |                                                            |
+|     | rgroup           | `process.real_group.id`  | keyword            | Unique identifier for the real group on the system/platform.                                                  |                                                            |
+|     | sgroup           | `process.saved_group.id` | keyword            | Unique identifier for the saved group on the system/platform.                                                 |                                                            |
+|     | start_time       | `process.start`          | date               | The time the process started.                                                                                 |                                                            |
+| !   | tgid             | `process.thread.id`      | **No ECS mapping** | Thread ID                                                                                                     | `thread.group` is **not part of ECS;** but `thread.id` is. |
+| !   | tty              | `process.tty`            | object             | Information about the controlling TTY device. If set, the process belongs to an interactive session.          | Needs clarification                                        |
+
+\* Custom field
+
+!: Fields awaiting analysis
+
+<details><summary>Fields not included in ECS</summary>
+<p>
+
+|     | Field name | ECS field name            | Data type          | Description                                                                                                   | Comments                                                   |
+| --- | ---------- | ------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| x   | state      | `process.state`           | **No ECS mapping** | State of the process                                                                                          | **Not part of ECS;** Maybe as a custom field.              |
+| x   | utime      | `process.cpu.user`        | **No ECS mapping** | User mode CPU time                                                                                            | **Not part of ECS;** Maybe as a custom field.              |
+| x   | stime      | `process.cpu.system`      | **No ECS mapping** | Kernel mode CPU time                                                                                          | **Not part of ECS;** Maybe as a custom field.              |
+| x?  | fgroup     | `process.group.file.id`   | **No ECS mapping** | unknown                                                                                                       |                                                            |
+| x   | priority   | `process.priority`        | **No ECS mapping** | Process priority                                                                                              | **Not part of ECS;** Maybe as a custom field.              |
+| x   | nice       | `process.nice`            | **No ECS mapping** | Nice value                                                                                                    | **Not part of ECS;** Maybe as a custom field.              |
+| x   | size       | `process.size`            | **No ECS mapping** | Process size                                                                                                  | **Not part of ECS;** Maybe as a custom field.              |
+| x   | vm_size    | `process.vm.size`         | **No ECS mapping** | Virtual memory size                                                                                           | **Not part of ECS;** Maybe as a custom field.              |
+| x   | resident   | `process.memory.resident` | **No ECS mapping** | Resident set size                                                                                             | **Not part of ECS;** Maybe as a custom field.              |
+| x   | share      | `process.memory.share`    | **No ECS mapping** | Shared memory size                                                                                            | **Not part of ECS;** Maybe as a custom field.              |
+| !   | pgrp       | `process.group.id`        | keyword            | Process group                                                                                                 | Isn't it duplicated ??                                     |
+| x   | session    | `process.session`         | **No ECS mapping** | Session ID                                                                                                    | **Not part of ECS;** Needs clarification.                  |
+| x   | nlwp       | `process.nlwp`            | **No ECS mapping** | Number of light-weight processes                                                                              | **Not part of ECS;** Needs clarification.                  |
+| !   | tgid       | `process.thread.id`       | **No ECS mapping** | Thread ID ID                                                                                                  | `thread.group` is **not part of ECS;** but `thread.id` is. |
+| !   | tty        | `process.tty`             | object             | Information about the controlling TTY device. If set, the process belongs to an interactive session.          | Needs clarification                                        |
+| x   | processor  | `host.cpu.processor`      | **No ECS mapping** | Processor number                                                                                              | No ECS field refers to the core number of the CPU.         |
+
+</p>
+</details>
+
+
+### ECS mapping
+
+```yml
+---
+name: wazuh-states-inventory-processes
+fields:
+    base:
+        fields:
+            "@timestamp": {}
+    agent:
+        fields:
+            id: {}
+            groups: {}
+    process:
+        fields:
+            pid: {}
+            name: ""
+            parent:
+                fields:
+                    pid: {}
+            command_line: ""
+            args: ""
+            user:
+                fields:
+                    id: ""
+            real_user:
+                fields:
+                    id: ""
+            saved_user:
+                fields:
+                    id: ""
+            group:
+                fields:
+                    id: ""
+            real_group:
+                fields:
+                    id: ""
+            saved_group:
+                fields:
+                    id: ""
+            start: {}
+            thread:
+                fields:
+                    id: ""
+            tty: {}
+```
+
+### Index settings
+
+```json
+{
+    "index_patterns": ["wazuh-states-inventory-processes*"],
+    "priority": 1,
+    "template": {
+        "settings": {
+            "index": {
+                "number_of_shards": "1",
+                "number_of_replicas": "0",
+                "refresh_interval": "5s",
+                "query.default_field": [
+                    "agent.id",
+                    "agent.groups",
+                    "process.name",
+                    "process.pid",
+                    "process.command_line"
+                ]
+            }
+        }
+    }
+}
+```

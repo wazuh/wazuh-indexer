@@ -1,4 +1,4 @@
-## `states-fim` index data model
+## `wazuh-states-fim` index data model
 
 ### Fields summary
 

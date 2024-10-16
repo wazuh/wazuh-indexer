@@ -271,7 +271,6 @@ function assemble_tar() {
     # Extract
     echo "Extract ${ARTIFACT_BUILD_NAME} archive"
     tar -zvxf "${ARTIFACT_BUILD_NAME}"
-    cd "$(ls -d wazuh-indexer-*/)"
 
     local version
     version=$(cat VERSION)

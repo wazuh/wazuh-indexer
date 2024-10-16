@@ -271,6 +271,7 @@ function assemble_tar() {
     # Extract
     echo "Extract ${ARTIFACT_BUILD_NAME} archive"
     tar -zvxf "${ARTIFACT_BUILD_NAME}"
+    cd ..
 
     local version
     version=$(cat VERSION)

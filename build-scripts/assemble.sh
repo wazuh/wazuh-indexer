@@ -264,20 +264,21 @@ function clean() {
 # ====
 function assemble_tar() {
     cd "${TMP_DIR}"
-    PATH_CONF="./config"
-    PATH_BIN="./bin"
-    PATH_PLUGINS="./plugins"
 
     # Extract
     echo "Extract ${ARTIFACT_BUILD_NAME} archive"
     tar -zvxf "${ARTIFACT_BUILD_NAME}"
-    cd "$(ls -d wazuh-indexer-*/)"
+    
+    decompressed_tar_dir=$(ls -d wazuh-indexer-*/)
 
     local version
-    version=$(cat VERSION)
+    version=$(cat ${decompressed_tar_dir}/VERSION)
+    
+    PATH_CONF="${decompressed_tar_dir}/config"
+    PATH_BIN="${decompressed_tar_dir}/bin"
+    PATH_PLUGINS="${decompressed_tar_dir}/plugins"
 
-    cd ..
-
+    echo $(pwd)
     # Install plugins
     install_plugins "${version}"
     fix_log_rotation ${PATH_CONF}

@@ -194,7 +194,7 @@ jobs:
           if-no-files-found: error
 
   build:
-    needs: [matrix]
+    needs: [matrix, build-wazuh-plugins, build-reporting-plugin]
     runs-on: ${{ matrix.architecture == 'arm64' && 'wz-linux-arm64' || 'ubuntu-22.04' }}
     strategy:
       fail-fast: false

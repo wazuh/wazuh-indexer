@@ -268,7 +268,7 @@ exit 0
 %changelog
 * Thu Oct 10 2024 support <info@wazuh.com> - 4.10.0
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-10-0.html
-* Fri Sep 27 2024 support <info@wazuh.com> - 4.9.1
+* Tue Oct 15 2024 support <info@wazuh.com> - 4.9.1
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-9-1.html
 * Thu Aug 15 2024 support <info@wazuh.com> - 4.9.0
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-9-0.html

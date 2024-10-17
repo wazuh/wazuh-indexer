@@ -1,6 +1,6 @@
 ## 2024-09-27 Version 4.9.1-rc2 Release Notes
 
-## [4.9.1-rc2]
+## [4.9.1]
 ### Added
 -
 

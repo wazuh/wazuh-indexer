@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Dependencies
 
 ### Changed
+- Upgrade third-party integrations to the latest versions ([#447](https://github.com/wazuh/wazuh-indexer/pull/447))
 
 ### Deprecated
 
@@ -18,4 +19,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Security
 
-[Unreleased 5.0.x]: https://github.com/wazuh/wazuh-indexer/compare/92ffe2ed8a743c07a1170960d5949fcd6ed12e89...master
+[Unreleased 5.0.x]: https://github.com/wazuh/wazuh-indexer/compare/4.10.2...master

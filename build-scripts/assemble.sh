@@ -289,7 +289,6 @@ function assemble_tar() {
 
     # Pack
     archive_name="wazuh-indexer-${version}"
-    cd ..
     tar -cvf "${archive_name}-${SUFFIX}.${EXT}" "${archive_name}"
     cd ../../..
     cp "${TMP_DIR}/${archive_name}-${SUFFIX}.${EXT}" "${OUTPUT}/dist/$ARTIFACT_PACKAGE_NAME"

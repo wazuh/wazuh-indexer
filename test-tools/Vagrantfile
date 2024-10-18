@@ -21,7 +21,7 @@ Vagrant.configure("2") do |config|
             # Compress and share certificates
             tar -cvf ./wazuh-certificates.tar -C ./wazuh-certificates/ .
             rm -rf ./wazuh-certificates *.yml *.log *.sh
-            cp wazuh-certificates.tar /vagrant/wazuh-vertificates.tar
+            cp wazuh-certificates.tar /vagrant/wazuh-certificates.tar
         SHELL
     end
     config.vm.define "indexer_2" do |indexer_2|
@@ -39,7 +39,7 @@ Vagrant.configure("2") do |config|
             # Add node-1 to /etc/hosts
             echo "192.168.56.10 node-1" >> /etc/hosts
             # Copy generated certificates
-            cp /vagrant/wazuh-vertificates.tar wazuh-vertificates.tar
+            cp /vagrant/wazuh-certificates.tar wazuh-certificates.tar
         SHELL
     end
 end

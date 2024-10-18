@@ -268,20 +268,19 @@ function assemble_tar() {
     # Extract
     echo "Extract ${ARTIFACT_BUILD_NAME} archive"
     tar -zvxf "${ARTIFACT_BUILD_NAME}"
-    
+    local decompressed_tar_dir
     decompressed_tar_dir=$(ls -d wazuh-indexer-*/)
 
     local version
-    version=$(cat ${decompressed_tar_dir}/VERSION)
-    
+    version=$(cat "${decompressed_tar_dir}"/VERSION)
+
     PATH_CONF="${decompressed_tar_dir}/config"
     PATH_BIN="${decompressed_tar_dir}/bin"
     PATH_PLUGINS="${decompressed_tar_dir}/plugins"
 
-    echo $(pwd)
     # Install plugins
     install_plugins "${version}"
-    fix_log_rotation ${PATH_CONF}
+    fix_log_rotation "${PATH_CONF}"
     # Swap configuration files
     add_configuration_files
     remove_unneeded_files

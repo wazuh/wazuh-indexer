@@ -1,0 +1,7 @@
+nodes:
+  # Wazuh indexer nodes
+  indexer:
+    - name: node-1
+      ip: "192.168.56.10"
+    - name: node-2
+      ip: "192.168.56.11"

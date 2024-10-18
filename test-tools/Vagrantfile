@@ -1,3 +1,10 @@
+system("
+    if [ #{ARGV[0]} = 'up' ]; then
+        echo 'Executing pre-start script.'
+        bash ./pre-start.sh
+    fi
+")
+
 Vagrant.configure("2") do |config|
     config.vm.define "indexer_1" do |indexer_1|
         indexer_1.vm.box = "generic/rhel9"
@@ -13,15 +20,9 @@ Vagrant.configure("2") do |config|
             sudo systemctl disable firewalld
             sudo yum clean all
             # Add node-2 to /etc/hosts
-            echo "192.168.56.11 node-2" >> /etc/hosts
-            # Generate certificates
-            cp /vagrant/config.yml config.yml
-            curl -sO https://packages.wazuh.com/4.9/wazuh-certs-tool.sh
-            bash ./wazuh-certs-tool.sh -A
-            # Compress and share certificates
-            tar -cvf ./wazuh-certificates.tar -C ./wazuh-certificates/ .
-            rm -rf ./wazuh-certificates *.yml *.log *.sh
-            cp wazuh-certificates.tar /vagrant/wazuh-certificates.tar
+            sudo echo "192.168.56.11 node-2" >> /etc/hosts
+            # Copy generated certificates
+            cp /vagrant/wazuh-certificates.tar /home/vagrant/wazuh-certificates.tar
         SHELL
     end
     config.vm.define "indexer_2" do |indexer_2|
@@ -36,10 +37,11 @@ Vagrant.configure("2") do |config|
         indexer_2.vm.provision "shell", inline: <<-SHELL
             sudo systemctl stop ufw
             sudo systemctl disable ufw
+            sudo apt install sshpass -y
             # Add node-1 to /etc/hosts
             echo "192.168.56.10 node-1" >> /etc/hosts
             # Copy generated certificates
-            cp /vagrant/wazuh-certificates.tar wazuh-certificates.tar
+            cp /vagrant/wazuh-certificates.tar /home/vagrant/wazuh-certificates.tar
         SHELL
     end
 end

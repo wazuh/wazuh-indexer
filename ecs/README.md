@@ -62,7 +62,6 @@ are generated. For example, to generate the mappings for the `vulnerability-dete
     ```console
     Loading schemas from git ref v8.11.0
     Running generator. ECS version 8.11.0
-    Replacing "match_only_text" type with "text"
     Mappings saved to ~/wazuh/wazuh-indexer/ecs/vulnerability-detector/mappings/v8.11.0
     ```
 

@@ -12,7 +12,7 @@ curl -sO https://packages.wazuh.com/4.9/wazuh-certs-tool.sh
 chmod +x ./wazuh-certs-tool.sh
 
 # Run the Wazuh certs tool
-bash ./wazuh-certs-tool.sh -A
+OPENSSL_CONF="/etc/ssl/openssl.cnf" ./wazuh-certs-tool.sh -A
 
 # Create a tarball of the generated certificates
 tar -cvf ./wazuh-certificates.tar -C ./wazuh-certificates/ .

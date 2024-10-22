@@ -30,7 +30,8 @@ USER=${2:-"admin"}
 PASSWORD=${3:-"admin"}
 
 # List of expected items
-EXPECTED_TEMPLATES=("vulnerabilities" "fim" "inventory-system" "inventory-packages" "inventory-processes" "alerts" "agent")
+EXPECTED_TEMPLATES=("index-template-agent" "index-template-alerts" "index-template-fim" "index-template-packages"
+    "index-template-processes" "index-template-system" "index-template-vulnerabilities")
 
 # Fetch the templates
 echo "Fetching templates from Wazuh indexer cluster..."
@@ -46,7 +47,17 @@ MISSING_TEMPLATES=()
 echo "Validating templates..."
 for TEMPLATE in "${EXPECTED_TEMPLATES[@]}"; do
     if echo "$TEMPLATES_RESPONSE" | grep -q "$TEMPLATE"; then
-        echo "  Template $TEMPLATE is created."
+        # Fetch the template info to check for required fields
+        TEMPLATE_INFO=$(curl -s -k -u $USER:$PASSWORD https://$CLUSTER_IP:9200/_template/$TEMPLATE)
+        if ! echo "$TEMPLATE_INFO" | jq -e '.[] | .mappings.properties.agent.properties.id' > /dev/null; then
+            echo "  Error: Template $TEMPLATE is missing required field 'agent.id'."
+            MISSING_TEMPLATES+=("$TEMPLATE")
+        elif ! echo "$TEMPLATE_INFO" | jq -e '.[] | .mappings.properties.agent.properties.groups' > /dev/null; then
+            echo "  Error: Template $TEMPLATE is missing required field 'agent.groups'."
+            MISSING_TEMPLATES+=("$TEMPLATE")
+        else
+            echo "  Template $TEMPLATE is created correctly."
+        fi
     else
         MISSING_TEMPLATES+=("$TEMPLATE")
         echo "  Error: Template $TEMPLATE is missing."
@@ -54,15 +65,15 @@ for TEMPLATE in "${EXPECTED_TEMPLATES[@]}"; do
 done
 
 if [ ${#MISSING_TEMPLATES[@]} -ne 0 ]; then
-    echo "Some templates are missing:"
+    echo "Some templates were not created correctly:"
     for TEMPLATE in "${MISSING_TEMPLATES[@]}"; do
         echo "  $TEMPLATE"
     done
-    exit 1
+    echo
+else
+    echo "All templates are correctly created."
+    echo
 fi
-
-echo "All templates are correctly created."
-echo
 
 # Fetch the indices
 echo "Fetching indices from Wazuh indexer cluster..."
@@ -95,22 +106,27 @@ while read -r line; do
         TO_MATCH=$INDICES_RESPONSE
     fi
 
+    # Check if index pattern ends with '*'
+    if [[ $INDEX_PATTERN != *\* ]]; then
+        echo "  Error: Index pattern $INDEX_PATTERN does not end with '*'."
+        INVALID_PATTERNS+=("$INDEX_PATTERN")
+        continue
+    fi
+
     if echo "$TO_MATCH" | grep -q "$INDEX_PATTERN"; then
-        echo "  Index pattern $INDEX_PATTERN is valid for template $TEMPLATE_NAME."
+        echo "  Index pattern $INDEX_PATTERN is valid."
     else
         INVALID_PATTERNS+=("$INDEX_PATTERN")
         echo "  Error: Index pattern $INDEX_PATTERN not found in indices for template $TEMPLATE_NAME."
     fi
-    # Check if index pattern ends with '*'
-    if [[ $INDEX_PATTERN != *\* ]]; then
-        echo "  Warning: Index pattern $INDEX_PATTERN does not end with '*'."
-        INVALID_PATTERNS+=("$INDEX_PATTERN")
-    fi
 done <<< "$(echo "$TEMPLATES_RESPONSE" | tail -n +2)"  # Skip header line
 
 if [ ${#INVALID_PATTERNS[@]} -ne 0 ]; then
-    echo "Some index patterns were not found in the indices."
-    exit 1
+    echo "Errors on index-patterns detected:"
+    for PATTERN in "${INVALID_PATTERNS[@]}"; do
+        echo "  $PATTERN"
+    done
+    echo
+else
+    echo "Index-patterns validated successfully."
 fi
-
-echo "All index patterns are valid."

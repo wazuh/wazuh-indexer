@@ -1,5 +1,5 @@
 {
-  "index_patterns": ["wazuh-states-vulnerabilities-*"],
+  "index_patterns": ["wazuh-states-vulnerabilities*"],
   "order": 1,
   "settings": {
     "index": {

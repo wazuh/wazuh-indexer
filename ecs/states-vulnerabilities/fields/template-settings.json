@@ -1,15 +1,15 @@
 {
-  "index_patterns": ["wazuh-states-vulnerabilities-*"],
+  "index_patterns": ["wazuh-states-vulnerabilities*"],
   "priority": 1,
   "template": {
     "settings": {
       "index": {
-        "codec": "best_compression",
         "number_of_shards": "1",
         "number_of_replicas": "0",
         "refresh_interval": "5s",
         "query.default_field": [
           "agent.id",
+          "agent.group",
           "host.os.full",
           "host.os.version",
           "package.name",

@@ -24,6 +24,12 @@ if [ -z "$1" ]; then
     usage
 fi
 
+# Check if curl and unzip are installed
+if ! command -v curl &> /dev/null || ! command -v unzip &> /dev/null; then
+    echo "Error: curl and unzip must be installed."
+    exit 1
+fi
+
 ARTIFACT_ID=$1
 shift
 

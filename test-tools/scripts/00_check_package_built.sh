@@ -22,6 +22,12 @@ if [ "$#" -lt 1 ]; then
     exit 1
 fi
 
+# Check if curl are installed
+if ! command -v curl &> /dev/null; then
+    echo "Error: curl must be installed."
+    exit 1
+fi
+
 RUN_ID=$1
 shift
 

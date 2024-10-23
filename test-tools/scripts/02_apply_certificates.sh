@@ -25,6 +25,7 @@ if [ $# -lt 2 ]; then
     usage
 fi
 
+
 # Assigning variables
 PATH_TO_CERTS=$1
 CURRENT_NODE=$2

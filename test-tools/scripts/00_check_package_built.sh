@@ -53,10 +53,19 @@ fi
 REPO="wazuh/wazuh-indexer"
 URL="https://api.github.com/repos/$REPO/actions/artifacts"
 
+# Detect OS and architecture
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    OS=$(echo $NAME | tr '[:upper:]' '[:lower:]')
+else
+    echo "Unsupported OS."
+    exit 1
+fi
+
 # Determine package type if PKG_NAME is not provided
 if [ -z "$PKG_NAME" ]; then
     ARCH=$(uname -m)
-    case "$(uname -n)" in
+    case "$OS" in
         "ubuntu" | "debian")
             PKG_FORMAT="deb"
             [ "$ARCH" == "x86_64" ] && ARCH="amd64"

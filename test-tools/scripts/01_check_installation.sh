@@ -54,35 +54,28 @@ fi
 REPO="wazuh/wazuh-indexer"
 URL="https://api.github.com/repos/${REPO}/actions/artifacts/${ARTIFACT_ID}/zip"
 
-# Detect OS and architecture
-if [ -f /etc/os-release ]; then
-    . /etc/os-release
-    OS=$(echo $NAME | tr '[:upper:]' '[:lower:]')
-else
-    echo "Unsupported OS."
-    exit 1
-fi
-
 # Determine package type if PKG_NAME is not provided
-if [ -z "$PKG_NAME" ]; then
-    ARCH=$(uname -m)
-    case "$(uname -n)" in
-        "ubuntu" | "debian")
-            PKG_FORMAT="deb"
+ARCH=$(uname -m)
+case "$(uname -n)" in
+    "ubuntu" | "debian")
+        PKG_FORMAT="deb"
+        if [ -z "$PKG_NAME" ]; then
             [ "$ARCH" == "x86_64" ] && ARCH="amd64"
             [ "$ARCH" == "aarch64" ] && ARCH="arm64"
             PKG_NAME="wazuh-indexer_${PKG_VERSION}-${PKG_REVISION}_${ARCH}.${PKG_FORMAT}"
-            ;;
-        "centos" | "fedora" | "rhel" | "red hat enterprise linux")
-            PKG_FORMAT="rpm"
+        fi
+        ;;
+    "centos" | "fedora" | "rhel" | "red hat enterprise linux")
+        PKG_FORMAT="rpm"
+        if [ -z "$PKG_NAME" ]; then
             PKG_NAME="wazuh-indexer-${PKG_VERSION}-${PKG_REVISION}.${ARCH}.${PKG_FORMAT}"
-            ;;
-        *)
-            echo "Unsupported OS."
-            exit 1
-            ;;
-    esac
-fi
+        fi
+        ;;
+    *)
+        echo "Unsupported OS."
+        exit 1
+        ;;
+esac
 
 # Download the package
 echo "Downloading wazuh-indexer package from GitHub artifactory..."

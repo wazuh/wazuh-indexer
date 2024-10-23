@@ -8,9 +8,10 @@
 # Function to display usage help
 usage() {
     echo
-    echo "Usage: $0 <CURRENT_NODE> <SECOND_NODE> <(Optional)CURRENT_NODE_IP> <(Optional)SECOND_NODE_IP>"
+    echo "Usage: $0 <PATH_TO_CERTS> <CURRENT_NODE> <SECOND_NODE> <(Optional)CURRENT_NODE_IP> <(Optional)SECOND_NODE_IP>"
     echo
     echo "Parameters:"
+    echo "  PATH_TO_CERTS      Path to the generated wazuh certificates tar"
     echo "  CURRENT_NODE       Name of the current node"
     echo "  SECOND_NODE        Name of the second node"
     echo "  CURRENT_NODE_IP    IP address of the current node (optional, defaults to CURRENT_NODE)"
@@ -25,10 +26,11 @@ if [ $# -lt 2 ]; then
 fi
 
 # Assigning variables
-CURRENT_NODE=$1
-SECOND_NODE=$2
-CURRENT_NODE_IP=${3:-$CURRENT_NODE}
-SECOND_NODE_IP=${4:-$SECOND_NODE}
+PATH_TO_CERTS=$1
+CURRENT_NODE=$2
+SECOND_NODE=$3
+CURRENT_NODE_IP=${4:-$CURRENT_NODE}
+SECOND_NODE_IP=${5:-$SECOND_NODE}
 CONFIG_FILE="/etc/wazuh-indexer/opensearch.yml"
 BACKUP_FILE="./opensearch.yml.bak"
 
@@ -56,7 +58,7 @@ CERT_DIR="/etc/wazuh-indexer/certs"
 # Extract certificates
 echo "Creating certificates directory and extracting certificates..."
 mkdir -p $CERT_DIR
-tar -xf ./wazuh-certificates.tar -C $CERT_DIR ./$CURRENT_NODE.pem ./$CURRENT_NODE-key.pem ./admin.pem ./admin-key.pem ./root-ca.pem
+tar -xf $PATH_TO_CERTS -C $CERT_DIR ./$CURRENT_NODE.pem ./$CURRENT_NODE-key.pem ./admin.pem ./admin-key.pem ./root-ca.pem
 
 if [ $? -ne 0 ]; then
     echo "Error extracting certificates."

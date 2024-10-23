@@ -9,7 +9,7 @@
         "refresh_interval": "5s",
         "query.default_field": [
           "agent.id",
-          "agent.group",
+          "agent.groups",
           "host.os.full",
           "host.os.version",
           "package.name",

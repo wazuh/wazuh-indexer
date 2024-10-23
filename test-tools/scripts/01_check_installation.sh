@@ -58,6 +58,7 @@ case "$OS" in
     "ubuntu" | "debian")
         PKG_FORMAT="deb"
         [ "$ARCH" == "x86_64" ] && ARCH="amd64"
+        [ "$ARCH" == "aarch64" ] && ARCH="arm64"
         # Construct package name
         PKG_NAME="wazuh-indexer_${PKG_VERSION}-${PKG_REVISION}_${ARCH}.${PKG_FORMAT}"
         ;;

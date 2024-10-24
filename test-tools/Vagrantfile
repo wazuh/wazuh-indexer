@@ -7,7 +7,7 @@ system("
 
 Vagrant.configure("2") do |config|
     config.vm.define "indexer_1" do |indexer_1|
-        indexer_1.vm.box = "generic/rhel9"
+        indexer_1.vm.box = "generic/alma9"
         indexer_1.vm.synced_folder ".", "/vagrant"
         indexer_1.vm.network "private_network", ip: "192.168.56.10"
         indexer_1.vm.hostname = "node-1"

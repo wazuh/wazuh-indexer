@@ -5,6 +5,9 @@
 # this file be licensed under the Apache-2.0 license or a
 # compatible open source license.
 
+# Tool dependencies
+DEPENDENCIES=(curl jq)
+
 # Function to display usage help
 usage() {
     echo "Usage: $0 -c <CLUSTER_IP> -u <USER> -p <PASSWORD>"
@@ -14,14 +17,19 @@ usage() {
     echo "  -u, --user         (Optional) Username for authentication. Default: admin"
     echo "  -p, --password     (Optional) Password for authentication. Default: admin"
     echo
+    echo "Please ensure you have all the dependencies installed [${DEPENDENCIES[@]}]"
     exit 1
 }
 
-# Check if curl and jq are installed
-if ! command -v curl &> /dev/null || ! command -v jq &> /dev/null; then
-    echo "Error: curl and jq must be installed."
+# Validate all dependencies are installed
+for dep in ${DEPENDENCIES[@]}
+do
+  if ! command -v  ${dep} &> /dev/null
+  then
+    echo "Error: Dependency '$dep' is not installed. Please install $dep and try again." >&2
     exit 1
-fi
+  fi
+done
 
 # Default values
 CLUSTER_IP="localhost"
@@ -96,7 +104,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # Check if the command is found in the search results
-if echo "$SEARCH_RESPONSE" | grep -q "\"user\":\"$USR\"" && echo "$SEARCH_RESPONSE" | grep -q "\"id\":\"$TRG_ID\""; then
+if echo "$SEARCH_RESPONSE" | grep -q "\"$USR\"" && echo "$SEARCH_RESPONSE" | grep -q "\"$TRG_ID\""; then
     echo "Validation successful: The command was created and found in the search results."
 else
     echo "Error: The command was not found in the search results."

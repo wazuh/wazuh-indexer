@@ -5,6 +5,9 @@
 # this file be licensed under the Apache-2.0 license or a
 # compatible open source license.
 
+# Tool dependencies
+DEPENDENCIES=(tar)
+
 # Function to display usage help
 usage() {
     echo "Usage: $0 --path-to-certs <PATH_TO_CERTS> --current-node <CURRENT_NODE> [--second-node <SECOND_NODE>] [--current-node-ip <CURRENT_NODE_IP>] [--second-node-ip <SECOND_NODE_IP>]"
@@ -16,6 +19,7 @@ usage() {
     echo "    -cip, --current-node-ip (Optional) IP address of the current node. Default: CURRENT_NODE"
     echo "    -sip, --second-node-ip  (Optional) IP address of the second node. Default: SECOND_NODE"
     echo
+    echo "Please ensure you have all the dependencies installed [${DEPENDENCIES[@]}]"
     exit 1
 }
 
@@ -31,6 +35,16 @@ while [[ "$#" -gt 0 ]]; do
         *) echo "Unknown parameter passed: $1"; usage ;;
     esac
     shift
+done
+
+# Validate all dependencies are installed
+for dep in ${DEPENDENCIES[@]}
+do
+  if ! command -v  ${dep} &> /dev/null
+  then
+    echo "Error: Dependency '$dep' is not installed. Please install $dep and try again." >&2
+    exit 1
+  fi
 done
 
 # Validate mandatory arguments

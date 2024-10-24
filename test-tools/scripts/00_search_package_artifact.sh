@@ -1,10 +1,12 @@
-#!/bin/bash
+#!/opt/homebrew/bin/bash
 
 # SPDX-License-Identifier: Apache-2.0
 # The OpenSearch Contributors require contributions made to
 # this file be licensed under the Apache-2.0 license or a
 # compatible open source license.
 
+# Tool dependencies
+DEPENDENCIES=(curl jq)
 # Default package revision
 PKG_REVISION="0"
 
@@ -18,12 +20,9 @@ usage() {
     echo "    -r, --revision    (Optional) The revision of the package. Defaults to '0' if not provided."
     echo "    -n, --name        (Optional) The package name. If not provided, it will be configured based on version and revision."
     echo
-    echo "Please ensure you have the GITHUB_TOKEN environment variable set to access the GitHub repository."
+    echo "Please ensure you have the GITHUB_TOKEN environment variable set to access the GitHub repository, and all dependencies installed: [${DEPENDENCIES[@]}]"
     exit 1
 }
-
-# Default package revision
-PKG_REVISION="0"
 
 # Parse named parameters
 while [[ "$#" -gt 0 ]]; do
@@ -36,6 +35,16 @@ while [[ "$#" -gt 0 ]]; do
         *) echo "Unknown parameter passed: $1"; usage ;;
     esac
     shift
+done
+
+# Validate all dependencies are installed
+for dep in ${DEPENDENCIES[@]}
+do
+  if ! command -v  ${dep} &> /dev/null
+  then
+    echo "Error: Dependency '$dep' is not installed. Please install $dep and try again." >&2
+    exit 1
+  fi
 done
 
 # Check if RUN_ID is provided

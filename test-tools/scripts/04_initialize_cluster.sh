@@ -7,13 +7,12 @@
 
 # Function to display usage help
 usage() {
-    echo
-    echo "Usage: $0 <CLUSTER_IP> <USER> <PASSWORD>"
+    echo "Usage: $0 -c <CLUSTER_IP> -u <USER> -p <PASSWORD>"
     echo
     echo "Parameters:"
-    echo "  CLUSTER_IP    IP address of the cluster (default: localhost)"
-    echo "  USER          Username for authentication (default: admin)"
-    echo "  PASSWORD      Password for authentication (default: admin)"
+    echo "  -ip, --cluster-ip  (Optional) IP address of the cluster. Default: localhost"
+    echo "  -u, --user         (Optional) Username for authentication. Default: admin"
+    echo "  -p, --password     (Optional) Password for authentication. Default: admin"
     echo
     exit 1
 }
@@ -24,10 +23,22 @@ if ! command -v curl &> /dev/null || ! command -v jq &> /dev/null; then
     exit 1
 fi
 
-# Assigning variables
-CLUSTER_IP=${1:-"localhost"}
-USER=${2:-"admin"}
-PASSWORD=${3:-"admin"}
+# Default values
+CLUSTER_IP="localhost"
+USER="admin"
+PASSWORD="admin"
+
+# Parse named arguments
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        -ip|--cluster-ip) CLUSTER_IP="$2"; shift ;;
+        -u|--user) USER="$2"; shift ;;
+        -p|--password) PASSWORD="$2"; shift ;;
+        -h|--help) usage ;;
+        *) echo "Unknown parameter passed: $1"; usage ;;
+    esac
+    shift
+done
 
 # Initialize cluster
 echo "Initializing wazuh-indexer cluster..."
@@ -53,7 +64,6 @@ fi
 INDEXER_NAME=$(echo $RESPONSE | jq -r '.name')
 CLUSTER_NAME=$(echo $RESPONSE | jq -r '.cluster_name')
 VERSION_NUMBER=$(echo $RESPONSE | jq -r '.version.number')
-
 echo "Indexer Status:"
 echo "  Node Name: $INDEXER_NAME"
 echo "  Cluster Name: $CLUSTER_NAME"
@@ -70,5 +80,4 @@ fi
 
 echo "Nodes:"
 echo "$NODES_RESPONSE"
-
 echo "Initialization completed successfully."

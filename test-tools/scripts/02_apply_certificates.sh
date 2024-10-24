@@ -7,31 +7,41 @@
 
 # Function to display usage help
 usage() {
-    echo
-    echo "Usage: $0 <PATH_TO_CERTS> <CURRENT_NODE> <SECOND_NODE> <(Optional)CURRENT_NODE_IP> <(Optional)SECOND_NODE_IP>"
+    echo "Usage: $0 --path-to-certs <PATH_TO_CERTS> --current-node <CURRENT_NODE> [--second-node <SECOND_NODE>] [--current-node-ip <CURRENT_NODE_IP>] [--second-node-ip <SECOND_NODE_IP>]"
     echo
     echo "Parameters:"
-    echo "  PATH_TO_CERTS      Path to the generated wazuh certificates tar"
-    echo "  CURRENT_NODE       Name of the current node"
-    echo "  SECOND_NODE        Name of the second node"
-    echo "  CURRENT_NODE_IP    IP address of the current node (optional, defaults to CURRENT_NODE)"
-    echo "  SECOND_NODE_IP     IP address of the second node (optional, defaults to SECOND_NODE)"
+    echo "    -p, --path-to-certs     Path to the generated Wazuh certificates tar"
+    echo "    -c, --current-node      Name of the current node"
+    echo "    -s, --second-node       (Optional) Name of the second node"
+    echo "    -cip, --current-node-ip (Optional) IP address of the current node. Default: CURRENT_NODE"
+    echo "    -sip, --second-node-ip  (Optional) IP address of the second node. Default: SECOND_NODE"
     echo
     exit 1
 }
 
-# Check if at least two arguments are provided
-if [ $# -lt 2 ]; then
+# Parse named arguments
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --path-to-certs|-p) PATH_TO_CERTS="$2"; shift ;;
+        --current-node|-c) CURRENT_NODE="$2"; shift ;;
+        --second-node|-s) SECOND_NODE="$2"; shift ;;
+        --current-node-ip|-cip) CURRENT_NODE_IP="$2"; shift ;;
+        --second-node-ip|-sip) SECOND_NODE_IP="$2"; shift ;;
+        -h|--help) usage ;;
+        *) echo "Unknown parameter passed: $1"; usage ;;
+    esac
+    shift
+done
+
+# Validate mandatory arguments
+if [ -z "$PATH_TO_CERTS" ] || [ -z "$CURRENT_NODE" ]; then
+    echo "Error: Missing mandatory parameter."
     usage
 fi
 
-
-# Assigning variables
-PATH_TO_CERTS=$1
-CURRENT_NODE=$2
-SECOND_NODE=$3
-CURRENT_NODE_IP=${4:-$CURRENT_NODE}
-SECOND_NODE_IP=${5:-$SECOND_NODE}
+# Set default values if optional arguments are not provided
+CURRENT_NODE_IP=${CURRENT_NODE_IP:-$CURRENT_NODE}
+SECOND_NODE_IP=${SECOND_NODE_IP:-$SECOND_NODE}
 CONFIG_FILE="/etc/wazuh-indexer/opensearch.yml"
 BACKUP_FILE="./opensearch.yml.bak"
 
@@ -43,14 +53,22 @@ cp $CONFIG_FILE $BACKUP_FILE
 echo "Updating configuration..."
 sed -i "s/network\.host: \"0\.0\.0\.0\"/network.host: \"${CURRENT_NODE_IP}\"/" $CONFIG_FILE
 sed -i "s/node\.name: \"node-1\"/node.name: \"${CURRENT_NODE}\"/" $CONFIG_FILE
-sed -i "s/#discovery\.seed_hosts:/discovery.seed_hosts:\n  - \"${CURRENT_NODE_IP}\"\n  - \"${SECOND_NODE_IP}\"/" $CONFIG_FILE
-sed -i "/cluster\.initial_master_nodes:/!b;n;c- ${CURRENT_NODE}\n- ${SECOND_NODE}" $CONFIG_FILE
-sed -i ':a;N;$!ba;s/plugins\.security\.nodes_dn:\n- "CN=node-1,OU=Wazuh,O=Wazuh,L=California,C=US"/plugins.security.nodes_dn:\n- "CN='"${CURRENT_NODE}"',OU=Wazuh,O=Wazuh,L=California,C=US"\n- "CN='"${SECOND_NODE}"',OU=Wazuh,O=Wazuh,L=California,C=US"/' $CONFIG_FILE
+
+if [ -n "$SECOND_NODE" ]; then
+    sed -i "s/#discovery\.seed_hosts:/discovery.seed_hosts:\n  - \"${CURRENT_NODE_IP}\"\n  - \"${SECOND_NODE_IP}\"/" $CONFIG_FILE
+    sed -i "/cluster\.initial_master_nodes:/!b;n;c- ${CURRENT_NODE}\n- ${SECOND_NODE}" $CONFIG_FILE
+    sed -i ':a;N;$!ba;s/plugins\.security\.nodes_dn:\n- "CN=node-1,OU=Wazuh,O=Wazuh,L=California,C=US"/plugins.security.nodes_dn:\n- "CN='"${CURRENT_NODE}"',OU=Wazuh,O=Wazuh,L=California,C=US"\n- "CN='"${SECOND_NODE}"',OU=Wazuh,O=Wazuh,L=California,C=US"/' $CONFIG_FILE
+else
+    sed -i "s/#discovery\.seed_hosts:/discovery.seed_hosts:\n  - \"${CURRENT_NODE_IP}\"/" $CONFIG_FILE
+    sed -i "/cluster\.initial_master_nodes:/!b;n;c- ${CURRENT_NODE}" $CONFIG_FILE
+    sed -i ':a;N;$!ba;s/plugins\.security\.nodes_dn:\n- "CN=node-1,OU=Wazuh,O=Wazuh,L=California,C=US"/plugins.security.nodes_dn:\n- "CN='"${CURRENT_NODE}"',OU=Wazuh,O=Wazuh,L=California,C=US"/' $CONFIG_FILE
+fi
 
 if [ $? -eq 0 ]; then
     echo "Configuration updated successfully. Backup created at ${BACKUP_FILE}"
 else
     echo "Error updating configuration."
+    exit 1
 fi
 
 # Directory for certificates
@@ -78,4 +96,5 @@ if [ $? -eq 0 ]; then
     echo "Certificates configured successfully."
 else
     echo "Error configuring certificates."
+    exit 1
 fi

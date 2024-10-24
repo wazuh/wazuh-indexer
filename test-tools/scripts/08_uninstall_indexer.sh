@@ -1,8 +1,26 @@
 #!/bin/bash
+
 # SPDX-License-Identifier: Apache-2.0
 # The OpenSearch Contributors require contributions made to
 # this file be licensed under the Apache-2.0 license or a
 # compatible open source license.
+
+# Function to display usage help
+usage() {
+    echo "Usage: $0 [-h]"
+    echo
+    echo "This script uninstalls Wazuh Indexer and validates its removal."
+    echo
+    echo "Options:"
+    echo "    -h, --help    Show this help message and exit."
+    echo
+    exit 1
+}
+
+# Check for help flag
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    usage
+fi
 
 # Detect package manager
 if command -v apt-get &> /dev/null; then

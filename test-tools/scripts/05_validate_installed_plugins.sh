@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # SPDX-License-Identifier: Apache-2.0
 # The OpenSearch Contributors require contributions made to
 # this file be licensed under the Apache-2.0 license or a
@@ -7,15 +6,13 @@
 
 # Function to display usage help
 usage() {
-    echo
-    echo "Usage: $0 <CLUSTER_IP> <USER> <PASSWORD> <NODE_1> <NODE_2> [...]"
+    echo "Usage: $0 -c <CLUSTER_IP> -u <USER> -p <PASSWORD> -n <NODE_1> -n <NODE_2> [...]"
     echo
     echo "Parameters:"
-    echo "  CLUSTER_IP    IP address of the cluster (default: localhost)"
-    echo "  USER          Username for authentication (default: admin)"
-    echo "  PASSWORD      Password for authentication (default: admin)"
-    echo "  NODE_1        Name of the first node"
-    echo "  NODE_2        Name of the second node (add more as needed)"
+    echo "  -ip, --cluster-ip  IP address of the cluster (default: localhost)"
+    echo "  -u, --user         Username for authentication (default: admin)"
+    echo "  -p, --password     Password for authentication (default: admin)"
+    echo "  -n, --node         Name of the nodes (add as many as needed)"
     echo
     exit 1
 }
@@ -26,33 +23,44 @@ if ! command -v curl &> /dev/null || ! command -v jq &> /dev/null; then
     exit 1
 fi
 
-# Check if at least four arguments are provided
-if [ "$#" -lt 4 ]; then
+# Default values
+CLUSTER_IP="localhost"
+USER="admin"
+PASSWORD="admin"
+NODES=()
+
+# Parse named arguments
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        -ip|--cluster-ip) CLUSTER_IP="$2"; shift ;;
+        -u|--user) USER="$2"; shift ;;
+        -p|--password) PASSWORD="$2"; shift ;;
+        -n|--node) NODES+=("$2"); shift ;;
+        -h|--help) usage ;;
+        *) echo "Unknown parameter passed: $1"; usage ;;
+    esac
+    shift
+done
+
+# Check if mandatory arguments are provided
+if [ -z "$CLUSTER_IP" ] || [ -z "$USER" ] || [ -z "$PASSWORD" ] || [ ${#NODES[@]} -eq 0 ]; then
+    echo "Error: Missing mandatory parameter."
     usage
 fi
-
-# Assigning variables
-CLUSTER_IP=${1:-"localhost"}
-USER=${2:-"admin"}
-PASSWORD=${3:-"admin"}
-NODES=${@:4}  # List of nodes passed as arguments starting from the 4th
 
 # Check the installed plugins on each node
 REQUIRED_PLUGINS=("wazuh-indexer-command-manager" "wazuh-indexer-setup")
 ALL_MISSING_PLUGINS=()
 
 echo "Checking installed plugins on Wazuh indexer nodes..."
-
-for NODE in $NODES; do
+for NODE in "${NODES[@]}"; do
     echo "Checking node $NODE..."
     RESPONSE=$(curl -s -k -u $USER:$PASSWORD https://$CLUSTER_IP:9200/_cat/plugins?v | grep $NODE)
-
     # Check if the request was successful
     if [ $? -ne 0 ]; then
         echo "Error: Failed to connect to Wazuh indexer."
         exit 1
     fi
-
     MISSING_PLUGINS=()
     for PLUGIN in "${REQUIRED_PLUGINS[@]}"; do
         if echo "$RESPONSE" | grep -q "$PLUGIN"; then
@@ -61,7 +69,6 @@ for NODE in $NODES; do
             MISSING_PLUGINS+=("$PLUGIN")
         fi
     done
-
     if [ ${#MISSING_PLUGINS[@]} -ne 0 ]; then
         echo "Error: The following required plugins are missing on $NODE:"
         for PLUGIN in "${MISSING_PLUGINS[@]}"; do

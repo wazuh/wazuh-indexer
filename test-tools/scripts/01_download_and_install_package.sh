@@ -1,59 +1,55 @@
 #!/bin/bash
+
 # SPDX-License-Identifier: Apache-2.0
 # The OpenSearch Contributors require contributions made to
 # this file be licensed under the Apache-2.0 license or a
 # compatible open source license.
 
-# Usage function to display help
+# Function to display usage help
 usage() {
-    echo "Usage: $0 <ARTIFACT_ID> [-v <PKG_VERSION>] [-r <PKG_REVISION>] [-n <PKG_NAME>]"
+    echo "Usage: $0 --artifact-id <ARTIFACT_ID> [-v <PKG_VERSION>] [-r <PKG_REVISION>] [-n <PKG_NAME>]"
     echo
     echo "Parameters:"
-    echo "    ARTIFACT_ID    The unique ID of the GHA artifact."
-    echo "    -v             (Optional) The version of the wazuh-indexer package."
-    echo "    -r             (Optional) The revision of the package. Defaults to '0' if not provided."
-    echo "    -n             (Optional) The package name."
+    echo "    -id, --artifact-id    The GHA workflow execution ID."
+    echo "    -v, --version         (Optional) The version of the wazuh-indexer package."
+    echo "    -r, --revision        (Optional) The revision of the package. Defaults to '0' if not provided."
+    echo "    -n, --name            (Optional) The package name. If not provided, it will be configured based on version and revision."
     echo
     echo "Please ensure you have the GITHUB_TOKEN environment variable set to access the GitHub repository."
     exit 1
 }
 
+# Default package revision
+PKG_REVISION="0"
+
+# Parse named parameters
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --artifact-id|-id) ARTIFACT_ID="$2"; shift ;;
+        --version|-v) PKG_VERSION="$2"; shift ;;
+        --revision|-r) PKG_REVISION="$2"; shift ;;
+        --name|-n) PKG_NAME="$2"; shift ;;
+        -h|--help) usage ;;
+        *) echo "Unknown parameter passed: $1"; usage ;;
+    esac
+    shift
+done
+
 # Check if ARTIFACT_ID is provided
-if [ -z "$1" ]; then
-    echo "Error: ARTIFACT_ID not provided."
+if [ -z "$ARTIFACT_ID" ]; then
+    echo "Error: ARTIFACT_ID is required."
     usage
 fi
-
-# Check if curl and unzip are installed
-if ! command -v curl &> /dev/null || ! command -v unzip &> /dev/null; then
-    echo "Error: curl and unzip must be installed."
-    exit 1
-fi
-
-ARTIFACT_ID=$1
-shift
-
-while getopts v:r:n: flag
-do
-    case "${flag}" in
-        v) PKG_VERSION=${OPTARG};;
-        r) PKG_REVISION=${OPTARG};;
-        n) PKG_NAME=${OPTARG};;
-        *)
-            usage
-            ;;
-    esac
-done
 
 # Validate GITHUB_TOKEN environment variable
 if [ -z "$GITHUB_TOKEN" ]; then
-    echo "Error: Environment variable GITHUB_TOKEN is not configured."
-    usage
+    echo "Please ensure you have the GITHUB_TOKEN environment variable set to access the GitHub repository."
+    exit 1
 fi
 
 # Ensure either PKG_NAME or both PKG_VERSION and PKG_REVISION are provided
 if [ -z "$PKG_NAME" ] && { [ -z "$PKG_VERSION" ] || [ -z "$PKG_REVISION" ]; }; then
-    echo "Error: Either a package name (-n) or both a version (-v) and revision (-r) must be provided."
+    echo "Error: Either a package name (--name) or both a version (--version) and revision (--revision) must be provided."
     usage
 fi
 
@@ -72,7 +68,7 @@ fi
 # Determine package type if PKG_NAME is not provided
 ARCH=$(uname -m)
 case "$OS" in
-    "ubuntu" | "debian")
+    *ubuntu* | *debian*)
         PKG_FORMAT="deb"
         if [ -z "$PKG_NAME" ]; then
             [ "$ARCH" == "x86_64" ] && ARCH="amd64"
@@ -80,7 +76,7 @@ case "$OS" in
             PKG_NAME="wazuh-indexer_${PKG_VERSION}-${PKG_REVISION}_${ARCH}.${PKG_FORMAT}"
         fi
         ;;
-    "centos" | "fedora" | "rhel" | "red hat enterprise linux")
+    *centos* | *fedora* | *rhel* | *"red hat"* | *alma*)
         PKG_FORMAT="rpm"
         if [ -z "$PKG_NAME" ]; then
             PKG_NAME="wazuh-indexer-${PKG_VERSION}-${PKG_REVISION}.${ARCH}.${PKG_FORMAT}"

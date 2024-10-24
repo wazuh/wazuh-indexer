@@ -8,41 +8,41 @@
 # Default package revision
 PKG_REVISION="0"
 
-# Check if the necessary arguments are provided
-if [ "$#" -lt 1 ]; then
-    echo "Usage: $0 <RUN_ID> [-v <PKG_VERSION>] [-r <PKG_REVISION>] [-n <PKG_NAME>]"
+# Function to display usage help
+usage() {
+    echo "Usage: $0 --run-id <RUN_ID> [-v <PKG_VERSION>] [-r <PKG_REVISION>] [-n <PKG_NAME>]"
     echo
     echo "Parameters:"
-    echo "    RUN_ID         The GHA workflow execution ID."
-    echo "    -v             (Optional) The version of the wazuh-indexer package."
-    echo "    -r             (Optional) The revision of the package. Defaults to '0' if not provided."
-    echo "    -n             (Optional) The package name. If not provided, it will be configured based on version and revision."
+    echo "    -id, --run-id     The GHA workflow execution ID."
+    echo "    -v, --version     (Optional) The version of the wazuh-indexer package."
+    echo "    -r, --revision    (Optional) The revision of the package. Defaults to '0' if not provided."
+    echo "    -n, --name        (Optional) The package name. If not provided, it will be configured based on version and revision."
     echo
     echo "Please ensure you have the GITHUB_TOKEN environment variable set to access the GitHub repository."
     exit 1
-fi
+}
 
-# Check if curl are installed
-if ! command -v curl &> /dev/null; then
-    echo "Error: curl must be installed."
-    exit 1
-fi
+# Default package revision
+PKG_REVISION="0"
 
-RUN_ID=$1
-shift
-
-while getopts v:r:n: flag
-do
-    case "${flag}" in
-        v) PKG_VERSION=${OPTARG};;
-        r) PKG_REVISION=${OPTARG};;
-        n) PKG_NAME=${OPTARG};;
-        *)
-            echo "Usage: $0 <RUN_ID> [-v <PKG_VERSION>] [-r <PKG_REVISION>] [-n <PKG_NAME>]"
-            exit 1
-            ;;
+# Parse named parameters
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --run-id|-id) RUN_ID="$2"; shift ;;
+        --version|-v) PKG_VERSION="$2"; shift ;;
+        --revision|-r) PKG_REVISION="$2"; shift ;;
+        --name|-n) PKG_NAME="$2"; shift ;;
+        -h|--help) usage ;;
+        *) echo "Unknown parameter passed: $1"; usage ;;
     esac
+    shift
 done
+
+# Check if RUN_ID is provided
+if [ -z "$RUN_ID" ]; then
+    echo "Error: RUN_ID is required."
+    usage
+fi
 
 # Validate GITHUB_TOKEN environment variable
 if [ -z "$GITHUB_TOKEN" ]; then
@@ -52,8 +52,8 @@ fi
 
 # Ensure either PKG_NAME or both PKG_VERSION and PKG_REVISION are provided
 if [ -z "$PKG_NAME" ] && { [ -z "$PKG_VERSION" ] || [ -z "$PKG_REVISION" ]; }; then
-    echo "Error: Either a package name (-n) or both a version (-v) and revision (-r) must be provided."
-    exit 1
+    echo "Error: Either a package name (--name) or both a version (--version) and revision (--revision) must be provided."
+    usage
 fi
 
 REPO="wazuh/wazuh-indexer"
@@ -72,13 +72,13 @@ fi
 if [ -z "$PKG_NAME" ]; then
     ARCH=$(uname -m)
     case "$OS" in
-        "ubuntu" | "debian")
+        *ubuntu* | *debian*)
             PKG_FORMAT="deb"
             [ "$ARCH" == "x86_64" ] && ARCH="amd64"
             [ "$ARCH" == "aarch64" ] && ARCH="arm64"
             PKG_NAME="wazuh-indexer_${PKG_VERSION}-${PKG_REVISION}_${ARCH}.${PKG_FORMAT}"
             ;;
-        "centos" | "fedora" | "rhel" | "red hat enterprise linux")
+        *centos* | *fedora* | *rhel* | *"red hat"* | *alma*)
             PKG_FORMAT="rpm"
             PKG_NAME="wazuh-indexer-${PKG_VERSION}-${PKG_REVISION}.${ARCH}.${PKG_FORMAT}"
             ;;

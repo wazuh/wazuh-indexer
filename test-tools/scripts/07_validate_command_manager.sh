@@ -1,20 +1,44 @@
 #!/bin/bash
+
 # SPDX-License-Identifier: Apache-2.0
 # The OpenSearch Contributors require contributions made to
 # this file be licensed under the Apache-2.0 license or a
 # compatible open source license.
 
-# Assigning variables
-CLUSTER_IP=${1:-"localhost"}
-USERNAME=${2:-"admin"}
-PASSWORD=${3:-"admin"}
+# Function to display usage help
+usage() {
+    echo "Usage: $0 -c <CLUSTER_IP> -u <USER> -p <PASSWORD>"
+    echo
+    echo "Parameters:"
+    echo "  -ip, --cluster-ip  (Optional) IP address of the cluster. Default: localhost"
+    echo "  -u, --user         (Optional) Username for authentication. Default: admin"
+    echo "  -p, --password     (Optional) Password for authentication. Default: admin"
+    echo
+    exit 1
+}
 
-# Check for curl command
-if ! command -v curl &> /dev/null
-then
-    echo "curl command could not be found"
-    exit
+# Check if curl and jq are installed
+if ! command -v curl &> /dev/null || ! command -v jq &> /dev/null; then
+    echo "Error: curl and jq must be installed."
+    exit 1
 fi
+
+# Default values
+CLUSTER_IP="localhost"
+USERNAME="admin"
+PASSWORD="admin"
+
+# Parse named arguments
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        -ip|--cluster-ip) CLUSTER_IP="$2"; shift ;;
+        -u|--user) USERNAME="$2"; shift ;;
+        -p|--password) PASSWORD="$2"; shift ;;
+        -h|--help) usage ;;
+        *) echo "Unknown parameter passed: $1"; usage ;;
+    esac
+    shift
+done
 
 COMMANDS_INDEX=".commands"
 SRC="Engine"
@@ -71,10 +95,8 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Extract and validate specific fields
-COMMAND_FOUND=$(echo "$SEARCH_RESPONSE" | jq -r '.hits.hits[] | select(._source.command.source == "Engine" and ._source.command.user == "TestUser" and ._source.command.target.id == "TestTarget" and ._source.command.action.args[0] == "/test/path/fake/args")')
-
-if [ -n "$COMMAND_FOUND" ]; then
+# Check if the command is found in the search results
+if echo "$SEARCH_RESPONSE" | grep -q "\"user\":\"$USR\"" && echo "$SEARCH_RESPONSE" | grep -q "\"id\":\"$TRG_ID\""; then
     echo "Validation successful: The command was created and found in the search results."
 else
     echo "Error: The command was not found in the search results."

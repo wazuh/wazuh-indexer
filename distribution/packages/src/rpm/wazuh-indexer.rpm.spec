@@ -209,7 +209,7 @@ if [ -f %{tmp_dir}/wazuh-indexer.restart ]; then
     rm -f %{tmp_dir}/wazuh-indexer.restart
     if command -v systemctl > /dev/null; then
         echo "Restarting wazuh-indexer service..."
-        systemctl restart wazuh-server.service > /dev/null 2>&1
+        systemctl restart wazuh-indexer.service > /dev/null 2>&1
         exit 0
     fi
 fi

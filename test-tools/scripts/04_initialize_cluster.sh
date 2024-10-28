@@ -17,14 +17,14 @@ usage() {
     echo "  -u, --user         (Optional) Username for authentication. Default: admin"
     echo "  -p, --password     (Optional) Password for authentication. Default: admin"
     echo
-    echo "Please ensure you have all the dependencies installed [${DEPENDENCIES[@]}]"
+    echo "Please ensure you have all the dependencies installed: " "${DEPENDENCIES[@]}"
     exit 1
 }
 
 # Validate all dependencies are installed
-for dep in ${DEPENDENCIES[@]}
+for dep in "${DEPENDENCIES[@]}"
 do
-  if ! command -v  ${dep} &> /dev/null
+  if ! command -v  "${dep}" &> /dev/null
   then
     echo "Error: Dependency '$dep' is not installed. Please install $dep and try again." >&2
     exit 1
@@ -60,7 +60,7 @@ fi
 
 # Check the Wazuh indexer status
 echo "Checking cluster status..."
-RESPONSE=$(curl -s -k -u $USER:$PASSWORD https://$CLUSTER_IP:9200)
+RESPONSE=$(curl -s -k -u "$USER:$PASSWORD" "https://$CLUSTER_IP:9200")
 
 # Check if the request was successful
 if [ $? -ne 0 ]; then
@@ -69,9 +69,9 @@ if [ $? -ne 0 ]; then
 fi
 
 # Parse and print the response
-INDEXER_NAME=$(echo $RESPONSE | jq -r '.name')
-CLUSTER_NAME=$(echo $RESPONSE | jq -r '.cluster_name')
-VERSION_NUMBER=$(echo $RESPONSE | jq -r '.version.number')
+INDEXER_NAME=$(echo "$RESPONSE" | jq -r '.name')
+CLUSTER_NAME=$(echo "$RESPONSE" | jq -r '.cluster_name')
+VERSION_NUMBER=$(echo "$RESPONSE" | jq -r '.version.number')
 echo "Indexer Status:"
 echo "  Node Name: $INDEXER_NAME"
 echo "  Cluster Name: $CLUSTER_NAME"
@@ -79,7 +79,7 @@ echo "  Version Number: $VERSION_NUMBER"
 
 # Verify the Wazuh indexer nodes
 echo "Verifying the Wazuh indexer nodes..."
-NODES_RESPONSE=$(curl -s -k -u $USER:$PASSWORD https://$CLUSTER_IP:9200/_cat/nodes?v)
+NODES_RESPONSE=$(curl -s -k -u "$USER:$PASSWORD" "https://$CLUSTER_IP:9200/_cat/nodes?v")
 
 if [ $? -ne 0 ]; then
     echo "Error: Failed to retrieve Wazuh indexer nodes."

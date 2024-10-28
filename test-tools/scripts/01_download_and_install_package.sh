@@ -20,7 +20,7 @@ usage() {
     echo "    -r, --revision        (Optional) The revision of the package. Defaults to '0' if not provided."
     echo "    -n, --name            (Optional) The package name. If not provided, it will be configured based on version and revision."
     echo
-    echo "Please ensure you have the GITHUB_TOKEN environment variable set to access the GitHub repository, and all dependencies installed: [${DEPENDENCIES[@]}]"
+    echo "Please ensure you have the GITHUB_TOKEN environment variable set to access the GitHub repository, and all the dependencies installed: " "${DEPENDENCIES[@]}"
     exit 1
 }
 
@@ -38,9 +38,9 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 # Validate all dependencies are installed
-for dep in ${DEPENDENCIES[@]}
+for dep in "${DEPENDENCIES[@]}"
 do
-  if ! command -v  ${dep} &> /dev/null
+  if ! command -v "${dep}" &> /dev/null
   then
     echo "Error: Dependency '$dep' is not installed. Please install $dep and try again." >&2
     exit 1
@@ -71,7 +71,7 @@ URL="https://api.github.com/repos/${REPO}/actions/artifacts/${ARTIFACT_ID}/zip"
 # Detect OS and architecture
 if [ -f /etc/os-release ]; then
     . /etc/os-release
-    OS=$(echo $NAME | tr '[:upper:]' '[:lower:]')
+    OS=$(echo "$NAME" | tr '[:upper:]' '[:lower:]')
 else
     echo "Unsupported OS."
     exit 1
@@ -106,7 +106,7 @@ echo "(It could take a couple of minutes)"
 curl -L -H "Accept: application/vnd.github+json" \
     -H "Authorization: Bearer $GITHUB_TOKEN" \
     -H "X-GitHub-Api-Version: 2022-11-28" \
-    $URL -o package.zip > /dev/null 2>&1
+    "$URL" -o package.zip > /dev/null 2>&1
 
 if [ $? -ne 0 ]; then
     echo "Error downloading package."
@@ -129,13 +129,14 @@ echo "Package decompressed"
 echo "Installing wazuh-indexer package..."
 case "$PKG_FORMAT" in
     "deb")
-        sudo dpkg -i $PKG_NAME
+        sudo dpkg -i "$PKG_NAME"
         ;;
     "rpm")
-        sudo rpm -i $PKG_NAME
+        sudo rpm -i "$PKG_NAME"
         ;;
 esac
 
+# shellcheck disable=SC2181
 if [ $? -ne 0 ]; then
     echo "Error installing package."
     exit 1

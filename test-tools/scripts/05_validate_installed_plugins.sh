@@ -17,14 +17,14 @@ usage() {
     echo "  -p, --password     Password for authentication (default: admin)"
     echo "  -n, --node         Name of the nodes (add as many as needed)"
     echo
-    echo "Please ensure you have all the dependencies installed [${DEPENDENCIES[@]}]"
+    echo "Please ensure you have all the dependencies installed: " "${DEPENDENCIES[@]}"
     exit 1
 }
 
 # Validate all dependencies are installed
-for dep in ${DEPENDENCIES[@]}
+for dep in "${DEPENDENCIES[@]}"
 do
-  if ! command -v  ${dep} &> /dev/null
+  if ! command -v "${dep}" &> /dev/null
   then
     echo "Error: Dependency '$dep' is not installed. Please install $dep and try again." >&2
     exit 1
@@ -63,8 +63,9 @@ ALL_MISSING_PLUGINS=()
 echo "Checking installed plugins on Wazuh indexer nodes..."
 for NODE in "${NODES[@]}"; do
     echo "Checking node $NODE..."
-    RESPONSE=$(curl -s -k -u $USER:$PASSWORD https://$CLUSTER_IP:9200/_cat/plugins?v | grep $NODE)
+    RESPONSE=$(curl -s -k -u "$USER:$PASSWORD" "https://$CLUSTER_IP:9200/_cat/plugins?v" | grep "$NODE")
     # Check if the request was successful
+    # shellcheck disable=SC2181
     if [ $? -ne 0 ]; then
         echo "Error: Failed to connect to Wazuh indexer."
         exit 1

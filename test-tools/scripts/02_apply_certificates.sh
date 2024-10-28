@@ -19,7 +19,7 @@ usage() {
     echo "    -cip, --current-node-ip (Optional) IP address of the current node. Default: CURRENT_NODE"
     echo "    -sip, --second-node-ip  (Optional) IP address of the second node. Default: SECOND_NODE"
     echo
-    echo "Please ensure you have all the dependencies installed [${DEPENDENCIES[@]}]"
+    echo "Please ensure you have all the dependencies installed: " "${DEPENDENCIES[@]}"
     exit 1
 }
 
@@ -38,7 +38,7 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 # Validate all dependencies are installed
-for dep in ${DEPENDENCIES[@]}
+for dep in "${DEPENDENCIES[@]}"
 do
   if ! command -v  ${dep} &> /dev/null
   then
@@ -78,6 +78,7 @@ else
     sed -i ':a;N;$!ba;s/plugins\.security\.nodes_dn:\n- "CN=node-1,OU=Wazuh,O=Wazuh,L=California,C=US"/plugins.security.nodes_dn:\n- "CN='"${CURRENT_NODE}"',OU=Wazuh,O=Wazuh,L=California,C=US"/' $CONFIG_FILE
 fi
 
+# shellcheck disable=SC2181
 if [ $? -eq 0 ]; then
     echo "Configuration updated successfully. Backup created at ${BACKUP_FILE}"
 else
@@ -91,7 +92,7 @@ CERT_DIR="/etc/wazuh-indexer/certs"
 # Extract certificates
 echo "Creating certificates directory and extracting certificates..."
 mkdir -p $CERT_DIR
-tar -xf $PATH_TO_CERTS -C $CERT_DIR ./$CURRENT_NODE.pem ./$CURRENT_NODE-key.pem ./admin.pem ./admin-key.pem ./root-ca.pem
+tar -xf "$PATH_TO_CERTS" -C "$CERT_DIR" "./$CURRENT_NODE.pem" "./$CURRENT_NODE-key.pem" ./admin.pem ./admin-key.pem ./root-ca.pem
 
 if [ $? -ne 0 ]; then
     echo "Error extracting certificates."
@@ -100,12 +101,13 @@ fi
 
 # Move and set permissions for certificates
 echo "Moving and setting permissions for certificates..."
-mv -n $CERT_DIR/$CURRENT_NODE.pem $CERT_DIR/indexer.pem
-mv -n $CERT_DIR/$CURRENT_NODE-key.pem $CERT_DIR/indexer-key.pem
-chmod 500 $CERT_DIR
-chmod 400 $CERT_DIR/*
-chown -R wazuh-indexer:wazuh-indexer $CERT_DIR
+mv -n "$CERT_DIR/$CURRENT_NODE.pem" "$CERT_DIR/indexer.pem"
+mv -n "$CERT_DIR/$CURRENT_NODE-key.pem" "$CERT_DIR/indexer-key.pem"
+chmod 500 "$CERT_DIR"
+chmod 400 "$CERT_DIR/*"
+chown -R wazuh-indexer:wazuh-indexer "$CERT_DIR"
 
+# shellcheck disable=SC2181
 if [ $? -eq 0 ]; then
     echo "Certificates configured successfully."
 else

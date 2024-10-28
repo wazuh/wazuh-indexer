@@ -7,8 +7,7 @@
 
 # Function to check the status of the wazuh-indexer service
 check_service_is_running() {
-    systemctl is-active --quiet wazuh-indexer
-    if [ $? -eq 0 ]; then
+    if ! systemctl is-active --quiet wazuh-indexer ; then
         echo "wazuh-indexer service is running."
     else
         echo "Error: wazuh-indexer service is not running." >&2

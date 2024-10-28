@@ -17,14 +17,14 @@ usage() {
     echo "  -u, --user         (Optional) Username for authentication. Default: admin"
     echo "  -p, --password     (Optional) Password for authentication. Default: admin"
     echo
-    echo "Please ensure you have all the dependencies installed [${DEPENDENCIES[@]}]"
+    echo "Please ensure you have all the dependencies installed: " "${DEPENDENCIES[@]}"
     exit 1
 }
 
 # Validate all dependencies are installed
-for dep in ${DEPENDENCIES[@]}
+for dep in "${DEPENDENCIES[@]}"
 do
-  if ! command -v  ${dep} &> /dev/null
+  if ! command -v "${dep}" &> /dev/null
   then
     echo "Error: Dependency '$dep' is not installed. Please install $dep and try again." >&2
     exit 1
@@ -54,7 +54,7 @@ EXPECTED_TEMPLATES=("index-template-agent" "index-template-alerts" "index-templa
 
 # Fetch the templates
 echo "Fetching templates from Wazuh indexer cluster..."
-TEMPLATES_RESPONSE=$(curl -s -k -u $USER:$PASSWORD https://$CLUSTER_IP:9200/_cat/templates?v)
+TEMPLATES_RESPONSE=$(curl -s -k -u "$USER:$PASSWORD" "https://$CLUSTER_IP:9200/_cat/templates?v")
 # Check if the request was successful
 if [ $? -ne 0 ]; then
     echo "Error: Failed to fetch templates."
@@ -67,7 +67,7 @@ echo "Validating templates..."
 for TEMPLATE in "${EXPECTED_TEMPLATES[@]}"; do
     if echo "$TEMPLATES_RESPONSE" | grep -q "$TEMPLATE"; then
         # Fetch the template info to check for required fields
-        TEMPLATE_INFO=$(curl -s -k -u $USER:$PASSWORD https://$CLUSTER_IP:9200/_template/$TEMPLATE)
+        TEMPLATE_INFO=$(curl -s -k -u "$USER:$PASSWORD" "https://$CLUSTER_IP:9200/_template/$TEMPLATE")
         if ! echo "$TEMPLATE_INFO" | jq -e '.[] | .mappings.properties.agent.properties.id' > /dev/null; then
             echo "  Error: Template $TEMPLATE is missing required field 'agent.id'."
             MISSING_TEMPLATES+=("$TEMPLATE")
@@ -96,7 +96,7 @@ fi
 
 # Fetch the indices
 echo "Fetching indices from Wazuh indexer cluster..."
-INDICES_RESPONSE=$(curl -s -k -u $USER:$PASSWORD https://$CLUSTER_IP:9200/_cat/indices?v)
+INDICES_RESPONSE=$(curl -s -k -u "$USER:$PASSWORD" "https://$CLUSTER_IP:9200/_cat/indices?v")
 # Check if the request was successful
 if [ $? -ne 0 ]; then
     echo "Error: Failed to fetch indices."
@@ -105,8 +105,9 @@ fi
 
 # Fetch the protected indices
 echo "Fetching protected indices from Wazuh indexer cluster..."
-PROTECTED_RESPONSE=$(curl -s -k -u $USER:$PASSWORD https://$CLUSTER_IP:9200/_cat/indices/.*?v)
+PROTECTED_RESPONSE=$(curl -s -k -u "$USER:$PASSWORD" "https://$CLUSTER_IP:9200/_cat/indices/.*?v")
 # Check if the request was successful
+# shellcheck disable=SC2181
 if [ $? -ne 0 ]; then
     echo "Error: Failed to fetch indices."
     exit 1
@@ -116,8 +117,8 @@ fi
 echo "Validating index patterns..."
 INVALID_PATTERNS=()
 while read -r line; do
-    TEMPLATE_NAME=$(echo $line | awk '{print $1}')
-    INDEX_PATTERN=$(echo $line | awk '{print $2}' | tr -d '[]')
+    TEMPLATE_NAME=$(echo "$line" | awk '{print $1}')
+    INDEX_PATTERN=$(echo "$line" | awk '{print $2}' | tr -d '[]')
 
     if [[ $INDEX_PATTERN == .* ]]; then
         TO_MATCH=$PROTECTED_RESPONSE

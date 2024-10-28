@@ -17,14 +17,14 @@ usage() {
     echo "  -u, --user         (Optional) Username for authentication. Default: admin"
     echo "  -p, --password     (Optional) Password for authentication. Default: admin"
     echo
-    echo "Please ensure you have all the dependencies installed [${DEPENDENCIES[@]}]"
+    echo "Please ensure you have all the dependencies installed: " "${DEPENDENCIES[@]}"
     exit 1
 }
 
 # Validate all dependencies are installed
-for dep in ${DEPENDENCIES[@]}
+for dep in "${DEPENDENCIES[@]}"
 do
-  if ! command -v  ${dep} &> /dev/null
+  if ! command -v "${dep}" &> /dev/null
   then
     echo "Error: Dependency '$dep' is not installed. Please install $dep and try again." >&2
     exit 1
@@ -70,19 +70,19 @@ BODY="{
   \"timeout\": 30
 }"
 
-# Send the POST request
-RESPONSE=$(curl -s -k -u $USERNAME:$PASSWORD -X POST https://$CLUSTER_IP:9200/_plugins/_command_manager/commands -H 'accept: */*' -H 'Content-Type: application/json' -d "$BODY")
-
-# Check if the request was successful
-if [ $? -ne 0 ]; then
+# Send the POST request and check it is successful
+if ! curl -s -k -u "$USERNAME:$PASSWORD" -X POST "https://$CLUSTER_IP:9200/_plugins/_command_manager/commands" -H 'accept: */*' -H 'Content-Type: application/json' -d "$BODY"; then
     echo "Error: Failed to create command."
     exit 1
 fi
 echo "Command created successfully."
+# Sleep to avoid the next request to be sent before index is created
+sleep .5
 
 # Fetch the indices
 echo "Validating .commands index is created..."
-INDICES_RESPONSE=$(curl -s -k -u $USERNAME:$PASSWORD https://$CLUSTER_IP:9200/_cat/indices/.*?v)
+INDICES_RESPONSE=$(curl -s -k -u "$USERNAME:$PASSWORD" "https://$CLUSTER_IP:9200/_cat/indices/.*?v")
+# shellcheck disable=SC2181
 if [ $? -ne 0 ]; then
     echo "Error: Failed to fetch indices."
     exit 1
@@ -96,8 +96,9 @@ fi
 
 echo "Validate the command is created"
 # Validate the command was created
-SEARCH_RESPONSE=$(curl -s -k -u $USERNAME:$PASSWORD https://$CLUSTER_IP:9200/.commands/_search)
+SEARCH_RESPONSE=$(curl -s -k -u "$USERNAME:$PASSWORD" "https://$CLUSTER_IP:9200/.commands/_search")
 # Check if the request was successful
+# shellcheck disable=SC2181
 if [ $? -ne 0 ]; then
     echo "Error: Failed to search for the command."
     exit 1

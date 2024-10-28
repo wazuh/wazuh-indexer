@@ -20,7 +20,7 @@ usage() {
     echo "    -r, --revision    (Optional) The revision of the package. Defaults to '0' if not provided."
     echo "    -n, --name        (Optional) The package name. If not provided, it will be configured based on version and revision."
     echo
-    echo "Please ensure you have the GITHUB_TOKEN environment variable set to access the GitHub repository, and all dependencies installed: [${DEPENDENCIES[@]}]"
+    echo "Please ensure you have the GITHUB_TOKEN environment variable set to access the GitHub repository, and all the dependencies installed: " "${DEPENDENCIES[@]}"
     exit 1
 }
 
@@ -38,9 +38,9 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 # Validate all dependencies are installed
-for dep in ${DEPENDENCIES[@]}
+for dep in "${DEPENDENCIES[@]}"
 do
-  if ! command -v  ${dep} &> /dev/null
+  if ! command -v "${dep}" &> /dev/null
   then
     echo "Error: Dependency '$dep' is not installed. Please install $dep and try again." >&2
     exit 1
@@ -71,7 +71,7 @@ URL="https://api.github.com/repos/$REPO/actions/artifacts"
 # Detect OS and architecture
 if [ -f /etc/os-release ]; then
     . /etc/os-release
-    OS=$(echo $NAME | tr '[:upper:]' '[:lower:]')
+    OS=$(echo "$NAME" | tr '[:upper:]' '[:lower:]')
 else
     echo "Unsupported OS."
     exit 1

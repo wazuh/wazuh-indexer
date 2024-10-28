@@ -103,6 +103,7 @@ echo "Fetching artifacts list..."
 RESPONSE=$(curl -s -L -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GITHUB_TOKEN" -H "X-GitHub-Api-Version: 2022-11-28" "$URL?name=$PKG_NAME")
 
 # Check if the curl command was successful
+# shellcheck disable=SC2181
 if [ $? -ne 0 ]; then
     echo "Error: Failed to fetch artifacts."
     exit 1

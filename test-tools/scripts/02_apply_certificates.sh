@@ -92,9 +92,8 @@ CERT_DIR="/etc/wazuh-indexer/certs"
 # Extract certificates
 echo "Creating certificates directory and extracting certificates..."
 mkdir -p $CERT_DIR
-tar -xf "$PATH_TO_CERTS" -C "$CERT_DIR" "./$CURRENT_NODE.pem" "./$CURRENT_NODE-key.pem" ./admin.pem ./admin-key.pem ./root-ca.pem
 
-if [ $? -ne 0 ]; then
+if ! tar -xf "$PATH_TO_CERTS" -C "$CERT_DIR" "./$CURRENT_NODE.pem" "./$CURRENT_NODE-key.pem" ./admin.pem ./admin-key.pem ./root-ca.pem ; then
     echo "Error extracting certificates."
     exit 1
 fi

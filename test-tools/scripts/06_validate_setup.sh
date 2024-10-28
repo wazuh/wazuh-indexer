@@ -98,6 +98,7 @@ fi
 echo "Fetching indices from Wazuh indexer cluster..."
 INDICES_RESPONSE=$(curl -s -k -u "$USER:$PASSWORD" "https://$CLUSTER_IP:9200/_cat/indices?v")
 # Check if the request was successful
+# shellcheck disable=SC2181
 if [ $? -ne 0 ]; then
     echo "Error: Failed to fetch indices."
     exit 1

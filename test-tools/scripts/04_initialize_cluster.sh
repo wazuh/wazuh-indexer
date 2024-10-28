@@ -63,6 +63,7 @@ echo "Checking cluster status..."
 RESPONSE=$(curl -s -k -u "$USER:$PASSWORD" "https://$CLUSTER_IP:9200")
 
 # Check if the request was successful
+# shellcheck disable=SC2181
 if [ $? -ne 0 ]; then
     echo "Error: Failed to connect to cluster."
     exit 1
@@ -81,6 +82,7 @@ echo "  Version Number: $VERSION_NUMBER"
 echo "Verifying the Wazuh indexer nodes..."
 NODES_RESPONSE=$(curl -s -k -u "$USER:$PASSWORD" "https://$CLUSTER_IP:9200/_cat/nodes?v")
 
+# shellcheck disable=SC2181
 if [ $? -ne 0 ]; then
     echo "Error: Failed to retrieve Wazuh indexer nodes."
     exit 1

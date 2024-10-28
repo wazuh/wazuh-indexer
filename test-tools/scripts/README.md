@@ -2,7 +2,7 @@
 
 This is a collection of scripts aimed to facilitate the validation of the wazuh-indexer packages generated on GHA.
 
-Even this scripts can be executed in mostly any linux environment, we expect it to be used alongside the
+Even if these scripts can be executed in almost any Linux environment, we expect it to be used alongside the
 Vagrant environment defined in the `test-tools`
 
 ### Validation flow

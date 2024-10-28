@@ -102,7 +102,7 @@ esac
 
 # Download the package
 echo "Downloading wazuh-indexer package from GitHub artifactory..."
-echo "(It could take a couple minutes)"
+echo "(It could take a couple of minutes)"
 curl -L -H "Accept: application/vnd.github+json" \
     -H "Authorization: Bearer $GITHUB_TOKEN" \
     -H "X-GitHub-Api-Version: 2022-11-28" \

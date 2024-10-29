@@ -152,7 +152,7 @@ jobs:
         working-directory: ./plugins/${{ matrix.plugins }}
 
       - name: Save commit hash
-        run: echo "plugins_hash=$(git rev-parse --short HEAD) >> "$GITHUB_OUTPUT"
+        run: echo "plugins_hash=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -190,7 +190,7 @@ jobs:
       - run: ls -lR build/distributions
 
       - name: Save commit hash
-        run: echo "reporting_hash=$(git rev-parse --short HEAD) >> "$GITHUB_OUTPUT"
+        run: echo "reporting_hash=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

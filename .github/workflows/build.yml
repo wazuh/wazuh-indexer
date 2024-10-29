@@ -151,6 +151,9 @@ jobs:
       - run: ls -lR build/distributions
         working-directory: ./plugins/${{ matrix.plugins }}
 
+      - name: Save commit hash
+        run: echo "plugins_hash=$(git rev-parse --short HEAD) >> "$GITHUB_OUTPUT"
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -185,6 +188,9 @@ jobs:
         run: ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }}
 
       - run: ls -lR build/distributions
+
+      - name: Save commit hash
+        run: echo "reporting_hash=$(git rev-parse --short HEAD) >> "$GITHUB_OUTPUT"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -240,6 +246,8 @@ jobs:
 
       - name: Run `baptizer.sh`
         run: |
+          PLUGINS_HASH=${{ steps.build-wazuh-plugins.outputs.plugins_hash }} \
+          REPORTING_HASH=${{ steps.build-reporting-plugin.outputs.reporting_hash }} \
           name=$(bash build-scripts/baptizer.sh \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }}  \

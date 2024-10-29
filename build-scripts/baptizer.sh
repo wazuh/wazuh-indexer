@@ -122,11 +122,17 @@ function get_release_name() {
 # Naming convention for pre-release packages
 # ====
 function get_devel_name() {
+    PREFIX=wazuh-indexer
+    COMMIT_HASH=$GIT_COMMIT
+    # Add -min to the prefix if corresponds
     if "$IS_MIN"; then
-        PACKAGE_NAME=wazuh-indexer-min_"$VERSION"-"$REVISION"_"$SUFFIX"_"$GIT_COMMIT"."$EXT"
-    else
-        PACKAGE_NAME=wazuh-indexer_"$VERSION"-"$REVISION"_"$SUFFIX"_"$GIT_COMMIT"."$EXT"
+        PREFIX="$PREFIX"-min
     fi
+    # Generate composed commit hash
+    if "$PLUGINS_HASH" && "$REPORTING_HASH"; then
+        COMMIT_HASH="$GIT_COMMIT"-"$PLUGINS_HASH"-"$REPORTING_HASH"
+    fi
+    PACKAGE_NAME="$PREFIX"_"$VERSION"-"$REVISION"_"$SUFFIX"_"$COMMIT_HASH"."$EXT"
 }
 
 # ====

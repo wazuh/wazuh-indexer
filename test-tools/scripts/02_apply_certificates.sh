@@ -100,11 +100,11 @@ fi
 
 # Move and set permissions for certificates
 echo "Moving and setting permissions for certificates..."
-mv -n "$CERT_DIR/$CURRENT_NODE.pem" $CERT_DIR/indexer.pem
-mv -n "$CERT_DIR/$CURRENT_NODE-key.pem" $CERT_DIR/indexer-key.pem
-chmod 500 $CERT_DIR
-chmod 400 $CERT_DIR/*
-chown -R wazuh-indexer:wazuh-indexer $CERT_DIR
+mv -n "$CERT_DIR/$CURRENT_NODE.pem" "$CERT_DIR/indexer.pem"
+mv -n "$CERT_DIR/$CURRENT_NODE-key.pem" "$CERT_DIR/indexer-key.pem"
+chmod 500 "$CERT_DIR"
+chmod 400 "$CERT_DIR"/*
+chown -R wazuh-indexer:wazuh-indexer "$CERT_DIR"
 
 # shellcheck disable=SC2181
 if [ $? -eq 0 ]; then

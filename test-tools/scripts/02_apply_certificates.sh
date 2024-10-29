@@ -93,18 +93,18 @@ CERT_DIR="/etc/wazuh-indexer/certs"
 echo "Creating certificates directory and extracting certificates..."
 mkdir -p $CERT_DIR
 
-if ! tar -xf "$PATH_TO_CERTS" -C "$CERT_DIR" "./$CURRENT_NODE.pem" "./$CURRENT_NODE-key.pem" ./admin.pem ./admin-key.pem ./root-ca.pem ; then
+if ! tar -xf "$PATH_TO_CERTS" -C "$CERT_DIR" "./$CURRENT_NODE.pem" "./$CURRENT_NODE-key.pem" "./admin.pem" "./admin-key.pem" "./root-ca.pem" ; then
     echo "Error extracting certificates."
     exit 1
 fi
 
 # Move and set permissions for certificates
 echo "Moving and setting permissions for certificates..."
-mv -n "$CERT_DIR/$CURRENT_NODE.pem" "$CERT_DIR/indexer.pem"
-mv -n "$CERT_DIR/$CURRENT_NODE-key.pem" "$CERT_DIR/indexer-key.pem"
-chmod 500 "$CERT_DIR"
-chmod 400 "$CERT_DIR/*"
-chown -R wazuh-indexer:wazuh-indexer "$CERT_DIR"
+mv -n "$CERT_DIR/$CURRENT_NODE.pem" $CERT_DIR/indexer.pem
+mv -n "$CERT_DIR/$CURRENT_NODE-key.pem" $CERT_DIR/indexer-key.pem
+chmod 500 $CERT_DIR
+chmod 400 $CERT_DIR/*
+chown -R wazuh-indexer:wazuh-indexer $CERT_DIR
 
 # shellcheck disable=SC2181
 if [ $? -eq 0 ]; then

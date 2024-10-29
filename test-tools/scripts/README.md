@@ -5,6 +5,10 @@ This is a collection of scripts aimed to facilitate the validation of the wazuh-
 Even if these scripts can be executed in almost any Linux environment, we expect it to be used alongside the
 Vagrant environment defined in the `test-tools`, using the scripts inside the VMs to facilitate the validation steps.
 
+## GitHub token requirements
+
+Create a personal access token for GitHub with at least `read:packages` permissions.
+
 ### Validation flow
 
 1. Check the package artifact is generated (run on each node)

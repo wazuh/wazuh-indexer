@@ -152,7 +152,7 @@ jobs:
         working-directory: ./plugins/${{ matrix.plugins }}
 
       - name: Save commit hash
-        run: echo "plugins_hash=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+        run: echo "plugins_hash=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -190,7 +190,7 @@ jobs:
       - run: ls -lR build/distributions
 
       - name: Save commit hash
-        run: echo "reporting_hash=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+        run: echo "reporting_hash=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -246,8 +246,8 @@ jobs:
 
       - name: Run `baptizer.sh`
         run: |
-          PLUGINS_HASH=${{ steps.build-wazuh-plugins.outputs.plugins_hash }} \
-          REPORTING_HASH=${{ steps.build-reporting-plugin.outputs.reporting_hash }} \
+          PLUGINS_HASH=${{ env.plugins_hash }} \
+          REPORTING_HASH=${{ env.reporting_hash }} \
           name=$(bash build-scripts/baptizer.sh \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }}  \

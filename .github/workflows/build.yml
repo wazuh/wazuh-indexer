@@ -245,6 +245,8 @@ jobs:
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }}  \
             -r ${{ inputs.revision }} \
+            -l ${{ needs.build-wazuh-plugins.outputs.hash }} \
+            -e ${{ needs.build-reporting-plugin.outputs.hash }} \
             ${{ inputs.is_stage && '-x' || '' }} \
           )
           echo "name=$name" >> $GITHUB_OUTPUT
@@ -253,12 +255,12 @@ jobs:
       - name: Run `baptizer.sh`
         # As parameters
         run: |
-          PLUGINS_HASH=${{ needs.build-wazuh-plugins.outputs.hash }} \
-          REPORTING_HASH=${{ needs.build-reporting-plugin.outputs.hash }} \
           name=$(bash build-scripts/baptizer.sh \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }}  \
             -r ${{ inputs.revision }} \
+            -l ${{ needs.build-wazuh-plugins.outputs.hash }} \
+            -e ${{ needs.build-reporting-plugin.outputs.hash }} \
             ${{ inputs.is_stage && '-x' || '' }} \
           )
           echo "name=$name" >> $GITHUB_OUTPUT

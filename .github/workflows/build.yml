@@ -126,6 +126,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       plugin_name: wazuh-indexer-${{ matrix.plugins }}
+    outputs:
+      hash: ${{ steps.save-hash.outputs.hash }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -152,7 +154,8 @@ jobs:
         working-directory: ./plugins/${{ matrix.plugins }}
 
       - name: Save commit hash
-        run: echo "plugins_hash=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
+        id: save-hash
+        run: echo "hash=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -164,6 +167,8 @@ jobs:
   build-reporting-plugin:
     if: ${{ inputs.reporting_plugin_ref != '' }}
     runs-on: ubuntu-latest
+    outputs:
+      hash: ${{ steps.save-hash.outputs.hash }}
     env:
       plugin_name: wazuh-indexer-reports-scheduler
     steps:
@@ -190,7 +195,8 @@ jobs:
       - run: ls -lR build/distributions
 
       - name: Save commit hash
-        run: echo "reporting_hash=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
+        id: save-hash
+        run: echo "hash=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -245,9 +251,10 @@ jobs:
         id: min_package
 
       - name: Run `baptizer.sh`
+        # As parameters
         run: |
-          PLUGINS_HASH=${{ env.plugins_hash }} \
-          REPORTING_HASH=${{ env.reporting_hash }} \
+          PLUGINS_HASH=${{build-wazuh-plugins.outputs.hash }} \
+          REPORTING_HASH=${{ build-reporting-plugin.outputs.hash }} \
           name=$(bash build-scripts/baptizer.sh \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }}  \

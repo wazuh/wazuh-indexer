@@ -14,9 +14,9 @@ usage() {
     echo
     echo "Parameters:"
     echo "    -p, --path-to-certs     Path to the generated Wazuh certificates tar"
-    echo "    -c, --current-node      Name of the current node"
+    echo "    -n, --current-node      Name of the current node"
     echo "    -s, --second-node       (Optional) Name of the second node"
-    echo "    -cip, --current-node-ip (Optional) IP address of the current node. Default: CURRENT_NODE"
+    echo "    -nip, --current-node-ip (Optional) IP address of the current node. Default: CURRENT_NODE"
     echo "    -sip, --second-node-ip  (Optional) IP address of the second node. Default: SECOND_NODE"
     echo
     echo "Please ensure you have all the dependencies installed: " "${DEPENDENCIES[@]}"
@@ -27,9 +27,9 @@ usage() {
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --path-to-certs|-p) PATH_TO_CERTS="$2"; shift ;;
-        --current-node|-c) CURRENT_NODE="$2"; shift ;;
+        --current-node|-n) CURRENT_NODE="$2"; shift ;;
         --second-node|-s) SECOND_NODE="$2"; shift ;;
-        --current-node-ip|-cip) CURRENT_NODE_IP="$2"; shift ;;
+        --current-node-ip|-nip) CURRENT_NODE_IP="$2"; shift ;;
         --second-node-ip|-sip) SECOND_NODE_IP="$2"; shift ;;
         -h|--help) usage ;;
         *) echo "Unknown parameter passed: $1"; usage ;;

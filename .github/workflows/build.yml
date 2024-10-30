@@ -11,10 +11,6 @@ on:
         description: "Revision"
         type: string
         default: "0"
-      upload:
-        description: "Upload ?"
-        type: boolean
-        default: false
       is_stage:
         description: "Is stage ?"
         type: boolean
@@ -302,39 +298,27 @@ jobs:
           if-no-files-found: error
 
       - name: Set up AWS CLI
-        if: ${{ inputs.upload }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY }}
           aws-secret-access-key: ${{ secrets.CI_INTERNAL_DEVELOPMENT_BUCKET_USER_SECRET_KEY }}
           aws-region: ${{ secrets.CI_AWS_REGION }}
 
-      - name: Check if package exists on S3
-        if: ${{ inputs.upload }}
-        run: |
-          dest="s3://packages-dev.internal.wazuh.com/development/wazuh/5.x/main/packages/"
-          s3uri="${dest}${{ steps.package.outputs.name }}"
-          if aws s3 ls "$s3uri" > /dev/null 2>&1; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
-          fi
-        id: package_in_s3
-
       - name: Upload package to S3
-        if: ${{ inputs.upload &&  steps.package_in_s3.outputs.exists == 'false' }}
         run: |
           src="artifacts/dist/${{ steps.package.outputs.name }}"
           dest="s3://packages-dev.internal.wazuh.com/development/wazuh/5.x/main/packages/"
           aws s3 cp "$src" "$dest"
           s3uri="${dest}${{ steps.package.outputs.name }}"
-          echo "::notice::"S3 URI: ${s3uri}"
+          echo "::notice::S3 URI: ${s3uri}"
+          echo "**Package S3 URI:** ${s3uri}" >> $GITHUB_STEP_SUMMARY
 
-      - name: Upload checksum to S3
+      - name: Upload checksum to S3sha512
         if: ${{ inputs.upload && inputs.checksum }}
         run: |
           src="artifacts/dist/${{ steps.package.outputs.name }}.sha512"
           dest="s3://packages-dev.internal.wazuh.com/development/wazuh/5.x/main/packages/"
           aws s3 cp "$src" "$dest"
           s3uri="${dest}${{ steps.package.outputs.name }}.sha512"
-          echo ""::notice::S3 sha512 URI: ${s3uri}"
+          echo "::notice::S3 sha512 URI: ${s3uri}"
+          echo "**Package checksum S3 URI:** ${s3uri}" >> $GITHUB_STEP_SUMMARY

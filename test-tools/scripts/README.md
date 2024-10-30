@@ -11,13 +11,21 @@ Create a personal access token for GitHub with at least `read:packages` permissi
 
 ### Validation flow
 
+Run all tests at once:
+
+```console
+sudo bash 00_run.sh
+```
+
+If you prefer, you can run each script individually.
+
 1. Check the artifact was created and package can be downloaded and installed (run on each node)
    ```bash
     GITHUB_TOKEN=<GH_TOKEN> bash 01_download_and_install_package.sh -id <RUN_ID> -n <PACKAGE_NAME>
     ```
 2. Check the service can be started`
    ```bash
-    bash 02_apply_certificates.sh -p <PATH_TO_CERTS.TAR> -n <CURRENT_NODE_NAME> -nip <NODE_IP> -s <OTHER_NODE_NAME> -sip <OTHER_NODE_IP>
+    bash 02_apply_certificates.sh -p <PATH_TO_CERTS.TAR> -n <NAME_NODE_1> -nip <IP_NODE_1> [-s <NAME_NODE_2> -sip <IP_NODE_2>]
     ```
     ```bash
     bash 03_manage_indexer_service.sh -a start
@@ -25,19 +33,19 @@ Create a personal access token for GitHub with at least `read:packages` permissi
     > You can also test `restart` and `stop`
 3. Check the cluster can be initialized
     ```bash
-    bash 04_initialize_cluster.sh -ip <CLUSTER_IP>
+    bash 04_initialize_cluster.sh 
     ```
 4. Check all the plugins are installed
     ```bash
-    bash 05_validate_installed_plugins.sh -ip <CLUSTER_IP> -n <NODE_1_NAME> -n <NODE_2_NAME>
+    bash 05_validate_installed_plugins.sh -n <NODE_1_NAME> [-n <NODE_2_NAME>]
     ```
 5. Check the setup plugin configured the index-patterns correctly
     ```bash
-    bash 06_validate_setup.sh -ip <CLUSTER_IP>
+    bash 06_validate_setup.sh
     ```
 6. Check the command manager plugin works correctly
     ```bash
-    bash 07_validate_command_manager.sh -ip<CLUSTER_IP>
+    bash 07_validate_command_manager.sh
     ```
 7. Check wazuh-indexer can be uninstalled
     ```bash

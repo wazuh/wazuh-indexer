@@ -9,12 +9,12 @@ DEPENDENCIES=(curl jq)
 
 # Function to display usage help
 usage() {
-    echo "Usage: $0 -c <CLUSTER_IP> -u <USER> -p <PASSWORD> -n <NODE_1> -n <NODE_2> [...]"
+    echo "Usage: $0 [-ip <CLUSTER_IP> -u <USER> -p <PASSWORD>] -n <NODE_1> -n <NODE_2> [...]"
     echo
     echo "Parameters:"
-    echo "  -ip, --cluster-ip  IP address of the cluster (default: localhost)"
-    echo "  -u, --user         Username for authentication (default: admin)"
-    echo "  -p, --password     Password for authentication (default: admin)"
+    echo "  -ip, --cluster-ip  (Optional) IP address of the cluster (default: localhost)"
+    echo "  -u, --user         (Optional) Username for authentication (default: admin)"
+    echo "  -p, --password     (Optional) Password for authentication (default: admin)"
     echo "  -n, --node         Name of the nodes (add as many as needed)"
     echo
     echo "Please ensure you have all the dependencies installed: " "${DEPENDENCIES[@]}"

@@ -10,7 +10,7 @@ DEPENDENCIES=(curl jq)
 
 # Function to display usage help
 usage() {
-    echo "Usage: $0 -c <CLUSTER_IP> -u <USER> -p <PASSWORD>"
+    echo "Usage: $0 [-ip <CLUSTER_IP>] [-u <USER>] [-p <PASSWORD>]"
     echo
     echo "Parameters:"
     echo "  -ip, --cluster-ip  (Optional) IP address of the cluster. Default: localhost"

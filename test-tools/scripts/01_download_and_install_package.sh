@@ -99,53 +99,58 @@ case "$OS" in
         ;;
 esac
 
-# Fetch the list of artifacts
-echo "Fetching artifacts list..."
-RUN_URL="https://api.github.com/repos/${REPO}/actions/artifacts"
-RESPONSE=$(curl -s -L -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GITHUB_TOKEN" -H "X-GitHub-Api-Version: 2022-11-28" "$RUN_URL?name=$PKG_NAME")
+# Check if the package is already present
+if [ -f "$PKG_NAME" ]; then
+    echo "Package $PKG_NAME found locally. Reusing existing package."
+else
+    # Fetch the list of artifacts
+    echo "Fetching artifacts list..."
+    RUN_URL="https://api.github.com/repos/${REPO}/actions/artifacts"
+    RESPONSE=$(curl -s -L -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GITHUB_TOKEN" -H "X-GitHub-Api-Version: 2022-11-28" "$RUN_URL?name=$PKG_NAME")
 
-# Check if the curl command was successful
-# shellcheck disable=SC2181
-if [ $? -ne 0 ]; then
-    echo "Error: Failed to fetch artifacts."
-    exit 1
+    # Check if the curl command was successful
+    if [ $? -ne 0 ]; then
+        echo "Error: Failed to fetch artifacts."
+        exit 1
+    fi
+
+    # Check if the artifact from the specified workflow run ID exists
+    echo "Checking ${PKG_NAME} package is generated for workflow run ${RUN_ID}"
+    ARTIFACT=$(echo "$RESPONSE" | jq -e ".artifacts[] | select(.workflow_run.id == $RUN_ID)")
+
+    if [ -z "$ARTIFACT" ]; then
+        echo "Error: Wazuh indexer package not found."
+        exit 1
+    fi
+
+    ARTIFACT_ID=$(echo "$ARTIFACT" | jq -r '.id')
+    echo "Wazuh indexer artifact detected. Artifact ID: $ARTIFACT_ID"
+
+    # Download the package
+    ARTIFACT_URL="https://api.github.com/repos/${REPO}/actions/artifacts/${ARTIFACT_ID}/zip"
+    echo "Downloading wazuh-indexer package from GitHub artifactory..."
+    echo "(It could take a couple of minutes)"
+
+    if ! curl -L -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "$ARTIFACT_URL" -o package.zip > /dev/null 2>&1; then
+        echo "Error downloading package."
+        exit 1
+    fi
+    echo "Package downloaded successfully"
+
+    # Unzip the package
+    echo "Decompressing wazuh-indexer package..."
+    unzip ./package.zip
+    rm package.zip
+
+    if [ $? -ne 0 ]; then
+        echo "Error unzipping package."
+        exit 1
+    fi
+    echo "Package decompressed"
 fi
-
-# Check if the artifact from the specified workflow run ID exists
-echo "Checking ${PKG_NAME} package is generated for workflow run ${RUN_ID}"
-ARTIFACT=$(echo "$RESPONSE" | jq -e ".artifacts[] | select(.workflow_run.id == $RUN_ID)")
-
-if [ -z "$ARTIFACT" ]; then
-    echo "Error: Wazuh indexer package not found."
-fi
-
-ARTIFACT_ID=$(echo "$ARTIFACT" | jq -r '.id')
-echo "Wazuh indexer artifact detected. Artifact ID: $ARTIFACT_ID"
-
-# Download the package
-ARTIFACT_URL="https://api.github.com/repos/${REPO}/actions/artifacts/${ARTIFACT_ID}/zip"
-echo "Downloading wazuh-indexer package from GitHub artifactory..."
-echo "(It could take a couple of minutes)"
-
-if ! curl -L -H "Accept: application/vnd.github+json" \
-         -H "Authorization: Bearer $GITHUB_TOKEN" \
-         -H "X-GitHub-Api-Version: 2022-11-28" \
-         "$ARTIFACT_URL" -o package.zip > /dev/null 2>&1; then
-    echo "Error downloading package."
-    exit 1
-fi
-echo "Package downloaded successfully"
-
-# Unzip the package
-echo "Decompressing wazuh-indexer package..."
-unzip ./package.zip
-rm package.zip
-
-if [ $? -ne 0 ]; then
-    echo "Error unzipping package."
-    exit 1
-fi
-echo "Package decompressed"
 
 # Install the package
 echo "Installing wazuh-indexer package..."
@@ -158,7 +163,6 @@ case "$PKG_FORMAT" in
         ;;
 esac
 
-# shellcheck disable=SC2181
 if [ $? -ne 0 ]; then
     echo "Error installing package."
     exit 1

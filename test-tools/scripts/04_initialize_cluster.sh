@@ -10,7 +10,7 @@ DEPENDENCIES=(curl jq)
 
 # Function to display usage help
 usage() {
-    echo "Usage: $0 -c <CLUSTER_IP> -u <USER> -p <PASSWORD>"
+    echo "Usage: $0 [-ip <CLUSTER_IP>] [-u <USER>] [-p <PASSWORD>]"
     echo
     echo "Parameters:"
     echo "  -ip, --cluster-ip  (Optional) IP address of the cluster. Default: localhost"
@@ -50,7 +50,7 @@ done
 
 # Initialize cluster
 echo "Initializing wazuh-indexer cluster..."
-bash /usr/share/wazuh-indexer/bin/indexer-security-init.sh &> /dev/null
+bash /usr/share/wazuh-indexer/bin/indexer-security-init.sh
 
 # Check if the initialization was successful
 # shellcheck disable=SC2181

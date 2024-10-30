@@ -65,7 +65,6 @@ cp $CONFIG_FILE $BACKUP_FILE
 
 # Replace values in the config file
 echo "Updating configuration..."
-sed -i "s/network\.host: \"0\.0\.0\.0\"/network.host: \"${CURRENT_NODE_IP}\"/" $CONFIG_FILE
 sed -i "s/node\.name: \"node-1\"/node.name: \"${CURRENT_NODE}\"/" $CONFIG_FILE
 
 if [ -n "$SECOND_NODE" ]; then

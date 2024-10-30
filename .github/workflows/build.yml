@@ -309,14 +309,26 @@ jobs:
           aws-secret-access-key: ${{ secrets.CI_INTERNAL_DEVELOPMENT_BUCKET_USER_SECRET_KEY }}
           aws-region: ${{ secrets.CI_AWS_REGION }}
 
-      - name: Upload package to S3
+      - name: Check if package exists on S3
         if: ${{ inputs.upload }}
+        run: |
+          dest="s3://packages-dev.internal.wazuh.com/development/wazuh/5.x/main/packages/"
+          s3uri="${dest}${{ steps.package.outputs.name }}"
+          if aws s3 ls "$s3uri" > /dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+        id: package_in_s3
+
+      - name: Upload package to S3
+        if: ${{ inputs.upload &&  steps.package_in_s3.outputs.exists == 'false' }}
         run: |
           src="artifacts/dist/${{ steps.package.outputs.name }}"
           dest="s3://packages-dev.internal.wazuh.com/development/wazuh/5.x/main/packages/"
           aws s3 cp "$src" "$dest"
           s3uri="${dest}${{ steps.package.outputs.name }}"
-          echo "S3 URI: ${s3uri}"
+          echo "::notice::"S3 URI: ${s3uri}"
 
       - name: Upload checksum to S3
         if: ${{ inputs.upload && inputs.checksum }}
@@ -325,4 +337,4 @@ jobs:
           dest="s3://packages-dev.internal.wazuh.com/development/wazuh/5.x/main/packages/"
           aws s3 cp "$src" "$dest"
           s3uri="${dest}${{ steps.package.outputs.name }}.sha512"
-          echo "S3 sha512 URI: ${s3uri}"
+          echo ""::notice::S3 sha512 URI: ${s3uri}"

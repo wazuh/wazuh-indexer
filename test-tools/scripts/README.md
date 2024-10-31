@@ -24,7 +24,6 @@ sudo bash 00_run.sh
 
 #### Multi node cluster
 
-In this case, some steps must be executed manually on the secondary node.
 > This section assumes you are using the `node-1` and `node-2` Vagrant VMs
 
 1. On the `node-2` VM install and prepare the `wazuh-indexer` component
@@ -37,7 +36,7 @@ In this case, some steps must be executed manually on the secondary node.
     ```bash
     sudo bash 03_manage_indexer_service.sh -a start
     ```
-2. Execute the _all-at-once_ utility
+2. On the `node-1` VM execute the _all-at-once_ utility
     ```bash
     sudo bash 00_run.sh
     ```

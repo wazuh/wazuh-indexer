@@ -126,6 +126,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       plugin_name: wazuh-indexer-${{ matrix.plugins }}
+    outputs:
+      hash: ${{ steps.save-hash.outputs.hash }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -151,6 +153,10 @@ jobs:
       - run: ls -lR build/distributions
         working-directory: ./plugins/${{ matrix.plugins }}
 
+      - name: Save commit hash
+        id: save-hash
+        run: echo "hash=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -161,6 +167,8 @@ jobs:
   build-reporting-plugin:
     if: ${{ inputs.reporting_plugin_ref != '' }}
     runs-on: ubuntu-latest
+    outputs:
+      hash: ${{ steps.save-hash.outputs.hash }}
     env:
       plugin_name: wazuh-indexer-reports-scheduler
     steps:
@@ -185,6 +193,10 @@ jobs:
         run: ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }}
 
       - run: ls -lR build/distributions
+
+      - name: Save commit hash
+        id: save-hash
+        run: echo "hash=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -233,6 +245,8 @@ jobs:
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }}  \
             -r ${{ inputs.revision }} \
+            -l ${{ needs.build-wazuh-plugins.outputs.hash }} \
+            -e ${{ needs.build-reporting-plugin.outputs.hash }} \
             ${{ inputs.is_stage && '-x' || '' }} \
           )
           echo "name=$name" >> $GITHUB_OUTPUT
@@ -244,6 +258,8 @@ jobs:
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }}  \
             -r ${{ inputs.revision }} \
+            -l ${{ needs.build-wazuh-plugins.outputs.hash }} \
+            -e ${{ needs.build-reporting-plugin.outputs.hash }} \
             ${{ inputs.is_stage && '-x' || '' }} \
           )
           echo "name=$name" >> $GITHUB_OUTPUT
@@ -299,7 +315,7 @@ jobs:
           dest="s3://packages-dev.internal.wazuh.com/development/wazuh/5.x/main/packages/"
           aws s3 cp "$src" "$dest"
           s3uri="${dest}${{ steps.package.outputs.name }}"
-          echo "S3 URI: ${s3uri}"
+          echo "::notice::S3 URI: ${s3uri}"
 
       - name: Upload checksum to S3
         if: ${{ inputs.upload && inputs.checksum }}
@@ -308,4 +324,4 @@ jobs:
           dest="s3://packages-dev.internal.wazuh.com/development/wazuh/5.x/main/packages/"
           aws s3 cp "$src" "$dest"
           s3uri="${dest}${{ steps.package.outputs.name }}.sha512"
-          echo "S3 sha512 URI: ${s3uri}"
+          echo "::notice::S3 sha512 URI: ${s3uri}"

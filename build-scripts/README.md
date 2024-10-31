@@ -2,7 +2,7 @@
 
 > [!CAUTION]
 >
-> Be aware that there might be some problems while following the steps in this guide due to outdated information. 
+> Be aware that there might be some problems while following the steps in this guide due to outdated information.
 > This document is pending a review. Let us know if you find any issues.
 
 The packages' generation process consists on 2 steps:
@@ -235,7 +235,7 @@ them, as well as their inputs and outputs.
 scripts:
   - file: build.sh
     description: |
-      generates a distribution package by running the appropiate Gradle task 
+      generates a distribution package by running the appropiate Gradle task
       depending on the parameters.
     inputs:
       architecture: [x64, arm64] # Note: we only build x86_64 packages
@@ -246,7 +246,7 @@ scripts:
 
   - file: assemble.sh
     description: |
-      bundles the wazuh-indexer package generated in by build.sh with plugins, 
+      bundles the wazuh-indexer package generated in by build.sh with plugins,
       configuration files and demo certificates (certificates yet to come).
     inputs:
       architecture: [x64, arm64] # Note: we only build x86_64 packages
@@ -264,6 +264,8 @@ scripts:
       architecture: [x64, arm64] # Note: we only build x86_64 packages
       distribution: [tar, deb, rpm]
       revision: revision number. 0 by default.
+      plugins_hash: Commit hash of the `wazuh-indexer-plugins` repository.
+      reporting_hash: Commit hash of the `wazuh-indexer-reporting` repository.
       is_release: if set, uses release naming convention.
       is_min: if set, the package name will start by `wazuh-indexer-min`. Used on the build stage.
     outputs:

@@ -253,7 +253,6 @@ jobs:
         id: min_package
 
       - name: Run `baptizer.sh`
-        # As parameters
         run: |
           name=$(bash build-scripts/baptizer.sh \
             -a ${{ matrix.architecture }} \

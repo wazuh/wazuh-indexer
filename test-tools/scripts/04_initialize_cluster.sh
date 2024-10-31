@@ -61,6 +61,7 @@ fi
 
 # Check the Wazuh indexer status
 echo "Checking cluster status..."
+sleep 2
 RESPONSE=$(curl -s -k -u "$USER:$PASSWORD" "https://$CLUSTER_IP:9200")
 
 # Check if the request was successful

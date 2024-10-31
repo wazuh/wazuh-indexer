@@ -50,7 +50,7 @@ done
 
 # Initialize cluster
 echo "Initializing wazuh-indexer cluster..."
-bash /usr/share/wazuh-indexer/bin/indexer-security-init.sh
+bash /usr/share/wazuh-indexer/bin/indexer-security-init.sh > /dev/null 2>&1
 
 # Check if the initialization was successful
 # shellcheck disable=SC2181

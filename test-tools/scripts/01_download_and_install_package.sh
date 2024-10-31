@@ -145,6 +145,7 @@ else
     unzip ./package.zip
     rm package.zip
 
+    # shellcheck disable=SC2181
     if [ $? -ne 0 ]; then
         echo "Error unzipping package."
         exit 1
@@ -156,13 +157,14 @@ fi
 echo "Installing wazuh-indexer package..."
 case "$PKG_FORMAT" in
     "deb")
-        sudo dpkg -i "$PKG_NAME"
+        sudo dpkg -i "$PKG_NAME" > /dev/null 2>&1
         ;;
     "rpm")
-        sudo rpm -i "$PKG_NAME"
+        sudo rpm -i "$PKG_NAME" > /dev/null 2>&1
         ;;
 esac
 
+# shellcheck disable=SC2181
 if [ $? -ne 0 ]; then
     echo "Error installing package."
     exit 1

@@ -48,9 +48,9 @@ fi
 case $ACTION in
     start)
         echo "Starting wazuh-indexer service..."
-        systemctl daemon-reload
-        systemctl enable wazuh-indexer
-        systemctl start wazuh-indexer
+        systemctl daemon-reload > /dev/null 2>&1
+        systemctl enable wazuh-indexer > /dev/null 2>&1
+        systemctl start wazuh-indexer > /dev/null 2>&1
         check_service_is_running
         ;;
     stop)

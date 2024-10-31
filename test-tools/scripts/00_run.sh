@@ -2,29 +2,34 @@
 
 # Prompt the user for GitHub Token and artifact details securely
 if [ -z "$GITHUB_TOKEN" ]; then
-  read -sp 'Enter GitHub Token: ' GITHUB_TOKEN
+  read -rsp 'Enter GitHub Token: ' GITHUB_TOKEN
   echo ""
 fi
 export GITHUB_TOKEN
 
-if [ -z "$ARTIFACT_ID" ]; then
-  read -p 'Enter Artifact ID: ' ARTIFACT_ID
+if [ -z "$RUN_ID" ]; then
+  read -rp 'Enter Action Run ID: ' RUN_ID
 fi
-export ARTIFACT_ID
+export RUN_ID
 
 if [ -z "$ARTIFACT_NAME" ]; then
-  read -p 'Enter Artifact Name: ' ARTIFACT_NAME
+  read -rp 'Enter Artifact Name: ' ARTIFACT_NAME
 fi
 export ARTIFACT_NAME
 
 # Define environment variables with default values if not provided
-export NODE_1=${NODE_1:-"node-1"}
-export IP_NODE_1=${IP_NODE_1:-"192.168.56.10"}
+read -rp "Enter current node name (default: 'node-1'): " NODE_NAME
+export NODE_NAME=${NODE_NAME:-"node-1"}
+
+IP_ADDRESS=$(ip addr show eth1 | grep 'inet ' | awk '{print $2}' | cut -d/ -f1)
+read -rp "Enter IP of current node (default: '$IP_ADDRESS'): " NODE_IP
+export NODE_IP=${NODE_IP:-$IP_ADDRESS}
+
 export CERTS_PATH=${CERTS_PATH:-"/home/vagrant/wazuh-certificates.tar"}
 
 # Optional variables for Node 2
-read -p 'Enter Node 2 (optional): ' NODE_2
-read -p 'Enter IP of Node 2 (optional): ' IP_NODE_2
+read -rp 'Enter secondary Node name (optional): ' NODE_2
+read -rp 'Enter IP of secondary Node (optional): ' IP_NODE_2
 
 # Logging function with timestamps
 log() {
@@ -35,8 +40,7 @@ log() {
 run_command() {
   local cmd=$1
   log "Executing: $cmd"
-  eval "$cmd"
-  if [ $? -ne 0 ]; then
+  if ! eval "$cmd > /dev/null 2>&1"; then
     log "Error executing: $cmd"
     exit 1
   else
@@ -47,13 +51,13 @@ run_command() {
 # Main execution
 log "Starting the script execution"
 
-run_command "bash 01_download_and_install_package.sh -id $ARTIFACT_ID -n $ARTIFACT_NAME"
+run_command "bash 01_download_and_install_package.sh -id $RUN_ID -n $ARTIFACT_NAME"
 
 # Apply certificates
 if [ -n "$NODE_2" ] && [ -n "$IP_NODE_2" ]; then
-  run_command "sudo bash 02_apply_certificates.sh -p $CERTS_PATH -n $NODE_1 -nip $IP_NODE_1 -s $NODE_2 -sip $IP_NODE_2"
+  run_command "sudo bash 02_apply_certificates.sh -p $CERTS_PATH -n $NODE_NAME -nip $NODE_IP -s $NODE_2 -sip $IP_NODE_2"
 else
-  run_command "sudo bash 02_apply_certificates.sh -p $CERTS_PATH -n $NODE_1 -nip $IP_NODE_1"
+  run_command "sudo bash 02_apply_certificates.sh -p $CERTS_PATH -n $NODE_NAME -nip $NODE_IP"
 fi
 
 # Start indexer service
@@ -64,9 +68,9 @@ run_command "sudo bash 04_initialize_cluster.sh"
 
 # Validate installed plugins
 if [ -n "$NODE_2" ]; then
-  run_command "bash 05_validate_installed_plugins.sh -n $NODE_1 -n $NODE_2"
+  run_command "bash 05_validate_installed_plugins.sh -n $NODE_NAME -n $NODE_2"
 else
-  run_command "bash 05_validate_installed_plugins.sh -n $NODE_1"
+  run_command "bash 05_validate_installed_plugins.sh -n $NODE_NAME"
 fi
 
 # Validate setup and command manager

@@ -71,13 +71,13 @@ BODY="{
 }"
 
 # Send the POST request and check it is successful
-if ! curl -s -k -u "$USERNAME:$PASSWORD" -X POST "https://$CLUSTER_IP:9200/_plugins/_command_manager/commands" -H 'accept: */*' -H 'Content-Type: application/json' -d "$BODY"; then
+if ! curl -s -k -u "$USERNAME:$PASSWORD" -X POST "https://$CLUSTER_IP:9200/_plugins/_command_manager/commands" -H 'accept: */*' -H 'Content-Type: application/json' -d "$BODY" > /dev/null 2>&1; then
     echo "Error: Failed to create command."
     exit 1
 fi
 echo "Command created successfully."
 # Sleep to avoid the next request to be sent before index is created
-sleep .5
+sleep 2
 
 # Fetch the indices
 echo "Validating .commands index is created..."

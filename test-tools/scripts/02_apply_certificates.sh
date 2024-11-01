@@ -87,7 +87,10 @@ fi
 
 # Directory for certificates
 CERT_DIR="/etc/wazuh-indexer/certs"
-
+if [ -d "$CERT_DIR" ]; then
+    echo "Certificates directory already exists. Removing it..."
+    rm -rf
+fi
 # Extract certificates
 echo "Creating certificates directory and extracting certificates..."
 mkdir -p $CERT_DIR

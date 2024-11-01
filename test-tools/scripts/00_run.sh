@@ -21,7 +21,10 @@ export ARTIFACT_NAME
 read -rp "Enter current node name (default: 'node-1'): " NODE_NAME
 export NODE_NAME=${NODE_NAME:-"node-1"}
 
-IP_ADDRESS=$(ip addr show eth1 | grep 'inet ' | awk '{print $2}' | cut -d/ -f1)
+IP_ADDRESS=$(ip addr show eth1 2>/dev/null | grep 'inet ' | awk '{print $2}' | cut -d/ -f1)
+if [ -z "$IP_ADDRESS" ]; then
+    IP_ADDRESS="127.0.0.1"
+fi
 read -rp "Enter IP of current node (default: '$IP_ADDRESS'): " NODE_IP
 export NODE_IP=${NODE_IP:-$IP_ADDRESS}
 

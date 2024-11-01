@@ -77,6 +77,7 @@ if ! curl -s -k -u "$USERNAME:$PASSWORD" -X POST "https://$CLUSTER_IP:9200/_plug
 fi
 echo "Command created successfully."
 # Sleep to avoid the next request to be sent before index is created
+curl -s -k -u "$USERNAME:$PASSWORD" -X POST "https://$CLUSTER_IP:9200/_forcemerge" -H 'accept: */*'
 sleep 2
 
 # Fetch the indices

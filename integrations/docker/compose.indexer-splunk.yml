@@ -161,10 +161,14 @@ services:
       SPLUNK_START_ARGS: --accept-license
 
   logstash:
+    image: logstash-oss:${LOGSTASH_OSS_VERSION}
     depends_on:
       splunk:
         condition: service_healthy
-    image: logstash-oss:${LOGSTASH_OSS_VERSION}
+    build:
+      context: ../logstash
+      args:
+        - LOGSTASH_OSS_VERSION=${LOGSTASH_OSS_VERSION}
     environment:
       LOGSTASH_OSS_VERSION: ${LOGSTASH_OSS_VERSION}
       LOG_LEVEL: info

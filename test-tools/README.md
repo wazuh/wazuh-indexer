@@ -1,6 +1,6 @@
 # Basic cluster environment
 
-This is a environment definition with the required configuration to be prepared to freshly install a Wazuh Indexer
+This is an environment definition with the required configuration to be prepared to freshly install a Wazuh Indexer
 cluster with two nodes using Vagrant and Libvirt to provision the Virtual Machines.
 
 It also generates the node's required certificates using the `wazuh-certs-tool` and copy them to each node's `home`

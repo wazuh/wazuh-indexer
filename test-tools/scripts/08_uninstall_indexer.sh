@@ -42,6 +42,7 @@ if [ "$PKG_MANAGER" == "apt-get" ]; then
 elif [ "$PKG_MANAGER" == "yum" ]; then
     sudo yum remove wazuh-indexer -y > /dev/null 2>&1
 fi
+rm -rf /etc/wazuh-indexer
 
 # Validate removal
 echo "Validating Wazuh Indexer removal..."

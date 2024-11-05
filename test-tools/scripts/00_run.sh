@@ -43,7 +43,7 @@ log() {
 run_command() {
   local cmd=$1
   log "Executing: $cmd"
-  if ! eval "$cmd > /dev/null 2>&1"; then
+  if ! eval "$cmd"; then
     log "Error executing: $cmd"
     exit 1
   else
@@ -68,7 +68,7 @@ run_command "sudo bash 03_manage_indexer_service.sh -a start"
 
 # Initialize cluster (assumes this step doesn't depend on Node 2 presence)
 run_command "sudo bash 04_initialize_cluster.sh"
-sleep 2
+sleep 10
 
 # Validate installed plugins
 if [ -n "$NODE_2" ]; then

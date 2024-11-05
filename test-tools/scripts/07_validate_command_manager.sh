@@ -95,6 +95,7 @@ else
     exit 1
 fi
 
+sleep 5
 echo "Validate the command is created"
 # Validate the command was created
 SEARCH_RESPONSE=$(curl -s -k -u "$USERNAME:$PASSWORD" "https://$CLUSTER_IP:9200/.commands/_search")

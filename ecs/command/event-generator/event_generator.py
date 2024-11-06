@@ -5,8 +5,8 @@ import json
 import logging
 import random
 import requests
+import urllib3
 import uuid
-import warnings
 
 LOG_FILE = 'generate_data.log'
 GENERATED_DATA_FILE = 'generatedData.json'
@@ -21,7 +21,7 @@ PORT = "9200"
 logging.basicConfig(filename=LOG_FILE, level=logging.INFO)
 
 # Suppress warnings
-warnings.filterwarnings("ignore")
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 def generate_random_command(include_all_fields=False):

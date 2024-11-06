@@ -5,7 +5,7 @@ import json
 import logging
 import random
 import requests
-import warnings
+import urllib3
 
 # Constants and Configuration
 LOG_FILE = 'generate_data.log'
@@ -22,7 +22,7 @@ PORT = "9200"
 logging.basicConfig(filename=LOG_FILE, level=logging.INFO)
 
 # Suppress warnings
-warnings.filterwarnings("ignore")
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 def generate_random_date():

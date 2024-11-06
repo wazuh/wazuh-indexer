@@ -1,11 +1,11 @@
 #!/bin/python3
 
 import datetime
-import random
 import json
+import logging
+import random
 import requests
 import warnings
-import logging
 
 # Constants and Configuration
 LOG_FILE = 'generate_data.log'

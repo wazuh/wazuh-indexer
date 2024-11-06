@@ -1,16 +1,22 @@
 #!/bin/python3
 
 import datetime
-import random
 import json
+import logging
+import random
 import requests
 import warnings
-import logging
 
 # Constants and Configuration
 LOG_FILE = 'generate_data.log'
 GENERATED_DATA_FILE = 'generatedData.json'
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
+# Default values
+INDEX_NAME = ".agents"
+USERNAME = "admin"
+PASSWORD = "admin"
+IP = "127.0.0.1"
+PORT = "9200"
 
 # Configure logging
 logging.basicConfig(filename=LOG_FILE, level=logging.INFO)
@@ -102,11 +108,11 @@ def main():
     inject = input(
         "Do you want to inject the generated data into your indexer? (y/n) ").strip().lower()
     if inject == 'y':
-        ip = input("Enter the IP of your Indexer: ")
-        port = input("Enter the port of your Indexer: ")
-        index = input("Enter the index name: ")
-        username = input("Username: ")
-        password = input("Password: ")
+        ip = input(f"Enter the IP of your Indexer (default: '{IP}'): ") or IP
+        port = input(f"Enter the port of your Indexer (default: '{PORT}'): ") or PORT
+        index = input(f"Enter the index name (default: '{INDEX_NAME}'): ") or INDEX_NAME
+        username = input(f"Username (default: '{USERNAME}'): ") or USERNAME
+        password = input(f"Password (default: '{PASSWORD}'): ") or PASSWORD
         inject_events(ip, port, index, username, password, data)
 
 

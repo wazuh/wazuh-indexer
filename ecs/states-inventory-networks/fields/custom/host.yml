@@ -1,0 +1,56 @@
+---
+- name: host
+  title: Host
+  type: group
+  group: 2
+  description: >
+    Host related data.
+  fields:
+    - name: network
+      type: group
+      group: 2
+      description: >
+        Host related network data.
+      fields:
+        - name: egress
+          type: group
+          group: 2
+          description: >
+            Outgoing network related data.
+          fields:
+            - name: drops
+              type: long
+              level: custom
+              description: >
+                Number of dropped transmitted packets.
+            - name: errors
+              type: long
+              level: custom
+              description: >
+                Number of transmission errors.
+            - name: queue
+              type: long
+              level: custom
+              description: >
+                Transmit queue length.
+        - name: ingress
+          type: group
+          group: 2
+          description: >
+            Incoming network related data.
+          fields:
+            - name: drops
+              type: long
+              level: custom
+              description: >
+                Number of dropped received packets.
+            - name: errors
+              type: long
+              level: custom
+              description: >
+                Number of reception errors.
+            - name: queue
+              type: long
+              level: custom
+              description: >
+                Receive queue length.

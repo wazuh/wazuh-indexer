@@ -1,0 +1,51 @@
+---
+name: wazuh-states-inventory-networks
+fields:
+  base:
+    fields:
+      tags: []
+      "@timestamp": {}
+  destination:
+    fields:
+      ip: {}
+      port: {}
+  device:
+    fields:
+      id: {}
+  file:
+    fields:
+      inode: {}
+  host:
+    fields:
+      ip: {}
+      mac: {}
+      network:
+        fields:
+          egress:
+            fields:
+              bytes: {}
+              packets: {}
+          ingress:
+            fields:
+              bytes: {}
+              packets: {}
+  network:
+    fields:
+      protocol: {}
+      type: {}
+  observer:
+    fields:
+      ingress:
+        fields:
+          interface:
+            fields:
+              alias: {}
+              name: {}
+  process:
+    fields:
+      name: {}
+      pid: {}
+  source:
+    fields:
+      ip: {}
+      port: {}

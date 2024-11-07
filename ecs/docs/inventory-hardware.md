@@ -6,19 +6,19 @@ The fields are based on https://github.com/wazuh/wazuh-indexer/issues/282#issuec
 
 Based on ECS:
 
--   [Device Fields](https://www.elastic.co/guide/en/ecs/current/ecs-device.html).
--   [Observer Fields](https://www.elastic.co/guide/en/ecs/current/ecs-device.html).
+-   [Host Fields](https://www.elastic.co/guide/en/ecs/current/ecs-host.html).
+-   [Observer Fields](https://www.elastic.co/guide/en/ecs/current/ecs-observer.html).
 
 |     | Field name   | ECS field name                | Data type | Description                      |
 | --- | ------------ | ----------------------------- | --------- | -------------------------------- |
 |     | scan_time    | @timestamp                    | date      | Timestamp of the scan            |
 |     | board_serial | observer.serial_number        | keyword   | Serial number of the motherboard |
-| *   | cpu_name     | device.cpu.name               | keyword   | Name of the CPU                  |
-| *   | cpu_cores    | device.cpu.cores              | long      | Number of CPU cores              |
-| *   | cpu_mhz      | device.cpu.speed              | long      | Speed of the CPU in MHz          |
-| *   | ram_total    | device.memory.total           | long      | Total RAM in the system          |
-| *   | ram_free     | device.memory.free            | long      | Free RAM in the system           |
-| *   | ram_usage    | device.memory.used.percentage | long      | RAM usage as a percentage        |
+| *   | cpu_name     | host.cpu.name               | keyword   | Name of the CPU                  |
+| *   | cpu_cores    | host.cpu.cores              | long      | Number of CPU cores              |
+| *   | cpu_mhz      | host.cpu.speed              | long      | Speed of the CPU in MHz          |
+| *   | ram_total    | host.memory.total           | long      | Total RAM in the system          |
+| *   | ram_free     | host.memory.free            | long      | Free RAM in the system           |
+| *   | ram_usage    | host.memory.used.percentage | long      | RAM usage as a percentage        |
 
 \* Custom fields
 

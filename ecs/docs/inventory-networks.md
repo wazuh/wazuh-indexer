@@ -12,7 +12,6 @@ Based on ECS:
 
 |     | Field name  | ECS field name                   | Data type | Description                                                      |
 | --- | ----------- | -------------------------------- | --------- | ---------------------------------------------------------------- |
-|     | PID         | process.pid                      | long      | Process ID                                                       |
 |     | adapter     | observer.ingress.interface.alias | keyword   | Adapter name of the network interface                            |
 |     | address     | host.ip                          | ip        | Network address                                                  |
 |     | iface       | observer.ingress.interface.name  | keyword   | Name of the network interface                                    |
@@ -22,6 +21,7 @@ Based on ECS:
 |     | local_port  | source.port                      | long      | Local port number                                                |
 |     | mac         | host.mac                         | keyword   | MAC address of the network interface                             |
 |     | name        | observer.ingress.interface.name  | keyword   | Name of the network interface                                    |
+|     | pid         | process.pid                      | long      | Process ID                                                       |
 |     | process     | process.name                     | keyword   | Process name                                                     |
 |     | proto       | network.protocol                 | keyword   | Type of network protocol                                         |
 |     | protocol    | network.protocol                 | keyword   | Protocol used                                                    |
@@ -30,67 +30,114 @@ Based on ECS:
 |     | remote_port | destination.port                 | long      | Remote port number                                               |
 |     | rx_bytes    | host.network.ingress.bytes       | long      | Number of received bytes                                         |
 |     | rx_packets  | host.network.ingress.packets     | long      | Number of received packets                                       |
+|     | scan_id     | event.id                         | keyword   | Reference to the scan information                                |
 |     | scan_time   | @timestamp                       | date      | Timestamp of the scan                                            |
 |     | tx_bytes    | host.network.egress.bytes        | long      | Number of transmitted bytes                                      |
 |     | tx_packets  | host.network.egress.packets      | long      | Number of transmitted packets                                    |
 |     | type        | network.type                     | keyword   | IPv4 or IPv6 for protocols, interface type for interface records |
+| *   | broadcast   | network.broadcast                | ip        | Broadcast address                                                |
+| *   | dhcp        | network.dhcp                     | keyword   | DHCP status (enabled, disabled, unknown, BOOTP)                  |
+| *   | gateway     | network.gateway                  | ip        | Gateway address                                                  |
+| *   | metric      | network.metric                   | long      | Metric of the network protocol                                   |
+| *   | mtu         | interface.mtu                    | long      | Maximum transmission unit size                                   |
+| *   | netmask     | network.netmask                  | ip        | Network mask                                                     |
+| *   | rx_dropped  | host.network.ingress.drops       | long      | Number of dropped received packets                               |
+| *   | rx_errors   | host.network.ingress.errors      | long      | Number of reception errors                                       |
+| *   | rx_queue    | host.network.ingress.queue       | long      | Receive queue length                                             |
+| *   | state       | interface.state                  | keyword   | State of the network interface                                   |
+| *   | tx_dropped  | host.network.egress.drops        | long      | Number of dropped transmitted packets                            |
+| *   | tx_errors   | host.network.egress.errors       | long      | Number of transmission errors                                    |
+| *   | tx_queue    | host.network.egress.queue        | long      | Transmit queue length                                            |
+| *   | type        | interface.type                   | keyword   | Interface type (eg. "wireless" or "ethernet")                    |
 
 \* Custom fields
 
-|     | Field name | ECS field name              | Data type | Description                                     |
-| --- | ---------- | --------------------------- | --------- | ----------------------------------------------- |
-| C   | broadcast  | network.broadcast           | ip        | Broadcast address                               |
-| C   | dhcp       | network.dhcp                | keyword   | DHCP status (enabled, disabled, unknown, BOOTP) |
-| C   | gateway    | network.gateway             | ip        | Gateway address                                 |
-| C   | metric     | network.metric              | long      | Metric of the network protocol                  |
-| C   | mtu        | interface.mtu               | long      | Maximum transmission unit size                  |
-| C   | netmask    | network.netmask             | ip        | Network mask                                    |
-| C   | rx_dropped | host.network.ingress.drops  | long      | Number of dropped received packets              |
-| C   | rx_errors  | host.network.ingress.errors | long      | Number of reception errors                      |
-| C   | rx_queue   | host.network.ingress.queue  | long      | Receive queue length                            |
-| C   | scan_id    | event.id                    | keyword   | Reference to the scan information               |
-| C   | state      | interface.state             | keyword   | State of the network interface                  |
-| C   | tx_dropped | host.network.egress.drops   | long      | Number of dropped transmitted packets           |
-| C   | tx_errors  | host.network.egress.errors  | long      | Number of transmission errors                   |
-| C   | tx_queue   | host.network.egress.queue   | long      | Transmit queue length                           |
-| C   | type       | interface.type              | keyword   | Interface type (eg. "wireless" or "ethernet")   |
-
-\* Pending fields
-
-| Field name | ECS field name | Notes |
-| ---------- | -------------- | ----- |
-|            |                |       |
 
 ### ECS mapping
 
 ```yml
 ---
-- name: wazuh-states-inventory-network
-  fields:
-      base:
-          fields:
-              "@timestamp": {}
-      agent:
-          fields:
-              id: {}
-              groups: {}
+name: wazuh-states-inventory-networks
+fields:
+  base:
+    fields:
+      tags: []
+      "@timestamp": {}
+  destination:
+    fields:
+      ip: {}
+      port: {}
+  device:
+    fields:
+      id: {}
+  event:
+    fields:
+      id: {}
+  file:
+    fields:
+      inode: {}
+  host:
+    fields:
+      ip: {}
+      mac: {}
+      network:
+        fields:
+          egress:
+            fields:
+              bytes: {}
+              packets: {}
+          ingress:
+            fields:
+              bytes: {}
+              packets: {}
+  network:
+    fields:
+      protocol: {}
+      type: {}
+  observer:
+    fields:
+      ingress:
+        fields:
+          interface:
+            fields:
+              alias: {}
+              name: {}
+  process:
+    fields:
+      name: {}
+      pid: {}
+  source:
+    fields:
+      ip: {}
+      port: {}
+
 ```
 
 ### Index settings
 
 ```json
 {
-    "index_patterns": ["wazuh-states-inventory-network*"],
-    "priority": 1,
-    "template": {
-        "settings": {
-            "index": {
-                "number_of_shards": "1",
-                "number_of_replicas": "0",
-                "refresh_interval": "5s",
-                "query.default_field": ["agent.id", "agent.groups"]
-            }
-        }
+  "index_patterns": [
+    "wazuh-states-inventory-networks*"
+  ],
+  "priority": 1,
+  "template": {
+    "settings": {
+      "index": {
+        "number_of_shards": "1",
+        "number_of_replicas": "0",
+        "refresh_interval": "5s",
+        "query.default_field": [
+          "agent.id",
+          "agent.groups",
+          "device.id",
+          "host.ip",
+          "observer.ingress.interface.name",
+          "observer.ingress.interface.alias",
+          "process.name"
+        ]
+      }
     }
+  }
 }
 ```

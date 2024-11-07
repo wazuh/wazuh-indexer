@@ -7,12 +7,14 @@
     Package related data.
   fields:
     - name: hotfix
-      type: 
+      type: group
+      level: custom
       group: 2
       description: >
         Hotfix related data.
       fields:
         - name: name
           type: keyword
+          level: custom
           description: >
             Name of the Hotfix.

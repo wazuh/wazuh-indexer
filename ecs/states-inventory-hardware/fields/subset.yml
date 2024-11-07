@@ -1,0 +1,10 @@
+---
+name: wazuh-states-inventory-hardware
+fields:
+  base:
+    fields:
+      tags: []
+      "@timestamp": {}
+  observer:
+    fields:
+      serial_number: {}

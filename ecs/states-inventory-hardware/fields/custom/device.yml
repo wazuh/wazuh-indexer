@@ -1,0 +1,50 @@
+---
+- name: device
+  title: Device
+  type: group
+  group: 2
+  description: >
+    Device related data.
+  fields:
+    - name: cpu
+      type: group
+      group: 2
+      description: >
+        CPU related data.
+      fields:
+        - name: name
+          type: keyword
+          description: >
+            Name of the CPU.
+        - name: cores
+          type: long
+          description: >
+            Number of CPU cores.
+        - name: speed
+          type: long
+          description: >
+            Speed of the CPU in MHz.
+    - name: memory
+      type: group
+      group: 2
+      description: >
+        Memory related data.
+      fields:
+        - name: total
+          type: long
+          description: >
+            Total RAM in the system.
+        - name: free
+          type: long
+          description: >
+            Free RAM in the system.
+        - name: used
+          type: group
+          group: 2
+          description: >
+            Used memory data.
+          fields:
+          - name: percentage
+            type: long
+            description: >
+              Used RAM as a percentage.

@@ -5,14 +5,14 @@ import json
 import logging
 import random
 import requests
-import warnings
+import urllib3
 
 # Constants and Configuration
 LOG_FILE = 'generate_data.log'
 GENERATED_DATA_FILE = 'generatedData.json'
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 # Default values
-INDEX_NAME = "wazuh-states-inventory-networks"
+INDEX_NAME = "wazuh-states-inventory-hardware"
 USERNAME = "admin"
 PASSWORD = "admin"
 IP = "127.0.0.1"
@@ -22,7 +22,7 @@ PORT = "9200"
 logging.basicConfig(filename=LOG_FILE, level=logging.INFO)
 
 # Suppress warnings
-warnings.filterwarnings("ignore", category=urllib3.exceptions.InsecureRequestWarning)
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 def generate_random_date():
@@ -32,34 +32,37 @@ def generate_random_date():
     return random_date.strftime(DATE_FORMAT)
 
 
-def generate_random_ip():
-    return f"{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}"
-
-
-def generate_random_network_data():
-    network = {
-        'protocol': random.choice(['TCP', 'UDP', 'ICMP']),
-        'type': random.choice(['ipv4', 'ipv6'])
+def generate_random_agent():
+    agent = {
+        'id': f'agent{random.randint(0, 99)}',
+        'groups': [f'group{random.randint(0, 99)}', f'group{random.randint(0, 99)}']
     }
-    return network
+    return agent
 
 
 def generate_random_host():
     host = {
-        'ip': generate_random_ip(),
-        'mac': f'{random.randint(0, 255):02x}:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}',
-        'network': {
-            'egress': {
-                'bytes': random.randint(1000, 1000000),
-                'packets': random.randint(100, 10000)
-            },
-            'ingress': {
-                'bytes': random.randint(1000, 1000000),
-                'packets': random.randint(100, 10000)
+        'cpu': {
+            'cores': random.randint(1, 16),
+            'name': f'cpu_{random.randint(1, 999)}',
+            'speed': random.randint(1000, 4000)
+        },
+        'memory': {
+            'free': random.randint(1000, 16000),
+            'total': random.randint(2000, 32000),
+            'used': {
+                'percentage': random.randint(1, 100)
             }
         }
     }
     return host
+
+
+def generate_random_observer():
+    observer = {
+        'serial_number': f'{random.randint(1000000000, 9999999999)}'
+    }
+    return observer
 
 
 def generate_random_data(number):
@@ -67,34 +70,9 @@ def generate_random_data(number):
     for _ in range(number):
         event_data = {
             '@timestamp': datetime.datetime.now().strftime(DATE_FORMAT),
-            'destination': {
-                'ip': generate_random_ip(),
-                'port': random.randint(1, 65535)
-            },
-            'device': {
-                'id': f'device{random.randint(1, 1000)}'
-            },
-            'file': {
-                'inode': f'inode{random.randint(1, 1000)}'
-            },
+            'agent': generate_random_agent(),
             'host': generate_random_host(),
-            'network': generate_random_network_data(),
-            'observer': {
-                'ingress': {
-                    'interface': {
-                        'alias': f'alias{random.randint(1, 1000)}',
-                        'name': f'interface{random.randint(1, 1000)}'
-                    }
-                }
-            },
-            'process': {
-                'name': f'process{random.randint(1, 1000)}',
-                'pid': random.randint(1, 10000)
-            },
-            'source': {
-                'ip': generate_random_ip(),
-                'port': random.randint(1, 65535)
-            }
+            'observer': generate_random_observer()
         }
         data.append(event_data)
     return data

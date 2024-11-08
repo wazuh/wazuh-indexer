@@ -32,9 +32,27 @@ fields:
     fields:
       tags: []
       "@timestamp": {}
+  agent:
+    fields:
+      id: {}
+      groups: {}
   observer:
     fields:
       serial_number: {}
+  host:
+    fields:
+      memory:
+        fields:
+          total: {}
+          free: {}
+          used:
+            fields:
+              percentage: {}
+      cpu:
+        fields:
+          name: {}
+          cores: {}
+          speed: {}
 ```
 
 ### Index settings
@@ -48,14 +66,82 @@ fields:
   "template": {
     "settings": {
       "index": {
-        "number_of_shards": "1",
         "number_of_replicas": "0",
-        "refresh_interval": "5s",
+        "number_of_shards": "1",
         "query.default_field": [
           "observer.board_serial"
-        ]
+        ],
+        "refresh_interval": "5s"
+      }
+    },
+    "mappings": {
+      "date_detection": false,
+      "dynamic": "strict",
+      "properties": {
+        "@timestamp": {
+          "type": "date"
+        },
+        "agent": {
+          "properties": {
+            "groups": {
+              "ignore_above": 1024,
+              "type": "keyword"
+            },
+            "id": {
+              "ignore_above": 1024,
+              "type": "keyword"
+            }
+          }
+        },
+        "host": {
+          "properties": {
+            "cpu": {
+              "properties": {
+                "cores": {
+                  "type": "long"
+                },
+                "name": {
+                  "ignore_above": 1024,
+                  "type": "keyword"
+                },
+                "speed": {
+                  "type": "long"
+                }
+              },
+              "type": "object"
+            },
+            "memory": {
+              "properties": {
+                "free": {
+                  "type": "long"
+                },
+                "total": {
+                  "type": "long"
+                },
+                "used": {
+                  "properties": {
+                    "percentage": {
+                      "type": "long"
+                    }
+                  },
+                  "type": "object"
+                }
+              },
+              "type": "object"
+            }
+          }
+        },
+        "observer": {
+          "properties": {
+            "serial_number": {
+              "ignore_above": 1024,
+              "type": "keyword"
+            }
+          }
+        }
       }
     }
   }
 }
+
 ```

@@ -2,57 +2,11 @@
 - name: host
   title: host
   type: group
-  group: 2
   description: >
     Host related data.
   fields:
-    - name: cpu
-      type: group
-      level: custom
-      group: 2
-      description: >
-        CPU related data.
-      fields:
-        - name: name
-          type: keyword
-          level: custom
-          description: >
-            Name of the CPU.
-        - name: cores
-          type: long
-          level: custom
-          description: >
-            Number of CPU cores.
-        - name: speed
-          type: long
-          level: custom
-          description: >
-            Speed of the CPU in MHz.
     - name: memory
+      description: >
+        Memory related data
       type: group
       level: custom
-      group: 2
-      description: >
-        Memory related data.
-      fields:
-        - name: total
-          type: long
-          level: custom
-          description: >
-            Total RAM in the system.
-        - name: free
-          type: long
-          level: custom
-          description: >
-            Free RAM in the system.
-        - name: used
-          type: group
-          group: 2
-          description: >
-            Used memory data.
-          fields:
-          - name: percentage
-            type: long
-            level: custom
-            description: >
-              Used RAM as a percentage.

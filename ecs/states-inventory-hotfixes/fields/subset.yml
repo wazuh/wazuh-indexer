@@ -5,3 +5,8 @@ fields:
     fields:
       tags: []
       "@timestamp": {}
+  package:
+    fields:
+      hotfix:
+        fields:
+          name: {}

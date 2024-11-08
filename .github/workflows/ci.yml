@@ -1,0 +1,21 @@
+name: CI
+
+# This workflow runs when any of the following occur:
+# - On push to branches named after ci/*
+on:
+  pull_request:
+    # Sequence of patterns matched against refs/heads
+    branches:
+      - "migrate-*"
+      - "ci/*"
+
+jobs:
+  call-test-workflow:
+    #     uses: ./.github/workflows/test.yml
+    runs-on: ubuntu-22.04
+    steps:
+      - run: |
+          ./gradlew assemble --parallel --no-build-cache -PDISABLE_BUILD_CACHE
+  call-build-workflow:
+    uses: ./.github/workflows/build.yml
+    secrets: inherit

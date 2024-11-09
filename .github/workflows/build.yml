@@ -239,6 +239,21 @@ jobs:
         run: |
           sudo bash build-scripts/provision.sh
 
+      # Cache OpenSearch plugins
+      - name: Cache OpenSearch plugins
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/opensearch
+          key: ${{ runner.os }}-opensearch-${{ hashFiles('plugins/**/*.xml', 'plugins/**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-opensearch-
+
+      # Add the script to install plugins here
+      - name: Run script to install OpenSearch plugins
+        run: |
+          chmod +x ./path/to/your/script.sh  # Cambia esto por la ruta real de tu script
+          ./path/to/your/script.sh
+
       - name: Run `baptizer.sh` (min)
         run: |
           name=$(bash build-scripts/baptizer.sh -m \

@@ -227,8 +227,14 @@ function install_plugins() {
     echo "Installing OpenSearch plugins"
     local maven_repo_local="$HOME/.m2"
     for plugin in "${plugins[@]}"; do
+      echo "Plugin ${plugin}, version ${VERSION}"
         local plugin_from_maven="org.opensearch.plugin:${plugin}:${VERSION}.0"
-        mvn -Dmaven.repo.local="${maven_repo_local}" org.apache.maven.plugins:maven-dependency-plugin:2.1:get -DrepoUrl=https://repo1.maven.org/maven2 -Dartifact="${plugin_from_maven}:zip"
+         if [[ -f "plugin_from_maven" ]]; then
+            echo "Plugin ${plugin} is already present, download omitted."
+        else
+            echo "Downloand ${plugin} plugin."
+            mvn -Dmaven.repo.local="${maven_repo_local}" org.apache.maven.plugins:maven-dependency-plugin:2.1:get -DrepoUrl=https://repo1.maven.org/maven2 -Dartifact="${plugin_from_maven}:zip"
+        fi
         OPENSEARCH_PATH_CONF=$PATH_CONF "${PATH_BIN}/opensearch-plugin" install --batch --verbose "file:${maven_repo_local}/org/opensearch/plugin/${plugin}/${VERSION}.0/${plugin}-${VERSION}.0.zip"
     done
 

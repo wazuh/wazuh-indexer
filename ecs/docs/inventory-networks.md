@@ -15,22 +15,12 @@ Based on ECS:
 |     | adapter     | observer.ingress.interface.alias | keyword   | Adapter name of the network interface                            |
 |     | address     | host.ip                          | ip        | Network address                                                  |
 |     | iface       | observer.ingress.interface.name  | keyword   | Name of the network interface                                    |
-|     | inode       | file.inode                       | keyword   | The unix inode of the port                                       |
 |     | item_id     | device.id                        | keyword   | Identifier of interface/protocol/address/port item               |
-|     | local_ip    | source.ip                        | ip        | Local IP address                                                 |
-|     | local_port  | source.port                      | long      | Local port number                                                |
 |     | mac         | host.mac                         | keyword   | MAC address of the network interface                             |
 |     | name        | observer.ingress.interface.name  | keyword   | Name of the network interface                                    |
-|     | pid         | process.pid                      | long      | Process ID                                                       |
-|     | process     | process.name                     | keyword   | Process name                                                     |
 |     | proto       | network.protocol                 | keyword   | Type of network protocol                                         |
-|     | protocol    | network.protocol                 | keyword   | Protocol used                                                    |
-|     | protocol    | network.protocol                 | keyword   | Protocol used                                                    |
-|     | remote_ip   | destination.ip                   | ip        | Remote IP address                                                |
-|     | remote_port | destination.port                 | long      | Remote port number                                               |
 |     | rx_bytes    | host.network.ingress.bytes       | long      | Number of received bytes                                         |
 |     | rx_packets  | host.network.ingress.packets     | long      | Number of received packets                                       |
-|     | scan_id     | event.id                         | keyword   | Reference to the scan information                                |
 |     | scan_time   | @timestamp                       | date      | Timestamp of the scan                                            |
 |     | tx_bytes    | host.network.egress.bytes        | long      | Number of transmitted bytes                                      |
 |     | tx_packets  | host.network.egress.packets      | long      | Number of transmitted packets                                    |
@@ -43,11 +33,9 @@ Based on ECS:
 | *   | netmask     | network.netmask                  | ip        | Network mask                                                     |
 | *   | rx_dropped  | host.network.ingress.drops       | long      | Number of dropped received packets                               |
 | *   | rx_errors   | host.network.ingress.errors      | long      | Number of reception errors                                       |
-| *   | rx_queue    | host.network.ingress.queue       | long      | Receive queue length                                             |
 | *   | state       | interface.state                  | keyword   | State of the network interface                                   |
 | *   | tx_dropped  | host.network.egress.drops        | long      | Number of dropped transmitted packets                            |
 | *   | tx_errors   | host.network.egress.errors       | long      | Number of transmission errors                                    |
-| *   | tx_queue    | host.network.egress.queue        | long      | Transmit queue length                                            |
 | *   | type        | interface.type                   | keyword   | Interface type (eg. "wireless" or "ethernet")                    |
 
 \* Custom fields

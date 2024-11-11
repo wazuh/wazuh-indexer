@@ -32,9 +32,77 @@ Based on ECS:
 ### ECS mapping
 
 ```yml
+---
+name: wazuh-states-inventory-ports
+fields:
+  base:
+    fields:
+      tags: []
+      "@timestamp": {}
+  agent:
+    fields:
+      id: {}
+      groups: {}
+  destination:
+    fields:
+      ip: {}
+      port: {}
+  device:
+    fields:
+      id: {}
+  file:
+    fields:
+      inode: {}
+  host:
+    fields:
+      network:
+        fields:
+          egress:
+            fields:
+              queue: {}
+          ingress:
+            fields:
+              queue: {}
+  network:
+    fields:
+      protocol: {}
+  process:
+    fields:
+      name: {}
+      pid: {}
+  source:
+    fields:
+      ip: {}
+      port: {}
+  interface:
+    fields:
+      state: {}
+
 ```
 
 ### Index settings
 
 ```json
+{
+  "index_patterns": [
+    "wazuh-states-inventory-ports*"
+  ],
+  "priority": 1,
+  "template": {
+    "settings": {
+      "index": {
+        "number_of_shards": "1",
+        "number_of_replicas": "0",
+        "refresh_interval": "5s",
+        "query.default_field": [
+          "agent.id",
+          "agent.groups",
+          "process.name",
+          "source.ip",
+          "destination.ip"
+        ]
+      }
+    }
+  }
+}
 ```

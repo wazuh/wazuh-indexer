@@ -1,4 +1,4 @@
-## `wazuh-states-inventory-networks` index data model
+## `wazuh-states-inventory-ports` index data model
 
 ### Fields summary
 

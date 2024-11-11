@@ -274,18 +274,24 @@ jobs:
 
 
       # Cache OpenSearch plugins
+      - name: Get Opensearch Version
+        run: |
+          VERSION=$(bash build-scripts/upstream-version.sh)
+          echo "versionOpenSearch_inBuild=$VERSION" >> $GITHUB_OUTPUT
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
       - name: Cache OpenSearch plugins
         id: cache-opensearch-plugins
         uses: actions/cache@v4
         with:
-          path: ~/.m2/repository/org/opensearch
-          key: ${{ runner.os }}-opensearch-${{ hashFiles('performance-analyzer.xml', 'plugins/**/gradle-wrapper.properties') }}
+          path: $HOME/.m2/repository/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0/
+          key: ${{ runner.os }}-opensearch-${{ hashFiles('performance-analyzer**.xml') }}
           restore-keys: |
-            ${{ runner.os }}-opensearch-
+            ${{ runner.os }}-opensearch-performance-analyzer
 
       - if: ${{steps.cache-opensearch-plugins.cache-hit != 'true'}}
         name: Cache OpenSearch plugins fail
-        run: echo "Failed to cache OpenSearch plugins. HOMEEEEE $HOME"
+        run: echo "Failed to cache OpenSearch plugins. HOMEEEEE $HOME  ENV-OPENSEARCH-VERSIO ${{ env.VERSION }} "
 
       - name: Run `assemble.sh`
         run: |

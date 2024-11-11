@@ -229,7 +229,7 @@ function install_plugins() {
     for plugin in "${plugins[@]}"; do
       echo "Plugin ${plugin}, version ${VERSION}"
         local plugin_from_maven="org.opensearch.plugin:${plugin}:${VERSION}.0"
-         if [[ -f "plugin_from_maven" ]]; then
+         if [[ -f "${maven_repo_local}/org/opensearch/plugin/${plugin}/${VERSION}.0/${plugin}-${VERSION}.0.zip" ]]; then
             echo "Plugin ${plugin} is already present, download omitted."
         else
             echo "Downloand ${plugin} plugin."

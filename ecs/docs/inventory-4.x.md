@@ -1,3 +1,15 @@
+## Migration to 5.x
+
+| Syscollector 4.x inventory table | Index 5.x                        |
+| -------------------------------- | -------------------------------- |
+| sys_processes                    | wazuh-states-inventory-processes |
+| sys_hwinfo                       | wazuh-states-inventory-hardware  |
+| sys_osinfo                       | wazuh-states-inventory-system    |
+| sys_ports                        | wazuh-states-inventory-networks  |
+| sys_net\*                        | wazuh-states-inventory-networks  |
+| sys_programs                     | wazuh-states-inventory-packages  |
+| sys_hotfixes                     | wazuh-states-inventory-hotfixes  |
+
 ### sys_netiface
 
 |     | Field name | ECS field name      | Data type | Description                                      |

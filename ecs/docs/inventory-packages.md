@@ -6,11 +6,11 @@ The fields are based on https://github.com/wazuh/wazuh-indexer/issues/282#issuec
 
 Based on ECS:
 
--   [Package Fields](https://www.elastic.co/guide/en/ecs/current/ecs-package.html).
+- [Package Fields](https://www.elastic.co/guide/en/ecs/current/ecs-package.html).
 
 |     | Field name             | Data type | Description                          | Example |
 | --- | ---------------------- | --------- | ------------------------------------ | ------- |
-|     | `@timestamp`           | date      | Timestamp of the scan                |         |
+|     | `@timestamp`           | date      | Timestamp of the scan.               |         |
 |     | `agent.id`             | keyword   | Unique identifier of this agent      |         |
 |     | `package.architecture` | keyword   | Package architecture.                |         |
 |     | `package.description`  | keyword   | Description of the package.          |         |
@@ -18,22 +18,22 @@ Based on ECS:
 |     | `package.name`         | keyword   | Package name.                        |         |
 |     | `package.path`         | keyword   | Path where the package is installed. |         |
 |     | `package.size`         | long      | Package size in bytes.               |         |
-|     | `package.type`         | keyword   | Package type                         |         |
-|     | `package.version`      | keyword   | Package version                      |         |
-| *   | `agent.groups`         | keyword   | Agent's groups                       |         |
+|     | `package.type`         | keyword   | Package type.                        |         |
+|     | `package.version`      | keyword   | Package version.                     |         |
+| \*  | `agent.groups`         | keyword   | List of groups the agent belong to.  |         |
 
 \* Custom field
 
 <details><summary>Fields not included in ECS</summary>
 <p>
 
-|     | Field name | ECS field name    | Data type | Description                                                                      |
-| --- | ---------- | ----------------- | --------- | -------------------------------------------------------------------------------- |
-| ?   | priority   |                   |           | Priority of the program                                                          |
-| ?   | section    |                   |           | Section of the program   category the package belongs to in DEB package managers |
-| X   | vendor     | package.reference | keyword   | Home page or reference URL of the software in this package, if available.        |
-| ?   | multiarch  |                   |           | Multi-architecture compatibility                                                 |
-| X   | source     |                   |           | Source of the program - package manager                                          |
+|     | Field name | ECS field name    | Data type | Description                                                                    |
+| --- | ---------- | ----------------- | --------- | ------------------------------------------------------------------------------ |
+| ?   | priority   |                   |           | Priority of the program                                                        |
+| ?   | section    |                   |           | Section of the program category the package belongs to in DEB package managers |
+| X   | vendor     | package.reference | keyword   | Home page or reference URL of the software in this package, if available.      |
+| ?   | multiarch  |                   |           | Multi-architecture compatibility                                               |
+| X   | source     |                   |           | Source of the program - package manager                                        |
 
 </p>
 </details>
@@ -44,23 +44,23 @@ Based on ECS:
 ---
 name: wazuh-states-inventory-packages
 fields:
-    base:
-        fields:
-            "@timestamp": {}
-    agent:
-        fields:
-            id: {}
-            groups: {}
-    package:
-        fields:
-            architecture: ""
-            description: ""
-            installed: {}
-            name: ""
-            path: ""
-            size: {}
-            type: ""
-            version: ""
+  base:
+    fields:
+      "@timestamp": {}
+  agent:
+    fields:
+      id: {}
+      groups: {}
+  package:
+    fields:
+      architecture: ""
+      description: ""
+      installed: {}
+      name: ""
+      path: ""
+      size: {}
+      type: ""
+      version: ""
 ```
 
 ### Index settings

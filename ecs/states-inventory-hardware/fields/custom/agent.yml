@@ -8,4 +8,4 @@
       type: keyword
       level: custom
       description: >
-        The groups the agent belongs to.
+        List of groups the agent belong to.

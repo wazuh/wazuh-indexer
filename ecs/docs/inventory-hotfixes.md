@@ -6,12 +6,12 @@ The fields are based on https://github.com/wazuh/wazuh-indexer/issues/282#issuec
 
 Based on ECS:
 
--   [Package Fields](https://www.elastic.co/guide/en/ecs/current/ecs-package.html).
+- [Package Fields](https://www.elastic.co/guide/en/ecs/current/ecs-package.html).
 
-|     | Field name          | Data type | Description           | Example                  |
-| --- | ------------------- | --------- | --------------------- | ------------------------ |
-|     | @timestamp          | date      | Timestamp of the scan | 2016-05-23T08:05:34.853Z |
-| *   | package.hotfix.name | keyword   | Name of the hotfix    |                          |
+|     | Field name            | Data type | Description           | Example                    |
+| --- | --------------------- | --------- | --------------------- | -------------------------- |
+|     | `@timestamp`          | date      | Timestamp of the scan | `2016-05-23T08:05:34.853Z` |
+| \*  | `package.hotfix.name` | keyword   | Name of the hotfix    |                            |
 
 \* Custom fields
 
@@ -40,18 +40,14 @@ fields:
 
 ```json
 {
-  "index_patterns": [
-    "wazuh-states-inventory-hotfixes*"
-  ],
+  "index_patterns": ["wazuh-states-inventory-hotfixes*"],
   "priority": 1,
   "template": {
     "settings": {
       "index": {
         "number_of_replicas": "0",
         "number_of_shards": "1",
-        "query.default_field": [
-          "package.hotfix.name"
-        ],
+        "query.default_field": ["package.hotfix.name"],
         "refresh_interval": "5s"
       }
     },
@@ -91,5 +87,4 @@ fields:
     }
   }
 }
-
 ```

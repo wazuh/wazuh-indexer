@@ -1,0 +1,45 @@
+---
+name: wazuh-states-inventory-ports
+fields:
+  base:
+    fields:
+      tags: []
+      "@timestamp": {}
+  agent:
+    fields:
+      id: {}
+      groups: {}
+  destination:
+    fields:
+      ip: {}
+      port: {}
+  device:
+    fields:
+      id: {}
+  file:
+    fields:
+      inode: {}
+  host:
+    fields:
+      network:
+        fields:
+#          egress:
+#            fields:
+#              queue: {}
+          ingress:
+            fields:
+              queue: {}
+  network:
+    fields:
+      protocol: {}
+  process:
+    fields:
+      name: {}
+      pid: {}
+  source:
+    fields:
+      ip: {}
+      port: {}
+  interface:
+    fields:
+      state: {}

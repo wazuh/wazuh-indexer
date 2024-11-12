@@ -8,19 +8,19 @@ Based on ECS:
 
 -   [Package Fields](https://www.elastic.co/guide/en/ecs/current/ecs-package.html).
 
-|     | Field name             | Data type | Description                                                       | Example |
-| --- | ---------------------- | --------- | ----------------------------------------------------------------- | ------- |
-|     | `agent.id`             | keyword   | Agent's ID                                                        |         |
-| *   | `agent.groups`         | keyword   | Agent's groups                                                    |         |
-|     | `@timestamp`           | date      | Timestamp of the scan                                             |         |
-|     | `package.architecture` | keyword   | Package architecture.                                             |         |
-|     | `package.description`  | keyword   | Description of the package.                                       |         |
-|     | `package.installed`    | date      | Time when package was installed.                                  |         |
-|     | `package.name`         | keyword   | Package name.                                                     |         |
-|     | `package.path`         | keyword   | Path where the package is installed.                              |         |
-|     | `package.size`         | long      | Package size in bytes.                                            |         |
-|     | `package.type`         | keyword   | Type of package. Examples: rpm, dpkg, brew, npm, gem, nupkg, jar. |         |
-|     | `package.version`      | keyword   | Package version.                                                  |         |
+|     | Field name             | Data type | Description                          | Example |
+| --- | ---------------------- | --------- | ------------------------------------ | ------- |
+|     | `@timestamp`           | date      | Timestamp of the scan                |         |
+|     | `agent.id`             | keyword   | Unique identifier of this agent      |         |
+|     | `package.architecture` | keyword   | Package architecture.                |         |
+|     | `package.description`  | keyword   | Description of the package.          |         |
+|     | `package.installed`    | date      | Time when package was installed.     |         |
+|     | `package.name`         | keyword   | Package name.                        |         |
+|     | `package.path`         | keyword   | Path where the package is installed. |         |
+|     | `package.size`         | long      | Package size in bytes.               |         |
+|     | `package.type`         | keyword   | Package type                         |         |
+|     | `package.version`      | keyword   | Package version                      |         |
+| *   | `agent.groups`         | keyword   | Agent's groups                       |         |
 
 \* Custom field
 

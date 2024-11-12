@@ -8,10 +8,10 @@ Based on ECS:
 
 -   [Package Fields](https://www.elastic.co/guide/en/ecs/current/ecs-package.html).
 
-|     | Field name          | Data type | Description           | Example |
-| --- | ------------------- | --------- | --------------------- | ------- |
-|     | @timestamp          | date      | Timestamp of the scan |         |
-| *   | package.hotfix.name | keyword   | Name of the hotfix    |         |
+|     | Field name          | Data type | Description           | Example                  |
+| --- | ------------------- | --------- | --------------------- | ------------------------ |
+|     | @timestamp          | date      | Timestamp of the scan | 2016-05-23T08:05:34.853Z |
+| *   | package.hotfix.name | keyword   | Name of the hotfix    |                          |
 
 \* Custom fields
 

@@ -12,7 +12,7 @@ LOG_FILE = 'generate_data.log'
 GENERATED_DATA_FILE = 'generatedData.json'
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 # Default values
-INDEX_NAME = "wazuh-states-inventory-networks"
+INDEX_NAME = "wazuh-states-inventory-ports"
 USERNAME = "admin"
 PASSWORD = "admin"
 IP = "127.0.0.1"
@@ -44,22 +44,33 @@ def generate_random_agent():
     return agent
 
 
+def generate_random_destination():
+    destination = {
+        'ip': generate_random_ip(),
+        'port': random.randint(1, 65535)
+    }
+    return destination
+
+
+def generate_random_device():
+    device = {
+        'id': f'device{random.randint(1, 1000)}'
+    }
+    return device
+
+
+def generate_random_file():
+    file = {
+        'inode': f'inode{random.randint(1, 1000)}'
+    }
+    return file
+
+
 def generate_random_host():
     host = {
-        'ip': generate_random_ip(),
-        'mac': f'{random.randint(0, 255):02x}:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}',
         'network': {
-            'egress': {
-                'bytes': random.randint(1000, 1000000),
-                'drops': random.randint(0, 1000),
-                'errors': random.randint(0, 100),
-                'packets': random.randint(100, 10000)
-            },
             'ingress': {
-                'bytes': random.randint(1000, 1000000),
-                'drops': random.randint(0, 1000),
-                'errors': random.randint(0, 100),
-                'packets': random.randint(100, 10000)
+                'queue': random.randint(1, 10000)
             }
         }
     }
@@ -68,27 +79,25 @@ def generate_random_host():
 
 def generate_random_network():
     network = {
-        'broadcast': generate_random_ip(),
-        'dhcp': f'dhcp_{random.randint(1, 1000)}',
-        'gateway': generate_random_ip(),
-        'metric': random.randint(1, 100),
-        'netmask': generate_random_ip(),
-        'protocol': random.choice(['TCP', 'UDP', 'ICMP']),
-        'type': random.choice(['wired', 'wireless'])
+        'protocol': random.choice(['TCP', 'UDP', 'ICMP'])
     }
     return network
 
 
-def generate_random_observer():
-    observer = {
-        'ingress': {
-            'interface': {
-                'alias': f'alias{random.randint(1, 1000)}',
-                'name': f'interface{random.randint(1, 1000)}'
-            }
-        }
+def generate_random_process():
+    process = {
+        'name': f'process{random.randint(1, 1000)}',
+        'pid': random.randint(1, 10000)
     }
-    return observer
+    return process
+
+
+def generate_random_source():
+    source = {
+        'ip': generate_random_ip(),
+        'port': random.randint(1, 65535)
+    }
+    return source
 
 
 def generate_random_data(number):
@@ -97,9 +106,13 @@ def generate_random_data(number):
         event_data = {
             '@timestamp': datetime.datetime.now().strftime(DATE_FORMAT),
             'agent': generate_random_agent(),
+            'destination': generate_random_destination(),
+            'device': generate_random_device(),
+            'file': generate_random_file(),
             'host': generate_random_host(),
             'network': generate_random_network(),
-            'observer': generate_random_observer()
+            'process': generate_random_process(),
+            'source': generate_random_source()
         }
         data.append(event_data)
     return data

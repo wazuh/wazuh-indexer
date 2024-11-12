@@ -3,7 +3,7 @@ name: CI
 # This workflow runs when any of the following occur:
 # - On push to branches named after ci/*
 on:
-  pull_request:
+  push:
     # Sequence of patterns matched against refs/heads
     branches:
       - "migrate-*"

@@ -12,23 +12,7 @@ fields:
       host:
         fields: "*"
   host:
-    fields:
-      ip: {}
-      mac: {}
-      network:
-        fields:
-          egress:
-            fields:
-              bytes: {}
-              drops: {}
-              errors: {}
-              packets: {}
-          ingress:
-            fields:
-              bytes: {}
-              drops: {}
-              errors: {}
-              packets: {}
+    fields: "*"
   interface:
     fields:
       mtu: {}

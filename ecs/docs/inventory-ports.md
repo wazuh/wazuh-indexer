@@ -10,21 +10,21 @@ Based on ECS:
 -   [Network Fields](https://www.elastic.co/guide/en/ecs/current/ecs-network.html).
 -   [Host Fields](https://www.elastic.co/guide/en/ecs/current/ecs-host.html).
 
-|     | Field name                 | Data type | Description                                   | Example |
-| --- | -------------------------- | --------- | --------------------------------------------- | ------- |
-|     | @timestamp                 | date      | Timestamp of the scan                         |         |
-|     | destination.ip             | ip        | IP address of the destination                 |         |
-|     | destination.port           | long      | Port of the destination                       |         |
-|     | device.id                  | keyword   | The unique identifier of a device             |         |
-|     | file.inode                 | keyword   | Inode representing the file in the filesystem |         |
-|     | network.protocol           | keyword   | Application protocol name                     |         |
-|     | process.name               | keyword   | Process name                                  |         |
-|     | process.pid                | long      | Process ID                                    |         |
-|     | source.ip                  | ip        | IP address of the source                      |         |
-|     | source.port                | long      | Port of the source                            |         |
-| *   | host.network.egress.queue  | long      | Transmit queue length                         |         |
-| *   | host.network.ingress.queue | long      | Receive queue length                          |         |
-| *   | interface.state            | keyword   | State of the network interface                |         |
+|     | Field name                 | Data type | Description                                   | Example                              |
+| --- | -------------------------- | --------- | --------------------------------------------- | ------------------------------------ |
+|     | @timestamp                 | date      | Timestamp of the scan                         | 2016-05-23T08:05:34.853Z             |
+|     | destination.ip             | ip        | IP address of the destination                 | 192.168.0.100                        |
+|     | destination.port           | long      | Port of the destination                       |                                      |
+|     | device.id                  | keyword   | The unique identifier of a device             | 00000000-54b3-e7c7-0000-000046bffd97 |
+|     | file.inode                 | keyword   | Inode representing the file in the filesystem | 256383                               |
+|     | network.protocol           | keyword   | Application protocol name                     | http                                 |
+|     | process.name               | keyword   | Process name                                  | ssh                                  |
+|     | process.pid                | long      | Process ID                                    | 4242                                 |
+|     | source.ip                  | ip        | IP address of the source                      |                                      |
+|     | source.port                | long      | Port of the source                            |                                      |
+| *   | host.network.egress.queue  | long      | Transmit queue length                         |                                      |
+| *   | host.network.ingress.queue | long      | Receive queue length                          |                                      |
+| *   | interface.state            | keyword   | State of the network interface                |                                      |
 
 \* Custom fields
 

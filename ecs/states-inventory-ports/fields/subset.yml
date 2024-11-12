@@ -22,15 +22,7 @@ fields:
     fields:
       inode: {}
   host:
-    fields:
-      network:
-        fields:
-#          egress:
-#            fields:
-#              queue: {}
-          ingress:
-            fields:
-              queue: {}
+    fields: "*"
   network:
     fields:
       protocol: {}

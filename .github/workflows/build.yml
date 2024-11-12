@@ -293,7 +293,7 @@ jobs:
 
       - if: ${{steps.cache-opensearch-plugins.cache-hit != 'true'}}
         name: Cache OpenSearch plugins fail
-        run: echo "Failed to cache OpenSearch plugins. DIRECTORYY /$HOME/.m2/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0/ "
+        run: echo "Failed to cache OpenSearch plugins. DIRECTORYY $HOME/.m2/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0/ "
 
       - name: Run `assemble.sh`
         run: |
@@ -309,11 +309,16 @@ jobs:
           path: |
             //$HOME/.m2/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0/
             $HOME/.m2/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0/
+            $HOME/runner/.m2/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0/
           key: ${{ runner.os }}-opensearch-performance-analyzer-${{ hashFiles('performance-analyzer**.xml') }}
           restore-keys: |
             ${{ runner.os }}-opensearch-performance-analyzer
             ${{ runner.os }}-opensearch
 
+      - if: ${{steps.cache-opensearch-plugins-post.cache-hit != 'true'}}
+        name: Cache OpenSearch plugins fail
+        run: echo "Failed to cache OpenSearch plugins post assemble script. DIRECTORYY $HOME/.m2/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0/ "
+        
       - name: Test RPM package
         if: ${{ matrix.distribution == 'rpm' }}
         uses: addnab/docker-run-action@v3

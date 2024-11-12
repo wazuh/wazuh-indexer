@@ -19,15 +19,9 @@
       type: date
       level: custom
       description: >
-<<<<<<< HEAD:ecs/agent/fields/custom/wazuh-agent.yml
         The agent's last login.
     - name: status
       type: keyword
-=======
-        The last time the agent logged in.
-    - name: is_connected
-      type: boolean
->>>>>>> master:ecs/agent/fields/custom/agent.yml
       level: custom
       description: >
         Agents' interpreted connection status depending on `agent.last_login`.

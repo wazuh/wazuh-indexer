@@ -9,20 +9,23 @@ fields:
     fields:
       id: {}
       groups: {}
+      host:
+        fields: "*"
   observer:
     fields:
       serial_number: {}
   host:
-    fields:
-      memory:
-        fields:
-          total: {}
-          free: {}
-          used:
-            fields:
-              percentage: {}
-      cpu:
-        fields:
-          name: {}
-          cores: {}
-          speed: {}
+    fields: "*"
+#    fields:
+#      memory:
+#        fields:
+#          total: {}
+#          free: {}
+#          used:
+#            fields:
+#              percentage: {}
+#      cpu:
+#        fields:
+#          name: {}
+#          cores: {}
+#          speed: {}

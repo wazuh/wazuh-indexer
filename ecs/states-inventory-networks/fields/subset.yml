@@ -9,6 +9,8 @@ fields:
     fields:
       id: {}
       groups: {}
+      host:
+        fields: "*"
   host:
     fields:
       ip: {}

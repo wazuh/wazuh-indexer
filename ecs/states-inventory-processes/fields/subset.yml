@@ -8,7 +8,9 @@ fields:
   agent:
     fields:
       id: {}
-      groups: {}
+      groups: {} 
+      host:
+        fields: "*"
   process:
     fields:
       pid: {}

@@ -8,6 +8,8 @@ fields:
     fields:
       id: {}
       groups: {}
+      host:
+        fields: "*"
   file:
     fields:
       attributes: {}

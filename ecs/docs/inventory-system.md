@@ -9,19 +9,19 @@ Based on ECS:
 -   [Host Fields](https://www.elastic.co/guide/en/ecs/current/ecs-host.html).
 -   [Operating System Fields](https://www.elastic.co/guide/en/ecs/current/ecs-os.html).
 
-|     | Field name          | Data type | Description                                                | Example |
-| --- | ------------------- | --------- | ---------------------------------------------------------- | ------- |
-|     | `@timestamp`        | date      | Date/time when the event originated.                       |         |
-|     | `agent.id`          | keyword   | Agent's ID                                                 |         |
-|     | `host.architecture` | keyword   | Operating system architecture.                             |         |
-|     | `host.hostname`     | keyword   | Hostname of the host.                                      |         |
-|     | `host.os.full`      | keyword   | Operating system name, including the version or code name. |         |
-|     | `host.os.kernel`    | keyword   | Operating system kernel version as a raw string.           |         |
-|     | `host.os.name`      | keyword   | Operating system name, without the version.                |         |
-|     | `host.os.platform`  | keyword   | Operating system platform (such centos, ubuntu, windows).  |         |
-|     | `host.os.type`      | keyword   | [linux, macos, unix, windows, ios, android]                |         |
-|     | `host.os.version`   | keyword   | Operating system version as a raw string.                  |         |
-| *   | `agent.groups`      | keyword   | Agent's groups                                             |         |
+|     | Field name          | Data type | Description                                                | Example                  |
+| --- | ------------------- | --------- | ---------------------------------------------------------- | ------------------------ |
+|     | `@timestamp`        | date      | Date/time when the event originated.                       | 2016-05-23T08:05:34.853Z |
+|     | `agent.id`          | keyword   | Unique identifier of this agent.                           | 8a4f500d                 |
+|     | `host.architecture` | keyword   | Operating system architecture.                             | x86_64                   |
+|     | `host.hostname`     | keyword   | Hostname of the host.                                      |                          |
+|     | `host.os.full`      | keyword   | Operating system name, including the version or code name. | Mac OS Mojave            |
+|     | `host.os.kernel`    | keyword   | Operating system kernel version as a raw string.           | 4.4.0-112-generic        |
+|     | `host.os.name`      | keyword   | Operating system name, without the version.                | Mac OS X                 |
+|     | `host.os.platform`  | keyword   | Operating system platform (such centos, ubuntu, windows).  | darwin                   |
+|     | `host.os.type`      | keyword   | [linux, macos, unix, windows, ios, android]                | macos                    |
+|     | `host.os.version`   | keyword   | Operating system version as a raw string.                  | 10.14.1                  |
+| *   | `agent.groups`      | keyword   | Agent's groups                                             |                          |
 
 \* Custom field
 

@@ -283,14 +283,14 @@ jobs:
         id: cache-opensearch-plugins
         uses: actions/cache@v4
         with:
-          path: $HOME/.m2/repository/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0/
-          key: ${{ runner.os }}-opensearch-${{ hashFiles('performance-analyzer**.xml') }}
+          path: /$HOME/.m2/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0/
+          key: ${{ runner.os }}-opensearch-performance-analyzer-${{ hashFiles('performance-analyzer**.xml') }}
           restore-keys: |
             ${{ runner.os }}-opensearch-performance-analyzer
 
       - if: ${{steps.cache-opensearch-plugins.cache-hit != 'true'}}
         name: Cache OpenSearch plugins fail
-        run: echo "Failed to cache OpenSearch plugins. DIRECTORYY $HOME/.m2/repository/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0/ "
+        run: echo "Failed to cache OpenSearch plugins. DIRECTORYY /$HOME/.m2/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0/ "
 
       - name: Run `assemble.sh`
         run: |
@@ -303,16 +303,12 @@ jobs:
         id: cache-opensearch-plugins-post
         uses: actions/cache@v4
         with:
-          path: $HOME/.m2/repository/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0/
-          key: ${{ runner.os }}-opensearch-${{ hashFiles('performance-analyzer**.xml') }}
+          path: /$HOME/.m2/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0/
+          key: ${{ runner.os }}-opensearch-performance-analyzer-${{ hashFiles('performance-analyzer**.xml') }}
           restore-keys: |
             ${{ runner.os }}-opensearch-performance-analyzer
-
-      - if: ${{steps.cache-opensearch-plugins-post.cache-hit != 'true'}}
-        name: Cache OpenSearch plugins fail POST
-        run: |
-          ls $HOME/.m2/repository/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0/ >> $GITHUB_OUTPUT
-
+            ${{ runner.os }}-opensearch
+            
       - name: Test RPM package
         if: ${{ matrix.distribution == 'rpm' }}
         uses: addnab/docker-run-action@v3

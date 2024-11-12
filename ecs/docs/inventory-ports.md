@@ -10,21 +10,21 @@ Based on ECS:
 -   [Network Fields](https://www.elastic.co/guide/en/ecs/current/ecs-network.html).
 -   [Host Fields](https://www.elastic.co/guide/en/ecs/current/ecs-host.html).
 
-|     | Field name  | ECS field name             | Data type | Description                                        |
-| --- | ----------- | -------------------------- | --------- | -------------------------------------------------- |
-|     | inode       | file.inode                 | keyword   | The unix inode of the port                         |
-|     | item_id     | device.id                  | keyword   | Identifier of interface/protocol/address/port item |
-|     | local_ip    | source.ip                  | ip        | Local IP address                                   |
-|     | local_port  | source.port                | long      | Local port number                                  |
-|     | pid         | process.pid                | long      | Process ID                                         |
-|     | process     | process.name               | keyword   | Process name                                       |
-|     | protocol    | network.protocol           | keyword   | Protocol used                                      |
-|     | remote_ip   | destination.ip             | ip        | Remote IP address                                  |
-|     | remote_port | destination.port           | long      | Remote port number                                 |
-|     | scan_time   | @timestamp                 | date      | Timestamp of the scan                              |
-| *   | rx_queue    | host.network.ingress.queue | long      | Receive queue length                               |
-| *   | state       | interface.state            | keyword   | State of the network interface                     |
-| *   | tx_queue    | host.network.egress.queue  | long      | Transmit queue length                              |
+|     | Field name                 | Data type | Description                                   | Example |
+| --- | -------------------------- | --------- | --------------------------------------------- | ------- |
+|     | @timestamp                 | date      | Timestamp of the scan                         |         |
+|     | destination.ip             | ip        | IP address of the destination                 |         |
+|     | destination.port           | long      | Port of the destination                       |         |
+|     | device.id                  | keyword   | The unique identifier of a device             |         |
+|     | file.inode                 | keyword   | Inode representing the file in the filesystem |         |
+|     | network.protocol           | keyword   | Application protocol name                     |         |
+|     | process.name               | keyword   | Process name                                  |         |
+|     | process.pid                | long      | Process ID                                    |         |
+|     | source.ip                  | ip        | IP address of the source                      |         |
+|     | source.port                | long      | Port of the source                            |         |
+| *   | host.network.egress.queue  | long      | Transmit queue length                         |         |
+| *   | host.network.ingress.queue | long      | Receive queue length                          |         |
+| *   | interface.state            | keyword   | State of the network interface                |         |
 
 \* Custom fields
 

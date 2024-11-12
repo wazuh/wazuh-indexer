@@ -6,27 +6,27 @@ The fields are based on https://github.com/wazuh/wazuh-indexer/issues/282#issuec
 
 Based on ECS:
 
--   [Process Fields](https://www.elastic.co/guide/en/ecs/current/ecs-process.html).
+- [Process Fields](https://www.elastic.co/guide/en/ecs/current/ecs-process.html).
 
-|     | Field name               | Data type | Description                                                                                          | Examples                                         | Comments                                                   |
-| --- | ------------------------ | --------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------- |
-|     | `@timestamp`             | date      | Date/time when the event originated                                                                  | 2016-05-23T08:05:34.853Z                         |                                                            |
-|     | `agent.id`               | keyword   | Unique identifier of this agent                                                                      | 8a4f500d                                         |                                                            |
-|     | `process.args`           | keyword   | Array of process arguments                                                                           | ["/usr/bin/ssh", "-l", "user", "10.0.0.16"]      |                                                            |
-|     | `process.command_line`   | wildcard  | process.command_line                                                                                 | /usr/bin/ssh -l user 10.0.0.16                   |                                                            |
-|     | `process.name`           | keyword   | Process name                                                                                         | ssh                                              |                                                            |
-|     | `process.parent.pid`     | long      | Parent process ID                                                                                    | 4242                                             |                                                            |
-|     | `process.pid`            | long      | Process ID                                                                                           | 4242                                             |                                                            |
-|     | `process.real_group.id`  | keyword   | Unique identifier for the group on the system/platform                                               |                                                  |                                                            |
-|     | `process.real_user.id`   | keyword   | Unique identifier of the user                                                                        | S-1-5-21-202424912787-2692429404-2351956786-1000 |                                                            |
-|     | `process.saved_group.id` | keyword   | Unique identifier for the group on the system/platform                                               |                                                  |                                                            |
-|     | `process.saved_user.id`  | keyword   | Unique identifier of the user                                                                        | S-1-5-21-202424912787-2692429404-2351956786-1000 |                                                            |
-|     | `process.start`          | date      | The time the process started                                                                         | 2016-05-23T08:05:34.853Z                         |                                                            |
-|     | `process.user.id`        | keyword   | Unique identifier of the user                                                                        | S-1-5-21-202424912787-2692429404-2351956786-1000 |                                                            |
-| !   | `process.thread.id`      | long      | Thread ID                                                                                            |                                                  | `thread.group` is **not part of ECS;** but `thread.id` is. |
-| !   | `process.tty`            | object    | Information about the controlling TTY device. If set, the process belongs to an interactive session. |                                                  | Needs clarification                                        |
-| *   | `process.group.id`       | keyword   | Unique identifier for the effective group on the system/platform.                                    |                                                  |                                                            |
-| *   | agent.groups             | keyword   | Agent's groups                                                                                       |                                                  |                                                            |
+|     | Field name               | Data type | Description                                                                                          | Examples                                           | Comments                                                   |
+| --- | ------------------------ | --------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------- | ---------------------------------------------------------- |
+|     | `@timestamp`             | date      | Date/time when the event originated.                                                                 | `2016-05-23T08:05:34.853Z`                         |                                                            |
+|     | `agent.id`               | keyword   | Unique identifier of this agent.                                                                      | `8a4f500d`                                         |                                                            |
+|     | `process.args`           | keyword   | Array of process arguments.                                                                          | `["/usr/bin/ssh", "-l", "user", "10.0.0.16"]`      |                                                            |
+|     | `process.command_line`   | wildcard  | process.command_line.                                                                                | `/usr/bin/ssh -l user 10.0.0.16`                   |                                                            |
+|     | `process.name`           | keyword   | Process name.                                                                                        | `ssh`                                              |                                                            |
+|     | `process.parent.pid`     | long      | Parent process ID.                                                                                   | `4242`                                             |                                                            |
+|     | `process.pid`            | long      | Process ID.                                                                                          | `4242`                                             |                                                            |
+|     | `process.real_group.id`  | keyword   | Unique identifier for the group on the system/platform.                                              |                                                    |                                                            |
+|     | `process.real_user.id`   | keyword   | Unique identifier of the user.                                                                       | `S-1-5-21-202424912787-2692429404-2351956786-1000` |                                                            |
+|     | `process.saved_group.id` | keyword   | Unique identifier for the group on the system/platform.                                              |                                                    |                                                            |
+|     | `process.saved_user.id`  | keyword   | Unique identifier of the user.                                                                       | `S-1-5-21-202424912787-2692429404-2351956786-1000` |                                                            |
+|     | `process.start`          | date      | The time the process started.                                                                        | `2016-05-23T08:05:34.853Z`                         |                                                            |
+|     | `process.user.id`        | keyword   | Unique identifier of the user.                                                                       | `S-1-5-21-202424912787-2692429404-2351956786-1000` |                                                            |
+| !   | `process.thread.id`      | long      | Thread ID.                                                                                           |                                                    | `thread.group` is **not part of ECS;** but `thread.id` is. |
+| !   | `process.tty`            | object    | Information about the controlling TTY device. If set, the process belongs to an interactive session. |                                                    | Needs clarification                                        |
+| \*  | `process.group.id`       | keyword   | Unique identifier for the effective group on the system/platform.                                    |                                                    |                                                            |
+| \*  | `agent.groups`           | keyword   | List of groups the agent belong to.                                                                  |                                                    |                                                            |
 
 \* Custom field
 
@@ -57,75 +57,74 @@ Based on ECS:
 </p>
 </details>
 
-
 ### ECS mapping
 
 ```yml
 ---
 name: wazuh-states-inventory-processes
 fields:
-    base:
+  base:
+    fields:
+      "@timestamp": {}
+  agent:
+    fields:
+      id: {}
+      groups: {}
+  process:
+    fields:
+      pid: {}
+      name: ""
+      parent:
         fields:
-            "@timestamp": {}
-    agent:
+          pid: {}
+      command_line: ""
+      args: ""
+      user:
         fields:
-            id: {}
-            groups: {}
-    process:
+          id: ""
+      real_user:
         fields:
-            pid: {}
-            name: ""
-            parent:
-                fields:
-                    pid: {}
-            command_line: ""
-            args: ""
-            user:
-                fields:
-                    id: ""
-            real_user:
-                fields:
-                    id: ""
-            saved_user:
-                fields:
-                    id: ""
-            group:
-                fields:
-                    id: ""
-            real_group:
-                fields:
-                    id: ""
-            saved_group:
-                fields:
-                    id: ""
-            start: {}
-            thread:
-                fields:
-                    id: ""
-            tty: {}
+          id: ""
+      saved_user:
+        fields:
+          id: ""
+      group:
+        fields:
+          id: ""
+      real_group:
+        fields:
+          id: ""
+      saved_group:
+        fields:
+          id: ""
+      start: {}
+      thread:
+        fields:
+          id: ""
+      tty: {}
 ```
 
 ### Index settings
 
 ```json
 {
-    "index_patterns": ["wazuh-states-inventory-processes*"],
-    "priority": 1,
-    "template": {
-        "settings": {
-            "index": {
-                "number_of_shards": "1",
-                "number_of_replicas": "0",
-                "refresh_interval": "5s",
-                "query.default_field": [
-                    "agent.id",
-                    "agent.groups",
-                    "process.name",
-                    "process.pid",
-                    "process.command_line"
-                ]
-            }
-        }
+  "index_patterns": ["wazuh-states-inventory-processes*"],
+  "priority": 1,
+  "template": {
+    "settings": {
+      "index": {
+        "number_of_shards": "1",
+        "number_of_replicas": "0",
+        "refresh_interval": "5s",
+        "query.default_field": [
+          "agent.id",
+          "agent.groups",
+          "process.name",
+          "process.pid",
+          "process.command_line"
+        ]
+      }
     }
+  }
 }
 ```

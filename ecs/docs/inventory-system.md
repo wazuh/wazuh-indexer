@@ -6,22 +6,22 @@ The fields are based on https://github.com/wazuh/wazuh-indexer/issues/282#issuec
 
 Based on ECS:
 
--   [Host Fields](https://www.elastic.co/guide/en/ecs/current/ecs-host.html).
--   [Operating System Fields](https://www.elastic.co/guide/en/ecs/current/ecs-os.html).
+- [Host Fields](https://www.elastic.co/guide/en/ecs/current/ecs-host.html).
+- [Operating System Fields](https://www.elastic.co/guide/en/ecs/current/ecs-os.html).
 
-|     | Field name          | Data type | Description                                                | Example                  |
-| --- | ------------------- | --------- | ---------------------------------------------------------- | ------------------------ |
-|     | `@timestamp`        | date      | Date/time when the event originated.                       | 2016-05-23T08:05:34.853Z |
-|     | `agent.id`          | keyword   | Unique identifier of this agent.                           | 8a4f500d                 |
-|     | `host.architecture` | keyword   | Operating system architecture.                             | x86_64                   |
-|     | `host.hostname`     | keyword   | Hostname of the host.                                      |                          |
-|     | `host.os.full`      | keyword   | Operating system name, including the version or code name. | Mac OS Mojave            |
-|     | `host.os.kernel`    | keyword   | Operating system kernel version as a raw string.           | 4.4.0-112-generic        |
-|     | `host.os.name`      | keyword   | Operating system name, without the version.                | Mac OS X                 |
-|     | `host.os.platform`  | keyword   | Operating system platform (such centos, ubuntu, windows).  | darwin                   |
-|     | `host.os.type`      | keyword   | [linux, macos, unix, windows, ios, android]                | macos                    |
-|     | `host.os.version`   | keyword   | Operating system version as a raw string.                  | 10.14.1                  |
-| *   | `agent.groups`      | keyword   | Agent's groups                                             |                          |
+|     | Field name          | Data type | Description                                                | Example                    |
+| --- | ------------------- | --------- | ---------------------------------------------------------- | -------------------------- |
+|     | `@timestamp`        | date      | Date/time when the event originated.                       | `2016-05-23T08:05:34.853Z` |
+|     | `agent.id`          | keyword   | Unique identifier of this agent.                           | `8a4f500d`                 |
+|     | `host.architecture` | keyword   | Operating system architecture.                             | `x86_64`                   |
+|     | `host.hostname`     | keyword   | Hostname of the host.                                      |                            |
+|     | `host.os.full`      | keyword   | Operating system name, including the version or code name. | `Mac OS Mojave`            |
+|     | `host.os.kernel`    | keyword   | Operating system kernel version as a raw string.           | `4.4.0-112-generic`        |
+|     | `host.os.name`      | keyword   | Operating system name, without the version.                | `Mac OS X`                 |
+|     | `host.os.platform`  | keyword   | Operating system platform (such centos, ubuntu, windows).  | `darwin`                   |
+|     | `host.os.type`      | keyword   | [linux, macos, unix, windows, ios, android]                | `macos`                    |
+|     | `host.os.version`   | keyword   | Operating system version as a raw string.                  | `10.14.1`                  |
+| \*  | `agent.groups`      | keyword   | List of groups the agent belong to.                        |                            |
 
 \* Custom field
 
@@ -30,22 +30,22 @@ Based on ECS:
 
 Removed fields:
 
--   os_display_version
--   os_major (can be extracted from os_version)
--   os_minor (can be extracted from os_version)
--   os_patch (can be extracted from os_version)
--   os_release
--   reference
--   release
--   scan_id
--   sysname
--   version
--   checksum
+- os_display_version
+- os_major (can be extracted from os_version)
+- os_minor (can be extracted from os_version)
+- os_patch (can be extracted from os_version)
+- os_release
+- reference
+- release
+- scan_id
+- sysname
+- version
+- checksum
 
 Available fields:
 
--   `os.family`
--   `hots.name`
+- `os.family`
+- `hots.name`
 
 </p>
 </details>
@@ -56,48 +56,48 @@ Available fields:
 ---
 name: wazuh-states-inventory-system
 fields:
-    base:
+  base:
+    fields:
+      "@timestamp": {}
+  agent:
+    fields:
+      id: {}
+      groups: {}
+  host:
+    fields:
+      architecture: {}
+      hostname: {}
+      name: {}
+      os:
         fields:
-            "@timestamp": {}
-    agent:
-        fields:
-            id: {}
-            groups: {}
-    host:
-        fields:
-            architecture: {}
-            hostname: {}
-            name: {}
-            os:
-                fields:
-                    kernel: {}
-                    full: {}
-                    platform: {}
-                    version: {}
-                    type: {}
+          kernel: {}
+          full: {}
+          platform: {}
+          version: {}
+          type: {}
 ```
 
 ### Index settings
 
 ```json
 {
-    "index_patterns": ["wazuh-states-inventory-system*"],
-    "priority": 1,
-    "template": {
-        "settings": {
-            "index": {
-                "number_of_shards": "1",
-                "number_of_replicas": "0",
-                "refresh_interval": "5s",
-                "query.default_field": [
-                    "agent.id",
-                    "agent.groups",
-                    "host.name",
-                    "host.os.type",
-                    "host.os.version"
-                ]
-            }
-        }
+  "index_patterns": ["wazuh-states-inventory-system*"],
+  "priority": 1,
+  "template": {
+    "settings": {
+      "index": {
+        "number_of_shards": "1",
+        "number_of_replicas": "0",
+        "refresh_interval": "5s",
+        "query.default_field": [
+          "agent.id",
+          "agent.groups",
+          "host.name",
+          "host.os.type",
+          "host.os.version"
+        ]
+      }
     }
+  }
 }
 ```

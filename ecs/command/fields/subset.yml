@@ -1,0 +1,11 @@
+---
+name: command
+fields:
+  base:
+    fields:
+      tags: []
+  agent:
+    fields:
+      groups: {}
+  command:
+    fields: "*"

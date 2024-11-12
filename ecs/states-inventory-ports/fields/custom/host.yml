@@ -1,0 +1,14 @@
+---
+- name: host
+  title: Host
+  fields:
+    - name: network.ingress.queue
+      type: long
+      level: custom
+      description: >
+        Receive queue length.
+    - name: network.egress.queue
+      type: long
+      level: custom
+      description: >
+        Transmit queue length.

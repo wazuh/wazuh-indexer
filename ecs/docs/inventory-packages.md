@@ -8,32 +8,32 @@ Based on ECS:
 
 -   [Package Fields](https://www.elastic.co/guide/en/ecs/current/ecs-package.html).
 
-| Field name   | ECS field name         | Data type | Description                                                       |
-| ------------ | ---------------------- | --------- | ----------------------------------------------------------------- |
-|              | `agent.id`             | keyword   | Agent's ID                                                        |
-|              | \*`agent.groups`       | keyword   | Agent's groups                                                    |
-| scan_time    | `@timestamp`           | date      | Timestamp of the scan                                             |
-| architecture | `package.architecture` | keyword   | Package architecture.                                             |
-| description  | `package.description`  | keyword   | Description of the package.                                       |
-| install_time | `package.installed`    | date      | Time when package was installed.                                  |
-| name         | `package.name`         | keyword   | Package name.                                                     |
-| location     | `package.path`         | keyword   | Path where the package is installed.                              |
-| size         | `package.size`         | long      | Package size in bytes.                                            |
-| format       | `package.type`         | keyword   | Type of package. Examples: rpm, dpkg, brew, npm, gem, nupkg, jar. |
-| version      | `package.version`      | keyword   | Package version.                                                  |
+|     | Field name             | Data type | Description                                                       | Example |
+| --- | ---------------------- | --------- | ----------------------------------------------------------------- | ------- |
+|     | `agent.id`             | keyword   | Agent's ID                                                        |         |
+| *   | `agent.groups`         | keyword   | Agent's groups                                                    |         |
+|     | `@timestamp`           | date      | Timestamp of the scan                                             |         |
+|     | `package.architecture` | keyword   | Package architecture.                                             |         |
+|     | `package.description`  | keyword   | Description of the package.                                       |         |
+|     | `package.installed`    | date      | Time when package was installed.                                  |         |
+|     | `package.name`         | keyword   | Package name.                                                     |         |
+|     | `package.path`         | keyword   | Path where the package is installed.                              |         |
+|     | `package.size`         | long      | Package size in bytes.                                            |         |
+|     | `package.type`         | keyword   | Type of package. Examples: rpm, dpkg, brew, npm, gem, nupkg, jar. |         |
+|     | `package.version`      | keyword   | Package version.                                                  |         |
 
 \* Custom field
 
 <details><summary>Fields not included in ECS</summary>
 <p>
 
-|     | Field name | ECS field name    | Data type | Description                                                               |
-| --- | ---------- | ----------------- | --------- | ------------------------------------------------------------------------- |
-| ?   | priority   |                   |           | Priority of the program                                                   |
-| ?   | section    |                   |           | Section of the program   category the package belongs to in DEB package managers                                                 |
-| X   | vendor     | package.reference | keyword   | Home page or reference URL of the software in this package, if available. |
-| ?   | multiarch  |                   |           | Multi-architecture compatibility                                          |
-| X   | source     |                   |           | Source of the program - package manager                                   |
+|     | Field name | ECS field name    | Data type | Description                                                                      |
+| --- | ---------- | ----------------- | --------- | -------------------------------------------------------------------------------- |
+| ?   | priority   |                   |           | Priority of the program                                                          |
+| ?   | section    |                   |           | Section of the program   category the package belongs to in DEB package managers |
+| X   | vendor     | package.reference | keyword   | Home page or reference URL of the software in this package, if available.        |
+| ?   | multiarch  |                   |           | Multi-architecture compatibility                                                 |
+| X   | source     |                   |           | Source of the program - package manager                                          |
 
 </p>
 </details>

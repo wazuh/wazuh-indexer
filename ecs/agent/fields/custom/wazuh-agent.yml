@@ -30,9 +30,3 @@
           description: Active agent status
         - name: disconnected
           description: Disconnected agent status
-    - name: host
-      type: group
-      level: custom
-      description: >
-        Agents' interpreted connection status depending on `agent.last_login`.
-      fields: "*"

@@ -16,8 +16,3 @@ fields:
       status: {}
       host:
         fields: "*"
-#        fields: "*"
-#      ip: {}
-#      os:
-#        fields:
-#          full: {}

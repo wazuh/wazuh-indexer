@@ -1,18 +1,6 @@
 ---
 - name: host
-  title: Wazuh Agents
-  short: Wazuh Inc. custom fields.
-  level: core
-  type: group
-  group: 0
   reusable:
     top_level: false
     expected:
       - agent
-  fields:
-    - name: os
-      title: Operating system
-      level: custom
-      type: keyword
-      description: >
-        Agent's operating system

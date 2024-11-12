@@ -9,17 +9,17 @@
       type: keyword
       level: custom
       description: >
-        The groups the agent belongs to.
+        List of groups the agent belong to.
     - name: key
       type: keyword
       level: custom
       description: >
-        The agent's registration key.
+        The registration key of the agent.
     - name: last_login
       type: date
       level: custom
       description: >
-        The agent's last login.
+        The last time the agent logged in.
     - name: is_connected
       type: boolean
       level: custom

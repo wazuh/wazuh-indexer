@@ -21,10 +21,18 @@ if command -v systemctl >/dev/null && systemctl is-active wazuh-indexer.service 
     echo "Stop existing wazuh-indexer.service"
     systemctl --no-reload stop wazuh-indexer.service
     touch $restart_service
+elif command -v service >/dev/null && service wazuh-indexer status >/dev/null 2>&1; then
+    echo "Stop existing wazuh-indexer"
+    service wazuh-indexer stop
+    touch $restart_service
 fi
+
 if command -v systemctl >/dev/null && systemctl is-active wazuh-indexer-performance-analyzer.service >/dev/null; then
     echo "Stop existing wazuh-indexer-performance-analyzer.service"
     systemctl --no-reload stop wazuh-indexer-performance-analyzer.service
+elif command -v service >/dev/null && service wazuh-indexer-performance-analyzer status >/dev/null 2>&1; then
+    echo "Stop existing wazuh-indexer-performance-analyzer"
+    service wazuh-indexer-performance-analyzer stop
 fi
 
 # Create user and group if they do not already exist.

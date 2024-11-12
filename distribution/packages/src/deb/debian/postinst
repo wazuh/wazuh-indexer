@@ -33,17 +33,22 @@ chown -R wazuh-indexer:wazuh-indexer ${pid_dir}
 chown -R wazuh-indexer:wazuh-indexer ${tmp_dir}
 
 # Reload systemctl daemon
-if command -v systemctl > /dev/null; then
+if command -v systemctl >/dev/null 2>&1 && systemctl >/dev/null 2>&1; then
     systemctl daemon-reload
 fi
 
 # Reload other configs
 if command -v systemctl > /dev/null; then
     systemctl restart systemd-sysctl.service || true
+elif command -v sysctl > /dev/null; then
+  # Load configurations from /etc/sysctl.conf
+    sysctl -p
 fi
 
 if command -v systemd-tmpfiles > /dev/null; then
     systemd-tmpfiles --create wazuh-indexer.conf
+else
+  touch wazuh-indexer.conf
 fi
 
 if [ -f $restart_service ]; then
@@ -51,6 +56,9 @@ if [ -f $restart_service ]; then
     echo "Restarting wazuh-indexer service..."
     if command -v systemctl > /dev/null; then
         systemctl restart wazuh-indexer.service > /dev/null 2>&1
+    # Check for SysV
+    elif command -v service > /dev/null 2>&1; then
+     service wazuh-indexer restart > /dev/null 2>&1
     fi
     exit 0
 fi

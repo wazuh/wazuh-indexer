@@ -13,10 +13,11 @@ fields:
       groups: {}
       key: {}
       last_login: {}
-      is_connected: {}
-  host:
-    fields:
-      ip: {}
-      os:
-        fields:
-          full: {}
+      status: {}
+      host:
+        fields: "*"
+#        fields: "*"
+#      ip: {}
+#      os:
+#        fields:
+#          full: {}

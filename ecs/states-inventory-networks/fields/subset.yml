@@ -1,0 +1,51 @@
+---
+name: wazuh-states-inventory-networks
+fields:
+  base:
+    fields:
+      tags: []
+      "@timestamp": {}
+  agent:
+    fields:
+      id: {}
+      groups: {}
+  host:
+    fields:
+      ip: {}
+      mac: {}
+      network:
+        fields:
+          egress:
+            fields:
+              bytes: {}
+              drops: {}
+              errors: {}
+              packets: {}
+          ingress:
+            fields:
+              bytes: {}
+              drops: {}
+              errors: {}
+              packets: {}
+  interface:
+    fields:
+      mtu: {}
+      state: {}
+      type: {}
+  network:
+    fields:
+      broadcast: {}
+      dhcp: {}
+      gateway: {}
+      metric: {}
+      netmask: {}
+      protocol: {}
+      type: {}
+  observer:
+    fields:
+      ingress:
+        fields:
+          interface:
+            fields:
+              alias: {}
+              name: {}

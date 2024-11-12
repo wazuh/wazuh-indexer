@@ -284,9 +284,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            //${{ HOME }}/.m2/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0/
             //$HOME/.m2/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0/
-            ${{ HOME }}/.m2/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0/
             $HOME/.m2/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0
           key: ${{ runner.os }}-opensearch-performance-analyzer-${{ hashFiles('performance-analyzer**.xml') }}
           restore-keys: |
@@ -309,9 +307,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            //${{ HOME }}/.m2/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0/
             //$HOME/.m2/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0/
-            ${{ HOME }}/.m2/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0/
             $HOME/.m2/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0/
           key: ${{ runner.os }}-opensearch-performance-analyzer-${{ hashFiles('performance-analyzer**.xml') }}
           restore-keys: |

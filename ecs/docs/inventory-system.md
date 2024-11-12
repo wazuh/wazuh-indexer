@@ -9,19 +9,19 @@ Based on ECS:
 -   [Host Fields](https://www.elastic.co/guide/en/ecs/current/ecs-host.html).
 -   [Operating System Fields](https://www.elastic.co/guide/en/ecs/current/ecs-os.html).
 
-| Field name   | ECS field name      | Data type | Description                                                |
-| ------------ | ------------------- | --------- | ---------------------------------------------------------- |
-|              | `agent.id`          | keyword   | Agent's ID                                                 |
-|              | \*`agent.groups`    | keyword   | Agent's groups                                             |
-| scan_time    | `@timestamp`        | date      | Date/time when the event originated.                       |
-| architecture | `host.architecture` | keyword   | Operating system architecture.                             |
-| hostname     | `host.hostname`     | keyword   | Hostname of the host.                                      |
-| os_build     | `host.os.kernel`    | keyword   | Operating system kernel version as a raw string.           |
-| os_codename  | `host.os.full`      | keyword   | Operating system name, including the version or code name. |
-| os_name      | `host.os.name`      | keyword   | Operating system name, without the version.                |
-| os_platform  | `host.os.platform`  | keyword   | Operating system platform (such centos, ubuntu, windows).  |
-| os_version   | `host.os.version`   | keyword   | Operating system version as a raw string.                  |
-| sysname      | `host.os.type`      | keyword   | [linux, macos, unix, windows, ios, android]                |
+|     | Field name          | Data type | Description                                                | Example |
+| --- | ------------------- | --------- | ---------------------------------------------------------- | ------- |
+|     | `@timestamp`        | date      | Date/time when the event originated.                       |         |
+|     | `agent.id`          | keyword   | Agent's ID                                                 |         |
+|     | `host.architecture` | keyword   | Operating system architecture.                             |         |
+|     | `host.hostname`     | keyword   | Hostname of the host.                                      |         |
+|     | `host.os.full`      | keyword   | Operating system name, including the version or code name. |         |
+|     | `host.os.kernel`    | keyword   | Operating system kernel version as a raw string.           |         |
+|     | `host.os.name`      | keyword   | Operating system name, without the version.                |         |
+|     | `host.os.platform`  | keyword   | Operating system platform (such centos, ubuntu, windows).  |         |
+|     | `host.os.type`      | keyword   | [linux, macos, unix, windows, ios, android]                |         |
+|     | `host.os.version`   | keyword   | Operating system version as a raw string.                  |         |
+| *   | `agent.groups`      | keyword   | Agent's groups                                             |         |
 
 \* Custom field
 

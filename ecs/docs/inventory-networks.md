@@ -10,33 +10,32 @@ Based on ECS:
 -   [Interface Fields](https://www.elastic.co/guide/en/ecs/current/ecs-interface.html).
 -   [Network Fields](https://www.elastic.co/guide/en/ecs/current/ecs-network.html).
 
-|     | Field name  | ECS field name                   | Data type | Description                                                      |
-| --- | ----------- | -------------------------------- | --------- | ---------------------------------------------------------------- |
-|     | adapter     | observer.ingress.interface.alias | keyword   | Adapter name of the network interface                            |
-|     | address     | host.ip                          | ip        | Network address                                                  |
-|     | iface       | observer.ingress.interface.name  | keyword   | Name of the network interface                                    |
-|     | item_id     | device.id                        | keyword   | Identifier of interface/protocol/address/port item               |
-|     | mac         | host.mac                         | keyword   | MAC address of the network interface                             |
-|     | name        | observer.ingress.interface.name  | keyword   | Name of the network interface                                    |
-|     | proto       | network.protocol                 | keyword   | Type of network protocol                                         |
-|     | rx_bytes    | host.network.ingress.bytes       | long      | Number of received bytes                                         |
-|     | rx_packets  | host.network.ingress.packets     | long      | Number of received packets                                       |
-|     | scan_time   | @timestamp                       | date      | Timestamp of the scan                                            |
-|     | tx_bytes    | host.network.egress.bytes        | long      | Number of transmitted bytes                                      |
-|     | tx_packets  | host.network.egress.packets      | long      | Number of transmitted packets                                    |
-|     | type        | network.type                     | keyword   | IPv4 or IPv6 for protocols, interface type for interface records |
-| *   | broadcast   | network.broadcast                | ip        | Broadcast address                                                |
-| *   | dhcp        | network.dhcp                     | keyword   | DHCP status (enabled, disabled, unknown, BOOTP)                  |
-| *   | gateway     | network.gateway                  | ip        | Gateway address                                                  |
-| *   | metric      | network.metric                   | long      | Metric of the network protocol                                   |
-| *   | mtu         | interface.mtu                    | long      | Maximum transmission unit size                                   |
-| *   | netmask     | network.netmask                  | ip        | Network mask                                                     |
-| *   | rx_dropped  | host.network.ingress.drops       | long      | Number of dropped received packets                               |
-| *   | rx_errors   | host.network.ingress.errors      | long      | Number of reception errors                                       |
-| *   | state       | interface.state                  | keyword   | State of the network interface                                   |
-| *   | tx_dropped  | host.network.egress.drops        | long      | Number of dropped transmitted packets                            |
-| *   | tx_errors   | host.network.egress.errors       | long      | Number of transmission errors                                    |
-| *   | type        | interface.type                   | keyword   | Interface type (eg. "wireless" or "ethernet")                    |
+|     | Field name                       | Data type | Description                                                                   | Example |
+| --- | -------------------------------- | --------- | ----------------------------------------------------------------------------- | ------- |
+|     | @timestamp                       | date      | Date/time when the event originated                                           |         |
+|     | device.id                        | keyword   | The unique identifier of a device.                                            |         |
+|     | host.ip                          | ip        | Host ip addresses                                                             |         |
+|     | host.mac                         | keyword   | Host MAC addresses.                                                           |         |  |
+|     | host.network.egress.bytes        | long      | The number of bytes sent on all network interfaces                            |         |
+|     | host.network.egress.packets      | long      | The number of packets sent on all network interfaces                          |         |
+|     | host.network.ingress.bytes       | long      | The number of bytes received on all network interfaces                        |         |
+|     | host.network.ingress.packets     | long      | The number of packets received on all network interfaces                      |         |
+|     | network.protocol                 | keyword   | Application protocol name                                                     |         |
+|     | network.type                     | keyword   | In the OSI Model this would be the Network Layer. ipv4, ipv6, ipsec, pim, etc |         |
+|     | observer.ingress.interface.alias | keyword   | Interface alias                                                               |         |
+|     | observer.ingress.interface.name  | keyword   | Interface name                                                                |         |
+| *   | host.network.egress.drops        | long      | Number of dropped transmitted packets                                         |         |
+| *   | host.network.egress.errors       | long      | Number of transmission errors                                                 |         |
+| *   | host.network.ingress.drops       | long      | Number of dropped received packets                                            |         |
+| *   | host.network.ingress.errors      | long      | Number of reception errors                                                    |         |
+| *   | interface.mtu                    | long      | Maximum transmission unit size                                                |         |
+| *   | interface.state                  | keyword   | State of the network interface                                                |         |
+| *   | interface.type                   | keyword   | Interface type (eg. "wireless" or "ethernet")                                 |         |
+| *   | network.broadcast                | ip        | Broadcast address                                                             |         |
+| *   | network.dhcp                     | keyword   | DHCP status (enabled, disabled, unknown, BOOTP)                               |         |
+| *   | network.gateway                  | ip        | Gateway address                                                               |         |
+| *   | network.metric                   | long      | Metric of the network protocol                                                |         |
+| *   | network.netmask                  | ip        | Network mask                                                                  |         |
 
 \* Custom fields
 

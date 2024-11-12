@@ -291,7 +291,7 @@ jobs:
 
       - if: ${{steps.cache-opensearch-plugins.cache-hit != 'true'}}
         name: Cache OpenSearch plugins fail
-        run: echo "Failed to cache OpenSearch plugins. DIRECTORYY $HOME/.m2/repository/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0/ " >> $GITHUB_OUTPUT
+        run: echo "Failed to cache OpenSearch plugins. DIRECTORYY $HOME/.m2/repository/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0/ "
 
       - name: Run `assemble.sh`
         run: |

@@ -1,0 +1,6 @@
+---
+- name: os
+  reusable:
+    top_level: false
+    expected:
+      - agent.host

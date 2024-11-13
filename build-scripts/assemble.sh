@@ -236,7 +236,7 @@ function install_plugins() {
             echo "Downloand ${plugin} plugin."
             mvn -Dmaven.repo.local="${maven_repo_local}" org.apache.maven.plugins:maven-dependency-plugin:2.1:get -DrepoUrl=https://repo1.maven.org/maven2 -Dartifact="${plugin_from_maven}:zip"
         fi
-        echo "Path TO CACHE ${maven_repo_local}/org/opensearch/plugin/${plugin}/${VERSION}.0/"
+        echo "Path TO CACHE ${PATH_BIN}/opensearch-plugin and OPENSEARCH_PATH_CONF=$PATH_CONF"
         OPENSEARCH_PATH_CONF=$PATH_CONF "${PATH_BIN}/opensearch-plugin" install --batch --verbose "file:${maven_repo_local}/org/opensearch/plugin/${plugin}/${VERSION}.0/${plugin}-${VERSION}.0.zip"
     done
 

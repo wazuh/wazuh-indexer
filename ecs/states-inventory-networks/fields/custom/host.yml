@@ -1,6 +1,9 @@
 ---
 - name: host
-  title: Host
+  reusable:
+    top_level: true
+    expected:
+      - { at: agent, as: host }
   fields:
   - name: network.egress.drops
     type: long

@@ -205,10 +205,10 @@ if command -v systemd-tmpfiles > /dev/null; then
     systemd-tmpfiles --create %{name}.conf
 fi
 
-if ! [ -d "${config_dir}/certs" ] && [ -f "${product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh" ]; then
+if ! [ -d %{config_dir}/certs ] && [ -f %{product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh ]; then
     echo "No certificates detected in ${config_dir}, installing demo certificates..."
     echo "### If you are using a custom certificates path, ignore this message."
-    bash "${product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh"
+    bash %{product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh
 fi
 
 if [ -f %{tmp_dir}/wazuh-indexer.restart ]; then

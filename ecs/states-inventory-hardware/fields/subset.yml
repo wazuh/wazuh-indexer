@@ -7,8 +7,11 @@ fields:
       "@timestamp": {}
   agent:
     fields:
-      id: {}
       groups: {}
+      id: {}
+      name: {}
+      type: {}
+      version: {}
       host:
         fields: "*"
   observer:

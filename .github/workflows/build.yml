@@ -293,6 +293,39 @@ jobs:
         name: PRE Cache /usr/share/wazuh-indexer/bin/opensearch-plugin success
         run: ls -la ./usr/share/wazuh-indexer/bin/opensearch-plugin
 
+
+      - name: PRE Cache ~/.m2/repository/org/opensearch
+        id: pre-assemble-cache-m2-repository-opensearch-plugins
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository/org/opensearch
+          key: ${{ runner.os }}-m2-repository-opensearch-${{ hashFiles('**.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-m2-repository-opensearch-
+            ${{ runner.os }}-m2-repository-opensearch
+
+      - if: ${{steps.pre-assemble-cache-m2-repository-opensearch-plugins.outputs.cache-hit == 'true'}}
+        name: PRE Cache ~/.m2/repository/org/opensearch success
+        run: ls -la ~/.m2/repository/org/opensearch
+
+
+      - name: PRE Cache $HOME/.m2/org/opensearch/plugin/
+        id: pre-assemble-cache-home-m2-opensearch-plugins
+        uses: actions/cache@v4
+        with:
+          path: |
+            $HOME/.m2/org/opensearch/plugin/
+          key: ${{ runner.os }}-home-m2-opensearch-${{ hashFiles('**.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-home-m2-opensearch-
+            ${{ runner.os }}-home-m2-opensearch
+
+      - if: ${{steps.pre-assemble-cache-home-m2-opensearch-plugins.outputs.cache-hit == 'true'}}
+        name: PRE Cache $HOME/.m2/org/opensearch/plugin/
+        run: ls -la $HOME/.m2/org/opensearch/plugin/
+
+
       - name: Run `assemble.sh`
         run: |
           bash build-scripts/assemble.sh \
@@ -314,6 +347,39 @@ jobs:
       - if: ${{steps.post-assemble-cache-usr-share-opensearch-plugins.outputs.cache-hit == 'true'}}
         name: POST Cache /usr/share/wazuh-indexer/bin/opensearch-plugin success
         run: ls -la ./usr/share/wazuh-indexer/bin/opensearch-plugin
+
+
+      - name: POST Cache ~/.m2/repository/org/opensearch
+        id: post-assemble-cache-m2-repository-opensearch-plugins
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository/org/opensearch
+          key: ${{ runner.os }}-m2-repository-opensearch-${{ hashFiles('**.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-m2-repository-opensearch-
+            ${{ runner.os }}-m2-repository-opensearch
+
+      - if: ${{steps.pre-assemble-cache-m2-repository-opensearch-plugins.outputs.cache-hit == 'true'}}
+        name: POST Cache ~/.m2/repository/org/opensearch success
+        run: ls -la ~/.m2/repository/org/opensearch
+
+
+      - name: POST Cache $HOME/.m2/org/opensearch/plugin/
+        id: post-assemble-cache-home-m2-opensearch-plugins
+        uses: actions/cache@v4
+        with:
+          path: |
+            $HOME/.m2/org/opensearch/plugin/
+          key: ${{ runner.os }}-home-m2-opensearch-${{ hashFiles('**.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-home-m2-opensearch-
+            ${{ runner.os }}-home-m2-opensearch
+
+      - if: ${{steps.pre-assemble-cache-home-m2-opensearch-plugins.outputs.cache-hit == 'true'}}
+        name: POST Cache $HOME/.m2/org/opensearch/plugin/
+        run: ls -la $HOME/.m2/org/opensearch/plugin/
+
 
       - name: Test RPM package
         if: ${{ matrix.distribution == 'rpm' }}

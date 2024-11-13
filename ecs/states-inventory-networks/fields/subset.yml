@@ -7,26 +7,15 @@ fields:
       "@timestamp": {}
   agent:
     fields:
-      id: {}
       groups: {}
+      id: {}
+      name: {}
+      type: {}
+      version: {}
+      host:
+        fields: "*"
   host:
-    fields:
-      ip: {}
-      mac: {}
-      network:
-        fields:
-          egress:
-            fields:
-              bytes: {}
-              drops: {}
-              errors: {}
-              packets: {}
-          ingress:
-            fields:
-              bytes: {}
-              drops: {}
-              errors: {}
-              packets: {}
+    fields: "*"
   interface:
     fields:
       mtu: {}

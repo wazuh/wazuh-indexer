@@ -5,19 +5,18 @@ fields:
     fields:
       tags: []
   agent:
-    fields: "*"
+    fields:
+      groups: {}
+      id: {}
+      name: {}
+      type: {}
+      version: {}
+      host:
+        fields: "*"
   package:
     fields: "*"
   host:
-    fields:
-      os:
-        fields:
-          full: ""
-          kernel: ""
-          name: ""
-          platform: ""
-          type: ""
-          version: ""
+    fields: "*"
   vulnerability:
     fields: "*"
   wazuh:

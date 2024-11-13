@@ -7,17 +7,12 @@ fields:
       "@timestamp": {}
   agent:
     fields:
-      id: {}
       groups: {}
-  host:
-    fields:
-      architecture: {}
-      hostname: {}
+      id: {}
       name: {}
-      os:
-        fields:
-          kernel: {}
-          full: {}
-          platform: {}
-          version: {}
-          type: {}
+      type: {}
+      version: {}
+      host:
+        fields: "*"
+  host:
+    fields: "*"

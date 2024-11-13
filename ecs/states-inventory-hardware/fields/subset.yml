@@ -7,22 +7,15 @@ fields:
       "@timestamp": {}
   agent:
     fields:
-      id: {}
       groups: {}
+      id: {}
+      name: {}
+      type: {}
+      version: {}
+      host:
+        fields: "*"
   observer:
     fields:
       serial_number: {}
   host:
-    fields:
-      memory:
-        fields:
-          total: {}
-          free: {}
-          used:
-            fields:
-              percentage: {}
-      cpu:
-        fields:
-          name: {}
-          cores: {}
-          speed: {}
+    fields: "*"

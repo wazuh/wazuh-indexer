@@ -1,0 +1,6 @@
+---
+- name: host
+  reusable:
+    top_level: false
+    expected:
+      - agent

@@ -45,16 +45,16 @@ files to generate the mappings. These are the inputs for the ECS generator.
       * INDEXER_SRC: Path to the wazuh-indexer repository
       * MODULE: Module to generate mappings for
       * --upload <URL>: Upload generated index template to the OpenSearch cluster. Defaults to https://localhost:9200
-    Example: generate.sh v8.11.0 ~/wazuh-indexer vulnerability-detector --upload https://indexer:9200
+    Example: generate.sh v8.11.0 ~/wazuh-indexer states-vulnerabilities --upload https://indexer:9200
     ```
 
 3. Use the `generate.sh` script to generate the mappings for a module. The script takes 3 arguments,
 plus 2 optional arguments to upload the mappings to the `wazuh-indexer`. Both, composable and legacy mappings
-are generated. For example, to generate the mappings for the `vulnerability-detector` module using the
+are generated. For example, to generate the mappings for the `states-vulnerabilities` module using the
     ECS version `v8.11.0` and assuming that path of this repository is `~/wazuh/wazuh-indexer`:
 
     ```bash
-    ./generate.sh v8.11.0 ~/wazuh/wazuh-indexer vulnerability-detector
+    ./generate.sh v8.11.0 ~/wazuh/wazuh-indexer states-vulnerabilities
     ```
 
     The tool will output the folder where they have been generated.
@@ -62,7 +62,7 @@ are generated. For example, to generate the mappings for the `vulnerability-dete
     ```console
     Loading schemas from git ref v8.11.0
     Running generator. ECS version 8.11.0
-    Mappings saved to ~/wazuh/wazuh-indexer/ecs/vulnerability-detector/mappings/v8.11.0
+    Mappings saved to ~/wazuh/wazuh-indexer/ecs/states-vulnerabilities/mappings/v8.11.0
     ```
 
 4. When you are done. Exit the virtual environment.
@@ -93,7 +93,7 @@ The script takes care of these changes automatically, generating the `opensearch
 You can either upload the index template using cURL or the UI (dev tools).
 
 ```bash
-curl -u admin:admin -k -X PUT "https://indexer:9200/_index_template/wazuh-vulnerability-detector" -H "Content-Type: application/json" -d @opensearch-template.json
+curl -u admin:admin -k -X PUT "https://indexer:9200/_index_template/wazuh-states-vulnerabilities" -H "Content-Type: application/json" -d @opensearch-template.json
 ```
 
 Notes:
@@ -117,7 +117,7 @@ are required.
 ### Event generator
 
 For testing purposes, the script `generate_events.py` can be used to generate events for a given module.
-Currently, it is only able to generate events for the `vulnerability-detector` module. To support other
+Currently, it is only able to generate events for the `states-vulnerabilities` module. To support other
 modules, please extend of refactor the script.
 
 The script prompts for the required parameters, so it can be launched without arguments:
@@ -137,3 +137,31 @@ The script uses log file. Check it out for debugging or additional information.
 - [ECS repository](https://github.com/elastic/ecs)
 - [ECS usage](https://github.com/elastic/ecs/blob/main/USAGE.md)
 - [ECS field reference](https://www.elastic.co/guide/en/ecs/current/ecs-field-reference.html)
+
+### All-in-one script
+
+```bash
+#!/bin/bash
+
+indices=(
+    agent
+    alerts
+    command
+    states-fim
+    states-inventory-hardware
+    states-inventory-hotfixes
+    states-inventory-networks
+    states-inventory-packages
+    states-inventory-ports
+    states-inventory-processes
+    states-inventory-system
+    states-vulnerabilities
+)
+
+ECS="v8.11.0"
+WI_REPO_PATH=~/wazuh/wazuh-indexer
+
+for index in "${indices[@]}"; do
+    bash generate.sh $ECS $WI_REPO_PATH "$index"
+done
+```

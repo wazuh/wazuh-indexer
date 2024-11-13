@@ -1,9 +1,9 @@
 ---
 - name: host
-  title: host
-  type: group
-  description: >
-    Host related data.
+  reusable:
+    top_level: true
+    expected:
+      - { at: agent, as: host }
   fields:
     - name: memory
       description: >

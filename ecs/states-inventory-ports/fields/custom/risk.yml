@@ -1,0 +1,6 @@
+---
+- name: risk
+  reusable:
+    top_level: false
+    expected:
+      - agent.host

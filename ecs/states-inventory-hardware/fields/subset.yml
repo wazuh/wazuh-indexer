@@ -16,16 +16,3 @@ fields:
       serial_number: {}
   host:
     fields: "*"
-#    fields:
-#      memory:
-#        fields:
-#          total: {}
-#          free: {}
-#          used:
-#            fields:
-#              percentage: {}
-#      cpu:
-#        fields:
-#          name: {}
-#          cores: {}
-#          speed: {}

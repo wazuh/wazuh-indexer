@@ -226,18 +226,19 @@ function enable_performance_analyzer_rca() {
 function install_plugins() {
     echo "Installing OpenSearch plugins"
     local maven_repo_local="$HOME/.m2"
+    echo "Content of .m2/repository/org/opensearch/"
+    ls la "~/.m2/repository/org/opensearch/"
     for plugin in "${plugins[@]}"; do
         echo "Plugin ${plugin}, version ${VERSION}"
         local plugin_from_maven="org.opensearch.plugin:${plugin}:${VERSION}.0"
 
-        if [[ -f "${maven_repo_local}/org/opensearch/plugin/${plugin}/${VERSION}.0/${plugin}-${VERSION}.0.zip" ]]; then
+        if [[ -f "~/.m2/repository/org/opensearch/${plugin}/${VERSION}.0/${plugin}-${VERSION}.0.pom" ]]; then
             echo "Plugin ${plugin} is already present, download omitted."
         else
             echo "Downloand ${plugin} plugin."
             mvn -Dmaven.repo.local="${maven_repo_local}" org.apache.maven.plugins:maven-dependency-plugin:2.1:get -DrepoUrl=https://repo1.maven.org/maven2 -Dartifact="${plugin_from_maven}:zip"
+            OPENSEARCH_PATH_CONF=$PATH_CONF "${PATH_BIN}/opensearch-plugin" install --batch --verbose "file:${maven_repo_local}/org/opensearch/plugin/${plugin}/${VERSION}.0/${plugin}-${VERSION}.0.zip"
         fi
-        echo "Path TO CACHE ${PATH_BIN}/opensearch-plugin and OPENSEARCH_PATH_CONF=$PATH_CONF"
-        OPENSEARCH_PATH_CONF=$PATH_CONF "${PATH_BIN}/opensearch-plugin" install --batch --verbose "file:${maven_repo_local}/org/opensearch/plugin/${plugin}/${VERSION}.0/${plugin}-${VERSION}.0.zip"
     done
 
     echo "Installing Wazuh plugins"

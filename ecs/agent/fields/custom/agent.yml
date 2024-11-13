@@ -19,7 +19,7 @@
       type: date
       level: custom
       description: >
-        The agent's last login.
+        The last time the agent logged in.
     - name: status
       type: keyword
       level: custom

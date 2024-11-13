@@ -38,7 +38,7 @@ def generate_random_agent():
         'name': f'Agent{random.randint(0, 99)}',
         'type': random.choice(['filebeat', 'windows', 'linux', 'macos']),
         'version': f'v{random.randint(0, 9)}-stable',
-        'is_connected': random.choice([True, False]),
+        'status': random.choice(['active', 'inactive']),
         'last_login': generate_random_date(),
         'groups': [f'group{random.randint(0, 99)}', f'group{random.randint(0, 99)}'],
         'key': f'key{random.randint(0, 999)}'
@@ -47,13 +47,76 @@ def generate_random_agent():
 
 
 def generate_random_host():
-    family = random.choice(['debian', 'ubuntu', 'macos', 'ios', 'android', 'RHEL'])
+    family = random.choice(
+        ['debian', 'ubuntu', 'macos', 'ios', 'android', 'RHEL'])
     version = f'{random.randint(0, 99)}.{random.randint(0, 99)}'
     host = {
+        'architecture': random.choice(['x86_64', 'arm64']),
+        'boot': {
+            'id': f'boot{random.randint(0, 9999)}'
+        },
+        'cpu': {
+            'usage': random.uniform(0, 100)
+        },
+        'disk': {
+            'read': {
+                'bytes': random.randint(0, 1000000)
+            },
+            'write': {
+                'bytes': random.randint(0, 1000000)
+            }
+        },
+        'domain': f'domain{random.randint(0, 999)}',
+        'geo': {
+            'city_name': random.choice(['San Francisco', 'New York', 'Berlin', 'Tokyo']),
+            'continent_code': random.choice(['NA', 'EU', 'AS']),
+            'continent_name': random.choice(['North America', 'Europe', 'Asia']),
+            'country_iso_code': random.choice(['US', 'DE', 'JP']),
+            'country_name': random.choice(['United States', 'Germany', 'Japan']),
+            'location': {
+                'lat': round(random.uniform(-90.0, 90.0), 6),
+                'lon': round(random.uniform(-180.0, 180.0), 6)
+            },
+            'name': f'geo{random.randint(0, 999)}',
+            'postal_code': f'{random.randint(10000, 99999)}',
+            'region_iso_code': f'region{random.randint(0, 999)}',
+            'region_name': f'Region {random.randint(0, 999)}',
+            'timezone': random.choice(['PST', 'EST', 'CET', 'JST'])
+        },
+        'hostname': f'host{random.randint(0, 9999)}',
+        'id': f'hostid{random.randint(0, 9999)}',
         'ip': f'{random.randint(1, 255)}.{random.randint(1, 255)}.{random.randint(1, 255)}.{random.randint(1, 255)}',
+        'mac': f'{random.randint(0, 255):02x}:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}',
+        'name': f'hostname{random.randint(0, 9999)}',
+        'network': {
+            'egress': {
+              'bytes': random.randint(0, 1000000),
+              'packets': random.randint(0, 1000000)
+            },
+            'ingress': {
+                'bytes': random.randint(0, 1000000),
+                'packets': random.randint(0, 1000000)
+            }
+        },
         'os': {
+            'family': family,
             'full': f'{family} {version}',
-        }
+            'kernel': f'kernel{random.randint(0, 999)}',
+            'name': family,
+            'platform': random.choice(['linux', 'windows', 'macos']),
+            'type': family,
+            'version': version
+        },
+        'pid_ns_ino': f'{random.randint(1000000, 9999999)}',
+        'risk': {
+            'calculated_level': random.choice(['low', 'medium', 'high']),
+            'calculated_score': random.uniform(0, 100),
+            'calculated_score_norm': random.uniform(0, 1),
+            'static_level': random.choice(['low', 'medium', 'high']),
+            'static_score': random.uniform(0, 100),
+            'static_score_norm': random.uniform(0, 1)
+        },
+        'uptime': random.randint(0, 1000000)
     }
     return host
 
@@ -105,8 +168,7 @@ def main():
 
     logging.info('Data generation completed.')
 
-    inject = input(
-        "Do you want to inject the generated data into your indexer? (y/n) ").strip().lower()
+    inject = input("Do you want to inject the generated data into your indexer? (y/n) ").strip().lower()
     if inject == 'y':
         ip = input(f"Enter the IP of your Indexer (default: '{IP}'): ") or IP
         port = input(f"Enter the port of your Indexer (default: '{PORT}'): ") or PORT

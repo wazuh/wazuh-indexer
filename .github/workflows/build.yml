@@ -278,7 +278,7 @@ jobs:
           echo "versionOpenSearch_inBuild=$VERSION" >> $GITHUB_OUTPUT
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-      - name: Cache OpenSearch plugins
+      - name: Pre Assemble Cache OpenSearch plugins
         id: pre-assemble-cache-opensearch-plugins
         uses: actions/cache@v4
         with:

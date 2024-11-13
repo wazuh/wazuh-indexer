@@ -272,29 +272,6 @@ jobs:
             -d ${{ matrix.distribution }} \
             -n ${{ steps.min_package.outputs.name }}
 
-      # Cache OpenSearch plugins
-      - name: Get Opensearch Version
-        run: |
-          VERSION=$(bash build-scripts/upstream-version.sh)
-          echo "versionOpenSearch_inBuild=$VERSION" >> $GITHUB_OUTPUT
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-
-      - name: Cache OpenSearch plugins
-        id: cache-opensearch-plugins
-        uses: actions/cache@v4
-        with:
-          path: |
-            //$HOME/.m2/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0/
-            $HOME/.m2/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0
-          key: ${{ runner.os }}-opensearch-performance-analyzer-${{ hashFiles('performance-analyzer**.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-opensearch-performance-analyzer
-            ${{ runner.os }}-opensearch
-
-      - if: ${{steps.cache-opensearch-plugins.cache-hit != 'true'}}
-        name: Cache OpenSearch plugins fail
-        run: echo "Failed to cache OpenSearch plugins. DIRECTORYY $HOME/.m2/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0/ "
-
       - name: Run `assemble.sh`
         run: |
           bash build-scripts/assemble.sh \
@@ -302,23 +279,31 @@ jobs:
             -d ${{ matrix.distribution }} \
             -r ${{ inputs.revision }}
 
-      - name: Cache OpenSearch plugins POST
-        id: cache-opensearch-plugins-post
+      - name: Get Opensearch Version
+        run: |
+          VERSION=$(bash build-scripts/upstream-version.sh)
+          echo "versionOpenSearch_inBuild=$VERSION" >> $GITHUB_OUTPUT
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      # Cache OpenSearch plugins
+      - name: Cache OpenSearch plugins
+        id: cache-opensearch-plugins
         uses: actions/cache@v4
         with:
           path: |
-            //$HOME/.m2/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0/
-            $HOME/.m2/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0/
-            $HOME/runner/.m2/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0/
-          key: ${{ runner.os }}-opensearch-performance-analyzer-${{ hashFiles('performance-analyzer**.xml') }}
+            ~/.m2/org/opensearch/plugin
+            //$HOME/.m2/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0
+            $HOME/.m2/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0
+            $HOME/runner/.m2/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0
+          key: ${{ runner.os }}-opensearch-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
-            ${{ runner.os }}-opensearch-performance-analyzer
+            ${{ runner.os }}-opensearch-
             ${{ runner.os }}-opensearch
 
-      - if: ${{steps.cache-opensearch-plugins-post.cache-hit != 'true'}}
+      - if: ${{steps.cache-opensearch-plugins.outputs.cache-hit != 'true'}}
         name: Cache OpenSearch plugins fail
         run: echo "Failed to cache OpenSearch plugins post assemble script. DIRECTORYY $HOME/.m2/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0/ "
-        
+
       - name: Test RPM package
         if: ${{ matrix.distribution == 'rpm' }}
         uses: addnab/docker-run-action@v3

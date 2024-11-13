@@ -278,23 +278,20 @@ jobs:
           echo "versionOpenSearch_inBuild=$VERSION" >> $GITHUB_OUTPUT
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-      - name: Pre Assemble Cache OpenSearch plugins
-        id: pre-assemble-cache-opensearch-plugins
+      - name: PRE Cache /usr/share/wazuh-indexer/bin/opensearch-plugin
+        id: pre-assemble-cache-usr-share-opensearch-plugins
         uses: actions/cache@v4
         with:
           path: |
-            ~/.m2/org/opensearch/plugin
-            //$HOME/.m2/org/opensearch/plugi # Cache OpenSearch pluginsn/performance-analyzer/${{ env.VERSION }}.0
-            $HOME/.m2/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0
-            $HOME/runner/.m2/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0
-          key: ${{ runner.os }}-opensearch-${{ hashFiles('**/pom.xml') }}
+            ./usr/share/wazuh-indexer/bin/opensearch-plugin
+          key: ${{ runner.os }}-usr-share-opensearch-${{ hashFiles('**.jar') }}
           restore-keys: |
-            ${{ runner.os }}-opensearch-
-            ${{ runner.os }}-opensearch
+            ${{ runner.os }}-usr-share-opensearch-
+            ${{ runner.os }}-usr-share-opensearch
 
-      - if: ${{steps.pre-assemble-cache-opensearch-plugins.outputs.cache-hit != 'true'}}
-        name: PRE Cache OpenSearch plugins fail
-        run: echo ".outputs.cache-hit fail"
+      - if: ${{steps.pre-assemble-cache-usr-share-opensearch-plugins.outputs.cache-hit == 'true'}}
+        name: PRE Cache /usr/share/wazuh-indexer/bin/opensearch-plugin success
+        run: ls -la ./usr/share/wazuh-indexer/bin/opensearch-plugin
 
       - name: Run `assemble.sh`
         run: |
@@ -303,23 +300,20 @@ jobs:
             -d ${{ matrix.distribution }} \
             -r ${{ inputs.revision }}
 
-      - name: Cache OpenSearch plugins
-        id: cache-opensearch-plugins
+      - name: POST Cache /usr/share/wazuh-indexer/bin/opensearch-plugin
+        id: post-assemble-cache-usr-share-opensearch-plugins
         uses: actions/cache@v4
         with:
           path: |
-            ~/.m2/org/opensearch/plugin
-            //$HOME/.m2/org/opensearch/plugi # Cache OpenSearch pluginsn/performance-analyzer/${{ env.VERSION }}.0
-            $HOME/.m2/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0
-            $HOME/runner/.m2/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0
-          key: ${{ runner.os }}-opensearch-${{ hashFiles('**/pom.xml') }}
+            ./usr/share/wazuh-indexer/bin/opensearch-plugin
+          key: ${{ runner.os }}-usr-share-opensearch-${{ hashFiles('**.jar') }}
           restore-keys: |
-            ${{ runner.os }}-opensearch-
-            ${{ runner.os }}-opensearch
+            ${{ runner.os }}-usr-share-opensearch-
+            ${{ runner.os }}-usr-share-opensearch
 
-      - if: ${{steps.cache-opensearch-plugins.outputs.cache-hit != 'true'}}
-        name: Cache OpenSearch plugins fail
-        run: echo "Failed to cache OpenSearch plugins post assemble script. DIRECTORYY $HOME/.m2/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0/ "
+      - if: ${{steps.post-assemble-cache-usr-share-opensearch-plugins.outputs.cache-hit == 'true'}}
+        name: POST Cache /usr/share/wazuh-indexer/bin/opensearch-plugin success
+        run: ls -la ./usr/share/wazuh-indexer/bin/opensearch-plugin
 
       - name: Test RPM package
         if: ${{ matrix.distribution == 'rpm' }}

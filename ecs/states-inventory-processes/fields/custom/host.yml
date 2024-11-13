@@ -1,6 +1,6 @@
 ---
 - name: host
   reusable:
-    top_level: false
+    top_level: true
     expected:
-      - agent
+      - { at: agent, as: host }

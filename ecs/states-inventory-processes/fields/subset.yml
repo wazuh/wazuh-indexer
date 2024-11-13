@@ -7,10 +7,15 @@ fields:
       tags: []
   agent:
     fields:
+      groups: {}
       id: {}
-      groups: {} 
+      name: {}
+      type: {}
+      version: {}
       host:
         fields: "*"
+  host:
+    fields: "*"
   process:
     fields:
       pid: {}

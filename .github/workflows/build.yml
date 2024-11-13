@@ -272,12 +272,21 @@ jobs:
             -d ${{ matrix.distribution }} \
             -n ${{ steps.min_package.outputs.name }}
 
+      - name: Get Opensearch Version
+        run: |
+          VERSION=$(bash build-scripts/upstream-version.sh)
+          echo "versionOpenSearch_inBuild=$VERSION" >> $GITHUB_OUTPUT
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
       - name: Cache OpenSearch plugins
         id: pre-assemble-cache-opensearch-plugins
         uses: actions/cache@v4
         with:
           path: |
             ~/.m2/org/opensearch/plugin
+            //$HOME/.m2/org/opensearch/plugi # Cache OpenSearch pluginsn/performance-analyzer/${{ env.VERSION }}.0
+            $HOME/.m2/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0
+            $HOME/runner/.m2/org/opensearch/plugin/performance-analyzer/${{ env.VERSION }}.0
           key: ${{ runner.os }}-opensearch-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-opensearch-
@@ -287,23 +296,12 @@ jobs:
         name: PRE Cache OpenSearch plugins fail
         run: echo ".outputs.cache-hit fail"
 
-      - if: ${{steps.pre-assemble-cache-opensearch-plugins.cache-hit != 'true'}}
-        name: PRE Cache OpenSearch plugins fail
-        run: echo "cache-hit fail"
-
       - name: Run `assemble.sh`
         run: |
           bash build-scripts/assemble.sh \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }} \
             -r ${{ inputs.revision }}
-
-      - name: Get Opensearch Version
-        run: |
-          VERSION=$(bash build-scripts/upstream-version.sh)
-          echo "versionOpenSearch_inBuild=$VERSION" >> $GITHUB_OUTPUT
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-
 
       - name: Cache OpenSearch plugins
         id: cache-opensearch-plugins

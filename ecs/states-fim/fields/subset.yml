@@ -6,8 +6,11 @@ fields:
       tags: []
   agent:
     fields:
-      id: {}
       groups: {}
+      id: {}
+      name: {}
+      type: {}
+      version: {}
       host:
         fields: "*"
   file:
@@ -30,6 +33,8 @@ fields:
       type: {}
       uid: {}
       owner: {}
+  host:
+    fields: "*"
   registry:
     fields:
       key: {}

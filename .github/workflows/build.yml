@@ -208,6 +208,8 @@ jobs:
   build:
     needs: [matrix, build-wazuh-plugins, build-reporting-plugin]
     runs-on: ${{ matrix.architecture == 'arm64' && 'wz-linux-arm64' || 'ubuntu-22.04' }}
+    env:
+      maven_local_path: ~/.m2/org/opensearch/plugin
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.matrix.outputs.matrix) }}
@@ -278,20 +280,20 @@ jobs:
           echo "versionOpenSearch_inBuild=$VERSION" >> $GITHUB_OUTPUT
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-      - name: PRE Cache ~/.m2/repository/org/opensearch
-        id: pre-assemble-cache-m2-repository-opensearch-plugins
+      - name: PRE Cache  ${{ env.maven_local_path }}
+        id: pre-assemble-cache-m2-opensearch-plugins
         uses: actions/cache@v4
         with:
           path: |
-            ~/.m2/repository/org/opensearch
-          key: ${{ runner.os }}-m2-repository-opensearch-${{ hashFiles('**.xml') }}
+            ${{ env.maven_local_path }}
+          key: ${{ runner.os }}-m2-opensearch-plugin-${{ hashFiles('**.sha1') }}
           restore-keys: |
-            ${{ runner.os }}-m2-repository-opensearch-
-            ${{ runner.os }}-m2-repository-opensearch
+            ${{ runner.os }}-m2-opensearch-plugin-
+            ${{ runner.os }}-m2-opensearch-plugin
 
-      - if: ${{steps.pre-assemble-cache-m2-repository-opensearch-plugins.outputs.cache-hit == 'true'}}
-        name: PRE Cache ~/.m2/repository/org/opensearch success
-        run: ls -la ~/.m2/repository/org/opensearch
+      - if: ${{steps.pre-assemble-cache-m2-opensearch-plugins.outputs.cache-hit == 'true'}}
+        name: PRE Cache  ${{ env.maven_local_path }}  success
+        run: ls -la  ${{ env.maven_local_path }}
 
       - name: Run `assemble.sh`
         run: |
@@ -300,20 +302,20 @@ jobs:
             -d ${{ matrix.distribution }} \
             -r ${{ inputs.revision }}
 
-      - name: POST Cache ~/.m2/repository/org/opensearch
-        id: post-assemble-cache-m2-repository-opensearch-plugins
+      - name: POST Cache ${{ env.maven_local_path }}
+        id: post-assemble-cache-m2-opensearch-plugins
         uses: actions/cache@v4
         with:
           path: |
-            ~/.m2/repository/org/opensearch
-          key: ${{ runner.os }}-m2-repository-opensearch-${{ hashFiles('**.xml') }}
+            ${{ env.maven_local_path }}
+          key: ${{ runner.os }}-m2-opensearch-plugin-${{ hashFiles('**.sha1') }}
           restore-keys: |
-            ${{ runner.os }}-m2-repository-opensearch-
-            ${{ runner.os }}-m2-repository-opensearch
+            ${{ runner.os }}-m2-opensearch-plugin-
+            ${{ runner.os }}-m2-opensearch-plugin
 
-      - if: ${{steps.pre-assemble-cache-m2-repository-opensearch-plugins.outputs.cache-hit == 'true'}}
-        name: POST Cache ~/.m2/repository/org/opensearch success
-        run: ls -la ~/.m2/repository/org/opensearch
+      - if: ${{steps.post-assemble-cache-m2-opensearch-plugins.outputs.cache-hit == 'true'}}
+        name: POST Cache ${{ env.maven_local_path }}  success
+        run: ls -la ${{ env.maven_local_path }}
 
       - name: Test RPM package
         if: ${{ matrix.distribution == 'rpm' }}

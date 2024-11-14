@@ -227,40 +227,22 @@ function install_plugins() {
     echo "Installing OpenSearch plugins"
     local maven_repo_local="$HOME/.m2"
 
-    local PLUGIN_DIRECTORY=".m2/repository/org/opensearch/"
-    # If directory exists
-    if [ -d "$PLUGIN_DIRECTORY" ]; then
-        echo "Content of .m2/repository/org/opensearch/ pre-install plugins"
-        ls -la "$PLUGIN_DIRECTORY"
-    else
-        echo "Directory .m2/repository/org/opensearch/ doesn't exist"
-    fi
-
     for plugin in "${plugins[@]}"; do
         echo "Plugin ${plugin}, version ${VERSION}"
         local plugin_from_maven="org.opensearch.plugin:${plugin}:${VERSION}.0"
 
-        if [[ -f "~/.m2/repository/org/opensearch/${plugin}/${VERSION}.0/${plugin}-${VERSION}.0.pom" ]]; then
-            echo "Plugin ${plugin} is already present, download omitted."
-        else
-            echo "Downloand ${plugin} plugin."
-            mvn -Dmaven.repo.local="${maven_repo_local}" org.apache.maven.plugins:maven-dependency-plugin:2.1:get -DrepoUrl=https://repo1.maven.org/maven2 -Dartifact="${plugin_from_maven}:zip"
-            OPENSEARCH_PATH_CONF=$PATH_CONF "${PATH_BIN}/opensearch-plugin" install --batch --verbose "file:${maven_repo_local}/org/opensearch/plugin/${plugin}/${VERSION}.0/${plugin}-${VERSION}.0.zip"
-        fi
+        echo "Download ${plugin} plugin."
+        mvn -Dmaven.repo.local="${maven_repo_local}" org.apache.maven.plugins:maven-dependency-plugin:2.1:get -DrepoUrl=https://repo1.maven.org/maven2 -Dartifact="${plugin_from_maven}:zip"
+        OPENSEARCH_PATH_CONF=$PATH_CONF "${PATH_BIN}/opensearch-plugin" install --batch --verbose "file:${maven_repo_local}/org/opensearch/plugin/${plugin}/${VERSION}.0/${plugin}-${VERSION}.0.zip"
+
     done
-     if [ -d "$PLUGIN_DIRECTORY" ]; then
-            echo "Content of .m2/repository/org/opensearch/ post-install plugins of opensearch"
-            ls -la "$PLUGIN_DIRECTORY"
-        else
-            echo "Directory .m2/repository/org/opensearch/ doesn't exist post install"
-        fi
 
     echo "Installing Wazuh plugins"
     local indexer_plugin_version="${1}.${REVISION}"
     for plugin_name in "${wazuh_plugins[@]}"; do
         # Check if the plugin is in the local maven repository. This is usually
         # case for local executions.
-        local plugin_path="${maven_repo_local}/repository/org/wazuh/${plugin_name}-plugin/${indexer_plugin_version}/${plugin_name}-${indexer_plugin_version}.zip"
+        local plugin_path="${maven_repo_local}/repository/com/wazuh/${plugin_name}-plugin/${indexer_plugin_version}/${plugin_name}-${indexer_plugin_version}.zip"
 
         # Otherwise, search for the plugins in the output folder.
         if [ -z "${plugin_from_maven_local}" ]; then

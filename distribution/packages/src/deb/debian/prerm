@@ -20,10 +20,19 @@ case "$1" in
         if command -v systemctl >/dev/null && systemctl is-active wazuh-indexer.service >/dev/null; then
             echo "Stop existing wazuh-indexer.service"
             systemctl --no-reload stop wazuh-indexer.service
+        # Check for SysV
+        elif command -v service > /dev/null && service wazuh-indexer status >/dev/null 2>&1; then
+           echo "Stop existing wazuh-indexer"
+           service wazuh-indexer stop
         fi
+
         if command -v systemctl >/dev/null && systemctl is-active wazuh-indexer-performance-analyzer.service >/dev/null; then
             echo "Stop existing wazuh-indexer-performance-analyzer.service"
             systemctl --no-reload stop wazuh-indexer-performance-analyzer.service
+        # Check for SysV
+        elif command -v service >/dev/null && service wazuh-indexer-performance-analyzer status >/dev/null 2>&1; then
+            echo "Stop existing wazuh-indexer-performance-analyzer"
+            service wazuh-indexer-performance-analyzer stop
         fi
     ;;
     failed-upgrade)

@@ -163,10 +163,20 @@ if command -v systemctl >/dev/null && systemctl is-active %{name}.service >/dev/
     echo "Stop existing %{name}.service"
     systemctl --no-reload stop %{name}.service
     touch %{tmp_dir}/wazuh-indexer.restart
+# Check for SysV
+elif command -v service > /dev/null 2>&1 && service %{name} status 2>/dev/null | grep "is running" > /dev/null 2>&1; then
+     echo "Stop existing %{name}"
+     service %{name} stop > /dev/null 2>&1
+     touch %{tmp_dir}/wazuh-indexer.restart
 fi
+
 if command -v systemctl >/dev/null && systemctl is-active %{name}-performance-analyzer.service >/dev/null; then
     echo "Stop existing %{name}-performance-analyzer.service"
     systemctl --no-reload stop %{name}-performance-analyzer.service
+# Check for SysV
+elif command -v service > /dev/null 2>&1 && service %{name}}-performance-analyzer status 2>/dev/null | grep "is running" > /dev/null 2>&1; then
+    echo "Stop existing %{name}-performance-analyzer"
+    service %{name}-performance-analyzer stop > /dev/null 2>&1
 fi
 # Create user and group if they do not already exist.
 getent group %{name} > /dev/null 2>&1 || groupadd -r %{name}
@@ -199,10 +209,15 @@ fi
 # Reload other configs
 if command -v systemctl > /dev/null; then
     systemctl restart systemd-sysctl.service || true
+elif command -v sysctl > /dev/null; then
+  # Load configurations from /etc/sysctl.conf
+    sysctl -p
 fi
 
 if command -v systemd-tmpfiles > /dev/null; then
     systemd-tmpfiles --create %{name}.conf
+else
+  touch wazuh-indexer.conf
 fi
 
 if [ -f %{tmp_dir}/wazuh-indexer.restart ]; then
@@ -211,15 +226,44 @@ if [ -f %{tmp_dir}/wazuh-indexer.restart ]; then
         echo "Restarting wazuh-indexer service..."
         systemctl restart wazuh-indexer.service > /dev/null 2>&1
         exit 0
+    # Check for SysV
+    elif command -v service > /dev/null 2>&1; then
+        echo "Restarting wazuh-indexer service..."
+        service wazuh-indexer restart > /dev/null 2>&1
+        exit 0
+    elif [ -x /etc/init.d/wazuh-indexer ]; then
+        if command -v invoke-rc.d >/dev/null; then
+            invoke-rc.d wazuh-indexer stop || true
+            invoke-rc.d wazuh-indexer start || true
+            exit 0
+        else
+            /etc/init.d/wazuh-indexer restart || true
+            exit 0
+        fi
     fi
 fi
 
-# Messages
-echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using systemd"
-echo " sudo systemctl daemon-reload"
-echo " sudo systemctl enable wazuh-indexer.service"
-echo "### You can start wazuh-indexer service by executing"
-echo " sudo systemctl start wazuh-indexer.service"
+# Check for systemd presence
+if command -v systemctl >/dev/null 2>&1; then
+    # Messages
+    echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using systemd"
+    echo " sudo systemctl daemon-reload"
+    echo " sudo systemctl enable wazuh-indexer.service"
+    echo "### You can start wazuh-indexer service by executing"
+    echo " sudo systemctl start wazuh-indexer.service"
+
+ elif command -v chkconfig >/dev/null; then
+         echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using chkconfig"
+         echo " sudo chkconfig --add wazuh-indexer"
+         echo "### You can start wazuh-indexer service by executing"
+         echo " sudo service wazuh-indexer start"
+
+ elif command -v update-rc.d >/dev/null; then
+     echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using chkconfig"
+     echo " sudo update-rc.d wazuh-indexer defaults 95 10"
+     echo "### You can start wazuh-indexer service by executing"
+     echo " sudo /etc/init.d/wazuh-indexer start"
+ fi
 exit 0
 
 %preun
@@ -227,10 +271,18 @@ set -e
 if command -v systemctl >/dev/null && systemctl is-active %{name}.service >/dev/null; then
     echo "Stop existing %{name}.service"
     systemctl --no-reload stop %{name}.service
+# Check for SysV
+elif command -v service > /dev/null 2>&1 && service %{name} status 2>/dev/null | grep "is running" > /dev/null 2>&1; then
+     echo "Stop existing %{name}"
+     service %{name} stop > /dev/null 2>&1
 fi
 if command -v systemctl >/dev/null && systemctl is-active %{name}-performance-analyzer.service >/dev/null; then
     echo "Stop existing %{name}-performance-analyzer.service"
     systemctl --no-reload stop %{name}-performance-analyzer.service
+# Check for SysV
+elif command -v service > /dev/null 2>&1 && service %{name}}-performance-analyzer status 2>/dev/null | grep "is running" > /dev/null 2>&1; then
+    echo "Stop existing %{name}-performance-analyzer"
+    service %{name}-performance-analyzer stop > /dev/null 2>&1
 fi
 exit 0
 

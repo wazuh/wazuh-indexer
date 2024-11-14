@@ -160,6 +160,9 @@ if [ $1 = 1 ];then # Install
     # To pick up /usr/lib/sysctl.d/wazuh-indexer.conf
     if command -v systemctl > /dev/null 2>&1; then
         systemctl restart systemd-sysctl > /dev/null 2>&1 || true
+    elif command -v sysctl > /dev/null; then
+        # Load configurations from /etc/sysctl.conf
+        sysctl -p
     fi
 
 fi

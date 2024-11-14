@@ -226,7 +226,16 @@ function enable_performance_analyzer_rca() {
 function install_plugins() {
     echo "Installing OpenSearch plugins"
     local maven_repo_local="$HOME/.m2"
-    echo "Content of .m2/repository/org/opensearch/"
+
+    local PLUGIN_DIRECTORY=".m2/repository/org/opensearch/"
+    # If directory exists
+    if [ -d "$PLUGIN_DIRECTORY" ]; then
+        echo "Content of .m2/repository/org/opensearch/ pre-install plugins"
+        ls -la "$PLUGIN_DIRECTORY"
+    else
+        echo "Directory .m2/repository/org/opensearch/ doesn't exist"
+    fi
+
     ls la "~/.m2/repository/org/opensearch/"
     for plugin in "${plugins[@]}"; do
         echo "Plugin ${plugin}, version ${VERSION}"
@@ -240,6 +249,12 @@ function install_plugins() {
             OPENSEARCH_PATH_CONF=$PATH_CONF "${PATH_BIN}/opensearch-plugin" install --batch --verbose "file:${maven_repo_local}/org/opensearch/plugin/${plugin}/${VERSION}.0/${plugin}-${VERSION}.0.zip"
         fi
     done
+     if [ -d "$PLUGIN_DIRECTORY" ]; then
+            echo "Content of .m2/repository/org/opensearch/ post-install plugins of opensearch"
+            ls -la "$PLUGIN_DIRECTORY"
+        else
+            echo "Directory .m2/repository/org/opensearch/ doesn't exist post install"
+        fi
 
     echo "Installing Wazuh plugins"
     local indexer_plugin_version="${1}.${REVISION}"

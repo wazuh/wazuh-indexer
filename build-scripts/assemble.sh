@@ -248,7 +248,6 @@ function install_plugins() {
             OPENSEARCH_PATH_CONF=$PATH_CONF "${PATH_BIN}/opensearch-plugin" install --batch --verbose "file:${maven_repo_local}/org/opensearch/plugin/${plugin}/${VERSION}.0/${plugin}-${VERSION}.0.zip"
         fi
     done
-    
      if [ -d "$PLUGIN_DIRECTORY" ]; then
             echo "Content of .m2/repository/org/opensearch/ post-install plugins of opensearch"
             ls -la "$PLUGIN_DIRECTORY"

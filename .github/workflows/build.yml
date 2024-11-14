@@ -210,6 +210,7 @@ jobs:
     runs-on: ${{ matrix.architecture == 'arm64' && 'wz-linux-arm64' || 'ubuntu-22.04' }}
     env:
       maven_local_path: ~/.m2/org/opensearch/plugin
+      opensearch_version: (bash build-scripts/upstream-version.sh)
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.matrix.outputs.matrix) }}
@@ -276,11 +277,9 @@ jobs:
 
       - name: Get Opensearch Version
         run: |
-          VERSION=$(bash build-scripts/upstream-version.sh)
-          echo "versionOpenSearch_inBuild=$VERSION" >> $GITHUB_OUTPUT
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-        env:
-          opensearch_version: bash build-scripts/upstream-version.sh
+          opensearch_version-=$(bash build-scripts/upstream-version.sh)
+          echo "versionOpenSearch_inBuild=$opensearch_version-" >> $GITHUB_OUTPUT
+          echo "opensearch_version-=$opensearch_version-" >> $GITHUB_ENV
 
       - name: PRE Cache  ${{ env.maven_local_path }}
         id: pre-assemble-cache-m2-opensearch-plugins

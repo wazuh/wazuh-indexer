@@ -236,7 +236,6 @@ function install_plugins() {
         echo "Directory .m2/repository/org/opensearch/ doesn't exist"
     fi
 
-    ls la "~/.m2/repository/org/opensearch/"
     for plugin in "${plugins[@]}"; do
         echo "Plugin ${plugin}, version ${VERSION}"
         local plugin_from_maven="org.opensearch.plugin:${plugin}:${VERSION}.0"
@@ -249,6 +248,7 @@ function install_plugins() {
             OPENSEARCH_PATH_CONF=$PATH_CONF "${PATH_BIN}/opensearch-plugin" install --batch --verbose "file:${maven_repo_local}/org/opensearch/plugin/${plugin}/${VERSION}.0/${plugin}-${VERSION}.0.zip"
         fi
     done
+    
      if [ -d "$PLUGIN_DIRECTORY" ]; then
             echo "Content of .m2/repository/org/opensearch/ post-install plugins of opensearch"
             ls -la "$PLUGIN_DIRECTORY"

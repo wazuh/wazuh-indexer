@@ -210,7 +210,6 @@ jobs:
     runs-on: ${{ matrix.architecture == 'arm64' && 'wz-linux-arm64' || 'ubuntu-22.04' }}
     env:
       maven_local_path: ~/.m2/org/opensearch/plugin
-      opensearch_version: (bash build-scripts/upstream-version.sh)
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.matrix.outputs.matrix) }}
@@ -277,19 +276,19 @@ jobs:
 
       - name: Get Opensearch Version
         run: |
-          opensearch_version-=$(bash build-scripts/upstream-version.sh)
-          echo "versionOpenSearch_inBuild=$opensearch_version-" >> $GITHUB_OUTPUT
-          echo "opensearch_version-=$opensearch_version-" >> $GITHUB_ENV
+          opensearch_version=$(bash build-scripts/upstream-version.sh)
+          echo "versionOpenSearch_inBuild=$opensearch_version" >> $GITHUB_OUTPUT
+          echo "opensearch_version=$opensearch_version" >> $GITHUB_ENV
 
       - name: PRE Cache  ${{ env.maven_local_path }}
         id: pre-assemble-cache-m2-opensearch-plugins
         uses: actions/cache@v4
         with:
           path: |
-            ${{ env.maven_local_path }}
-          key: ${{ runner.os }}-m2-opensearch-${{ env.opensearch_version }}-plugin-${{ hashFiles('**.sha1') }}
+            ${{ maven_local_path }}
+          key: ${{ runner.os }}-m2-opensearch-${{ opensearch_version }}-plugin-${{ hashFiles('**.sha1') }}
           restore-keys: |
-            ${{ runner.os }}-m2-opensearch-plugin-${{ env.opensearch_version }}-
+            ${{ runner.os }}-m2-opensearch-${{ opensearch_version }}-plugin-
 
       - if: ${{steps.pre-assemble-cache-m2-opensearch-plugins.outputs.cache-hit == 'true'}}
         name: PRE Cache  ${{ env.maven_local_path }}  success
@@ -308,9 +307,9 @@ jobs:
         with:
           path: |
             ${{ env.maven_local_path }}
-          key: ${{ runner.os }}-m2-opensearch-${{ env.opensearch_version }}-plugin-${{ hashFiles('**.sha1') }}
+          key: ${{ runner.os }}-m2-opensearch-${{ opensearch_version }}-plugin-${{ hashFiles('**.sha1') }}
           restore-keys: |
-            ${{ runner.os }}-m2-opensearch-plugin-${{ env.opensearch_version }}-
+            ${{ runner.os }}-m2-opensearch-${{ opensearch_version }}-plugin-
 
       - if: ${{steps.post-assemble-cache-m2-opensearch-plugins.outputs.cache-hit == 'true'}}
         name: POST Cache ${{ env.maven_local_path }}  success

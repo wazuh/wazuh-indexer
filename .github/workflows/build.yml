@@ -285,7 +285,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            ${{ maven_local_path }}
+            ${{ env.maven_local_path }}
           key: ${{ runner.os }}-m2-opensearch-${{ opensearch_version }}-plugin-${{ hashFiles('**.sha1') }}
           restore-keys: |
             ${{ runner.os }}-m2-opensearch-${{ opensearch_version }}-plugin-

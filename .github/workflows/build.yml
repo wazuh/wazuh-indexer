@@ -286,9 +286,9 @@ jobs:
         with:
           path: |
             ${{ env.maven_local_path }}
-          key: ${{ runner.os }}-m2-opensearch-${{ opensearch_version }}-plugin-${{ hashFiles('**.sha1') }}
+          key: ${{ runner.os }}-m2-opensearch-${{ env.opensearch_version }}-plugin-${{ hashFiles('**.sha1') }}
           restore-keys: |
-            ${{ runner.os }}-m2-opensearch-${{ opensearch_version }}-plugin-
+            ${{ runner.os }}-m2-opensearch-${{ env.opensearch_version }}-plugin-
 
       - if: ${{steps.pre-assemble-cache-m2-opensearch-plugins.outputs.cache-hit == 'true'}}
         name: PRE Cache  ${{ env.maven_local_path }}  success
@@ -307,9 +307,9 @@ jobs:
         with:
           path: |
             ${{ env.maven_local_path }}
-          key: ${{ runner.os }}-m2-opensearch-${{ opensearch_version }}-plugin-${{ hashFiles('**.sha1') }}
+          key: ${{ runner.os }}-m2-opensearch-${{ env.opensearch_version }}-plugin-${{ hashFiles('**.sha1') }}
           restore-keys: |
-            ${{ runner.os }}-m2-opensearch-${{ opensearch_version }}-plugin-
+            ${{ runner.os }}-m2-opensearch-${{ env.opensearch_version }}-plugin-
 
       - if: ${{steps.post-assemble-cache-m2-opensearch-plugins.outputs.cache-hit == 'true'}}
         name: POST Cache ${{ env.maven_local_path }}  success

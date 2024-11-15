@@ -41,7 +41,8 @@ def generate_random_agent():
         'status': random.choice(['active', 'inactive']),
         'last_login': generate_random_date(),
         'groups': [f'group{random.randint(0, 99)}', f'group{random.randint(0, 99)}'],
-        'key': f'key{random.randint(0, 999)}'
+        'key': f'key{random.randint(0, 999)}',
+        'host': generate_random_host()
     }
     return agent
 
@@ -125,8 +126,7 @@ def generate_random_data(number):
     data = []
     for _ in range(number):
         event_data = {
-            'agent': generate_random_agent(),
-            'host': generate_random_host(),
+            'agent': generate_random_agent()
         }
         data.append(event_data)
     return data

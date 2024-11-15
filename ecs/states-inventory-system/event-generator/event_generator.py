@@ -12,7 +12,7 @@ LOG_FILE = 'generate_data.log'
 GENERATED_DATA_FILE = 'generatedData.json'
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 # Default values
-INDEX_NAME = ".agents"
+INDEX_NAME = "wazuh-states-inventory-system"
 USERNAME = "admin"
 PASSWORD = "admin"
 IP = "127.0.0.1"
@@ -38,95 +38,97 @@ def generate_random_agent():
         'name': f'Agent{random.randint(0, 99)}',
         'type': random.choice(['filebeat', 'windows', 'linux', 'macos']),
         'version': f'v{random.randint(0, 9)}-stable',
-        'status': random.choice(['active', 'inactive']),
-        'last_login': generate_random_date(),
         'groups': [f'group{random.randint(0, 99)}', f'group{random.randint(0, 99)}'],
-        'key': f'key{random.randint(0, 999)}',
         'host': generate_random_host()
     }
     return agent
 
 
 def generate_random_host():
-    family = random.choice(
-        ['debian', 'ubuntu', 'macos', 'ios', 'android', 'RHEL'])
-    version = f'{random.randint(0, 99)}.{random.randint(0, 99)}'
     host = {
         'architecture': random.choice(['x86_64', 'arm64']),
         'boot': {
-            'id': f'boot{random.randint(0, 9999)}'
+            'id': f'bootid{random.randint(0, 9999)}'
         },
         'cpu': {
             'usage': random.uniform(0, 100)
         },
         'disk': {
             'read': {
-                'bytes': random.randint(0, 1000000)
+                'bytes': random.randint(1000, 1000000)
             },
             'write': {
-                'bytes': random.randint(0, 1000000)
+                'bytes': random.randint(1000, 1000000)
             }
         },
-        'domain': f'domain{random.randint(0, 999)}',
-        'geo': {
-            'city_name': random.choice(['San Francisco', 'New York', 'Berlin', 'Tokyo']),
-            'continent_code': random.choice(['NA', 'EU', 'AS']),
-            'continent_name': random.choice(['North America', 'Europe', 'Asia']),
-            'country_iso_code': random.choice(['US', 'DE', 'JP']),
-            'country_name': random.choice(['United States', 'Germany', 'Japan']),
-            'location': {
-                'lat': round(random.uniform(-90.0, 90.0), 6),
-                'lon': round(random.uniform(-180.0, 180.0), 6)
-            },
-            'name': f'geo{random.randint(0, 999)}',
-            'postal_code': f'{random.randint(10000, 99999)}',
-            'region_iso_code': f'region{random.randint(0, 999)}',
-            'region_name': f'Region {random.randint(0, 999)}',
-            'timezone': random.choice(['PST', 'EST', 'CET', 'JST'])
-        },
-        'hostname': f'host{random.randint(0, 9999)}',
-        'id': f'hostid{random.randint(0, 9999)}',
-        'ip': f'{random.randint(1, 255)}.{random.randint(1, 255)}.{random.randint(1, 255)}.{random.randint(1, 255)}',
+        'domain': f'domain{random.randint(0, 1000)}',
+        'geo': generate_random_geo(),
+        'hostname': f'host{random.randint(0, 1000)}',
+        'id': f'id{random.randint(0, 1000)}',
+        'ip': f'{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}',
         'mac': f'{random.randint(0, 255):02x}:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}',
-        'name': f'hostname{random.randint(0, 9999)}',
+        'name': f'host{random.randint(0, 1000)}',
         'network': {
             'egress': {
-              'bytes': random.randint(0, 1000000),
-              'packets': random.randint(0, 1000000)
+                'bytes': random.randint(1000, 1000000),
+                'packets': random.randint(100, 10000)
             },
             'ingress': {
-                'bytes': random.randint(0, 1000000),
-                'packets': random.randint(0, 1000000)
+                'bytes': random.randint(1000, 1000000),
+                'packets': random.randint(100, 10000)
             }
         },
         'os': {
-            'family': family,
-            'full': f'{family} {version}',
-            'kernel': f'kernel{random.randint(0, 999)}',
-            'name': family,
-            'platform': random.choice(['linux', 'windows', 'macos']),
-            'type': family,
-            'version': version
+            'family': random.choice(['debian', 'ubuntu', 'macos', 'ios', 'android', 'RHEL']),
+            'full': f'{random.choice(["debian", "ubuntu", "macos", "ios", "android", "RHEL"])} {random.randint(0, 99)}.{random.randint(0, 99)}',
+            'kernel': f'{random.randint(0, 9)}.{random.randint(0, 9)}.{random.randint(0, 9)}',
+            'name': random.choice(['Linux', 'Windows', 'macOS']),
+            'platform': random.choice(['platform1', 'platform2']),
+            'type': random.choice(['os_type1', 'os_type2']),
+            'version': f'{random.randint(0, 9)}.{random.randint(0, 9)}.{random.randint(0, 9)}'
         },
-        'pid_ns_ino': f'{random.randint(1000000, 9999999)}',
+        'pid_ns_ino': f'pid_ns{random.randint(0, 9999)}',
         'risk': {
             'calculated_level': random.choice(['low', 'medium', 'high']),
-            'calculated_score': random.uniform(0, 100),
+            'calculated_score': random.uniform(0, 10),
             'calculated_score_norm': random.uniform(0, 1),
             'static_level': random.choice(['low', 'medium', 'high']),
-            'static_score': random.uniform(0, 100),
+            'static_score': random.uniform(0, 10),
             'static_score_norm': random.uniform(0, 1)
         },
-        'uptime': random.randint(0, 1000000)
+        'type': random.choice(['type1', 'type2']),
+        'uptime': random.randint(1000, 1000000)
     }
     return host
+
+
+def generate_random_geo():
+    geo = {
+        'city_name': 'CityName',
+        'continent_code': 'NA',
+        'continent_name': 'North America',
+        'country_iso_code': 'US',
+        'country_name': 'United States',
+        'location': {
+            'lat': round(random.uniform(-90, 90), 6),
+            'lon': round(random.uniform(-180, 180), 6)
+        },
+        'name': f'location{random.randint(0, 999)}',
+        'postal_code': f'{random.randint(10000, 99999)}',
+        'region_iso_code': 'US-CA',
+        'region_name': 'California',
+        'timezone': 'America/Los_Angeles'
+    }
+    return geo
 
 
 def generate_random_data(number):
     data = []
     for _ in range(number):
         event_data = {
-            'agent': generate_random_agent()
+            '@timestamp': generate_random_date(),
+            'agent': generate_random_agent(),
+            'host': generate_random_host()
         }
         data.append(event_data)
     return data
@@ -176,7 +178,6 @@ def main():
         username = input(f"Username (default: '{USERNAME}'): ") or USERNAME
         password = input(f"Password (default: '{PASSWORD}'): ") or PASSWORD
         inject_events(ip, port, index, username, password, data)
-
 
 if __name__ == "__main__":
     main()

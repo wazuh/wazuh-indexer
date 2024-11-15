@@ -1,39 +1,43 @@
 #!/bin/python3
 
-import random
-import json
-import requests
-import warnings
-import logging
 import argparse
+import json
+import logging
+import random
+import requests
+import urllib3
 import uuid
 
 LOG_FILE = 'generate_data.log'
 GENERATED_DATA_FILE = 'generatedData.json'
+# Default values
+INDEX_NAME = ".commands"
+USERNAME = "admin"
+PASSWORD = "admin"
+IP = "127.0.0.1"
+PORT = "9200"
 
 # Configure logging
 logging.basicConfig(filename=LOG_FILE, level=logging.INFO)
 
 # Suppress warnings
-warnings.filterwarnings("ignore")
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 def generate_random_command(include_all_fields=False):
     document = {
-        "command": {
-            "source": random.choice(["Users/Services", "Engine", "Content manager"]),
-            "user": f"user{random.randint(1, 100)}",
-            "target": {
-                "id": f"target{random.randint(1, 10)}",
-                "type": random.choice(["agent", "group", "server"])
-            },
-            "action": {
-                "name": random.choice(["restart", "update", "change_group", "apply_policy"]),
-                "args": [f"/path/to/executable/arg{random.randint(1, 10)}"],
-                "version": f"v{random.randint(1, 5)}"
-            },
-            "timeout": random.randint(10, 100)
-        }
+        "source": random.choice(["Users/Services", "Engine", "Content manager"]),
+        "user": f"user{random.randint(1, 100)}",
+        "target": {
+            "id": f"target{random.randint(1, 10)}",
+            "type": random.choice(["agent", "group", "server"])
+        },
+        "action": {
+            "name": random.choice(["restart", "update", "change_group", "apply_policy"]),
+            "args": [f"/path/to/executable/arg{random.randint(1, 10)}"],
+            "version": f"v{random.randint(1, 5)}"
+        },
+        "timeout": random.randint(10, 100)
     }
 
     if include_all_fields:
@@ -73,8 +77,7 @@ def inject_events(ip, port, index, username, password, data, use_index=False):
                 url = f'https://{ip}:{port}/{index}/_doc/{doc_id}'
             else:
                 # Default URL for command manager API without the index
-                url = f'https://{ip}:{port}/_plugins/_commandmanager'
-
+                url = f'https://{ip}:{port}/_plugins/_command_manager/commands'
             response = session.post(url, json=event_data, headers=headers)
             if response.status_code != 201:
                 logging.error(f'Error: {response.status_code}')
@@ -116,19 +119,19 @@ def main():
         "Do you want to inject the generated data into your indexer/command manager? (y/n) "
     ).strip().lower()
     if inject == 'y':
-        ip = input("Enter the IP of your Indexer: ")
-        port = input("Enter the port of your Indexer: ")
+        ip = input(f"Enter the IP of your Indexer (default: '{IP}'): ") or IP
+        port = input(f"Enter the port of your Indexer (default: '{PORT}'): ") or PORT
 
         if args.index:
-            index = input("Enter the index name: ")
+            index = input(f"Enter the index name (default: '{INDEX_NAME}'): ") or INDEX_NAME
         else:
             index = None
 
-        username = input("Username: ")
-        password = input("Password: ")
+        username = input(f"Username (default: '{USERNAME}'): ") or USERNAME
+        password = input(f"Password (default: '{PASSWORD}'): ") or PASSWORD
 
         inject_events(ip, port, index, username, password,
-                      data, use_index=args.index)
+                      data, use_index=bool(args.index))
 
 
 if __name__ == "__main__":

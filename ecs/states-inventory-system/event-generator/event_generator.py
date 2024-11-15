@@ -34,6 +34,10 @@ def generate_random_date():
 
 def generate_random_agent():
     agent = {
+        'id': f'agent{random.randint(0, 99)}',
+        'name': f'Agent{random.randint(0, 99)}',
+        'type': random.choice(['filebeat', 'windows', 'linux', 'macos']),
+        'version': f'v{random.randint(0, 9)}-stable',
         'groups': [f'group{random.randint(0, 99)}', f'group{random.randint(0, 99)}'],
         'host': generate_random_host()
     }

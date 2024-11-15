@@ -280,17 +280,16 @@ jobs:
           echo "versionOpenSearch_inBuild=$opensearch_version" >> $GITHUB_OUTPUT
           echo "opensearch_version=$opensearch_version" >> $GITHUB_ENV
 
-      - name: PRE Cache  ${{ env.maven_local_path }}
-        id: pre-assemble-cache-m2-opensearch-plugins
-        uses: actions/cache@v4
+      - name: Restore Cache ${{ env.maven_local_path }}
+        id: restore-assemble-cache-m2-opensearch-plugins
+        uses: actions/cache/restore@v4
         with:
-          path: |
-            ${{ env.maven_local_path }}
+          path: ${{ env.maven_local_path }}
           key: ${{ runner.os }}-m2-opensearch-${{ env.opensearch_version }}-plugin-${{ hashFiles('**.sha1') }}
           restore-keys: |
             ${{ runner.os }}-m2-opensearch-${{ env.opensearch_version }}-plugin-
 
-      - if: ${{steps.pre-assemble-cache-m2-opensearch-plugins.outputs.cache-hit == 'true'}}
+      - if: ${{steps.restore-assemble-cache-m2-opensearch-plugins.outputs.cache-hit == 'true'}}
         name: PRE Cache  ${{ env.maven_local_path }}  success
         run: ls -la  ${{ env.maven_local_path }}
 
@@ -301,17 +300,15 @@ jobs:
             -d ${{ matrix.distribution }} \
             -r ${{ inputs.revision }}
 
-      - name: POST Cache ${{ env.maven_local_path }}
-        id: post-assemble-cache-m2-opensearch-plugins
-        uses: actions/cache@v4
+      - name: Save Cache ${{ env.maven_local_path }}
+        id: save-assemble-cache-m2-opensearch-plugins
+        uses: actions/cache/save@v4
         with:
           path: |
             ${{ env.maven_local_path }}
           key: ${{ runner.os }}-m2-opensearch-${{ env.opensearch_version }}-plugin-${{ hashFiles('**.sha1') }}
-          restore-keys: |
-            ${{ runner.os }}-m2-opensearch-${{ env.opensearch_version }}-plugin-
-
-      - if: ${{steps.post-assemble-cache-m2-opensearch-plugins.outputs.cache-hit == 'true'}}
+          
+      - if: ${{steps.save-assemble-cache-m2-opensearch-plugins.outputs.cache-hit == 'true'}}
         name: POST Cache ${{ env.maven_local_path }}  success
         run: ls -la ${{ env.maven_local_path }}
 

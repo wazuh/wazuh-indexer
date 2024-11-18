@@ -8,27 +8,40 @@ on:
   workflow_dispatch:
     inputs:
       revision:
-        description: "Revision"
+        description: 'Set the value to "1" for packages in release format.
+                       You can also add other values, such as issue numbers.
+                       By default, it is set to "0" for development.'
         type: string
         default: "0"
+        required: false
       upload:
         description: "Upload ?"
         type: boolean
         default: false
       is_stage:
-        description: "Is stage ?"
+        description: "Build package with release format.
+          By default: false"
         type: boolean
         default: false
       distribution:
-        description: '[ "tar", "rpm", "deb" ]'
-        type: string
+        description: "Package format [tar, rpm, deb]"
+        type: choice
+        options:
+          - rpm
+          - deb
+          - tar
         default: '[ "rpm", "deb" ]'
+        required: true
       architecture:
-        description: '[ "x64", "arm64" ]'
-        type: string
+        description:  "Architecture of the package [x64, arm64]"
+        type: choice
+        options:
+          - x64
+          - arm64
         default: '[ "x64", "arm64"  ]'
+        required: true
       checksum:
-        description: "Checksum ?"
+        description: "Generate package checksum?"
         type: boolean
         default: false
       id:
@@ -46,38 +59,31 @@ on:
   workflow_call:
     inputs:
       revision:
-        description: "Revision"
         type: string
         default: "0"
+        required: false
       upload:
-        description: "Upload ?"
         type: boolean
         default: false
       is_stage:
-        description: "Is stage ?"
         type: boolean
         default: false
       distribution:
-        description: '[ "tar", "rpm", "deb" ]'
         type: string
         default: '[ "rpm", "deb" ]'
       architecture:
-        description: '[ "x64", "arm64" ]'
         type: string
         default: '[ "x64", "arm64"  ]'
       checksum:
-        description: "Checksum ?"
         type: boolean
         default: false
       id:
         type: string
         required: false
       wazuh_plugins_ref:
-        description: "Branch, commit or tag for the wazuh-indexer-plugins repository"
         type: string
         default: "master"
       reporting_plugin_ref:
-        description: "Branch, commit or tag for the wazuh-indexer-reporting repository"
         type: string
         default: "master"
     secrets:

@@ -10,12 +10,6 @@ on:
       - "ci/*"
 
 jobs:
-  call-test-workflow:
-    #     uses: ./.github/workflows/test.yml
-    runs-on: ubuntu-22.04
-    steps:
-      - run: |
-          ./gradlew assemble --parallel --no-build-cache -PDISABLE_BUILD_CACHE
   call-build-workflow:
     uses: ./.github/workflows/build.yml
     secrets: inherit

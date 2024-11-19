@@ -41,13 +41,14 @@ fi
 if command -v systemctl > /dev/null; then
     systemctl restart systemd-sysctl.service || true
 elif command -v sysctl > /dev/null; then
-  # Load configurations from /etc/sysctl.conf
+  echo "Load configurations from /etc/sysctl.conf"
     sysctl -p
 fi
 
 if command -v systemd-tmpfiles > /dev/null; then
     systemd-tmpfiles --create wazuh-indexer.conf
 else
+  echo "touch wazuh-indexer.conf"
   touch wazuh-indexer.conf
 fi
 

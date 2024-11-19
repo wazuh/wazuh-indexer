@@ -45,7 +45,6 @@ find "${buildroot}" -type f -exec chmod 640 {} \;
 systemd_files=()
 systemd_files+=("${buildroot}/${service_dir}/${name}.service")
 systemd_files+=("${buildroot}/${service_dir}/${name}-performance-analyzer.service")
-systemd_files+=("${buildroot}/${service_dir}/${name}-performance-analyzer.service")
 systemd_files+=("${buildroot}/etc/init.d/${name}")
 systemd_files+=("${buildroot}/usr/lib/sysctl.d/${name}.conf")
 systemd_files+=("${buildroot}/usr/lib/tmpfiles.d/${name}.conf")

@@ -30,7 +30,11 @@ on:
           - rpm
           - deb
           - tar
-        default: '[ "rpm", "deb" ]'
+          - rpm,deb
+          - rpm,tar
+          - deb,tar
+          - rpm,deb,tar
+        default: rpm,deb
         required: true
       architecture:
         description:  "Architecture of the package [x64, arm64]"
@@ -38,7 +42,8 @@ on:
         options:
           - x64
           - arm64
-        default: '[ "x64", "arm64"  ]'
+          - x64,arm64
+        default: x64,arm64
         required: true
       checksum:
         description: "Generate package checksum?"
@@ -116,11 +121,17 @@ jobs:
     steps:
       - id: setup
         run: |
+          # Asignar las entradas a variables
+          distribution="${{ inputs.distribution }}"
+          architecture="${{ inputs.architecture }}"
+
+          # Generar el JSON utilizando jq
           matrix=$(jq -cn \
-              --argjson distribution '${{ inputs.distribution }}' \
-              --argjson architecture '${{ inputs.architecture }}' \
-              '{distribution: $distribution, architecture: $architecture}'
-          )
+            --argjson distribution "$(echo $distribution | jq -R 'split(",")')" \
+            --argjson architecture "$(echo $architecture | jq -R 'split(",")')" \
+            '{distribution: $distribution, architecture: $architecture}')
+
+          # Guardar el resultado en GITHUB_OUTPUT
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
 
   build-wazuh-plugins:

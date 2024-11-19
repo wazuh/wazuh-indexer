@@ -180,18 +180,6 @@ set -e
 chown -R %{name}:%{name} %{config_dir}
 chown -R %{name}:%{name} %{log_dir}
 
-# Apply PerformanceAnalyzer Settings
-chmod a+rw /tmp
-if ! grep -q '## OpenSearch Performance Analyzer' %{config_dir}/jvm.options; then
-   # Add Performance Analyzer settings in %{config_dir}/jvm.options
-   CLK_TCK=`/usr/bin/getconf CLK_TCK`
-   echo >> %{config_dir}/jvm.options
-   echo '## OpenSearch Performance Analyzer' >> %{config_dir}/jvm.options
-   echo "-Dclk.tck=$CLK_TCK" >> %{config_dir}/jvm.options
-   echo "-Djdk.attach.allowAttachSelf=true" >> %{config_dir}/jvm.options
-   echo "-Djava.security.policy=file://%{config_dir}/opensearch-performance-analyzer/opensearch_security.policy" >> %{config_dir}/jvm.options
-   echo "--add-opens=jdk.attach/sun.tools.attach=ALL-UNNAMED" >> %{config_dir}/jvm.options
-fi
 # Reload systemctl daemon
 if command -v systemctl > /dev/null; then
     systemctl daemon-reload

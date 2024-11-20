@@ -16,7 +16,7 @@ mkdir -p "$TMP_DIR"
 # If demo certificates are explicitly solicited
 # (ie. for dockerized cluster test environments)
 # then, use hardcoded certs.
-if [[$USE_DEMO_CERTS == "true" ]]
+if [ ${USE_DEMO_CERTS:-false} = "true" ]
 then
 cat <<'ADMIN_KEY' > $TMP_DIR/admin-key.pem
 -----BEGIN PRIVATE KEY-----

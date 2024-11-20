@@ -158,13 +158,14 @@ function parse_args() {
 # Set up configuration files
 # ====
 function add_configuration_files() {
-    # swap configuration files
-    cp $PATH_CONF/security/* $PATH_CONF/opensearch-security/
-    cp $PATH_CONF/jvm.prod.options $PATH_CONF/jvm.options
-    cp $PATH_CONF/opensearch.prod.yml $PATH_CONF/opensearch.yml
+    # Add our settings to the configuration files
+    cat "$PATH_CONF/security/roles.wazuh.yml" >> "$PATH_CONF/opensearch-security/roles.yml"
+    cat "$PATH_CONF/security/roles_mapping.wazuh.yml" >> "$PATH_CONF/opensearch-security/roles_mapping.yml"
+    
+    cp "$PATH_CONF/opensearch.prod.yml" "$PATH_CONF/opensearch.yml"
 
-    rm -r $PATH_CONF/security
-    rm $PATH_CONF/jvm.prod.options $PATH_CONF/opensearch.prod.yml
+    rm -r "$PATH_CONF/security"
+    rm "$PATH_CONF/opensearch.prod.yml"
 
     # Remove symbolic links and bat files
     find . -type l -exec rm -rf {} \;
@@ -187,9 +188,9 @@ function add_wazuh_tools() {
     local download_url
     download_url="https://packages-dev.wazuh.com/${version}"
 
-    curl -sL "${download_url}/config.yml" -o $PATH_PLUGINS/opensearch-security/tools/config.yml
-    curl -sL "${download_url}/wazuh-passwords-tool.sh" -o $PATH_PLUGINS/opensearch-security/tools/wazuh-passwords-tool.sh
-    curl -sL "${download_url}/wazuh-certs-tool.sh" -o $PATH_PLUGINS/opensearch-security/tools/wazuh-certs-tool.sh
+    curl -sL "${download_url}/config.yml" -o "$PATH_PLUGINS/opensearch-security/tools/config.yml"
+    curl -sL "${download_url}/wazuh-passwords-tool.sh" -o "$PATH_PLUGINS/opensearch-security/tools/wazuh-passwords-tool.sh"
+    curl -sL "${download_url}/wazuh-certs-tool.sh" -o "$PATH_PLUGINS/opensearch-security/tools/wazuh-certs-tool.sh"
 }
 
 # ====

@@ -180,18 +180,20 @@ set -e
 chown -R %{name}:%{name} %{config_dir}
 chown -R %{name}:%{name} %{log_dir}
 
-# Apply PerformanceAnalyzer Settings
-chmod a+rw /tmp
-if ! grep -q '## OpenSearch Performance Analyzer' %{config_dir}/jvm.options; then
-   # Add Performance Analyzer settings in %{config_dir}/jvm.options
-   CLK_TCK=`/usr/bin/getconf CLK_TCK`
-   echo >> %{config_dir}/jvm.options
-   echo '## OpenSearch Performance Analyzer' >> %{config_dir}/jvm.options
-   echo "-Dclk.tck=$CLK_TCK" >> %{config_dir}/jvm.options
-   echo "-Djdk.attach.allowAttachSelf=true" >> %{config_dir}/jvm.options
-   echo "-Djava.security.policy=file://%{config_dir}/opensearch-performance-analyzer/opensearch_security.policy" >> %{config_dir}/jvm.options
-   echo "--add-opens=jdk.attach/sun.tools.attach=ALL-UNNAMED" >> %{config_dir}/jvm.options
+export OPENSEARCH_PATH_CONF=${OPENSEARCH_PATH_CONF:-%{config_dir}}
+# Apply Performance Analyzer settings, as per https://github.com/opensearch-project/opensearch-build/blob/2.18.0/scripts/pkg/build_templates/current/opensearch/deb/debian/postinst#L28-L37
+if ! grep -q '## OpenSearch Performance Analyzer' "$OPENSEARCH_PATH_CONF/jvm.options"; then
+    CLK_TCK=$(/usr/bin/getconf CLK_TCK)
+    {
+        echo
+        echo "## OpenSearch Performance Analyzer"
+        echo "-Dclk.tck=$CLK_TCK"
+        echo "-Djdk.attach.allowAttachSelf=true"
+        echo "-Djava.security.policy=file://$OPENSEARCH_PATH_CONF/opensearch-performance-analyzer/opensearch_security.policy"
+        echo "--add-opens=jdk.attach/sun.tools.attach=ALL-UNNAMED"
+    } >> "$OPENSEARCH_PATH_CONF/jvm.options"
 fi
+
 # Reload systemctl daemon
 if command -v systemctl > /dev/null; then
     systemctl daemon-reload

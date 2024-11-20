@@ -13,7 +13,7 @@
 if [ -f "${path.env}" ]; then
     . "${path.env}"
 fi
-
+echo "SCRIPTS/PRERM"
 export OPENSEARCH_PATH_CONF=${OPENSEARCH_PATH_CONF:-${path.conf}}
 
 STOP_REQUIRED=false

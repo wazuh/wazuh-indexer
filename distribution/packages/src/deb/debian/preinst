@@ -10,6 +10,7 @@
 # deb wazuh-indexer preinst script
 
 set -e
+echo "DEBIAN/PREINST"
 
 echo "Running Wazuh Indexer Pre-Installation Script"
 

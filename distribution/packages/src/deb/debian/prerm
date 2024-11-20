@@ -10,6 +10,7 @@
 # deb wazuh-indexer prerm script
 
 set -e
+echo "DEBIAN/PREIRM"
 
 case "$1" in
     upgrade|deconfigure)

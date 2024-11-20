@@ -166,7 +166,7 @@ else
   openssl genrsa -out "$TMP_DIR/indexer-key-temp.pem" 2048
   openssl pkcs8 -inform PEM -outform PEM -in "$TMP_DIR/indexer-key-temp.pem" -topk8 -nocrypt -v1 PBE-SHA1-3DES -out "$TMP_DIR/indexer-key.pem"
   openssl req -new -key "$TMP_DIR/indexer-key.pem" -subj "/C=US/L=California/O=Wazuh/OU=Wazuh/CN=node-1" -out "$TMP_DIR/indexer.csr"
-  echo 'subjectAltName=subjectAltName=RID:1.2.3.4.5.5,DNS:wazuh.indexer,DNS:localhost,IP:127.0.0.1,IP:0:0:0:0:0:0:0:1' > "$TMP_DIR/indexer.ext"
+  echo 'subjectAltName=RID:1.2.3.4.5.5,DNS:wazuh.indexer,DNS:localhost,IP:127.0.0.1,IP:0:0:0:0:0:0:0:1' > "$TMP_DIR/indexer.ext"
   openssl x509 -req -in "$TMP_DIR/indexer.csr" -CA "$TMP_DIR/root-ca.pem" -CAkey "$TMP_DIR/root-ca-key-temp.pem" -CAcreateserial -sha256 -out "$TMP_DIR/indexer.pem" -days 3650 -extfile "$TMP_DIR/indexer.ext"
 
   # Cleanup temporary files

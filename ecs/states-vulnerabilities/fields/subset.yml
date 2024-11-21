@@ -1,0 +1,23 @@
+---
+name: wazuh-states-vulnerabilities
+fields:
+  base:
+    fields:
+      tags: []
+  agent:
+    fields:
+      groups: {}
+      id: {}
+      name: {}
+      type: {}
+      version: {}
+      host:
+        fields: "*"
+  package:
+    fields: "*"
+  host:
+    fields: "*"
+  vulnerability:
+    fields: "*"
+  wazuh:
+    fields: "*"

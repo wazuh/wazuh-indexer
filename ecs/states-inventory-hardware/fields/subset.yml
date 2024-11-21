@@ -1,0 +1,21 @@
+---
+name: wazuh-states-inventory-hardware
+fields:
+  base:
+    fields:
+      tags: []
+      "@timestamp": {}
+  agent:
+    fields:
+      groups: {}
+      id: {}
+      name: {}
+      type: {}
+      version: {}
+      host:
+        fields: "*"
+  observer:
+    fields:
+      serial_number: {}
+  host:
+    fields: "*"

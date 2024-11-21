@@ -1,0 +1,32 @@
+---
+- name: agent
+  title: Wazuh Agents
+  short: Wazuh Inc. custom fields.
+  type: group
+  group: 2
+  fields:
+    - name: groups
+      type: keyword
+      level: custom
+      description: >
+        List of groups the agent belong to.
+    - name: key
+      type: keyword
+      level: custom
+      description: >
+        The registration key of the agent.
+    - name: last_login
+      type: date
+      level: custom
+      description: >
+        The last time the agent logged in.
+    - name: status
+      type: keyword
+      level: custom
+      description: >
+        Agents' interpreted connection status depending on `agent.last_login`.
+      allowed_values:
+        - name: active
+          description: Active agent status
+        - name: disconnected
+          description: Disconnected agent status

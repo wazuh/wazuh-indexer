@@ -1,0 +1,22 @@
+{
+  "index_patterns": [
+    ".commands*"
+  ],
+  "priority": 1,
+  "template": {
+    "settings": {
+      "index": {
+        "hidden": true,
+        "number_of_shards": "1",
+        "number_of_replicas": "0",
+        "refresh_interval": "5s",
+        "query.default_field": [
+          "command.source",
+          "command.target.type",
+          "command.status",
+          "command.action.name"
+        ]
+      }
+    }
+  }
+}

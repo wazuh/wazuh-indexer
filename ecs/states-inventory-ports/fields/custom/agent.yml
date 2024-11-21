@@ -1,0 +1,12 @@
+---
+- name: agent
+  title: Wazuh Agents
+  short: Wazuh Inc. custom fields.
+  type: group
+  group: 2
+  fields:
+    - name: groups
+      type: keyword
+      level: custom
+      description: >
+        List of groups the agent belong to.

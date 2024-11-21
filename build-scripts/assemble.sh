@@ -161,7 +161,7 @@ function add_configuration_files() {
     # Add our settings to the configuration files
     cat "$PATH_CONF/security/roles.wazuh.yml" >> "$PATH_CONF/opensearch-security/roles.yml"
     cat "$PATH_CONF/security/roles_mapping.wazuh.yml" >> "$PATH_CONF/opensearch-security/roles_mapping.yml"
-    
+
     cp "$PATH_CONF/opensearch.prod.yml" "$PATH_CONF/opensearch.yml"
 
     rm -r "$PATH_CONF/security"
@@ -355,6 +355,8 @@ function assemble_deb() {
     cp "distribution/packages/src/deb/debmake_install.sh" "${TMP_DIR}"
     cp -r "distribution/packages/src/deb/debian" "${TMP_DIR}"
     cp -r "distribution/packages/src/common/scripts" "${TMP_DIR}"
+    echo "CONTENT OF ${TMP_DIR}"
+    ls -la "${TMP_DIR}"
     chmod a+x "${TMP_DIR}/debmake_install.sh"
     # Copy performance analyzer service file
     enable_performance_analyzer

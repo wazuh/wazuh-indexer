@@ -10,7 +10,23 @@ RUN apt-get update \
     wget \
     curl \
     unzip \
-    gnupg2
+    gnupg2 \
+    git
+
+# Define build arguments
+ARG indexer_branch=master
+ARG indexer_plugins_branch=master
+ARG indexer_reporting_branch=master
+
+# Use build arguments as environment variables in the container
+ENV INDEXER_BRANCH=${indexer_branch}
+ENV INDEXER_PLUGINS_BRANCH=${indexer_plugins_branch}
+ENV INDEXER_REPORTING_BRANCH=${indexer_reporting_branch}
+
+# Clone the repositories using the specified branches
+RUN git clone --branch ${INDEXER_BRANCH} https://github.com/wazuh/wazuh-indexer --depth 1 && \
+    git clone --branch ${INDEXER_PLUGINS_BRANCH} https://github.com/wazuh/wazuh-indexer-plugins --depth 1 && \
+    git clone --branch ${INDEXER_REPORTING_BRANCH} https://github.com/wazuh/wazuh-indexer-reporting --depth 1
 
 # Install OpenJDK 21
 RUN wget -O- https://download.java.net/openjdk/jdk21/ri/openjdk-21+35_linux-x64_bin.tar.gz | tar xz -C /opt/
@@ -32,3 +48,5 @@ ENV PATH=$GRADLE_HOME/bin:$PATH
 
 # Clean up APT when done
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+COPY ../../build-scripts/* .

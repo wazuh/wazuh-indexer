@@ -354,7 +354,7 @@ function assemble_deb() {
     cp "distribution/packages/src/deb/Makefile" "${TMP_DIR}"
     cp "distribution/packages/src/deb/debmake_install.sh" "${TMP_DIR}"
     cp -r "distribution/packages/src/deb/debian" "${TMP_DIR}"
-    cp -r "distribution/packages/src/common/scripts/*" "${TMP_DIR}/debian"
+    cp -r "distribution/packages/src/common/scripts/." "${TMP_DIR}/debian"
     echo "CONTENT OF ${TMP_DIR}/debian"
     ls -la "${TMP_DIR}/debian"
     chmod a+x "${TMP_DIR}/debmake_install.sh"

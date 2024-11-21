@@ -8,27 +8,44 @@ on:
   workflow_dispatch:
     inputs:
       revision:
-        description: "Revision"
+        description: "Revision number of the package."
         type: string
         default: "0"
+        required: false
       upload:
-        description: "Upload ?"
+        description: "Enable to upload the packages to the S3 bucket."
         type: boolean
         default: false
       is_stage:
-        description: "Is stage ?"
+        description: "Enable to use the release naming nomenclature."
         type: boolean
         default: false
       distribution:
-        description: '[ "tar", "rpm", "deb" ]'
-        type: string
-        default: '[ "rpm", "deb" ]'
+        description: "Distribution format of the package [tar, rpm, deb]."
+        type: choice
+        options:
+          - '[ "tar" ]'
+          - '[ "deb" ]'
+          - '[ "rpm" ]'
+          - '[ "tar", "deb" ]'
+          - '[ "tar", "rpm" ]'
+          - '[ "deb", "rpm" ]'
+          - '[ "tar", "deb", "rpm" ]'
+        default: '[ "deb", "rpm" ]'
+        required: true
       architecture:
-        description: '[ "x64", "arm64" ]'
-        type: string
-        default: '[ "x64", "arm64"  ]'
+        description: "Architecture of the package [x64, arm64]."
+        type: choice
+        options:
+          - '[ "x64" ]'
+          - '[ "arm64" ]'
+          - '[ "x64", "arm64" ]'
+        default: '[ "x64", "arm64" ]'
+        required: true
       checksum:
-        description: "Checksum ?"
+        description: |
+          Enable to generate the MD5 checksums of the packages.
+          If the upload to the S3 bucket is enabled, these will be uploaded too.
         type: boolean
         default: false
       id:
@@ -36,48 +53,41 @@ on:
         type: string
         required: false
       wazuh_plugins_ref:
-        description: "Branch, commit or tag for the wazuh-indexer-plugins repository"
+        description: "Branch, commit or tag for the wazuh-indexer-plugins repository."
         type: string
         default: "master"
       reporting_plugin_ref:
-        description: "Branch, commit or tag for the wazuh-indexer-reporting repository"
+        description: "Branch, commit or tag for the wazuh-indexer-reporting repository."
         type: string
         default: "master"
   workflow_call:
     inputs:
       revision:
-        description: "Revision"
         type: string
         default: "0"
+        required: false
       upload:
-        description: "Upload ?"
         type: boolean
         default: false
       is_stage:
-        description: "Is stage ?"
         type: boolean
         default: false
       distribution:
-        description: '[ "tar", "rpm", "deb" ]'
         type: string
         default: '[ "rpm", "deb" ]'
       architecture:
-        description: '[ "x64", "arm64" ]'
         type: string
         default: '[ "x64", "arm64"  ]'
       checksum:
-        description: "Checksum ?"
         type: boolean
         default: false
       id:
         type: string
         required: false
       wazuh_plugins_ref:
-        description: "Branch, commit or tag for the wazuh-indexer-plugins repository"
         type: string
         default: "master"
       reporting_plugin_ref:
-        description: "Branch, commit or tag for the wazuh-indexer-reporting repository"
         type: string
         default: "master"
     secrets:

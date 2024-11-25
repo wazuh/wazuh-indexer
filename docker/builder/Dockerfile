@@ -69,9 +69,6 @@ RUN git clone --branch ${INDEXER_BRANCH} https://github.com/wazuh/wazuh-indexer 
     git clone --branch ${INDEXER_PLUGINS_BRANCH} https://github.com/wazuh/wazuh-indexer-plugins --depth 1 /opt/wazuh-indexer-plugins && \
     git clone --branch ${INDEXER_REPORTING_BRANCH} https://github.com/wazuh/wazuh-indexer-reporting --depth 1 /opt/wazuh-indexer-reporting
 
-# Set version env var
-ENV VERSION=$(</opt/wazuh-indexer/VERSION)
-
 # Install OpenJDK 21
 RUN wget -O- https://download.java.net/openjdk/jdk21/ri/openjdk-21+35_linux-x64_bin.tar.gz | tar xz -C /opt/
 
@@ -88,12 +85,10 @@ RUN wget https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.
 
 # Set GRADLE_HOME environment variable
 ENV GRADLE_HOME=/opt/gradle/gradle-${GRADLE_VERSION}
-ENV PATH=$GRADLE_HOME/bin:$PATH
+ENV PATH=$GRADLE_HOME/bin/$PATH
 
-## Copy build scripts to /opt directory only if build_scripts_dir is set.
-#RUN if [ -n "${BUILD_SCRIPTS_DIR}" ]; then \
-#    cp -r ${BUILD_SCRIPTS_DIR} /opt/wazuh-indexer/build-scripts/; \
-#fi
+# Create the artifacts directory
+RUN mkdir -p /opt/wazuh-indexer/artifacts/plugins
 
 # Clean up APT when done
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -110,21 +105,29 @@ USER opensearchuser
 # ---PACKAGE-BUILDING---
 
 # Build plugins
-RUN cd /opt/wazuh-indexer-plugins/plugins/setup && \
+RUN export VERSION=$(cat /opt/wazuh-indexer/VERSION) && \
+    cd /opt/wazuh-indexer-plugins/plugins/setup && \
     ./gradlew build -Dversion=${VERSION} -Drevision=${REVISION} && \
     cd /opt/wazuh-indexer-plugins/plugins/command-manager && \
     ./gradlew build -Dversion=${VERSION} -Drevision=${REVISION}
 
 # Build reporting
-RUN cd /opt/wazuh-indexer-reporting && \
+RUN export VERSION=$(cat /opt/wazuh-indexer/VERSION) && \
+    cd /opt/wazuh-indexer-reporting && \
     ./gradlew build -Dversion=${VERSION} -Drevision=${REVISION}
 
-# Copy builds
-RUN cp /opt/wazuh-indexer-plugins/plugins/setup/build/distributions/wazuh-indexer-setup-${VERSION}.${REVISION}.zip /opt/wazuh-indexer/artifacts/plugins && \
-    cp /opt/wazuh-indexer-plugins/plugins/command-manager/build/distributions/wazuh-indexer-command-manager-${VERSION}.${REVISION}.zip /opt/wazuh-indexer/artifacts/plugins && \
-    cp /opt/wazuh-indexer-reporting/build/distributions/wazuh-indexer-reports-scheduler-${VERSION}.${REVISION}.zip /opt/wazuh-indexer/artifacts/plugins
+# Copy builds /opt/wazuh-indexer/artifacts
+RUN export VERSION=$(cat /opt/wazuh-indexer/VERSION) && \
+    cp /opt/wazuh-indexer-plugins/plugins/setup/build/distributions/wazuh-indexer-setup-${VERSION}.${REVISION}.zip /opt/wazuh-indexer/artifacts/plugins/ && \
+    cp /opt/wazuh-indexer-plugins/plugins/command-manager/build/distributions/wazuh-indexer-command-manager-${VERSION}.${REVISION}.zip /opt/wazuh-indexer/artifacts/plugins/ && \
+    cp /opt/wazuh-indexer-reporting/build/distributions/wazuh-indexer-reports-scheduler-${VERSION}.${REVISION}.zip /opt/wazuh-indexer/artifacts/plugins/
 
 USER root
+
+# Configure Git to trust the repositories' directories
+RUN git config --global --add safe.directory /opt/wazuh-indexer-plugins && \
+    git config --global --add safe.directory /opt/wazuh-indexer-reporting && \
+    git config --global --add safe.directory /opt/wazuh-indexer \
 
 # Combined RUN command
 RUN cd /opt/wazuh-indexer-plugins && PLUGINS_HASH=$(git rev-parse --short HEAD) && \

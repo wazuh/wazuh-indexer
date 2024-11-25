@@ -7,11 +7,12 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Update the package list and install necessary tools
 RUN apt-get update \
     && apt-get upgrade -y \
+    && apt-get install curl gnupg2 -y \
+    && curl -o- https://www.aptly.info/pubkey.txt | apt-key add - \
+    && echo "deb http://repo.aptly.info/ squeeze main" | tee -a /etc/apt/sources.list.d/aptly.list \
     && apt-get install -y \
         wget \
-        curl \
         unzip \
-        gnupg2 \
         git \
         build-essential \
         debmake \
@@ -37,6 +38,12 @@ RUN apt-get update \
         libnss3 \
         libnspr4 \
         libnspr4-dev \
+        aptly \
+        cpio \
+        rpm \
+        rpm2cpio \
+        maven \
+    && dpkg -r lintian \
     && rm -rf /var/lib/apt/lists/*
 
 # Define build arguments with default values
@@ -62,10 +69,8 @@ RUN git clone --branch ${INDEXER_BRANCH} https://github.com/wazuh/wazuh-indexer 
     git clone --branch ${INDEXER_PLUGINS_BRANCH} https://github.com/wazuh/wazuh-indexer-plugins --depth 1 /opt/wazuh-indexer-plugins && \
     git clone --branch ${INDEXER_REPORTING_BRANCH} https://github.com/wazuh/wazuh-indexer-reporting --depth 1 /opt/wazuh-indexer-reporting
 
-# Save repositories hashes
-RUN cd /opt/wazuh-indexer && indexer_hash=$(git rev-parse --short HEAD) && \
-    cd /opt/wazuh-indexer-plugins && plugins_hash=$(git rev-parse --short HEAD) && \
-    cd /opt/wazuh-indexer-reporting && reporting_hash=$(git rev-parse --short HEAD)
+# Set version env var
+ENV VERSION=$(</opt/wazuh-indexer/VERSION)
 
 # Install OpenJDK 21
 RUN wget -O- https://download.java.net/openjdk/jdk21/ri/openjdk-21+35_linux-x64_bin.tar.gz | tar xz -C /opt/
@@ -85,55 +90,67 @@ RUN wget https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.
 ENV GRADLE_HOME=/opt/gradle/gradle-${GRADLE_VERSION}
 ENV PATH=$GRADLE_HOME/bin:$PATH
 
-# Copy build scripts to /opt directory
-COPY ../../build-scripts/* /opt/build-scripts/
+## Copy build scripts to /opt directory only if build_scripts_dir is set.
+#RUN if [ -n "${BUILD_SCRIPTS_DIR}" ]; then \
+#    cp -r ${BUILD_SCRIPTS_DIR} /opt/wazuh-indexer/build-scripts/; \
+#fi
 
 # Clean up APT when done
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+# Create a non-root user and set up permissions
+RUN useradd -ms /bin/bash opensearchuser && \
+    mkdir -p /home/opensearchuser && \
+    chown -R opensearchuser:opensearchuser /opt/wazuh-indexer-plugins && \
+    chown -R opensearchuser:opensearchuser /opt/wazuh-indexer-reporting && \
+    chown -R opensearchuser:opensearchuser /opt/wazuh-indexer
+
+USER opensearchuser
+
 # ---PACKAGE-BUILDING---
 
-# Baptize min
-RUN PACKAGE_MIN_NAME=$(bash /opt/build-scripts/baptizer.sh -m \
-    -a ${ARCHITECTURE} \
-    -d ${DISTRIBUTION} \
-    -r ${REVISION} \
-    -l ${plugins_hash} \
-    -e ${reporting_hash} \
-    $(if [ "${IS_STAGE}" = "true" ]; then echo "-x"; fi))
+# Build plugins
+RUN cd /opt/wazuh-indexer-plugins/plugins/setup && \
+    ./gradlew build -Dversion=${VERSION} -Drevision=${REVISION} && \
+    cd /opt/wazuh-indexer-plugins/plugins/command-manager && \
+    ./gradlew build -Dversion=${VERSION} -Drevision=${REVISION}
 
-# Baptize package (min)
-RUN PACKAGE_MIN_NAME=$(bash /opt/build-scripts/baptizer.sh \
-    -a ${ARCHITECTURE} \
-    -d ${DISTRIBUTION} \
-    -r ${REVISION} \
-    -l ${plugins_hash} \
-    -e ${reporting_hash} \
-    $(if [ "${IS_STAGE}" = "true" ]; then echo "-x"; fi))
+# Build reporting
+RUN cd /opt/wazuh-indexer-reporting && \
+    ./gradlew build -Dversion=${VERSION} -Drevision=${REVISION}
 
-# Baptize package
-RUN PACKAGE_NAME=$(bash /opt/build-scripts/baptizer.sh \
-    -a ${ARCHITECTURE} \
-    -d ${DISTRIBUTION} \
-    -r ${REVISION} \
-    -l ${plugins_hash} \
-    -e ${reporting_hash} \
-    $(if [ "${IS_STAGE}" = "true" ]; then echo "-x"; fi))
+# Copy builds
+RUN cp /opt/wazuh-indexer-plugins/plugins/setup/build/distributions/wazuh-indexer-setup-${VERSION}.${REVISION}.zip /opt/wazuh-indexer/artifacts/plugins && \
+    cp /opt/wazuh-indexer-plugins/plugins/command-manager/build/distributions/wazuh-indexer-command-manager-${VERSION}.${REVISION}.zip /opt/wazuh-indexer/artifacts/plugins && \
+    cp /opt/wazuh-indexer-reporting/build/distributions/wazuh-indexer-reports-scheduler-${VERSION}.${REVISION}.zip /opt/wazuh-indexer/artifacts/plugins
 
-# Build
-RUN bash /opt/build-scripts/build.sh \
-    -a ${ARCHITECTURE} \
-    -d ${DISTRIBUTION} \
-    -n ${PACKAGE_MIN_NAME}
+USER root
 
-# Assamble
-RUN bash build-scripts/assemble.sh \
-    -a ${ARCHITECTURE} \
-    -d ${DISTRIBUTION} \
-    -r ${REVISION}
-
-# Create a directory to store the resulting packages \
-RUN mkdir -p /artifacts/dist/
-
-# Move the resulting package to /artifacts/dist/
-RUN mv /opt/artifacts/dist/${PACKAGE_NAME} /artifacts/dist/
+# Combined RUN command
+RUN cd /opt/wazuh-indexer-plugins && PLUGINS_HASH=$(git rev-parse --short HEAD) && \
+    cd /opt/wazuh-indexer-reporting && REPORTING_HASH=$(git rev-parse --short HEAD) && \
+    cd /opt/wazuh-indexer && INDEXER_HASH=$(git rev-parse --short HEAD) && \
+    PACKAGE_MIN_NAME=$(bash build-scripts/baptizer.sh -m \
+        -a ${ARCHITECTURE} \
+        -d ${DISTRIBUTION} \
+        -r ${REVISION} \
+        -l ${PLUGINS_HASH} \
+        -e ${REPORTING_HASH} \
+        $(if [ "${IS_STAGE}" = "true" ]; then echo "-x"; fi)) && \
+    PACKAGE_NAME=$(bash build-scripts/baptizer.sh \
+        -a ${ARCHITECTURE} \
+        -d ${DISTRIBUTION} \
+        -r ${REVISION} \
+        -l ${PLUGINS_HASH} \
+        -e ${REPORTING_HASH} \
+        $(if [ "${IS_STAGE}" = "true" ]; then echo "-x"; fi)) && \
+    bash build-scripts/build.sh \
+        -a ${ARCHITECTURE} \
+        -d ${DISTRIBUTION} \
+        -n ${PACKAGE_MIN_NAME} && \
+    bash build-scripts/assemble.sh \
+        -a ${ARCHITECTURE} \
+        -d ${DISTRIBUTION} \
+        -r ${REVISION} && \
+    mkdir -p /artifacts/dist/ && \
+    mv artifacts/dist/${PACKAGE_NAME} /artifacts/dist/

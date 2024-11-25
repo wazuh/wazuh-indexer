@@ -109,15 +109,10 @@ RUN export VERSION=$(cat /opt/wazuh-indexer/VERSION) && \
     cd /opt/wazuh-indexer-plugins/plugins/setup && \
     ./gradlew build -Dversion=${VERSION} -Drevision=${REVISION} && \
     cd /opt/wazuh-indexer-plugins/plugins/command-manager && \
-    ./gradlew build -Dversion=${VERSION} -Drevision=${REVISION}
-
-# Build reporting
-RUN export VERSION=$(cat /opt/wazuh-indexer/VERSION) && \
+    ./gradlew build -Dversion=${VERSION} -Drevision=${REVISION} && \
     cd /opt/wazuh-indexer-reporting && \
-    ./gradlew build -Dversion=${VERSION} -Drevision=${REVISION}
-
-# Copy builds /opt/wazuh-indexer/artifacts
-RUN export VERSION=$(cat /opt/wazuh-indexer/VERSION) && \
+    ./gradlew build -Dversion=${VERSION} -Drevision=${REVISION} && \
+    # Copy the buit packages
     cp /opt/wazuh-indexer-plugins/plugins/setup/build/distributions/wazuh-indexer-setup-${VERSION}.${REVISION}.zip /opt/wazuh-indexer/artifacts/plugins/ && \
     cp /opt/wazuh-indexer-plugins/plugins/command-manager/build/distributions/wazuh-indexer-command-manager-${VERSION}.${REVISION}.zip /opt/wazuh-indexer/artifacts/plugins/ && \
     cp /opt/wazuh-indexer-reporting/build/distributions/wazuh-indexer-reports-scheduler-${VERSION}.${REVISION}.zip /opt/wazuh-indexer/artifacts/plugins/
@@ -127,12 +122,12 @@ USER root
 # Configure Git to trust the repositories' directories
 RUN git config --global --add safe.directory /opt/wazuh-indexer-plugins && \
     git config --global --add safe.directory /opt/wazuh-indexer-reporting && \
-    git config --global --add safe.directory /opt/wazuh-indexer \
+    git config --global --add safe.directory /opt/wazuh-indexer
 
 # Combined RUN command
 RUN cd /opt/wazuh-indexer-plugins && PLUGINS_HASH=$(git rev-parse --short HEAD) && \
     cd /opt/wazuh-indexer-reporting && REPORTING_HASH=$(git rev-parse --short HEAD) && \
-    cd /opt/wazuh-indexer && INDEXER_HASH=$(git rev-parse --short HEAD) && \
+    cd /opt/wazuh-indexer && \
     PACKAGE_MIN_NAME=$(bash build-scripts/baptizer.sh -m \
         -a ${ARCHITECTURE} \
         -d ${DISTRIBUTION} \

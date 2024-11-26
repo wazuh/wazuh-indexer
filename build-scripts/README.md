@@ -62,13 +62,13 @@ The `builder` image automates the build and assemble process for the Wazuh Index
 
 1. Build the image:
     ```bash
-    cd docker/builder && docker build -t wazuh-indexer-builder .
+    cd docker/builder && docker build -t wazuh-indexer-builder . && cd ../..
     ```
 2. Execute the package build process
     ```bash
-    docker run --rm -v /path/to/local/artifacts:/home/indexer/artifacts wazuh-indexer-builder
+    docker run --rm -v ./artifacts/dist:/home/indexer/artifacts wazuh-indexer-builder
     ```
-   > Replace `/path/to/local/artifacts` with the actual path on your host system where you want to store the resulting package.
+The resulting package will be stored at `./artifacts/dist`.
 
 #### Environment Variables
 You can customize the build process by setting the following environment variables:

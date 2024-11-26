@@ -64,10 +64,6 @@ ENV PATH=$GRADLE_HOME/bin/$PATH
 # Clean up APT when done
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Create volume dir
-RUN mkdir -p /artifacts
-VOLUME /artifacts
-
 # Create a non-root user and set up permissions
 RUN useradd -ms /bin/bash indexer && mkdir -p /home/indexer && chown -R indexer:indexer /home/indexer
 
@@ -76,6 +72,10 @@ ADD entrypoint.sh /home/indexer/
 
 # Change file permissions as root
 RUN chmod +x /home/indexer/entrypoint.sh
+
+# Create volume dir
+RUN mkdir -p /home/indexer/artifacts
+VOLUME /home/indexer/artifacts
 
 # Switch to non-root user
 USER indexer

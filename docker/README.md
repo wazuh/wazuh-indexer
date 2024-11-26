@@ -29,10 +29,33 @@ Once the `wi-dev:x.y.z` container is up, attach a shell to it and run `./gradlew
 
 ## Containers to generate packages
 
-Use the `ci/ci.sh` script to start provisioned containers to generate packages.
+The `builder` image automates the build and assemble process for the Wazuh Indexer and its plugins, making it easy to create packages on any system.
 
-```bash
-Usage: ./ci.sh {up|down|stop}
+### Usage
+1. Build the image:
+    ```bash
+    cd docker/builder && docker build -t wazuh-indexer-builder .
+    ```
+2. Execute the package building process
+    ```bash
+    docker run --rm -v /path/to/local/artifacts:/artifacts wazuh-indexer-builder
+    ```
+    > Replace `/path/to/local/artifacts` with the actual path on your host system where you want to store the resulting package.
+
+#### Environment Variables
+You can customize the build process by setting the following environment variables:
+
+- `INDEXER_BRANCH`: The branch to use for the Wazuh Indexer (default: `master`).
+- `INDEXER_PLUGINS_BRANCH`: The branch to use for the Wazuh Indexer plugins (default: `master`).
+- `INDEXER_REPORTING_BRANCH`: The branch to use for the Wazuh Indexer reporting (default: `master`).
+- `REVISION`: The revision number for the build (default: `0`).
+- `IS_STAGE`: Whether the build is a staging build (default: `false`).
+- `DISTRIBUTION`: The distribution format for the package (default: `tar`).
+- `ARCHITECTURE`: The architecture for the package (default: `x64`).
+
+Example usage with custom environment variables:
+```sh
+docker run --rm -e INDEXER_BRANCH="5.0.0" -e INDEXER_PLUGINS_BRANCH="5.0.0" -e INDEXER_REPORTING_BRANCH="5.0.0" -v /path/to/local/artifacts:/artifacts wazuh-indexer-builder
 ```
 
 Refer to [build-scripts/README.md](../build-scripts/README.md) for details about how to build packages.
@@ -51,5 +74,5 @@ docker build --build-arg="VERSION=5.0.0" --build-arg="INDEXER_TAR_NAME=wazuh-ind
 Then, start a container with:
 
 ```console
-docker run -it --rm wazuh-indexer:5.0.0 
+docker run -it --rm wazuh-indexer:5.0.0
 ```

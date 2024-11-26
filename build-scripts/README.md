@@ -6,7 +6,7 @@
 > This document is pending a review. Let us know if you find any issues.
 
 The packages' generation process consists on 2 steps:
-
+[build.yml](../.github/workflows/build.yml)
 - **Build**: compiles the Java application and bundles it into a package.
 - **Assembly**: uses the package from the previous step and inflates it with plugins and
   configuration files, ready for production deployment.
@@ -15,64 +15,138 @@ We usually generate the packages using GitHub Actions, however, the process is d
 be independent enough for maximum portability. GitHub Actions provides infrastructure, while
 the building process is self-contained in the application code.
 
-Each section includes instructions to generate packages locally, using Act or Docker.
-
-- [Install Act](https://github.com/nektos/act)
+This guide includes instructions to generate packages locally, using Act or Docker.
 
 The names of the packages are managed by the `baptizer.sh` script.
 
-## Building the plugins
+## Local environment
 
-Follow the [DEVELOPER_GUIDE.md](https://github.com/wazuh/wazuh-indexer-plugins/blob/master/DEVELOPER_GUIDE.md) instructions to build the plugins. The build scripts expect the plugins in the Maven local repository or under the `artifacts/plugins` folder.
+### Build
 
-1. Build the plugins.
-2. Publish the plugins to the local Maven repository: run `./gradlew publishToMavenLocal`.
-    - Alternatively, copy the generated zip files to the `artifacts/plugins` folder.
-3. Build and Assemble the `wazuh-indexer` package.
+1. Build a wazuh-indexer minimal package
+    ```bash
+    bash build-scripts/build.sh -a [ARCHITECTURE] -d [PACKAGE_TYPE] -n $(bash build-scripts/baptizer.sh -a [ARCHITECTURE] -d [PACKAGE_TYPE] -m)
+    ```
+    > A basic package including only the Wazuh Indexer engine without extra plugin is generated first using the `build.sh` script.
+    > Take a look at the `build.yml` workflow file for an example of usage.
+2. Build the wazuh-indexer plugins. (Repeat for each plugin `command-manager`, `setup`, and `reporting`)
+   ```bash
+    cd path/to/wazuh/indexer/plugin/
+    ./gradlew build -Dversion=[VERSION] -Drevision=[REVISION]
+    ```
+    > Follow the [DEVELOPER_GUIDE.md](https://github.com/wazuh/wazuh-indexer-plugins/blob/master/DEVELOPER_GUIDE.md) instructions to build the plugins. The build scripts expect the plugins in the Maven local repository or under the `artifacts/plugins` folder.
+3. Publish the plugins to the local Maven repository. (Repeat for each plugin `command-manager`, `setup`, and `reporting`)
+    ```bash
+    ./gradlew publishToMavenLocal
+    ```
+    > Alternatively, copy the generated zip files to the `artifacts/plugins` folder.
+    > ```bash
+    > cp build/distributions/wazuh-indexer-[PLUGIN_NAME]-[VERSION]-[REVISION].zip /wazuh-indexer/artifacts/plugins/
+    > ```
+
+### Assemble
+
+> **Note:** set the environment variable `TEST=true` to assemble a package with the required plugins only,
+speeding up the assembly process.
+
+1. Assemble the `wazuh-indexer` complete package
+    ```bash
+    bash build-scripts/assemble.sh -a [ARCHITECTURE] -d [PACKAGE_TYPE]
+    ```
+
+## Docker environment
+
+- [Install Docker](https://docs.docker.com/engine/install/)
+
+The `builder` image automates the build and assemble process for the Wazuh Indexer and its plugins, making it easy to create packages on any system.
+
+1. Build the image:
+    ```bash
+    cd docker/builder && docker build -t wazuh-indexer-builder .
+    ```
+2. Execute the package building process
+    ```bash
+    docker run --rm -v /path/to/local/artifacts:/artifacts wazuh-indexer-builder
+    ```
+   > Replace `/path/to/local/artifacts` with the actual path on your host system where you want to store the resulting package.
+
+#### Environment Variables
+You can customize the build process by setting the following environment variables:
+
+- `INDEXER_BRANCH`: The branch to use for the Wazuh Indexer (default: `master`).
+- `INDEXER_PLUGINS_BRANCH`: The branch to use for the Wazuh Indexer plugins (default: `master`).
+- `INDEXER_REPORTING_BRANCH`: The branch to use for the Wazuh Indexer reporting (default: `master`).
+- `REVISION`: The revision number for the build (default: `0`).
+- `IS_STAGE`: Whether the build is a staging build (default: `false`).
+- `DISTRIBUTION`: The distribution format for the package (default: `tar`).
+- `ARCHITECTURE`: The architecture for the package (default: `x64`).
+
+Example usage with custom environment variables:
+```sh
+docker run --rm -e INDEXER_BRANCH="5.0.0" -e INDEXER_PLUGINS_BRANCH="5.0.0" -e INDEXER_REPORTING_BRANCH="5.0.0" -v /path/to/local/artifacts:/artifacts wazuh-indexer-builder
+```
 
 ## Build and Assemble in Act
+
+- [Install Act](https://github.com/nektos/act)
 
 Use Act to run the `build.yml` workflow locally. The `act.input.env` file contains the inputs
 for the workflow. As the workflow clones the `wazuh-indexer-plugins` repository, the `GITHUB_TOKEN`
 is required. You can use the `gh` CLI to authenticate, as seen in the example below.
 
-```console
+```bash
 act -j build -W .github/workflows/build.yml --artifact-server-path ./artifacts --input-file build-scripts/act.input.env -s GITHUB_TOKEN="$(gh auth token)"
 ```
 
-## Build
+## Bash scripts reference
 
-For local package generation, use the `build.sh` script. Take a look at the `build.yml`
-workflow file for an example of usage.
+The packages' generation process is guided through bash scripts. This section list and describes
+them, as well as their inputs and outputs.
 
-```bash
-bash build-scripts/build.sh -a x64 -d tar -n $(bash build-scripts/baptizer.sh -a x64 -d tar -m)
+```yml
+scripts:
+  - file: build.sh
+    description: |
+      generates a distribution package by running the appropiate Gradle task
+      depending on the parameters.
+    inputs:
+      architecture: [x64, arm64] # Note: we only build x86_64 packages
+      distribution: [tar, deb, rpm]
+      name: the name of the package to be generated.
+    outputs:
+      package: minimal wazuh-indexer package for the required distribution.
+
+  - file: assemble.sh
+    description: |
+      bundles the wazuh-indexer package generated in by build.sh with plugins,
+      configuration files and demo certificates (certificates yet to come).
+    inputs:
+      architecture: [x64, arm64] # Note: we only build x86_64 packages
+      distribution: [tar, deb, rpm]
+      revision: revision number. 0 by default.
+    outputs:
+      package: wazuh-indexer package.
+
+  - file: provision.sh
+    description: Provision script for the assembly of DEB packages.
+
+  - file: baptizer.sh
+    description: generate the wazuh-indexer package name depending on the parameters.
+    inputs:
+      architecture: [x64, arm64] # Note: we only build x86_64 packages
+      distribution: [tar, deb, rpm]
+      revision: revision number. 0 by default.
+      plugins_hash: Commit hash of the `wazuh-indexer-plugins` repository.
+      reporting_hash: Commit hash of the `wazuh-indexer-reporting` repository.
+      is_release: if set, uses release naming convention.
+      is_min: if set, the package name will start by `wazuh-indexer-min`. Used on the build stage.
+    outputs:
+      package: the name of the wazuh-indexer package.
 ```
 
-#### Act (GitHub Workflow locally)
+### Assemble flow reference
 
-```console
-act -j build -W .github/workflows/build.yml --artifact-server-path ./artifacts
-
-[Build slim packages/build] 🏁  Job succeeded
-```
-
-#### Running in Docker
-
-Using the [Docker environment](../docker):
-
-```console
-docker exec -it wi-build_$(<VERSION) bash build-scripts/build.sh -a x64 -d tar -n $(bash build-scripts/baptizer.sh -a x64 -d tar -m)
-```
-
-The generated package is sent to the `wazuh-indexer/artifacts` folder.
-
-## Assemble
-
-**Note:** set the environment variable `TEST=true` to assemble a package with the required plugins only,
-speeding up the assembly process.
-
-### TAR
+#### TAR
 
 The assembly process for tarballs consists on:
 
@@ -81,11 +155,11 @@ The assembly process for tarballs consists on:
 3. Add Wazuh's configuration files and tools.
 4. Compress.
 
-```console
+```bash
 bash build-scripts/assemble.sh -a x64 -d tar -r 1
 ```
 
-### DEB
+#### DEB
 
 For DEB packages, the `assemble.sh` script will perform the following operations:
 
@@ -152,18 +226,6 @@ For DEB packages, the `assemble.sh` script will perform the following operations
                | -- postinst
    ```
 
-#### Running in Docker
-
-Pre-requisites:
-
-- Current directory: `wazuh-indexer/`
-- Existing deb package in `wazuh-indexer/artifacts/dist/deb`, as a result of the _Build_ stage.
-- Using the [Docker environment](../docker):
-
-```console
-docker exec -it wi-assemble_$(<VERSION) bash build-scripts/assemble.sh -a x64 -d deb -r 1
-```
-
 ### RPM
 
 The `assemble.sh` script will use the output from the `build.sh` script and use it as a
@@ -213,61 +275,3 @@ The script will:
        wazuh-indexer-min-*.rpm
        wazuh-indexer.rpm.spec
    ```
-
-#### Running in Docker
-
-Pre-requisites:
-
-- Current directory: `wazuh-indexer/`
-- Existing rpm package in `wazuh-indexer/artifacts/dist/rpm`, as a result of the _Build_ stage.
-- Using the [Docker environment](../docker):
-
-```console
-docker exec -it wi-assemble_$(<VERSION) bash build-scripts/assemble.sh -a x64 -d rpm -r 1
-```
-
-## Bash scripts reference
-
-The packages' generation process is guided through bash scripts. This section list and describes
-them, as well as their inputs and outputs.
-
-```yml
-scripts:
-  - file: build.sh
-    description: |
-      generates a distribution package by running the appropiate Gradle task
-      depending on the parameters.
-    inputs:
-      architecture: [x64, arm64] # Note: we only build x86_64 packages
-      distribution: [tar, deb, rpm]
-      name: the name of the package to be generated.
-    outputs:
-      package: minimal wazuh-indexer package for the required distribution.
-
-  - file: assemble.sh
-    description: |
-      bundles the wazuh-indexer package generated in by build.sh with plugins,
-      configuration files and demo certificates (certificates yet to come).
-    inputs:
-      architecture: [x64, arm64] # Note: we only build x86_64 packages
-      distribution: [tar, deb, rpm]
-      revision: revision number. 0 by default.
-    outputs:
-      package: wazuh-indexer package.
-
-  - file: provision.sh
-    description: Provision script for the assembly of DEB packages.
-
-  - file: baptizer.sh
-    description: generate the wazuh-indexer package name depending on the parameters.
-    inputs:
-      architecture: [x64, arm64] # Note: we only build x86_64 packages
-      distribution: [tar, deb, rpm]
-      revision: revision number. 0 by default.
-      plugins_hash: Commit hash of the `wazuh-indexer-plugins` repository.
-      reporting_hash: Commit hash of the `wazuh-indexer-reporting` repository.
-      is_release: if set, uses release naming convention.
-      is_min: if set, the package name will start by `wazuh-indexer-min`. Used on the build stage.
-    outputs:
-      package: the name of the wazuh-indexer package.
-```

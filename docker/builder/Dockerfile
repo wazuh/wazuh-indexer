@@ -64,6 +64,10 @@ ENV INDEXER_BRANCH=${indexer_branch} \
     DISTRIBUTION=${distribution} \
     ARCHITECTURE=${architecture}
 
+RUN mkdir -p /artifacts/dist/
+
+VOLUME /artifacts/dist/
+
 # Clone the repositories using the specified branches
 RUN git clone --branch ${INDEXER_BRANCH} https://github.com/wazuh/wazuh-indexer --depth 1 /opt/wazuh-indexer && \
     git clone --branch ${INDEXER_PLUGINS_BRANCH} https://github.com/wazuh/wazuh-indexer-plugins --depth 1 /opt/wazuh-indexer-plugins && \
@@ -112,7 +116,7 @@ RUN export VERSION=$(cat /opt/wazuh-indexer/VERSION) && \
     ./gradlew build -Dversion=${VERSION} -Drevision=${REVISION} && \
     cd /opt/wazuh-indexer-reporting && \
     ./gradlew build -Dversion=${VERSION} -Drevision=${REVISION} && \
-    # Copy the buit packages
+    # Copy the built packages
     cp /opt/wazuh-indexer-plugins/plugins/setup/build/distributions/wazuh-indexer-setup-${VERSION}.${REVISION}.zip /opt/wazuh-indexer/artifacts/plugins/ && \
     cp /opt/wazuh-indexer-plugins/plugins/command-manager/build/distributions/wazuh-indexer-command-manager-${VERSION}.${REVISION}.zip /opt/wazuh-indexer/artifacts/plugins/ && \
     cp /opt/wazuh-indexer-reporting/build/distributions/wazuh-indexer-reports-scheduler-${VERSION}.${REVISION}.zip /opt/wazuh-indexer/artifacts/plugins/

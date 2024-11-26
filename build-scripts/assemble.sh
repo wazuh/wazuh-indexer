@@ -159,9 +159,9 @@ function parse_args() {
 # ====
 function add_configuration_files() {
     # Add our settings to the configuration files
-    cat "$PATH_CONF/security/roles.wazuh.yml" >> "$PATH_CONF/opensearch-security/roles.yml"
-    cat "$PATH_CONF/security/roles_mapping.wazuh.yml" >> "$PATH_CONF/opensearch-security/roles_mapping.yml"
-    
+    cat "$PATH_CONF/security/roles.wazuh.yml" >>"$PATH_CONF/opensearch-security/roles.yml"
+    cat "$PATH_CONF/security/roles_mapping.wazuh.yml" >>"$PATH_CONF/opensearch-security/roles_mapping.yml"
+
     cp "$PATH_CONF/opensearch.prod.yml" "$PATH_CONF/opensearch.yml"
 
     rm -r "$PATH_CONF/security"
@@ -193,6 +193,9 @@ function add_wazuh_tools() {
     curl -sL "${download_url}/wazuh-certs-tool.sh" -o "$PATH_PLUGINS"/opensearch-security/tools/wazuh-certs-tool.sh
 }
 
+# ====
+# Add demo certificates installer
+# ====
 function add_demo_certs_installer() {
     cp install-demo-certificates.sh "$PATH_PLUGINS"/opensearch-security/tools/
 }

@@ -32,7 +32,6 @@ chown -R wazuh-indexer:wazuh-indexer ${data_dir}
 chown -R wazuh-indexer:wazuh-indexer ${pid_dir}
 chown -R wazuh-indexer:wazuh-indexer ${tmp_dir}
 
-
 export OPENSEARCH_PATH_CONF=${OPENSEARCH_PATH_CONF:-${config_dir}}
 # Apply Performance Analyzer settings, as per https://github.com/opensearch-project/opensearch-build/blob/2.18.0/scripts/pkg/build_templates/current/opensearch/deb/debian/postinst#L28-L37
 if ! grep -q '## OpenSearch Performance Analyzer' "$OPENSEARCH_PATH_CONF/jvm.options"; then
@@ -44,36 +43,35 @@ if ! grep -q '## OpenSearch Performance Analyzer' "$OPENSEARCH_PATH_CONF/jvm.opt
         echo "-Djdk.attach.allowAttachSelf=true"
         echo "-Djava.security.policy=file://$OPENSEARCH_PATH_CONF/opensearch-performance-analyzer/opensearch_security.policy"
         echo "--add-opens=jdk.attach/sun.tools.attach=ALL-UNNAMED"
-    } >> "$OPENSEARCH_PATH_CONF/jvm.options"
+    } >>"$OPENSEARCH_PATH_CONF/jvm.options"
 fi
 
 # Reload systemctl daemon
-if command -v systemctl > /dev/null; then
+if command -v systemctl >/dev/null; then
     systemctl daemon-reload
 fi
 
 # Reload other configs
-if command -v systemctl > /dev/null; then
+if command -v systemctl >/dev/null; then
     systemctl restart systemd-sysctl.service || true
 fi
 
-if command -v systemd-tmpfiles > /dev/null; then
+if command -v systemd-tmpfiles >/dev/null; then
     systemd-tmpfiles --create wazuh-indexer.conf
 fi
-
 
 if ! [ -d "${config_dir}/certs" ] && [ -f "${product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh" ]; then
     echo "No certificates detected in ${config_dir}, installing demo certificates..."
     echo "### If you are using a custom certificates path, ignore this message."
     export USE_DEMO_CERTS
-    bash "${product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh" > "${log_dir}/install_demo_certificates.log" 2>&1
+    bash "${product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh" >"${log_dir}/install_demo_certificates.log" 2>&1
 fi
 
 if [ -f $restart_service ]; then
     rm -f $restart_service
     echo "Restarting wazuh-indexer service..."
-    if command -v systemctl > /dev/null; then
-        systemctl restart wazuh-indexer.service > /dev/null 2>&1
+    if command -v systemctl >/dev/null; then
+        systemctl restart wazuh-indexer.service >/dev/null 2>&1
     fi
     exit 0
 fi

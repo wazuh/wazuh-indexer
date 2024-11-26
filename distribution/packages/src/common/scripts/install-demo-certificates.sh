@@ -16,9 +16,8 @@ mkdir -p "$TMP_DIR"
 # If demo certificates are explicitly solicited
 # (ie. for dockerized cluster test environments)
 # then, use hardcoded certs.
-if [ ${USE_DEMO_CERTS:-false} = "true" ]
-then
-cat <<'ADMIN_KEY' > $TMP_DIR/admin-key.pem
+if [ "${USE_DEMO_CERTS:-false}" = "true" ]; then
+  cat <<'ADMIN_KEY' >$TMP_DIR/admin-key.pem
 -----BEGIN PRIVATE KEY-----
 MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC3ebYoJC7NR6YU
 aYDnhRlawrb6BD4Oj3VkLsk4hIEKLo0afcexZWhW2iKqK1d7KLQir7ZqmodyQpzR
@@ -49,7 +48,7 @@ V4hJcul3lbTnrbuRHvVEOGk=
 -----END PRIVATE KEY-----
 ADMIN_KEY
 
-cat <<'ADMIN_CERT' > $TMP_DIR/admin.pem
+  cat <<'ADMIN_CERT' >$TMP_DIR/admin.pem
 -----BEGIN CERTIFICATE-----
 MIIDDjCCAfYCFD71oGZblxldV2/96zP2kZpIKOYgMA0GCSqGSIb3DQEBCwUAMDUx
 DjAMBgNVBAsMBVdhenVoMQ4wDAYDVQQKDAVXYXp1aDETMBEGA1UEBwwKQ2FsaWZv
@@ -71,7 +70,7 @@ BzcZ+J6GzTHIZXHI77PvXHtf
 -----END CERTIFICATE-----
 ADMIN_CERT
 
-cat <<'INDEXER_KEY' > $TMP_DIR/indexer-key.pem
+  cat <<'INDEXER_KEY' >$TMP_DIR/indexer-key.pem
 -----BEGIN PRIVATE KEY-----
 MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDJZsCQdRwFIszQ
 XtccbLLs3aUquhbIdGwpDALXtOa8XWBRhusSLgftmNfIQg4adPVgqzXvij546wiQ
@@ -102,7 +101,7 @@ KhyfqIhMJFSEqFwz8nsLcDo=
 -----END PRIVATE KEY-----
 INDEXER_KEY
 
-cat <<'INDEXER_CERT' > $TMP_DIR/indexer.pem
+  cat <<'INDEXER_CERT' >$TMP_DIR/indexer.pem
 -----BEGIN CERTIFICATE-----
 MIIDrTCCApWgAwIBAgIUXrjOPxnJtoICOqL+z9QzqccrhE0wDQYJKoZIhvcNAQEL
 BQAwNTEOMAwGA1UECwwFV2F6dWgxDjAMBgNVBAoMBVdhenVoMRMwEQYDVQQHDApD
@@ -127,7 +126,7 @@ mVGWK9t6LlKwb/u1zTKn+Ayy24fzELpG/y5CF35BW+Zy
 -----END CERTIFICATE-----
 INDEXER_CERT
 
-cat <<'ROOT_CA' > $TMP_DIR/root-ca.pem
+  cat <<'ROOT_CA' >$TMP_DIR/root-ca.pem
 -----BEGIN CERTIFICATE-----
 MIIDSzCCAjOgAwIBAgIUI7nMX6wJ4fcTo1JfSUNtuFNlgNIwDQYJKoZIhvcNAQEL
 BQAwNTEOMAwGA1UECwwFV2F6dWgxDjAMBgNVBAoMBVdhenVoMRMwEQYDVQQHDApD
@@ -166,7 +165,7 @@ else
   openssl genrsa -out "$TMP_DIR/indexer-key-temp.pem" 2048
   openssl pkcs8 -inform PEM -outform PEM -in "$TMP_DIR/indexer-key-temp.pem" -topk8 -nocrypt -v1 PBE-SHA1-3DES -out "$TMP_DIR/indexer-key.pem"
   openssl req -new -key "$TMP_DIR/indexer-key.pem" -subj "/C=US/L=California/O=Wazuh/OU=Wazuh/CN=node-0.wazuh.indexer" -out "$TMP_DIR/indexer.csr"
-cat <<'INDEXER_EXT' > $TMP_DIR/indexer.ext
+  cat <<'INDEXER_EXT' >$TMP_DIR/indexer.ext
 subjectAltName = @alt_names
 [alt_names]
 DNS.1 = localhost

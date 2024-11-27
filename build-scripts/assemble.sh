@@ -159,9 +159,9 @@ function parse_args() {
 # ====
 function add_configuration_files() {
     # Add our settings to the configuration files
-    cat "$PATH_CONF/security/roles.wazuh.yml" >> "$PATH_CONF/opensearch-security/roles.yml"
-    cat "$PATH_CONF/security/roles_mapping.wazuh.yml" >> "$PATH_CONF/opensearch-security/roles_mapping.yml"
-    
+    cat "$PATH_CONF/security/roles.wazuh.yml" >>"$PATH_CONF/opensearch-security/roles.yml"
+    cat "$PATH_CONF/security/roles_mapping.wazuh.yml" >>"$PATH_CONF/opensearch-security/roles_mapping.yml"
+
     cp "$PATH_CONF/opensearch.prod.yml" "$PATH_CONF/opensearch.yml"
 
     rm -r "$PATH_CONF/security"
@@ -188,9 +188,16 @@ function add_wazuh_tools() {
     local download_url
     download_url="https://packages-dev.wazuh.com/${version}"
 
-    curl -sL "${download_url}/config.yml" -o "$PATH_PLUGINS/opensearch-security/tools/config.yml"
-    curl -sL "${download_url}/wazuh-passwords-tool.sh" -o "$PATH_PLUGINS/opensearch-security/tools/wazuh-passwords-tool.sh"
-    curl -sL "${download_url}/wazuh-certs-tool.sh" -o "$PATH_PLUGINS/opensearch-security/tools/wazuh-certs-tool.sh"
+    curl -sL "${download_url}/config.yml" -o "$PATH_PLUGINS"/opensearch-security/tools/config.yml
+    curl -sL "${download_url}/wazuh-passwords-tool.sh" -o "$PATH_PLUGINS"/opensearch-security/tools/wazuh-passwords-tool.sh
+    curl -sL "${download_url}/wazuh-certs-tool.sh" -o "$PATH_PLUGINS"/opensearch-security/tools/wazuh-certs-tool.sh
+}
+
+# ====
+# Add demo certificates installer
+# ====
+function add_demo_certs_installer() {
+    cp install-demo-certificates.sh "$PATH_PLUGINS"/opensearch-security/tools/
 }
 
 # ====
@@ -282,6 +289,7 @@ function assemble_tar() {
     # Install plugins
     install_plugins "${version}"
     fix_log_rotation "${PATH_CONF}"
+    add_demo_certs_installer
     # Swap configuration files
     add_configuration_files
     remove_unneeded_files
@@ -322,6 +330,7 @@ function assemble_rpm() {
     install_plugins "${version}"
     fix_log_rotation ${PATH_CONF}
     enable_performance_analyzer_rca ${src_path}
+    add_demo_certs_installer
     # Swap configuration files
     add_configuration_files
     remove_unneeded_files
@@ -376,6 +385,7 @@ function assemble_deb() {
     install_plugins "${version}"
     fix_log_rotation ${PATH_CONF}
     enable_performance_analyzer_rca ${src_path}
+    add_demo_certs_installer
     # Swap configuration files
     add_configuration_files
     remove_unneeded_files
@@ -421,6 +431,8 @@ function main() {
     TMP_DIR="${OUTPUT}/tmp/${TARGET}"
     mkdir -p "$TMP_DIR"
     cp "${OUTPUT}/dist/$ARTIFACT_BUILD_NAME" "${TMP_DIR}"
+    # Copy the demo certificates generator
+    cp distribution/packages/src/common/scripts/install-demo-certificates.sh "$TMP_DIR"
 
     case $PACKAGE in
     tar)

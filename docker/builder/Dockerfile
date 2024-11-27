@@ -65,7 +65,7 @@ ENV PATH=$GRADLE_HOME/bin/$PATH
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Create a non-root user and set up permissions
-RUN useradd -ms /bin/bash indexer && mkdir -p /home/indexer && chown -R indexer:indexer /home/indexer
+RUN useradd -ms /bin/bash indexer && mkdir -p /home/indexer/artifacts && chown -R indexer:indexer /home/indexer
 
 # Copy your build scripts into the container as root
 ADD entrypoint.sh /home/indexer/
@@ -73,8 +73,7 @@ ADD entrypoint.sh /home/indexer/
 # Change file permissions as root
 RUN chmod +x /home/indexer/entrypoint.sh
 
-# Create volume dir
-RUN mkdir -p /home/indexer/artifacts
+# Create volume dir=
 VOLUME /home/indexer/artifacts
 
 # Switch to non-root user

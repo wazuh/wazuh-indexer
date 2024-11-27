@@ -210,7 +210,6 @@ fi
 if ! [ -d %{config_dir}/certs ] && [ -f %{product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh ]; then
     echo "No certificates detected in %{config_dir}, installing demo certificates..."
     echo "### If you are using a custom certificates path, ignore this message."
-    export USE_DEMO_CERTS
     bash %{product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh > %{log_dir}/install_demo_certificates.log 2>&1
 fi
 

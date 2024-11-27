@@ -19,7 +19,7 @@ Vagrant.configure("2") do |config|
             systemctl stop firewalld
             systemctl disable firewalld
             yum clean all
-            yum install curl jq unzip tar -y
+            yum install jq unzip tar -y
             # Add node-2 to /etc/hosts
             echo "192.168.56.11 node-2" >> /etc/hosts
             # Copy generated certificates

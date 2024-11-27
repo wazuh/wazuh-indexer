@@ -1,6 +1,7 @@
 #!/bin/python3
 
 import argparse
+import datetime
 import json
 import logging
 import random
@@ -10,6 +11,7 @@ import uuid
 
 LOG_FILE = 'generate_data.log'
 GENERATED_DATA_FILE = 'generatedData.json'
+DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 # Default values
 INDEX_NAME = ".commands"
 USERNAME = "admin"
@@ -22,6 +24,16 @@ logging.basicConfig(filename=LOG_FILE, level=logging.INFO)
 
 # Suppress warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+
+def generate_random_date(days_range=30, initial_date=datetime.datetime.now()):
+    random_days = random.randint(0, days_range)
+    new_timestamp = initial_date + datetime.timedelta(days=random_days)
+    return new_timestamp.strftime(DATE_FORMAT)
+
+
+def parse_date(date_string):
+    return datetime.datetime.strptime(date_string, DATE_FORMAT)
 
 
 def generate_random_command(include_all_fields=False):
@@ -41,6 +53,7 @@ def generate_random_command(include_all_fields=False):
     }
 
     if include_all_fields:
+        document["@timestamp"] = generate_random_date()
         document["agent"]["groups"] = [f"group{random.randint(1, 5)}"],
         document["command"]["status"] = random.choice(
             ["pending", "sent", "success", "failure"])
@@ -52,6 +65,7 @@ def generate_random_command(include_all_fields=False):
         # Generate UUIDs for request_id and order_id
         document["command"]["request_id"] = str(uuid.uuid4())
         document["command"]["order_id"] = str(uuid.uuid4())
+        document["command"]["delivery_timestamp"] = generate_random_date(parse_date(document["@timestamp"]))
 
     return document
 

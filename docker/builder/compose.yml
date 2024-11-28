@@ -1,0 +1,29 @@
+services:
+
+  wazuh-indexer-builder:
+    image: wazuh-indexer-builder:${VERSION}
+    container_name: wazuh-indexer-builder_${VERSION}
+    build:
+      context: ./../..
+      dockerfile: ${REPO_PATH}/docker/builder/Dockerfile
+    volumes:
+     - ${REPO_PATH}:/home/wazuh-indexer
+       #entrypoint: ["/bin/bash", "/home/wazuh-indexer/entrypoint.sh"]
+    entrypoint: ["tail", "-f", "/dev/null"]
+    user: "1000:1000"
+    working_dir: /home/wazuh-indexer
+
+      #  wi-assemble:
+      #    image: wi-assemble:${VERSION}
+      #    container_name: wi-assemble_${VERSION}
+      #    build:
+      #      context: ./../..
+      #      dockerfile: ${REPO_PATH}/docker/builder/Dockerfile
+      #    volumes:
+      #      - ${REPO_PATH}/build-scripts:/home/wazuh-indexer/build-scripts
+      #      - ${REPO_PATH}/artifacts:/home/wazuh-indexer/artifacts
+      #      - ${REPO_PATH}/distribution/packages/src:/home/wazuh-indexer/distribution/packages/src
+      #      - ${REPO_PATH}/buildSrc:/home/wazuh-indexer/buildSrc
+      #    entrypoint: ["tail", "-f", "/dev/null"]
+      #    user: "1000:1000"
+      #    working_dir: /home/wazuh-indexer

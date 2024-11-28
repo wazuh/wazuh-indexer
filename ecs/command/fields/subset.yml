@@ -5,9 +5,9 @@ fields:
     fields:
       tags: []
       "@timestamp": {}
+      "delivery_timestamp": {}
   agent:
     fields:
       groups: {}
   command:
     fields: "*"
-  delivery_timestamp: {}

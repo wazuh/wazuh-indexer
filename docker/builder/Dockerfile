@@ -65,22 +65,24 @@ ENV PATH=$GRADLE_HOME/bin/$PATH
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Create a non-root user and set up permissions
-RUN useradd -ms /bin/bash indexer && mkdir -p /home/indexer/artifacts && chown -R indexer:indexer /home/indexer
+#RUN useradd -ms /bin/bash -u 1000 wazuh-indexer && \
+# mkdir -p /home/wazuh-indexer/artifacts && \
+# chown -R 1000 /home/wazuh-indexer
 
 # Copy your build scripts into the container as root
-ADD entrypoint.sh /home/indexer/
+ADD docker/builder/entrypoint.sh /home/wazuh-indexer/
 
 # Change file permissions as root
-RUN chmod +x /home/indexer/entrypoint.sh
+RUN chmod +x /home/wazuh-indexer/entrypoint.sh
 
 # Create volume dir=
-VOLUME /home/indexer/artifacts
+#VOLUME /home/wazuh-indexer/artifacts
 
 # Switch to non-root user
-USER indexer
+USER wazuh-indexer
 
 # Set the working directory
-WORKDIR /home/indexer
+WORKDIR /home/wazuh-indexer
 
 # Entry point to the build script
 ENTRYPOINT ["./entrypoint.sh"]

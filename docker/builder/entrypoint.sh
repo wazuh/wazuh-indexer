@@ -17,7 +17,7 @@ clone_repositories() {
     echo "----------------------------------------"
     echo "Cloning Repositories"
     echo "----------------------------------------"
-    git clone --branch "$INDEXER_BRANCH" https://github.com/wazuh/wazuh-indexer --depth 1 ~/wazuh-indexer
+    #git clone --branch "$INDEXER_BRANCH" https://github.com/wazuh/wazuh-indexer --depth 1 ~/wazuh-indexer
     git clone --branch "$INDEXER_PLUGINS_BRANCH" https://github.com/wazuh/wazuh-indexer-plugins --depth 1 ~/wazuh-indexer-plugins
     git clone --branch "$INDEXER_REPORTING_BRANCH" https://github.com/wazuh/wazuh-indexer-reporting --depth 1 ~/wazuh-indexer-reporting
 }

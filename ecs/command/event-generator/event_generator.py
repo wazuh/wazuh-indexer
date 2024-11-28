@@ -54,6 +54,7 @@ def generate_random_command(include_all_fields=False):
 
     if include_all_fields:
         document["@timestamp"] = generate_random_date()
+        document["delivery_timestamp"] = generate_random_date(parse_date(document["@timestamp"]))
         document["agent"]["groups"] = [f"group{random.randint(1, 5)}"],
         document["command"]["status"] = random.choice(
             ["pending", "sent", "success", "failure"])
@@ -65,7 +66,6 @@ def generate_random_command(include_all_fields=False):
         # Generate UUIDs for request_id and order_id
         document["command"]["request_id"] = str(uuid.uuid4())
         document["command"]["order_id"] = str(uuid.uuid4())
-        document["command"]["delivery_timestamp"] = generate_random_date(parse_date(document["@timestamp"]))
 
     return document
 

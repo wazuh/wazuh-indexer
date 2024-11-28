@@ -26,46 +26,48 @@ logging.basicConfig(filename=LOG_FILE, level=logging.INFO)
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
-def generate_random_date(days_range=30, initial_date=datetime.datetime.now()):
+def generate_random_date(initial_date=None, days_range=30):
+    if initial_date is None:
+        initial_date = datetime.datetime.now()
     random_days = random.randint(0, days_range)
     new_timestamp = initial_date + datetime.timedelta(days=random_days)
-    return new_timestamp.strftime(DATE_FORMAT)
-
-
-def parse_date(date_string):
-    return datetime.datetime.strptime(date_string, DATE_FORMAT)
+    return int(new_timestamp.timestamp() * 1000)  # Convert to milliseconds and return as int
 
 
 def generate_random_command(include_all_fields=False):
-    document = {
-        "source": random.choice(["Users/Services", "Engine", "Content manager"]),
-        "user": f"user{random.randint(1, 100)}",
-        "target": {
-            "id": f"target{random.randint(1, 10)}",
-            "type": random.choice(["agent", "group", "server"])
-        },
-        "action": {
-            "name": random.choice(["restart", "update", "change_group", "apply_policy"]),
-            "args": [f"/path/to/executable/arg{random.randint(1, 10)}"],
-            "version": f"v{random.randint(1, 5)}"
-        },
-        "timeout": random.randint(10, 100)
-    }
-
+    document = {}
     if include_all_fields:
         document["@timestamp"] = generate_random_date()
-        document["delivery_timestamp"] = generate_random_date(parse_date(document["@timestamp"]))
-        document["agent"]["groups"] = [f"group{random.randint(1, 5)}"],
-        document["command"]["status"] = random.choice(
-            ["pending", "sent", "success", "failure"])
-        document["command"]["result"] = {
+        document["delivery_timestamp"] = generate_random_date()
+        document["agent"] = {"groups": [f"group{random.randint(1, 5)}"]}
+        document["command"] = {
+          "status": random.choice(["pending", "sent", "success", "failure"]),
+          "result": {
             "code": random.randint(0, 255),
             "message": f"Result message {random.randint(1, 1000)}",
             "data": f"Result data {random.randint(1, 100)}"
+          },
+          "request_id": str(uuid.uuid4()),
+          "order_id": str(uuid.uuid4())
         }
         # Generate UUIDs for request_id and order_id
         document["command"]["request_id"] = str(uuid.uuid4())
         document["command"]["order_id"] = str(uuid.uuid4())
+    else:
+        document = {
+          "source": random.choice(["Users/Services", "Engine", "Content manager"]),
+          "user": f"user{random.randint(1, 100)}",
+          "target": {
+            "id": f"target{random.randint(1, 10)}",
+            "type": random.choice(["agent", "group", "server"])
+          },
+          "action": {
+            "name": random.choice(["restart", "update", "change_group", "apply_policy"]),
+            "args": [f"/path/to/executable/arg{random.randint(1, 10)}"],
+            "version": f"v{random.randint(1, 5)}"
+          },
+          "timeout": random.randint(10, 100)
+        }
 
     return document
 

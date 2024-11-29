@@ -51,34 +51,27 @@ fields:
       "@timestamp": {}
   agent:
     fields:
-      id: {}
       groups: {}
-  destination:
-    fields:
-      ip: {}
-      port: {}
-  device:
-    fields:
       id: {}
-  file:
-    fields:
-      inode: {}
+      name: {}
+      type: {}
+      version: {}
+      host:
+        fields: "*"
   host:
+    fields: "*"
+  interface:
     fields:
-      ip: {}
-      mac: {}
-      network:
-        fields:
-          egress:
-            fields:
-              bytes: {}
-              packets: {}
-          ingress:
-            fields:
-              bytes: {}
-              packets: {}
+      mtu: {}
+      state: {}
+      type: {}
   network:
     fields:
+      broadcast: {}
+      dhcp: {}
+      gateway: {}
+      metric: {}
+      netmask: {}
       protocol: {}
       type: {}
   observer:
@@ -89,14 +82,7 @@ fields:
             fields:
               alias: {}
               name: {}
-  process:
-    fields:
-      name: {}
-      pid: {}
-  source:
-    fields:
-      ip: {}
-      port: {}
+
 ```
 
 ### Index settings

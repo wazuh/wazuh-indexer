@@ -138,14 +138,17 @@ def generate_random_network():
     }
     return network
 
+def generate_random_interface():
+    interface = {
+        'alias': f'alias{random.randint(0, 9999)}',
+        'name': f'name{random.randint(0, 9999)}'
+    }
+    return interface
 
 def generate_random_observer():
     observer = {
         'ingress': {
-            'interface': {
-                'alias': f'alias{random.randint(0, 9999)}',
-                'name': f'name{random.randint(0, 9999)}'
-            }
+            'interface': generate_random_interface()
         }
     }
     return observer
@@ -159,7 +162,8 @@ def generate_random_data(number):
             'agent': generate_random_agent(),
             'host': generate_random_host(),
             'network': generate_random_network(),
-            'observer': generate_random_observer()
+            'observer': generate_random_observer(),
+            'interface': generate_random_interface()
         }
         data.append(event_data)
     return data

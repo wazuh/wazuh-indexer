@@ -35,41 +35,40 @@ def generate_random_date(initial_date=None, days_range=30):
 
 
 def generate_random_command(include_all_fields=False):
-    document = {}
-    if include_all_fields:
-        document["@timestamp"] = generate_random_date()
-        document["delivery_timestamp"] = generate_random_date()
-        document["agent"] = {"groups": [f"group{random.randint(1, 5)}"]}
-        document["command"] = {
-          "status": random.choice(["pending", "sent", "success", "failure"]),
-          "result": {
-            "code": random.randint(0, 255),
-            "message": f"Result message {random.randint(1, 1000)}",
-            "data": f"Result data {random.randint(1, 100)}"
-          },
-          "request_id": str(uuid.uuid4()),
-          "order_id": str(uuid.uuid4())
-        }
-        # Generate UUIDs for request_id and order_id
-        document["command"]["request_id"] = str(uuid.uuid4())
-        document["command"]["order_id"] = str(uuid.uuid4())
-    else:
-        document = {
-          "source": random.choice(["Users/Services", "Engine", "Content manager"]),
-          "user": f"user{random.randint(1, 100)}",
-          "target": {
+    command = {
+        "source": random.choice(["Users/Services", "Engine", "Content manager"]),
+        "user": f"user{random.randint(1, 100)}",
+        "target": {
             "id": f"target{random.randint(1, 10)}",
             "type": random.choice(["agent", "group", "server"])
-          },
-          "action": {
-            "name": random.choice(["restart", "update", "change_group", "apply_policy"]),
+        },
+        "action": {
+            "name": random.choice(["restart", "update","change_group", "apply_policy"]),
             "args": [f"/path/to/executable/arg{random.randint(1, 10)}"],
             "version": f"v{random.randint(1, 5)}"
-          },
-          "timeout": random.randint(10, 100)
+        },
+        "timeout": random.randint(10, 100)
+    }
+    if include_all_fields:
+        document = {
+            "@timestamp": generate_random_date(),
+            "delivery_timestamp": generate_random_date(),
+            "agent": {"groups": [f"group{random.randint(1, 5)}"]},
+            "command": {
+                **command,
+                "status": random.choice(["pending", "sent", "success", "failure"]),
+                "result": {
+                    "code": random.randint(0, 255),
+                    "message": f"Result message {random.randint(1, 1000)}",
+                    "data": f"Result data {random.randint(1, 100)}"
+                },
+                "request_id": str(uuid.uuid4()),
+                "order_id": str(uuid.uuid4())
+            }
         }
+        return document
 
-    return document
+    return command
 
 
 def generate_random_data(number, include_all_fields=False):

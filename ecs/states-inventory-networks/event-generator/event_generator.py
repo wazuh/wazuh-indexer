@@ -44,8 +44,8 @@ def generate_random_agent():
     return agent
 
 
-def generate_random_host(is_root_level=False):
-    if is_root_level:
+def generate_random_host(is_root_level_level=False):
+    if is_root_level_level:
         host = {
         'ip': f'{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}',
         'mac': f'{random.randint(0, 255):02x}:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}',
@@ -158,14 +158,25 @@ def generate_random_network():
     }
     return network
 
+def generate_random_interface(is_root_level=False):
+    if is_root_level:
+        interface = {
+            'mtu': f'{random.randint(1000000, 99999999)}',
+            'state': random.choice(['Active', 'Inactive', 'Unknown']),
+            'type': random.choice(['wireless', 'ethernet'])
+        }
+    else:
+        interface = {
+            'alias': f'alias{random.randint(0, 9999)}',
+            'name': f'name{random.randint(0, 9999)}',
+        }
+
+    return interface
 
 def generate_random_observer():
     observer = {
         'ingress': {
-            'interface': {
-                'alias': f'alias{random.randint(0, 9999)}',
-                'name': f'name{random.randint(0, 9999)}'
-            }
+            'interface': generate_random_interface(False)
         }
     }
     return observer
@@ -179,7 +190,8 @@ def generate_random_data(number):
             'agent': generate_random_agent(),
             'host': generate_random_host(True),
             'network': generate_random_network(),
-            'observer': generate_random_observer()
+            'observer': generate_random_observer(),
+            'interface': generate_random_interface(True)
         }
         data.append(event_data)
     return data

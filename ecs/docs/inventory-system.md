@@ -11,8 +11,8 @@ Based on ECS:
 
 |     | Field name          | Data type | Description                                                | Example                    |
 | --- | ------------------- | --------- | ---------------------------------------------------------- | -------------------------- |
+|     | `agent.*`           | object    | All the agent fields.                                      | `                          |
 |     | `@timestamp`        | date      | Date/time when the event originated.                       | `2016-05-23T08:05:34.853Z` |
-|     | `agent.id`          | keyword   | Unique identifier of this agent.                           | `8a4f500d`                 |
 |     | `host.architecture` | keyword   | Operating system architecture.                             | `x86_64`                   |
 |     | `host.hostname`     | keyword   | Hostname of the host.                                      |                            |
 |     | `host.os.full`      | keyword   | Operating system name, including the version or code name. | `Mac OS Mojave`            |
@@ -21,7 +21,6 @@ Based on ECS:
 |     | `host.os.platform`  | keyword   | Operating system platform (such centos, ubuntu, windows).  | `darwin`                   |
 |     | `host.os.type`      | keyword   | [linux, macos, unix, windows, ios, android]                | `macos`                    |
 |     | `host.os.version`   | keyword   | Operating system version as a raw string.                  | `10.14.1`                  |
-| \*  | `agent.groups`      | keyword   | List of groups the agent belong to.                        |                            |
 
 \* Custom field
 
@@ -58,23 +57,19 @@ name: wazuh-states-inventory-system
 fields:
   base:
     fields:
+      tags: []
       "@timestamp": {}
   agent:
     fields:
-      id: {}
       groups: {}
-  host:
-    fields:
-      architecture: {}
-      hostname: {}
+      id: {}
       name: {}
-      os:
-        fields:
-          kernel: {}
-          full: {}
-          platform: {}
-          version: {}
-          type: {}
+      type: {}
+      version: {}
+      host:
+        fields: "*"
+  host:
+    fields: "*"
 ```
 
 ### Index settings

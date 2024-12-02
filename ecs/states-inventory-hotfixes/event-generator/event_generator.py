@@ -137,7 +137,6 @@ def generate_random_data(number):
         event_data = {
             '@timestamp': generate_random_date(),
             'agent': generate_random_agent(),
-            'host': generate_random_host(),
             'package': generate_random_package()
         }
         data.append(event_data)

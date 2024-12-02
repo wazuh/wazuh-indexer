@@ -58,8 +58,6 @@ fields:
       version: {}
       host:
         fields: "*"
-  host:
-    fields: "*"
   interface:
     fields:
       mtu: {}
@@ -94,8 +92,9 @@ fields:
   "template": {
     "settings": {
       "index": {
-        "number_of_replicas": "0",
         "number_of_shards": "1",
+        "number_of_replicas": "0",
+        "refresh_interval": "5s",
         "query.default_field": [
           "agent.id",
           "agent.groups",
@@ -105,149 +104,7 @@ fields:
           "observer.ingress.interface.name",
           "observer.ingress.interface.alias",
           "process.name"
-        ],
-        "refresh_interval": "5s"
-      }
-    },
-    "mappings": {
-      "date_detection": false,
-      "dynamic": "strict",
-      "properties": {
-        "@timestamp": {
-          "type": "date"
-        },
-        "agent": {
-          "properties": {
-            "groups": {
-              "ignore_above": 1024,
-              "type": "keyword"
-            },
-            "id": {
-              "ignore_above": 1024,
-              "type": "keyword"
-            }
-          }
-        },
-        "destination": {
-          "properties": {
-            "ip": {
-              "type": "ip"
-            },
-            "port": {
-              "type": "long"
-            }
-          }
-        },
-        "device": {
-          "properties": {
-            "id": {
-              "ignore_above": 1024,
-              "type": "keyword"
-            }
-          }
-        },
-        "file": {
-          "properties": {
-            "inode": {
-              "ignore_above": 1024,
-              "type": "keyword"
-            }
-          }
-        },
-        "host": {
-          "properties": {
-            "ip": {
-              "type": "ip"
-            },
-            "mac": {
-              "ignore_above": 1024,
-              "type": "keyword"
-            },
-            "network": {
-              "properties": {
-                "egress": {
-                  "properties": {
-                    "bytes": {
-                      "type": "long"
-                    },
-                    "packets": {
-                      "type": "long"
-                    }
-                  }
-                },
-                "ingress": {
-                  "properties": {
-                    "bytes": {
-                      "type": "long"
-                    },
-                    "packets": {
-                      "type": "long"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "network": {
-          "properties": {
-            "protocol": {
-              "ignore_above": 1024,
-              "type": "keyword"
-            },
-            "type": {
-              "ignore_above": 1024,
-              "type": "keyword"
-            }
-          }
-        },
-        "observer": {
-          "properties": {
-            "ingress": {
-              "properties": {
-                "interface": {
-                  "properties": {
-                    "alias": {
-                      "ignore_above": 1024,
-                      "type": "keyword"
-                    },
-                    "name": {
-                      "ignore_above": 1024,
-                      "type": "keyword"
-                    }
-                  }
-                }
-              },
-              "type": "object"
-            }
-          }
-        },
-        "process": {
-          "properties": {
-            "name": {
-              "fields": {
-                "text": {
-                  "type": "match_only_text"
-                }
-              },
-              "ignore_above": 1024,
-              "type": "keyword"
-            },
-            "pid": {
-              "type": "long"
-            }
-          }
-        },
-        "source": {
-          "properties": {
-            "ip": {
-              "type": "ip"
-            },
-            "port": {
-              "type": "long"
-            }
-          }
-        }
+        ]
       }
     }
   }

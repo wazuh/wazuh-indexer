@@ -59,7 +59,15 @@ fields:
     fields:
       inode: {}
   host:
-    fields: "*"
+    fields: 
+      network:
+        fields:
+          egress:
+            fields:
+              queue: {}
+          ingress:
+            fields:
+              queue: {}
   network:
     fields:
       protocol: {}

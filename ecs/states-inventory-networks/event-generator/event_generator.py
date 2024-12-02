@@ -157,6 +157,7 @@ def generate_random_data(number):
         event_data = {
             '@timestamp': generate_random_date(),
             'agent': generate_random_agent(),
+            'host': generate_random_host(),
             'network': generate_random_network(),
             'observer': generate_random_observer()
         }

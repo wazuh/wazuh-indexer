@@ -44,8 +44,8 @@ def generate_random_agent():
     return agent
 
 
-def generate_random_host(is_root_level=False):
-    if is_root_level:
+def generate_random_host(is_root_level_level=False):
+    if is_root_level_level:
         host = {
         'ip': f'{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}',
         'mac': f'{random.randint(0, 255):02x}:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}',
@@ -158,8 +158,8 @@ def generate_random_network():
     }
     return network
 
-def generate_random_interface(is_root=False):
-    if is_root:
+def generate_random_interface(is_root_level=False):
+    if is_root_level:
         interface = {
             'mtu': f'{random.randint(1000000, 99999999)}',
             'state': random.choice(['Active', 'Inactive', 'Unknown']),

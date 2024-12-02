@@ -10,8 +10,8 @@ Based on ECS:
 
 |     | Field name               | Data type | Description                                                                                          | Examples                                           | Comments                                                   |
 | --- | ------------------------ | --------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------- | ---------------------------------------------------------- |
+|     | `agent.*`                | object    | All the agent fields.                                                                                | `                                                  |
 |     | `@timestamp`             | date      | Date/time when the event originated.                                                                 | `2016-05-23T08:05:34.853Z`                         |                                                            |
-|     | `agent.id`               | keyword   | Unique identifier of this agent.                                                                      | `8a4f500d`                                         |                                                            |
 |     | `process.args`           | keyword   | Array of process arguments.                                                                          | `["/usr/bin/ssh", "-l", "user", "10.0.0.16"]`      |                                                            |
 |     | `process.command_line`   | wildcard  | process.command_line.                                                                                | `/usr/bin/ssh -l user 10.0.0.16`                   |                                                            |
 |     | `process.name`           | keyword   | Process name.                                                                                        | `ssh`                                              |                                                            |
@@ -26,7 +26,6 @@ Based on ECS:
 | !   | `process.thread.id`      | long      | Thread ID.                                                                                           |                                                    | `thread.group` is **not part of ECS;** but `thread.id` is. |
 | !   | `process.tty`            | object    | Information about the controlling TTY device. If set, the process belongs to an interactive session. |                                                    | Needs clarification                                        |
 | \*  | `process.group.id`       | keyword   | Unique identifier for the effective group on the system/platform.                                    |                                                    |                                                            |
-| \*  | `agent.groups`           | keyword   | List of groups the agent belong to.                                                                  |                                                    |                                                            |
 
 \* Custom field
 
@@ -66,10 +65,16 @@ fields:
   base:
     fields:
       "@timestamp": {}
+      tags: []
   agent:
     fields:
-      id: {}
       groups: {}
+      id: {}
+      name: {}
+      type: {}
+      version: {}
+      host:
+        fields: "*"
   process:
     fields:
       pid: {}
@@ -101,7 +106,6 @@ fields:
       thread:
         fields:
           id: ""
-      tty: {}
 ```
 
 ### Index settings

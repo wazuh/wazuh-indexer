@@ -14,8 +14,6 @@ fields:
       version: {}
       host:
         fields: "*"
-  host:
-    fields: "*"
   process:
     fields:
       pid: {}

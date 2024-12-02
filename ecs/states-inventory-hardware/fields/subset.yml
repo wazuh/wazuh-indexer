@@ -17,5 +17,3 @@ fields:
   observer:
     fields:
       serial_number: {}
-  host:
-    fields: "*"

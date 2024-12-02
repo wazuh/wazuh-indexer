@@ -33,11 +33,7 @@ fields:
       type: {}
       uid: {}
       owner: {}
-  host:
-    fields: "*"
   registry:
     fields:
       key: {}
       value: {}
-
-

@@ -24,8 +24,6 @@ fields:
   file:
     fields:
       inode: {}
-  host:
-    fields: "*"
   network:
     fields:
       protocol: {}

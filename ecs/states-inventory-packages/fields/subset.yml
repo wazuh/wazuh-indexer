@@ -14,8 +14,6 @@ fields:
       version: {}
       host:
         fields: "*"
-  host:
-    fields: "*"
   package:
     fields:
       architecture: ""

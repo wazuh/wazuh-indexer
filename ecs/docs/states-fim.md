@@ -38,12 +38,20 @@ Based on ECS:
 
 ```yml
 ---
-name: fim
+name: wazuh-states-fim
 fields:
+  base:
+    fields:
+      tags: []
   agent:
     fields:
-      id: {}
       groups: {}
+      id: {}
+      name: {}
+      type: {}
+      version: {}
+      host:
+        fields: "*"
   file:
     fields:
       attributes: {}

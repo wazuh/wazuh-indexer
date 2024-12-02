@@ -10,8 +10,8 @@ Based on ECS:
 
 |     | Field name             | Data type | Description                          | Example |
 | --- | ---------------------- | --------- | ------------------------------------ | ------- |
+|     | `agent.*`              | object    | All the agent fields.                | `       |
 |     | `@timestamp`           | date      | Timestamp of the scan.               |         |
-|     | `agent.id`             | keyword   | Unique identifier of this agent      |         |
 |     | `package.architecture` | keyword   | Package architecture.                |         |
 |     | `package.description`  | keyword   | Description of the package.          |         |
 |     | `package.installed`    | date      | Time when package was installed.     |         |
@@ -20,7 +20,6 @@ Based on ECS:
 |     | `package.size`         | long      | Package size in bytes.               |         |
 |     | `package.type`         | keyword   | Package type.                        |         |
 |     | `package.version`      | keyword   | Package version.                     |         |
-| \*  | `agent.groups`         | keyword   | List of groups the agent belong to.  |         |
 
 \* Custom field
 
@@ -67,31 +66,30 @@ fields:
       size: {}
       type: ""
       version: ""
-
 ```
 
 ### Index settings
 
 ```json
 {
-    "index_patterns": ["wazuh-states-inventory-packages*"],
-    "priority": 1,
-    "template": {
-        "settings": {
-            "index": {
-                "number_of_shards": "1",
-                "number_of_replicas": "0",
-                "refresh_interval": "5s",
-                "query.default_field": [
-                    "agent.id",
-                    "agent.groups",
-                    "package.architecture",
-                    "package.name",
-                    "package.version",
-                    "package.type"
-                ]
-            }
-        }
+  "index_patterns": ["wazuh-states-inventory-packages*"],
+  "priority": 1,
+  "template": {
+    "settings": {
+      "index": {
+        "number_of_shards": "1",
+        "number_of_replicas": "0",
+        "refresh_interval": "5s",
+        "query.default_field": [
+          "agent.id",
+          "agent.groups",
+          "package.architecture",
+          "package.name",
+          "package.version",
+          "package.type"
+        ]
+      }
     }
+  }
 }
 ```

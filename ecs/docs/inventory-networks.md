@@ -12,6 +12,7 @@ Based on ECS:
 
 |     | Field name                         | Data type | Description                                                                    | Example                                |
 | --- | ---------------------------------- | --------- | ------------------------------------------------------------------------------ | -------------------------------------- |
+|     | `agent.*`                          | object    | All the agent fields.                                                          | `                                      |
 |     | `@timestamp`                       | date      | Date/time when the event originated.                                           | `2016-05-23T08:05:34.853Z`             |
 |     | `device.id`                        | keyword   | The unique identifier of a device.                                             | `00000000-54b3-e7c7-0000-000046bffd97` |
 |     | `host.ip`                          | ip        | Host IP addresses. Note: this field should contain an array of values.         | `["192.168.56.11", "10.54.27.1"]`      |
@@ -58,6 +59,8 @@ fields:
       version: {}
       host:
         fields: "*"
+  host:
+    fields: "*"
   interface:
     fields:
       mtu: {}
@@ -80,14 +83,15 @@ fields:
             fields:
               alias: {}
               name: {}
-
 ```
 
 ### Index settings
 
 ```json
 {
-  "index_patterns": ["wazuh-states-inventory-networks*"],
+  "index_patterns": [
+    "wazuh-states-inventory-networks*"
+  ],
   "priority": 1,
   "template": {
     "settings": {

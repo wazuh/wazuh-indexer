@@ -66,16 +66,10 @@ fields:
   base:
     fields:
       "@timestamp": {}
-      tags: []
   agent:
     fields:
-      groups: {}
       id: {}
-      name: {}
-      type: {}
-      version: {}
-      host:
-        fields: "*"
+      groups: {}
   process:
     fields:
       pid: {}
@@ -107,48 +101,7 @@ fields:
       thread:
         fields:
           id: ""
-```
-
-```yml
----
-- name: agent
-  title: Wazuh Agents
-  short: Wazuh Inc. custom fields.
-  type: group
-  group: 2
-  fields:
-    - name: groups
-      type: keyword
-      level: custom
-      description: >
-        List of groups the agent belong to.
-```
-
-```yml
----
-- name: host
-  reusable:
-    top_level: true
-    expected:
-      - { at: agent, as: host }
-```
-
-```yml
----
-- name: os
-  reusable:
-    top_level: false
-    expected:
-      - agent.host
-```
-
-```yml
----
-- name: risk
-  reusable:
-    top_level: false
-    expected:
-      - agent.host
+      tty: {}
 ```
 
 ### Index settings

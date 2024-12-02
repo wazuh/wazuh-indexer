@@ -12,6 +12,7 @@ Based on ECS:
 
 |     | Field name                   | Data type | Description                                    | Example                                |
 | --- | ---------------------------- | --------- | ---------------------------------------------- | -------------------------------------- |
+|     | `agent.*`                    | object    | All the agent fields.                          | `                                      |
 |     | `@timestamp`                 | date      | Timestamp of the scan.                         | `2016-05-23T08:05:34.853Z`             |
 |     | `destination.ip`             | ip        | IP address of the destination.                 | `["192.168.0.100"]`                    |
 |     | `destination.port`           | long      | Port of the destination.                       |                                        |
@@ -40,8 +41,13 @@ fields:
       "@timestamp": {}
   agent:
     fields:
-      id: {}
       groups: {}
+      id: {}
+      name: {}
+      type: {}
+      version: {}
+      host:
+        fields: "*"
   destination:
     fields:
       ip: {}
@@ -53,7 +59,7 @@ fields:
     fields:
       inode: {}
   host:
-    fields:
+    fields: 
       network:
         fields:
           egress:
@@ -82,7 +88,9 @@ fields:
 
 ```json
 {
-  "index_patterns": ["wazuh-states-inventory-ports*"],
+  "index_patterns": [
+    "wazuh-states-inventory-ports*"
+  ],
   "priority": 1,
   "template": {
     "settings": {

@@ -141,7 +141,10 @@ def generate_random_network():
 def generate_random_interface():
     interface = {
         'alias': f'alias{random.randint(0, 9999)}',
-        'name': f'name{random.randint(0, 9999)}'
+        'name': f'name{random.randint(0, 9999)}',
+        'mtu': f'{random.randint(1000000, 99999999)}',
+        'state': random.choice(['Active', 'Inactive', 'Unknown']),
+        'type': random.choice(['wireless', 'ethernet'])
     }
     return interface
 

@@ -40,13 +40,8 @@ fields:
       "@timestamp": {}
   agent:
     fields:
-      groups: {}
       id: {}
-      name: {}
-      type: {}
-      version: {}
-      host:
-        fields: "*"
+      groups: {}
   destination:
     fields:
       ip: {}
@@ -57,6 +52,16 @@ fields:
   file:
     fields:
       inode: {}
+  host:
+    fields:
+      network:
+        fields:
+          egress:
+            fields:
+              queue: {}
+          ingress:
+            fields:
+              queue: {}
   network:
     fields:
       protocol: {}

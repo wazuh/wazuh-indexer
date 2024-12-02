@@ -47,16 +47,10 @@ fields:
   base:
     fields:
       "@timestamp": {}
-      tags: []
   agent:
     fields:
-      groups: {}
       id: {}
-      name: {}
-      type: {}
-      version: {}
-      host:
-        fields: "*"
+      groups: {}
   package:
     fields:
       architecture: ""
@@ -67,7 +61,6 @@ fields:
       size: {}
       type: ""
       version: ""
-
 ```
 
 ### Index settings
@@ -85,7 +78,7 @@ fields:
                 "query.default_field": [
                     "agent.id",
                     "agent.groups",
-                    "package.architecture",
+                    "package.architecture"
                     "package.name",
                     "package.version",
                     "package.type"

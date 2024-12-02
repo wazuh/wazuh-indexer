@@ -173,6 +173,7 @@ def generate_random_data(number):
     for _ in range(number):
         event_data = {
             'agent': generate_random_agent(),
+            'host': generate_random_host(),
             'package': generate_random_package(),
             'vulnerability': generate_random_vulnerability()
         }

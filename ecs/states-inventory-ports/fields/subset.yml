@@ -24,6 +24,16 @@ fields:
   file:
     fields:
       inode: {}
+  host:
+    fields: 
+      network:
+        fields:
+          egress:
+            fields:
+              queue: {}
+          ingress:
+            fields:
+              queue: {}
   network:
     fields:
       protocol: {}

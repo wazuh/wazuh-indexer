@@ -10,6 +10,7 @@ Based on ECS:
 
 |     | Field name            | Data type | Description           | Example                    |
 | --- | --------------------- | --------- | --------------------- | -------------------------- |
+|     | `agent.*`             | object    | All the agent fields. | `                          |
 |     | `@timestamp`          | date      | Timestamp of the scan | `2016-05-23T08:05:34.853Z` |
 | \*  | `package.hotfix.name` | keyword   | Name of the hotfix    |                            |
 
@@ -39,14 +40,15 @@ fields:
       hotfix:
         fields:
           name: {}
-
 ```
 
 ### Index settings
 
 ```json
 {
-  "index_patterns": ["wazuh-states-inventory-hotfixes*"],
+  "index_patterns": [
+    "wazuh-states-inventory-hotfixes*"
+  ],
   "priority": 1,
   "template": {
     "settings": {

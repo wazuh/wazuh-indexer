@@ -11,6 +11,7 @@ Based on ECS:
 
 |     | Field name                    | Data type | Description                          | Example                    |
 | --- | ----------------------------- | --------- | ------------------------------------ | -------------------------- |
+|     | `agent.*`                     | object    | All the agent fields.                | `                          |
 |     | `@timestamp`                  | date      | Date/time when the event originated. | `2016-05-23T08:05:34.853Z` |
 |     | `observer.serial_number`      | keyword   | Observer serial number.              |                            |
 | \*  | `host.cpu.name`               | keyword   | Name of the CPU                      |                            |
@@ -44,7 +45,20 @@ fields:
   observer:
     fields:
       serial_number: {}
-
+  host:
+    fields:
+      memory:
+        fields:
+          total: {}
+          free: {}
+          used:
+            fields:
+              percentage: {}
+      cpu:
+        fields:
+          name: {}
+          cores: {}
+          speed: {}
 ```
 
 ### Index settings
@@ -59,9 +73,7 @@ fields:
         "number_of_shards": "1",
         "number_of_replicas": "0",
         "refresh_interval": "5s",
-        "query.default_field": [
-          "observer.board_serial"
-        ]
+        "query.default_field": ["observer.board_serial"]
       }
     }
   }

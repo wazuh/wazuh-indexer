@@ -66,7 +66,6 @@ fields:
       size: {}
       type: ""
       version: ""
-
 ```
 
 ### Index settings

@@ -155,6 +155,7 @@ def generate_random_data(number):
         event_data = {
             'agent': generate_random_agent(),
             'file': generate_random_file(),
+            'host': generate_random_host(),
             'registry': generate_random_registry()
         }
         data.append(event_data)

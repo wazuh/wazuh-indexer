@@ -27,19 +27,13 @@ fields:
       "@timestamp": {}
   agent:
     fields:
-      groups: {}
       id: {}
-      name: {}
-      type: {}
-      version: {}
-      host:
-        fields: "*"
+      groups: {}
   package:
     fields:
       hotfix:
         fields:
           name: {}
-
 ```
 
 ### Index settings
@@ -51,12 +45,44 @@ fields:
   "template": {
     "settings": {
       "index": {
-        "number_of_shards": "1",
         "number_of_replicas": "0",
-        "refresh_interval": "5s",
-        "query.default_field": [
-          "package.hotfix.name"
-        ]
+        "number_of_shards": "1",
+        "query.default_field": ["package.hotfix.name"],
+        "refresh_interval": "5s"
+      }
+    },
+    "mappings": {
+      "date_detection": false,
+      "dynamic": "strict",
+      "properties": {
+        "@timestamp": {
+          "type": "date"
+        },
+        "agent": {
+          "properties": {
+            "groups": {
+              "ignore_above": 1024,
+              "type": "keyword"
+            },
+            "id": {
+              "ignore_above": 1024,
+              "type": "keyword"
+            }
+          }
+        },
+        "package": {
+          "properties": {
+            "hotfix": {
+              "properties": {
+                "name": {
+                  "ignore_above": 1024,
+                  "type": "keyword"
+                }
+              },
+              "type": "object"
+            }
+          }
+        }
       }
     }
   }

@@ -10,6 +10,7 @@ Based on ECS:
 
 |     | Field name            | Data type | Description           | Example                    |
 | --- | --------------------- | --------- | --------------------- | -------------------------- |
+|     | `agent.*`             | object    | All the agent fields. | `                          |
 |     | `@timestamp`          | date      | Timestamp of the scan | `2016-05-23T08:05:34.853Z` |
 | \*  | `package.hotfix.name` | keyword   | Name of the hotfix    |                            |
 
@@ -27,8 +28,13 @@ fields:
       "@timestamp": {}
   agent:
     fields:
-      id: {}
       groups: {}
+      id: {}
+      name: {}
+      type: {}
+      version: {}
+      host:
+        fields: "*"
   package:
     fields:
       hotfix:
@@ -40,49 +46,19 @@ fields:
 
 ```json
 {
-  "index_patterns": ["wazuh-states-inventory-hotfixes*"],
+  "index_patterns": [
+    "wazuh-states-inventory-hotfixes*"
+  ],
   "priority": 1,
   "template": {
     "settings": {
       "index": {
-        "number_of_replicas": "0",
         "number_of_shards": "1",
-        "query.default_field": ["package.hotfix.name"],
-        "refresh_interval": "5s"
-      }
-    },
-    "mappings": {
-      "date_detection": false,
-      "dynamic": "strict",
-      "properties": {
-        "@timestamp": {
-          "type": "date"
-        },
-        "agent": {
-          "properties": {
-            "groups": {
-              "ignore_above": 1024,
-              "type": "keyword"
-            },
-            "id": {
-              "ignore_above": 1024,
-              "type": "keyword"
-            }
-          }
-        },
-        "package": {
-          "properties": {
-            "hotfix": {
-              "properties": {
-                "name": {
-                  "ignore_above": 1024,
-                  "type": "keyword"
-                }
-              },
-              "type": "object"
-            }
-          }
-        }
+        "number_of_replicas": "0",
+        "refresh_interval": "5s",
+        "query.default_field": [
+          "package.hotfix.name"
+        ]
       }
     }
   }

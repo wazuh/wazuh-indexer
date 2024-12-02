@@ -11,8 +11,7 @@ Based on ECS:
 
 |     | Field              | Type    | Description                                                                                           | Example                                                                                               |
 | --- | ------------------ | ------- | ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-|     | `agent.id`         | keyword | Unique identifier of this agent.                                                                      | `8a4f500d`                                                                                            |
-| \*  | \*`agent.groups`   | keyword | List of groups the agent belong to.                                                                   | `["group1", "group2"]`                                                                                |
+|     | `agent.*`          | object  | All the agent fields.                                                                                 | `                                                                                                     |
 |     | `file.attributes`  | keyword | Array of file attributes.                                                                             | `["readonly", "system"]`                                                                              |
 |     | `file.gid`         | keyword | Primary group ID (GID) of the file.                                                                   | `1001`                                                                                                |
 |     | `file.group`       | keyword | Primary group name of the file.                                                                       | `alice`                                                                                               |
@@ -38,12 +37,20 @@ Based on ECS:
 
 ```yml
 ---
-name: fim
+name: wazuh-states-fim
 fields:
+  base:
+    fields:
+      tags: []
   agent:
     fields:
-      id: {}
       groups: {}
+      id: {}
+      name: {}
+      type: {}
+      version: {}
+      host:
+        fields: "*"
   file:
     fields:
       attributes: {}

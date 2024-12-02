@@ -171,7 +171,6 @@ def generate_random_data(number):
             'destination': generate_random_destination(),
             'device': generate_random_device(),
             'file': generate_random_file(),
-            'host': generate_random_host(),
             'network': {
                 'protocol': random.choice(['TCP', 'UDP', 'ICMP'])
             },

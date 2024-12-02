@@ -15,8 +15,6 @@ fields:
         fields: "*"
   package:
     fields: "*"
-  host:
-    fields: "*"
   vulnerability:
     fields: "*"
   wazuh:

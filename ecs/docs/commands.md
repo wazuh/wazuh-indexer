@@ -5,6 +5,7 @@
 > rev 0.2 - September 30th, 2024: Change type of `request_id`, `order_id` and `id` to keyword.
 > rev 0.3 - October 3rd, 2024: Change descriptions for `command.type`, `command.action.type`, `command.request_id`, `command.order_id`.
 > rev 0.4 - October 9th, 2024: Apply changes described in https://github.com/wazuh/wazuh-indexer-plugins/issues/96#issue-2576028654.
+> rev 0.5 - December 3rd, 2024: Added `@timestamp` and `delivery_timestamp` date fields. 
 
 ### Fields summary
 

@@ -46,7 +46,7 @@
       type: short
       level: custom
       description: >
-        Time window in which the command has to be sent to its target.
+        Seconds in which the command has to be sent to its target.
     - name: status
       type: keyword
       level: custom

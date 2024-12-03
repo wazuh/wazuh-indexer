@@ -1,0 +1,9 @@
+- name: base
+  title: Wazuh base fields
+  root: true
+  fields:
+    - name: delivery_timestamp
+      type: date
+      level: custom
+      description: >
+        The latest date-time for the command to be delivered. Calculated as the current timestamp plus the timeout.

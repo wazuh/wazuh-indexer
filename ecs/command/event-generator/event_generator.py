@@ -28,10 +28,10 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 def generate_random_date(initial_date=None, days_range=30):
     if initial_date is None:
-        initial_date = datetime.datetime.now()
+        initial_date = datetime.datetime.now(datetime.timezone.utc)
     random_days = random.randint(0, days_range)
     new_timestamp = initial_date + datetime.timedelta(days=random_days)
-    return int(new_timestamp.timestamp() * 1000)  # Convert to milliseconds and return as int
+    return new_timestamp.strftime('%Y-%m-%dT%H:%M:%SZ')
 
 
 def generate_random_command(include_all_fields=False):
@@ -89,10 +89,10 @@ def inject_events(ip, port, index, username, password, data, use_index=False):
             if use_index:
                 # Generate UUIDs for the document id
                 doc_id = str(uuid.uuid4())
-                url = f'https://{ip}:{port}/{index}/_doc/{doc_id}'
+                url = f'http://{ip}:{port}/{index}/_doc/{doc_id}'
             else:
                 # Default URL for command manager API without the index
-                url = f'https://{ip}:{port}/_plugins/_command_manager/commands'
+                url = f'http://{ip}:{port}/_plugins/_command_manager/commands'
             response = session.post(url, json=event_data, headers=headers)
             if response.status_code != 201:
                 logging.error(f'Error: {response.status_code}')

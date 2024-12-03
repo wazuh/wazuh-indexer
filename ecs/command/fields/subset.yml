@@ -4,6 +4,8 @@ fields:
   base:
     fields:
       tags: []
+      "@timestamp": {}
+      "delivery_timestamp": {}
   agent:
     fields:
       groups: {}

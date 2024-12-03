@@ -1,6 +1,7 @@
 #!/bin/python3
 
 import argparse
+import datetime
 import json
 import logging
 import random
@@ -10,6 +11,7 @@ import uuid
 
 LOG_FILE = 'generate_data.log'
 GENERATED_DATA_FILE = 'generatedData.json'
+DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 # Default values
 INDEX_NAME = ".commands"
 USERNAME = "admin"
@@ -24,8 +26,16 @@ logging.basicConfig(filename=LOG_FILE, level=logging.INFO)
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
+def generate_random_date(initial_date=None, days_range=30):
+    if initial_date is None:
+        initial_date = datetime.datetime.now(datetime.timezone.utc)
+    random_days = random.randint(0, days_range)
+    new_timestamp = initial_date + datetime.timedelta(days=random_days)
+    return new_timestamp.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+
 def generate_random_command(include_all_fields=False):
-    document = {
+    command = {
         "source": random.choice(["Users/Services", "Engine", "Content manager"]),
         "user": f"user{random.randint(1, 100)}",
         "target": {
@@ -33,27 +43,32 @@ def generate_random_command(include_all_fields=False):
             "type": random.choice(["agent", "group", "server"])
         },
         "action": {
-            "name": random.choice(["restart", "update", "change_group", "apply_policy"]),
+            "name": random.choice(["restart", "update","change_group", "apply_policy"]),
             "args": [f"/path/to/executable/arg{random.randint(1, 10)}"],
             "version": f"v{random.randint(1, 5)}"
         },
         "timeout": random.randint(10, 100)
     }
-
     if include_all_fields:
-        document["agent"]["groups"] = [f"group{random.randint(1, 5)}"],
-        document["command"]["status"] = random.choice(
-            ["pending", "sent", "success", "failure"])
-        document["command"]["result"] = {
-            "code": random.randint(0, 255),
-            "message": f"Result message {random.randint(1, 1000)}",
-            "data": f"Result data {random.randint(1, 100)}"
+        document = {
+            "@timestamp": generate_random_date(),
+            "delivery_timestamp": generate_random_date(),
+            "agent": {"groups": [f"group{random.randint(1, 5)}"]},
+            "command": {
+                **command,
+                "status": random.choice(["pending", "sent", "success", "failure"]),
+                "result": {
+                    "code": random.randint(0, 255),
+                    "message": f"Result message {random.randint(1, 1000)}",
+                    "data": f"Result data {random.randint(1, 100)}"
+                },
+                "request_id": str(uuid.uuid4()),
+                "order_id": str(uuid.uuid4())
+            }
         }
-        # Generate UUIDs for request_id and order_id
-        document["command"]["request_id"] = str(uuid.uuid4())
-        document["command"]["order_id"] = str(uuid.uuid4())
+        return document
 
-    return document
+    return command
 
 
 def generate_random_data(number, include_all_fields=False):
@@ -74,10 +89,10 @@ def inject_events(ip, port, index, username, password, data, use_index=False):
             if use_index:
                 # Generate UUIDs for the document id
                 doc_id = str(uuid.uuid4())
-                url = f'https://{ip}:{port}/{index}/_doc/{doc_id}'
+                url = f'http://{ip}:{port}/{index}/_doc/{doc_id}'
             else:
                 # Default URL for command manager API without the index
-                url = f'https://{ip}:{port}/_plugins/_command_manager/commands'
+                url = f'http://{ip}:{port}/_plugins/_command_manager/commands'
             response = session.post(url, json=event_data, headers=headers)
             if response.status_code != 201:
                 logging.error(f'Error: {response.status_code}')

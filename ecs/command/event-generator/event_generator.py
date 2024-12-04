@@ -75,32 +75,39 @@ def generate_random_data(number, include_all_fields=False):
     data = []
     for _ in range(number):
         data.append(generate_random_command(include_all_fields))
+    if not include_all_fields:
+        return {"commands": data}
     return data
 
 
-def inject_events(ip, port, index, username, password, data, use_index=False):
+def inject_events(protocol, ip, port, index, username, password, data, use_index=False):
+    try:
+        if not use_index:
+            # Use the command-manager API
+            url = f'{protocol}://{ip}:{port}/_plugins/_command_manager/commands'
+            send_post_request(username, password, url, data)
+            return
+        for event_data in data:
+            # Generate UUIDs for the document id
+            doc_id = str(uuid.uuid4())
+            url = f'{protocol}://{ip}:{port}/{index}/_doc/{doc_id}'
+            send_post_request(username, password, url, event_data)
+        logging.info('Data injection completed successfully.')
+    except Exception as e:
+        logging.error(f'Error: {str(e)}')
+
+
+def send_post_request(username, password, url, event_data):
     session = requests.Session()
     session.auth = (username, password)
     session.verify = False
     headers = {'Content-Type': 'application/json'}
-
-    try:
-        for event_data in data:
-            if use_index:
-                # Generate UUIDs for the document id
-                doc_id = str(uuid.uuid4())
-                url = f'http://{ip}:{port}/{index}/_doc/{doc_id}'
-            else:
-                # Default URL for command manager API without the index
-                url = f'http://{ip}:{port}/_plugins/_command_manager/commands'
-            response = session.post(url, json=event_data, headers=headers)
-            if response.status_code != 201:
-                logging.error(f'Error: {response.status_code}')
-                logging.error(response.text)
-                break
-        logging.info('Data injection completed successfully.')
-    except Exception as e:
-        logging.error(f'Error: {str(e)}')
+    # Send request
+    response = session.post(url, json=event_data, headers=headers)
+    if response.status_code not in [201, 200]:
+        logging.error(f'Error: {response.status_code}')
+        logging.error(response.text)
+    return response
 
 
 def main():
@@ -111,6 +118,12 @@ def main():
         "--index",
         action="store_true",
         help="Generate additional fields for indexing and inject into a specific index."
+    )
+    parser.add_argument(
+        "--protocol",
+        choices=['http', 'https'],
+        default='https',
+        help="Specify the protocol to use: http or https."
     )
     args = parser.parse_args()
 
@@ -145,7 +158,7 @@ def main():
         username = input(f"Username (default: '{USERNAME}'): ") or USERNAME
         password = input(f"Password (default: '{PASSWORD}'): ") or PASSWORD
 
-        inject_events(ip, port, index, username, password,
+        inject_events(args.protocol, ip, port, index, username, password,
                       data, use_index=bool(args.index))
 
 

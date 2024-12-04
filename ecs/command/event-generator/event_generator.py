@@ -103,7 +103,7 @@ def send_post_request(username, password, url, event_data):
     session.verify = False
     headers = {'Content-Type': 'application/json'}
     # Send request
-    response = session.post(url, json=event_data, headers=headers)
+    response = session.post(url, data=json.dumps(event_data), headers=headers)
     if response.status_code not in [201, 200]:
         logging.error(f'Error: {response.status_code}')
         logging.error(response.text)

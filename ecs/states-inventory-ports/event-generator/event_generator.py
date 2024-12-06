@@ -188,7 +188,10 @@ def generate_random_data(number):
                 'protocol': random.choice(['TCP', 'UDP', 'ICMP'])
             },
             'process': generate_random_process(),
-            'source': generate_random_source()
+            'source': generate_random_source(),
+            'interface': {
+                'state': random.choice(['Active', 'Inactive', 'Unknown'])
+            }
         }
         data.append(event_data)
     return data

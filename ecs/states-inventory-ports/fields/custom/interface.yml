@@ -1,5 +1,9 @@
 ---
 - name: interface
+  reusable:
+    top_level: true
+    expected:
+      - { at: observer.egress.interface, as: observer.ingress.interface }
   title: Interface
   type: group
   group: 2

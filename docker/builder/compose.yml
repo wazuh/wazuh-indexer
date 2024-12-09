@@ -9,7 +9,8 @@ services:
     volumes:
      - ${REPO_PATH}:/home/wazuh-indexer
        #entrypoint: ["/bin/bash", "/home/wazuh-indexer/entrypoint.sh"]
-    entrypoint: ["tail", "-f", "/dev/null"]
+       #entrypoint: ["tail", "-f", "/dev/null"]
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
     user: "1000:1000"
     working_dir: /home/wazuh-indexer
 

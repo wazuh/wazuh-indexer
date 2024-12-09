@@ -129,7 +129,7 @@ main() {
     echo "---------Starting Build Process---------"
     clone_repositories
     # Set version env var
-    VERSION=$(cat ~/wazuh-indexer/VERSION)
+    VERSION=$(cat ~/VERSION)
     # Build and assemble the package
     build_plugins "$VERSION" "$REVISION"
     build_reporting "$VERSION" "$REVISION"

@@ -1,8 +1,11 @@
 # Use the official Ubuntu Noble image as the base image
 FROM ubuntu:noble
 
+RUN userdel -r ubuntu
+
 # Set environment variables for non-interactive installation
 ENV DEBIAN_FRONTEND=noninteractive
+
 
 # Update the package list and install necessary tools
 RUN apt-get update \
@@ -53,6 +56,7 @@ ENV PATH=$JAVA_HOME/bin:$PATH
 ENV GRADLE_VERSION=8.10
 ENV GRADLE_OPTS="-Xmx2048m -XX:ReservedCodeCacheSize=440m"
 
+# Download gradle
 RUN wget https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip -P /tmp \
     && unzip -d /opt/gradle /tmp/gradle-${GRADLE_VERSION}-bin.zip \
     && rm /tmp/gradle-${GRADLE_VERSION}-bin.zip
@@ -64,19 +68,15 @@ ENV PATH=$GRADLE_HOME/bin/$PATH
 # Clean up APT when done
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Create a non-root user and set up permissions
-#RUN useradd -ms /bin/bash -u 1000 wazuh-indexer && \
-# mkdir -p /home/wazuh-indexer/artifacts && \
-# chown -R 1000 /home/wazuh-indexer
+# Create a non-root user
+RUN addgroup --gid 1000 wazuh-indexer && \
+adduser --ingroup wazuh-indexer --uid 1000 wazuh-indexer
 
 # Copy your build scripts into the container as root
-ADD docker/builder/entrypoint.sh /home/wazuh-indexer/
+COPY docker/builder/entrypoint.sh /
 
 # Change file permissions as root
-RUN chmod +x /home/wazuh-indexer/entrypoint.sh
-
-# Create volume dir=
-#VOLUME /home/wazuh-indexer/artifacts
+RUN chmod +x /entrypoint.sh
 
 # Switch to non-root user
 USER wazuh-indexer

@@ -45,3 +45,8 @@ fields:
       thread:
         fields:
           id: ""
+      tty:
+        fields:
+          char_device:
+            fields:
+              major: ""

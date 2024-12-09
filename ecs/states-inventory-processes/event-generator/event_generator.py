@@ -152,6 +152,11 @@ def generate_random_process():
         },
         'user': {
             'id': f'userid{random.randint(0, 9999)}'
+        },
+        'tty': {
+            'char_device': {
+                'major': random.randint(0, 5)
+            }
         }
     }
     return process

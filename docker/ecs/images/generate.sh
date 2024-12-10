@@ -8,17 +8,24 @@ set -euo pipefail
 # compatible open source license.
 
 # Default values
-DEFAULT_ECS_VERSION="v8.11.0"
-DEFAULT_INDEXER_PATH="/wazuh-indexer"
+ECS_VERSION="${ECS_VERSION:-v8.11.0}"
+INDEXER_PATH="${INDEXER_PATH:-/source}"
 
 # Function to display usage information
 show_usage() {
-  echo "Usage: $0 <ECS_MODULE> [<INDEXER_PATH>] [<ECS_VERSION>]"
-  echo "  * ECS_MODULE: Module to generate mappings for"
-  echo "  * INDEXER_PATH: Path to the Wazuh indexer repository (default: /wazuh-indexer)"
-  echo "  * ECS_VERSION: ECS version to generate mappings for (default: v8.11.0)"
-  echo "Example: $0 vulnerability-detector ~/wazuh-indexer v8.11.0"
+  echo "Usage: $0"
+  echo "Environment Variables:"
+  echo "  * ECS_MODULE:   Module to generate mappings for"
+  echo "  * INDEXER_PATH: (Optional) Path to the Wazuh indexer repository (default: /source)"
+  echo "  * ECS_VERSION:  (Optional) ECS version to generate mappings for (default: v8.11.0)"
+  echo "Example: docker run -e ECS_MODULE=vulnerability-detector -e INDEXER_PATH=/source -e ECS_VERSION=v8.11.0 ecs-generator"
 }
+
+# Ensure ECS_MODULE is provided
+if [ -z "${ECS_MODULE:-}" ]; then
+  show_usage
+  exit 1
+fi
 
 # Function to remove multi-fields from the generated index template
 remove_multi_fields() {
@@ -85,16 +92,6 @@ generate_mappings() {
 
   echo "Mappings saved to $out_dir"
 }
-
-# Parse command line arguments
-if [ -z "${1:-}" ]; then
-  show_usage
-  exit 1
-fi
-
-ECS_MODULE="$1"
-INDEXER_PATH="${2:-$DEFAULT_INDEXER_PATH}"
-ECS_VERSION="${3:-$DEFAULT_ECS_VERSION}"
 
 # Generate mappings
 generate_mappings "$ECS_MODULE" "$INDEXER_PATH" "$ECS_VERSION"

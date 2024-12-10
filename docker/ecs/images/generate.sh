@@ -3,13 +3,16 @@
 set -e
 set -u
 
+# Default values
+DEFAULT_ECS_VERSION="v.8.11.0"
+DEFAULT_INDEX_PATH="/wazuh-indexer"
+
 # Function to display usage information
 show_usage() {
-  echo "Usage: $0 <ECS_VERSION> <INDEXER_SRC> <MODULE> [--upload <URL>]"
+  echo "Usage: $0 <ECS_VERSION> <INDEXER_PATH> <ECS_MODULE> [--upload <URL>]"
+  echo "  * ECS_MODULE: Module to generate mappings for"
+  echo "  * INDEXER_PATH: Path to the wazuh-indexer repository"
   echo "  * ECS_VERSION: ECS version to generate mappings for"
-  echo "  * INDEXER_SRC: Path to the wazuh-indexer repository"
-  echo "  * MODULE: Module to generate mappings for"
-  echo "  * --upload <URL>: Upload generated index template to the OpenSearch cluster. Defaults to https://localhost:9200"
   echo "Example: $0 v8.11.0 ~/wazuh-indexer vulnerability-detector --upload https://indexer:9200"
 }
 
@@ -81,38 +84,37 @@ generate_mappings() {
   }' >"$OUT_DIR/generated/elasticsearch/legacy/opensearch-template.json"
 
   # Check if the --upload flag has been provided
-  if [ "$UPLOAD" == "--upload" ]; then
-    upload_mappings "$OUT_DIR" "$URL" || exit 1
-  fi
+  # if [ "$UPLOAD" == "--upload" ]; then
+  #   upload_mappings "$OUT_DIR" "$URL" || exit 1
+  # fi
 
   echo "Mappings saved to $OUT_DIR"
 }
 
 # Function to upload generated composable index template to the OpenSearch cluster
-upload_mappings() {
-  local OUT_DIR="$1"
-  local URL="$2"
+#upload_mappings() {
+#  local OUT_DIR="$1"
+#  local URL="$2"
+#
+#  echo "Uploading index template to the OpenSearch cluster"
+#  for file in "$OUT_DIR/generated/elasticsearch/composable/component"/*.json; do
+#    component_name=$(basename "$file" .json)
+#    echo "Uploading $component_name"
+#    curl -u admin:admin -X PUT "$URL/_component_template/$component_name?pretty" -H 'Content-Type: application/json' -d@"$file" || exit 1
+#  done
+#}
 
-  echo "Uploading index template to the OpenSearch cluster"
-  for file in "$OUT_DIR/generated/elasticsearch/composable/component"/*.json; do
-    component_name=$(basename "$file" .json)
-    echo "Uploading $component_name"
-    curl -u admin:admin -X PUT "$URL/_component_template/$component_name?pretty" -H 'Content-Type: application/json' -d@"$file" || exit 1
-  done
-}
-
-# Check if the minimum required arguments have been provided
-if [ $# -lt 3 ]; then
+# Check if ECS_MODULE is provided
+if [ -z "${1:-}" ]; then
   show_usage
   exit 1
 fi
 
-# Parse command line arguments
-ECS_VERSION="$1"
-INDEXER_SRC="$2"
-MODULE="$3"
-UPLOAD="${4:-false}"
-URL="${5:-https://localhost:9200}"
+ECS_MODULE="$1"
+INDEXER_PATH="${2:-$DEFAULT_INDEX_PATH}"
+ECS_VERSION="${3:-$DEFAULT_ECS_VERSION}"
+# UPLOAD="${4:-false}"
+# URL="${5:-https://localhost:9200}"
 
 # Generate mappings
 generate_mappings "$ECS_VERSION" "$INDEXER_SRC" "$MODULE" "$UPLOAD" "$URL"

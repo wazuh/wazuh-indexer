@@ -18,86 +18,85 @@ show_usage() {
 
 # Function to remove multi-fields from the generated index template
 remove_multi_fields() {
-  local IN_FILE="$1"
-  local OUT_FILE="$2"
+  local in_file="$1"
+  local out_file="$2"
 
   jq 'del(
     .mappings.properties.host.properties.os.properties.full.fields,
     .mappings.properties.host.properties.os.properties.name.fields,
     .mappings.properties.vulnerability.properties.description.fields
-  )' "$IN_FILE" > "$OUT_FILE"
+  )' "$in_file" > "$out_file"
 }
-
 
 # Function to generate mappings
 generate_mappings() {
-  local IN_FILES_DIR="$INDEXER_SRC/ecs/$MODULE/fields"
-  local OUT_DIR="$INDEXER_SRC/ecs/$MODULE/mappings/$ECS_VERSION"
+  local in_files_dir="$INDEXER_PATH/ecs/$ECS_MODULE/fields"
+  local out_dir="$INDEXER_PATH/ecs/$ECS_MODULE/mappings/$ECS_VERSION"
 
   # Ensure the output directory exists
-  mkdir -p "$OUT_DIR" || exit 1
+  mkdir -p "$out_dir" || exit 1
 
   # Generate mappings
   python scripts/generator.py --strict --ref "$ECS_VERSION" \
-    --include "$IN_FILES_DIR/custom/" \
-    --subset "$IN_FILES_DIR/subset.yml" \
-    --template-settings "$IN_FILES_DIR/template-settings.json" \
-    --template-settings-legacy "$IN_FILES_DIR/template-settings-legacy.json" \
-    --mapping-settings "$IN_FILES_DIR/mapping-settings.json" \
-    --out "$OUT_DIR" || exit 1
+    --include "$in_files_dir/custom/" \
+    --subset "$in_files_dir/subset.yml" \
+    --template-settings "$in_files_dir/template-settings.json" \
+    --template-settings-legacy "$in_files_dir/template-settings-legacy.json" \
+    --mapping-settings "$in_files_dir/mapping-settings.json" \
+    --out "$out_dir" || exit 1
 
   # Replace "constant_keyword" type (not supported by OpenSearch) with "keyword"
   echo "Replacing \"constant_keyword\" type with \"keyword\""
-  find "$OUT_DIR" -type f -exec sed -i 's/constant_keyword/keyword/g' {} \;
+  find "$out_dir" -type f -exec sed -i 's/constant_keyword/keyword/g' {} \;
 
   # Replace "flattened" type (not supported by OpenSearch) with "flat_object"
   echo "Replacing \"flattened\" type with \"flat_object\""
-  find "$OUT_DIR" -type f -exec sed -i 's/flattened/flat_object/g' {} \;
+  find "$out_dir" -type f -exec sed -i 's/flattened/flat_object/g' {} \;
 
   # Replace "scaled_float" type with "float"
   echo "Replacing \"scaled_float\" type with \"float\""
-  find "$OUT_DIR" -type f -exec sed -i 's/scaled_float/float/g' {} \;
+  find "$out_dir" -type f -exec sed -i 's/scaled_float/float/g' {} \;
   echo "Removing scaling_factor lines"
-  find "$OUT_DIR" -type f -exec sed -i '/scaling_factor/d' {} \;
+  find "$out_dir" -type f -exec sed -i '/scaling_factor/d' {} \;
 
-  local IN_FILE="$OUT_DIR/generated/elasticsearch/legacy/template.json"
-  local OUT_FILE="$OUT_DIR/generated/elasticsearch/legacy/template-tmp.json"
+  local in_file="$out_dir/generated/elasticsearch/legacy/template.json"
+  local out_file="$out_dir/generated/elasticsearch/legacy/template-tmp.json"
 
   # Delete the "tags" field from the index template
   echo "Deleting the \"tags\" field from the index template"
-  jq 'del(.mappings.properties.tags)' "$IN_FILE" > "$OUT_FILE"
-  mv "$OUT_FILE" "$IN_FILE"
+  jq 'del(.mappings.properties.tags)' "$in_file" > "$out_file"
+  mv "$out_file" "$in_file"
 
   # Remove multi-fields from the generated index template
   echo "Removing multi-fields from the index template"
-  remove_multi_fields "$IN_FILE" "$OUT_FILE"
-  mv "$OUT_FILE" "$IN_FILE"
+  remove_multi_fields "$in_file" "$out_file"
+  mv "$out_file" "$in_file"
 
   # Transform legacy index template for OpenSearch compatibility
-  cat "$IN_FILE" | jq '{
+  cat "$in_file" | jq '{
     "index_patterns": .index_patterns,
     "priority": .order,
     "template": {
       "settings": .settings,
       "mappings": .mappings
     }
-  }' >"$OUT_DIR/generated/elasticsearch/legacy/opensearch-template.json"
+  }' >"$out_dir/generated/elasticsearch/legacy/opensearch-template.json"
 
   # Check if the --upload flag has been provided
   # if [ "$UPLOAD" == "--upload" ]; then
-  #   upload_mappings "$OUT_DIR" "$URL" || exit 1
+  #   upload_mappings "$out_dir" "$URL" || exit 1
   # fi
 
-  echo "Mappings saved to $OUT_DIR"
+  echo "Mappings saved to $out_dir"
 }
 
 # Function to upload generated composable index template to the OpenSearch cluster
 #upload_mappings() {
-#  local OUT_DIR="$1"
+#  local out_dir="$1"
 #  local URL="$2"
 #
 #  echo "Uploading index template to the OpenSearch cluster"
-#  for file in "$OUT_DIR/generated/elasticsearch/composable/component"/*.json; do
+#  for file in "$out_dir/generated/elasticsearch/composable/component"/*.json; do
 #    component_name=$(basename "$file" .json)
 #    echo "Uploading $component_name"
 #    curl -u admin:admin -X PUT "$URL/_component_template/$component_name?pretty" -H 'Content-Type: application/json' -d@"$file" || exit 1
@@ -117,4 +116,4 @@ ECS_VERSION="${3:-$DEFAULT_ECS_VERSION}"
 # URL="${5:-https://localhost:9200}"
 
 # Generate mappings
-generate_mappings "$ECS_VERSION" "$INDEXER_SRC" "$MODULE" "$UPLOAD" "$URL"
+generate_mappings "$ECS_VERSION" "$INDEXER_PATH" "$ECS_MODULE"

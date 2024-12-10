@@ -1,19 +1,23 @@
 #!/bin/bash
 
-set -e
-set -u
+set -euo pipefail
+
+# SPDX-License-Identifier: Apache-2.0
+# The OpenSearch Contributors require contributions made to
+# this file be licensed under the Apache-2.0 license or a
+# compatible open source license.
 
 # Default values
-DEFAULT_ECS_VERSION="v.8.11.0"
-DEFAULT_INDEX_PATH="/wazuh-indexer"
+DEFAULT_ECS_VERSION="v8.11.0"
+DEFAULT_INDEXER_PATH="/wazuh-indexer"
 
 # Function to display usage information
 show_usage() {
-  echo "Usage: $0 <ECS_VERSION> <INDEXER_PATH> <ECS_MODULE> [--upload <URL>]"
+  echo "Usage: $0 <ECS_MODULE> [<INDEXER_PATH>] [<ECS_VERSION>]"
   echo "  * ECS_MODULE: Module to generate mappings for"
-  echo "  * INDEXER_PATH: Path to the wazuh-indexer repository"
-  echo "  * ECS_VERSION: ECS version to generate mappings for"
-  echo "Example: $0 v8.11.0 ~/wazuh-indexer vulnerability-detector --upload https://indexer:9200"
+  echo "  * INDEXER_PATH: Path to the Wazuh indexer repository (default: /wazuh-indexer)"
+  echo "  * ECS_VERSION: ECS version to generate mappings for (default: v8.11.0)"
+  echo "Example: $0 vulnerability-detector ~/wazuh-indexer v8.11.0"
 }
 
 # Function to remove multi-fields from the generated index template
@@ -30,33 +34,30 @@ remove_multi_fields() {
 
 # Function to generate mappings
 generate_mappings() {
-  local in_files_dir="$INDEXER_PATH/ecs/$ECS_MODULE/fields"
-  local out_dir="$INDEXER_PATH/ecs/$ECS_MODULE/mappings/$ECS_VERSION"
+  local ecs_module="$1"
+  local indexer_path="$2"
+  local ecs_version="$3"
+
+  local in_files_dir="$indexer_path/ecs/$ecs_module/fields"
+  local out_dir="$indexer_path/ecs/$ecs_module/mappings/$ecs_version"
 
   # Ensure the output directory exists
-  mkdir -p "$out_dir" || exit 1
+  mkdir -p "$out_dir"
 
   # Generate mappings
-  python scripts/generator.py --strict --ref "$ECS_VERSION" \
+  python scripts/generator.py --strict --ref "$ecs_version" \
     --include "$in_files_dir/custom/" \
     --subset "$in_files_dir/subset.yml" \
     --template-settings "$in_files_dir/template-settings.json" \
     --template-settings-legacy "$in_files_dir/template-settings-legacy.json" \
     --mapping-settings "$in_files_dir/mapping-settings.json" \
-    --out "$out_dir" || exit 1
+    --out "$out_dir"
 
-  # Replace "constant_keyword" type (not supported by OpenSearch) with "keyword"
-  echo "Replacing \"constant_keyword\" type with \"keyword\""
+  # Replace unsupported types
+  echo "Replacing unsupported types in generated mappings"
   find "$out_dir" -type f -exec sed -i 's/constant_keyword/keyword/g' {} \;
-
-  # Replace "flattened" type (not supported by OpenSearch) with "flat_object"
-  echo "Replacing \"flattened\" type with \"flat_object\""
   find "$out_dir" -type f -exec sed -i 's/flattened/flat_object/g' {} \;
-
-  # Replace "scaled_float" type with "float"
-  echo "Replacing \"scaled_float\" type with \"float\""
   find "$out_dir" -type f -exec sed -i 's/scaled_float/float/g' {} \;
-  echo "Removing scaling_factor lines"
   find "$out_dir" -type f -exec sed -i '/scaling_factor/d' {} \;
 
   local in_file="$out_dir/generated/elasticsearch/legacy/template.json"
@@ -73,47 +74,27 @@ generate_mappings() {
   mv "$out_file" "$in_file"
 
   # Transform legacy index template for OpenSearch compatibility
-  cat "$in_file" | jq '{
+  jq '{
     "index_patterns": .index_patterns,
     "priority": .order,
     "template": {
       "settings": .settings,
       "mappings": .mappings
     }
-  }' >"$out_dir/generated/elasticsearch/legacy/opensearch-template.json"
-
-  # Check if the --upload flag has been provided
-  # if [ "$UPLOAD" == "--upload" ]; then
-  #   upload_mappings "$out_dir" "$URL" || exit 1
-  # fi
+  }' "$in_file" > "$out_dir/generated/elasticsearch/legacy/opensearch-template.json"
 
   echo "Mappings saved to $out_dir"
 }
 
-# Function to upload generated composable index template to the OpenSearch cluster
-#upload_mappings() {
-#  local out_dir="$1"
-#  local URL="$2"
-#
-#  echo "Uploading index template to the OpenSearch cluster"
-#  for file in "$out_dir/generated/elasticsearch/composable/component"/*.json; do
-#    component_name=$(basename "$file" .json)
-#    echo "Uploading $component_name"
-#    curl -u admin:admin -X PUT "$URL/_component_template/$component_name?pretty" -H 'Content-Type: application/json' -d@"$file" || exit 1
-#  done
-#}
-
-# Check if ECS_MODULE is provided
+# Parse command line arguments
 if [ -z "${1:-}" ]; then
   show_usage
   exit 1
 fi
 
 ECS_MODULE="$1"
-INDEXER_PATH="${2:-$DEFAULT_INDEX_PATH}"
+INDEXER_PATH="${2:-$DEFAULT_INDEXER_PATH}"
 ECS_VERSION="${3:-$DEFAULT_ECS_VERSION}"
-# UPLOAD="${4:-false}"
-# URL="${5:-https://localhost:9200}"
 
 # Generate mappings
-generate_mappings "$ECS_VERSION" "$INDEXER_PATH" "$ECS_MODULE"
+generate_mappings "$ECS_MODULE" "$INDEXER_PATH" "$ECS_VERSION"

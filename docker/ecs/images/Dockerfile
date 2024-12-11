@@ -16,6 +16,8 @@ ADD docker/ecs/images/generate.sh /ecs/generate.sh
 # This directory will be attached to a volume
 RUN mkdir -p /source/ecs
 
+VOLUME /source/ecs
+
 RUN chmod +x /ecs/generate.sh
 
 WORKDIR /ecs

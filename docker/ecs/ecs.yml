@@ -1,17 +1,11 @@
 services:
   wazuh-ecs-generator:
-    image: wazuh-ecs-generator:${VERSION}
-    container_name: wazuh-ecs-generator_{VERSION}
+    image: wazuh-ecs-generator
+    container_name: wazuh-ecs-generator
     build:
       context: ./../..
       dockerfile: ${REPO_PATH}/docker/ecs/images/Dockerfile
     volumes:
-      - source:/source/ecs
-      #entrypoint: ["/bin/bash", "/home/wazuh-indexer/entrypoint.sh"]
-#    working_dir: /home/wazuh-indexer
+      - ${REPO_PATH}/ecs:/source/ecs
     environment:
       - ECS_MODULE=alerts
-
-volumes:
-  source:
-    driver: ${REPO_PATH}/ecs

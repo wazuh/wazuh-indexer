@@ -19,10 +19,13 @@ remove_multi_fields() {
   local OUT_FILE="$2"
 
   jq 'del(
+    .mappings.properties.agent.properties.host.properties.os.properties.full.fields,
+    .mappings.properties.agent.properties.host.properties.os.properties.name.fields,
     .mappings.properties.host.properties.os.properties.full.fields,
     .mappings.properties.host.properties.os.properties.name.fields,
+    .mappings.properties.process.properties.command_line.fields,
+    .mappings.properties.process.properties.name.fields
     .mappings.properties.vulnerability.properties.description.fields,
-    .mappings.properties.process.properties.command_line.fields
   )' "$IN_FILE" > "$OUT_FILE"
 }
 

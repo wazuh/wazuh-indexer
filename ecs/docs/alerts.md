@@ -611,7 +611,7 @@ fields:
         fields: "*"
 ```
 
-###
+### Template settings
 
 ```json
 {
@@ -631,5 +631,14 @@ fields:
       }
     }
   }
+}
+```
+
+### Mapping settings
+
+```json
+{
+    "dynamic": true,
+    "date_detection": false
 }
 ```

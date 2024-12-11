@@ -12,7 +12,9 @@ RUN apt-get update && \
 # Change this to a volume
 ADD docker/ecs/images/generate.sh /ecs/generate.sh
 #ADD docker/ecs/images/entrypoint.sh entrypoint.sh
-ADD ecs/ /source/ecs
+#ADD ecs/ /source/ecs
+# This directory will be attached to a volume
+RUN mkdir -p /source/ecs
 
 RUN chmod +x /ecs/generate.sh
 

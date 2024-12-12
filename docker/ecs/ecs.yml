@@ -8,4 +8,4 @@ services:
     volumes:
       - ${REPO_PATH}/ecs:/source/ecs
     environment:
-      - ECS_MODULE=alerts
+      - ECS_MODULE=${ECS_MODULE}

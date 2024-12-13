@@ -10,6 +10,8 @@ set -e
 # The container is built only if needed, the tool can be executed several times
 # for different modules in the same build since the script runs as entrypoint
 
+
+
 # ====
 # Checks that the script is run from the intended location
 # ====
@@ -40,16 +42,14 @@ function usage() {
 }
 
 function main() {
+    local compose_filename="docker/ecs/mapping-generator.yml"
     local compose_command
-    local compose_filename
     local module
     local repo_path
 
     navigate_to_project_root
 
-    compose_filename="docker/ecs/ecs.yml"
     compose_command="docker compose -f $compose_filename"
-
 
     case $1 in
         run)

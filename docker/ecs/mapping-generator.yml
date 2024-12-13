@@ -1,5 +1,5 @@
 services:
-  wazuh-ecs-generator:
+  ecs-mapping-generator:
     image: wazuh-ecs-generator
     container_name: wazuh-ecs-generator
     build:

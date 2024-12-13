@@ -77,7 +77,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Bump `org.jruby.jcodings:jcodings` from 1.0.58 to 1.0.61 ([#17061](https://github.com/opensearch-project/OpenSearch/pull/17061))
 
 ### Changed
-- Upgrade third-party integrations to the latest versions ([#447](https://github.com/wazuh/wazuh-indexer/pull/447))
+- Upgrade third-party integrations to the latest versions ([#445](https://github.com/wazuh/wazuh-indexer/issues/445))
+- Changes on the Vulnerability Detector index template ([#25485](https://github.com/wazuh/wazuh/issues/25485)) ([#382](https://github.com/wazuh/wazuh-indexer/issues/382))
+- Packages refinement - Stage 1 ([#484](https://github.com/wazuh/wazuh-indexer/issues/484))
 
 ### Deprecated
 - Performing update operation with default pipeline or final pipeline is deprecated ([#16712](https://github.com/opensearch-project/OpenSearch/pull/16712))

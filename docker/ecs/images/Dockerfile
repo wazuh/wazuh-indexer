@@ -15,7 +15,7 @@ RUN apt-get update && \
     mkdir -p /source/ecs
 
 # Ensure the generate.sh script is in the correct location
-ADD docker/ecs/images/generate.sh /ecs/generator.sh
+ADD docker/ecs/images/generator.sh /ecs/generator.sh
 
 # Define the directory as a volume to allow for external mounting
 VOLUME /source/ecs

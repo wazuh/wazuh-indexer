@@ -14,6 +14,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Update bundled JDK to 21.0.13+9 ([#23408](https://github.com/opensearch-project/OpenSearch/issues/23408), [#22572](https://github.com/opensearch-project/OpenSearch/issues/22572), [#22809](https://github.com/opensearch-project/OpenSearch/issues/22809))
 - Update OpenTelemetry to 1.67.0 ([#23363](https://github.com/opensearch-project/OpenSearch/issues/23363))
 
+### Changed
+- Upgrade third-party integrations to the latest versions ([#445](https://github.com/wazuh/wazuh-indexer/issues/445))
+- Changes on the Vulnerability Detector index template ([#25485](https://github.com/wazuh/wazuh/issues/25485)) ([#382](https://github.com/wazuh/wazuh-indexer/issues/382))
+- Packages refinement - Stage 1 ([#484](https://github.com/wazuh/wazuh-indexer/issues/484))
+
 ### Deprecated
 
 ### Removed

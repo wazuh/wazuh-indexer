@@ -4,8 +4,8 @@ services:
     container_name: wazuh-ecs-generator
     build:
       context: ./../..
-      dockerfile: ${REPO_PATH}/docker/ecs/images/Dockerfile
+      dockerfile: ${REPO_PATH:-.}/docker/ecs/images/Dockerfile
     volumes:
-      - ${REPO_PATH}/ecs:/source/ecs
+      - ${REPO_PATH:-.}/ecs:/source/ecs
     environment:
-      - ECS_MODULE=${ECS_MODULE}
+      - ECS_MODULE=${ECS_MODULE:-default_module}

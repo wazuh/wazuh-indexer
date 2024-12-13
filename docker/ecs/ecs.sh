@@ -16,65 +16,59 @@ set -e
 function navigate_to_project_root() {
     local repo_root_marker
     local script_path
-    local script_abs_path
-
     repo_root_marker=".github"
-    script_path=$(dirname "$0")
-    script_abs_path=$(cd "$script_path" && pwd)
+    script_path=$(dirname "$(realpath "$0")")
 
-    while [[ "$script_abs_path" != "/" ]] && [[ ! -f "$script_abs_path/$repo_root_marker" ]]; do
-        script_abs_path=$(dirname "$script_abs_path")
+    while [[ "$script_path" != "/" ]] && [[ ! -d "$script_path/$repo_root_marker" ]]; do
+        script_path=$(dirname "$script_path")
     done
 
-    if [[ "$script_abs_path" == "/" ]]; then
-        echo "Unable to find the repository root."
+    if [[ "$script_path" == "/" ]]; then
+        echo "Error: Unable to find the repository root."
         exit 1
     fi
 
-    cd "$script_abs_path"
+    cd "$script_path"
 }
 
 # ====
 # Displays usage information
 # ====
 function usage() {
-    echo "Usage: $0 {up|down|stop} <ECS_MODULE> [REPO_PATH]"
+    echo "Usage: $0 {run|down|stop} <ECS_MODULE> [REPO_PATH]"
     exit 1
 }
 
 function main() {
+    local compose_command
     local compose_filename
-    local compose_cmd
     local module
     local repo_path
 
-    if [[ "$#" -lt 2 || "$#" -gt 3 ]]; then
-        usage
-    fi
-
     navigate_to_project_root
 
-    module="$2"
-    if [[ -n "$3" ]]; then
-        repo_path="$3"
-    else
-        repo_path="$(pwd)"
-    fi
-
     compose_filename="docker/ecs/ecs.yml"
-    compose_cmd="docker-compose -f $compose_filename"
+    compose_command="docker compose -f $compose_filename"
+
 
     case $1 in
-        up)
-            # Main folder created here to grant access to both containers
-            mkdir -p artifacts
-            $compose_cmd ECS_MODULE="$module" REPO_PATH="$repo_path" up -d
+        run)
+            if [[ "$#" -lt 2 || "$#" -gt 3 ]]; then
+                usage
+            fi
+            module="$2"
+            repo_path="${3:-$(pwd)}"
+
+            # Start the container with the required env variables
+            ECS_MODULE="$module" REPO_PATH="$repo_path" $compose_command up
+            # The containers are stopped after each execution
+            $compose_command stop
             ;;
         down)
-            $compose_cmd down
+            $compose_command down
             ;;
         stop)
-            $compose_cmd stop
+            $compose_command stop
             ;;
         *)
             usage

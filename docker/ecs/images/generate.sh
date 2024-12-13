@@ -9,16 +9,15 @@ set -euo pipefail
 
 # Default values
 ECS_VERSION="${ECS_VERSION:-v8.11.0}"
-INDEXER_PATH="${INDEXER_PATH:-/source}"
+ECS_SOURCE=/source
 
 # Function to display usage information
 show_usage() {
   echo "Usage: $0"
   echo "Environment Variables:"
   echo "  * ECS_MODULE:   Module to generate mappings for"
-  echo "  * INDEXER_PATH: (Optional) Path to the Wazuh indexer repository (default: /source)"
   echo "  * ECS_VERSION:  (Optional) ECS version to generate mappings for (default: v8.11.0)"
-  echo "Example: docker run -e ECS_MODULE=vulnerability-detector -e INDEXER_PATH=/source -e ECS_VERSION=v8.11.0 ecs-generator"
+  echo "Example: docker run -e ECS_MODULE=alerts -e ECS_VERSION=v8.11.0 ecs-generator"
 }
 
 # Ensure ECS_MODULE is provided
@@ -94,4 +93,4 @@ generate_mappings() {
 }
 
 # Generate mappings
-generate_mappings "$ECS_MODULE" "$INDEXER_PATH" "$ECS_VERSION"
+generate_mappings "$ECS_MODULE" "$ECS_SOURCE" "$ECS_VERSION"

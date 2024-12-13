@@ -11,10 +11,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v3
 
       - name: Set up Docker Compose
         run: sudo apt-get install docker-compose
@@ -47,13 +47,13 @@ jobs:
 
       - name: Upload artifact
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: ecs-template
           path: ecs/${{ env.ecs_module }}/mappings/v8.11.0/generated/elasticsearch/legacy/template.json
 
       - name: Checkout target repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: wazuh/wazuh-indexer-plugins
           token: ${{ secrets.GITHUB_TOKEN }}

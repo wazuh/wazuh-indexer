@@ -1,0 +1,108 @@
+name: ECS Generator
+
+on:
+  push:
+    paths:
+      - 'ecs/**'
+
+jobs:
+  run-ecs-generator:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Set up Docker Compose
+        run: sudo apt-get install docker-compose
+
+      - name: Extract ECS Module and Run ECS Generator
+        id: run-ecs-generator
+        run: |
+          # Extract the ECS module name from the modified files
+          modified_files=$(git diff --name-only HEAD^ HEAD)
+          ecs_module=""
+          for file in $modified_files; do
+            if [[ $file == ecs/* ]]; then
+              ecs_module=$(echo $file | cut -d'/' -f2)
+              break
+            fi
+          done
+
+          if [[ -n "$ecs_module" ]]; then
+            # Run the ECS generator script
+            docker/ecs/mapping-generator.sh run "$ecs_module"
+            echo "ecs_module=$ecs_module" >> $GITHUB_ENV
+          else
+            echo "No modifications detected in ecs/ directory."
+            exit 0
+          fi
+
+      - name: Tear down ECS Generator
+        if: always()
+        run: docker/ecs/mapping-generator.sh down
+
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ecs-template
+          path: ecs/${{ env.ecs_module }}/mappings/v8.11.0/generated/elasticsearch/legacy/template.json
+
+      - name: Checkout target repository
+        uses: actions/checkout@v2
+        with:
+          repository: wazuh/wazuh-indexer-plugins
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: wazuh-indexer-plugins
+
+      - name: Copy generated file to target repository
+        run: |
+          # Map ECS module to target JSON filename
+          declare -A module_to_file=(
+            [agent]="index-template-agent.json"
+            [alerts]="index-template-alerts.json"
+            [commands]="index-template-commands.json"
+            [hardware]="index-template-hardware.json"
+            [hotfixes]="index-template-hotfixes.json"
+            [fim]="index-template-fim.json"
+            [networks]="index-template-networks.json"
+            [packages]="index-template-packages.json"
+            [ports]="index-template-ports.json"
+            [processes]="index-template-processes.json"
+            [scheduled-commands]="index-template-scheduled-commands.json"
+            [system]="index-template-system.json"
+            [vulnerabilities]="index-template-vulnerabilities.json"
+          )
+
+          target_file=${module_to_file[${{ env.ecs_module }}]}
+          if [[ -z "$target_file" ]]; then
+            echo "No corresponding file for module ${{ env.ecs_module }}"
+            exit 1
+          fi
+
+          mkdir -p wazuh-indexer-plugins/plugins/setup/src/main/resources/
+          cp ecs/${{ env.ecs_module }}/mappings/v8.11.0/generated/elasticsearch/legacy/template.json wazuh-indexer-plugins/plugins/setup/src/main/resources/$target_file
+
+      - name: Commit and push changes
+        run: |
+          cd wazuh-indexer-plugins
+          git config --global user.email "github-actions@github.com"
+          git config --global user.name "GitHub Actions"
+          git checkout -b update-ecs-template-${{ env.ecs_module }}
+          git add .
+          git commit -m "Update ECS template for module ${{ env.ecs_module }}"
+          git push origin update-ecs-template-${{ env.ecs_module }}
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Update ECS template for module ${{ env.ecs_module }}"
+          branch: update-ecs-template-${{ env.ecs_module }}
+          title: "Update ECS template for module ${{ env.ecs_module }}"
+          body: "This PR updates the ECS template for the ${{ env.ecs_module }} module."
+          base: master

@@ -137,9 +137,8 @@ def main():
     data = generate_random_data(number, include_all_fields=args.index)
 
     with open(GENERATED_DATA_FILE, 'a') as outfile:
-        for event_data in data:
-            json.dump(event_data, outfile)
-            outfile.write('\n')
+        json.dump(data, outfile)
+        outfile.write('\n')
 
     logging.info('Data generation completed.')
 

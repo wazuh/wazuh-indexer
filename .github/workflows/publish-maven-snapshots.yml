@@ -11,7 +11,7 @@ on:
 jobs:
   build-and-publish-snapshots:
     if: github.repository == 'opensearch-project/OpenSearch'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     permissions:
       id-token: write

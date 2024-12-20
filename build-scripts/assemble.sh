@@ -363,7 +363,7 @@ function assemble_deb() {
     cp "distribution/packages/src/deb/Makefile" "${TMP_DIR}"
     cp "distribution/packages/src/deb/debmake_install.sh" "${TMP_DIR}"
     cp -r "distribution/packages/src/common/env" "${TMP_DIR}"
-    cp -r "distribution/packages/src/common/scripts" "${TMP_DIR}"
+    cp "distribution/packages/src/common/scripts/*" "${TMP_DIR}"/debian
     chmod a+x "${TMP_DIR}/debmake_install.sh"
     # Copy performance analyzer service file
     enable_performance_analyzer
@@ -373,8 +373,8 @@ function assemble_deb() {
     PATH_CONF="./etc/wazuh-indexer"
     PATH_BIN="${src_path}/bin"
     PATH_PLUGINS="${src_path}/plugins"
-    mv scripts debian
-    cp env/wazuh-indexer debian/wazuh-control
+    # mv scripts debian
+    # cp env/wazuh-indexer debian/wazuh-control
     # Extract min-package. Creates usr/, etc/ and var/ in the current directory
     echo "Extract ${ARTIFACT_BUILD_NAME} archive"
     ar xf "${ARTIFACT_BUILD_NAME}" data.tar.gz

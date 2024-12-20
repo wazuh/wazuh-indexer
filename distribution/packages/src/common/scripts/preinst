@@ -22,6 +22,8 @@ if [ -f "${path.env}" ]; then
     . "${path.env}"
 fi
 
+echo "RUNNING PRE INSTALL"
+
 export OPENSEARCH_PATH_CONF=${OPENSEARCH_PATH_CONF:-${path.conf}}
 
 case "$1" in

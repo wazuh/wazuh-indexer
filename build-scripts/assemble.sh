@@ -368,6 +368,8 @@ function assemble_deb() {
     enable_performance_analyzer
 
     cd "${TMP_DIR}"
+    ls -ll
+    mv scripts debian
     local src_path="./usr/share/wazuh-indexer"
     PATH_CONF="./etc/wazuh-indexer"
     PATH_BIN="${src_path}/bin"

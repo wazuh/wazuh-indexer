@@ -7,7 +7,7 @@ export OPENSEARCH_PATH_CONF=${OPENSEARCH_PATH_CONF:-${path.conf}}
 
 if [ ! -f "${OPENSEARCH_PATH_CONF}"/opensearch.keystore ]; then
     /usr/share/wazuh-indexer/bin/opensearch-keystore create
-    chown root:wazuh-indexer "${OPENSEARCH_PATH_CONF}"/opensearch.keystore
+    chown wazuh-indexer:wazuh-indexer "${OPENSEARCH_PATH_CONF}"/opensearch.keystore
     chmod 660 "${OPENSEARCH_PATH_CONF}"/opensearch.keystore
     md5sum "${OPENSEARCH_PATH_CONF}"/opensearch.keystore > "${OPENSEARCH_PATH_CONF}"/.opensearch.keystore.initial_md5sum
 else

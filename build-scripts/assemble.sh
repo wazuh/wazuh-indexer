@@ -362,14 +362,12 @@ function assemble_deb() {
     # Copy spec
     cp "distribution/packages/src/deb/Makefile" "${TMP_DIR}"
     cp "distribution/packages/src/deb/debmake_install.sh" "${TMP_DIR}"
-    cp -r "distribution/packages/src/common/scripts" "${TMP_DIR}"
+    cp -r "distribution/packages/src/common/scripts/*" "${TMP_DIR}/debian"
     chmod a+x "${TMP_DIR}/debmake_install.sh"
     # Copy performance analyzer service file
     enable_performance_analyzer
 
     cd "${TMP_DIR}"
-    ls -ll
-    mv scripts debian
     local src_path="./usr/share/wazuh-indexer"
     PATH_CONF="./etc/wazuh-indexer"
     PATH_BIN="${src_path}/bin"
@@ -381,11 +379,11 @@ function assemble_deb() {
     tar zvxf data.tar.gz
     # Extracts debian control files (preinst, postrm, ...)
     # We need to use some custom files, otherwise debuild fails
-    mv "./debian/control" "./debian/wazuh-control"
-    ar xf "${ARTIFACT_BUILD_NAME}" control.tar.gz
-    tar zvxf control.tar.gz -C "debian"
-    mv "./debian/wazuh-control" "./debian/control"
-    rm "./debian/conffiles"
+    # mv "./debian/control" "./debian/wazuh-control"
+    # ar xf "${ARTIFACT_BUILD_NAME}" control.tar.gz
+    # tar zvxf control.tar.gz -C "debian"
+    # mv "./debian/wazuh-control" "./debian/control"
+    # rm "./debian/conffiles"
 
     local version
     version=$(cat ./usr/share/wazuh-indexer/VERSION)

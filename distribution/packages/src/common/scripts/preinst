@@ -11,7 +11,7 @@
 #       $1=2       : indicates an upgrade
 
 set -e -o pipefail
-
+echo "SCRIPTS/PREINST"
 err_exit() {
     echo "$@" >&2
     exit 1

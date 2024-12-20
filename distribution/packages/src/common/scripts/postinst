@@ -12,7 +12,7 @@
 if [ -f "${path.env}" ]; then
     . "${path.env}"
 fi
-
+echo "SCRIPTS/POSTINST"
 export OPENSEARCH_PATH_CONF=${OPENSEARCH_PATH_CONF:-${path.conf}}
 
 IS_UPGRADE=false

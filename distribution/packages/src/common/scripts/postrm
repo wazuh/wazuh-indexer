@@ -13,7 +13,7 @@
 if [ -f "${path.env}" ]; then
     . "${path.env}"
 fi
-
+echo "SCRIPTS/POSTRM"
 export OPENSEARCH_PATH_CONF=${OPENSEARCH_PATH_CONF:-${path.conf}}
 
 REMOVE_DIRS=false

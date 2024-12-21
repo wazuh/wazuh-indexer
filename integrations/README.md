@@ -28,6 +28,6 @@ We host development environments to support the following integrations:
 **Compatibility matrix**
 
 |                | Wazuh | Logstash | OpenSearch | Elastic | Splunk |
-| -------------- | ----- | -------- | ---------- | ------- | ------ |
+| -------------- | ----- | -------- | ---------- |---------|--------|
 | v1.0           | 4.8.1 | 8.9.0    | 2.14.0     | 8.14.3  | 9.1.4  |
-| Latest version | 4.9.2 | 8.9.0    | 2.18.0     | 8.15.3  | 9.3.1  |
+| Latest version | 4.9.2 | 8.9.0    | 2.18.0     | 8.17.0  | 9.3.2  |

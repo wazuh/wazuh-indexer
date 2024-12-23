@@ -57,6 +57,7 @@ if command -v systemctl > /dev/null; then
     systemctl restart systemd-sysctl.service || true
 fi
 
+echo "Upgade: x$IS_UPGRADE"
 if [ "x$IS_UPGRADE" != "xtrue" ]; then
     echo -n "Daemon reloading..."
     if command -v systemctl >/dev/null; then
@@ -122,5 +123,4 @@ if [ "$PACKAGE" = "deb" ]; then
 fi
 
 echo "POST INSTALL DONE"
-echo "Footer: ${scripts.footer}"
 ${scripts.footer}

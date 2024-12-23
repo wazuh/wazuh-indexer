@@ -72,6 +72,13 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 RUN addgroup --gid 1000 wazuh-indexer && \
 adduser --ingroup wazuh-indexer --uid 1000 wazuh-indexer
 
+# Create repositories path
+
+RUN mkdir -p /repositories/wazuh-indexer-plugins && \
+  mkdir -p /repositories/wazuh-indexer-reporting && \
+  chown wazuh-indexer:wazuh-indexer /repositories/wazuh-indexer-plugins && \
+  chown wazuh-indexer:wazuh-indexer /repositories/wazuh-indexer-reporting
+
 # Copy your build scripts into the container as root
 COPY docker/builder/entrypoint.sh /
 

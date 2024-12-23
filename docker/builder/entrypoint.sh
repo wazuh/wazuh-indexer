@@ -18,8 +18,8 @@ clone_repositories() {
     echo "Cloning Repositories"
     echo "----------------------------------------"
     #git clone --branch "$INDEXER_BRANCH" https://github.com/wazuh/wazuh-indexer --depth 1 ~/wazuh-indexer
-    git clone --branch "$INDEXER_PLUGINS_BRANCH" https://github.com/wazuh/wazuh-indexer-plugins --depth 1 ~/wazuh-indexer-plugins
-    git clone --branch "$INDEXER_REPORTING_BRANCH" https://github.com/wazuh/wazuh-indexer-reporting --depth 1 ~/wazuh-indexer-reporting
+    git clone --branch "$INDEXER_PLUGINS_BRANCH" https://github.com/wazuh/wazuh-indexer-plugins --depth 1 /repositories/wazuh-indexer-plugins
+    git clone --branch "$INDEXER_REPORTING_BRANCH" https://github.com/wazuh/wazuh-indexer-reporting --depth 1 /repositories/wazuh-indexer-reporting
 }
 
 # Function to build wazuh-indexer-plugins
@@ -29,10 +29,10 @@ build_plugins() {
     echo "----------------------------------------"
     local version="$1"
     local revision="$2"
-    cd ~/wazuh-indexer-plugins/plugins/setup
+    cd /repositories/wazuh-indexer-plugins/plugins/setup
     echo "Building setup plugin..."
     ./gradlew build -Dversion="$version" -Drevision="$revision" --no-daemon
-    cd ~/wazuh-indexer-plugins/plugins/command-manager
+    cd /repositories/wazuh-indexer-plugins/plugins/command-manager
     echo "Building command-manager plugin..."
     ./gradlew build -Dversion="$version" -Drevision="$revision" --no-daemon
 }
@@ -44,7 +44,7 @@ build_reporting() {
     echo "----------------------------------------"
     local version="$1"
     local revision="$2"
-    cd ~/wazuh-indexer-reporting
+    cd /repositories/wazuh-indexer-reporting
     echo "Building reporting..."
     ./gradlew build -Dversion="$version" -Drevision="$revision" --no-daemon
 }
@@ -56,13 +56,13 @@ copy_builds() {
     echo "----------------------------------------"
     local version="$1"
     local revision="$2"
-    mkdir -p ~/wazuh-indexer/artifacts/plugins
+    mkdir -p ~/artifacts/plugins
     echo "Copying setup plugin..."
-    cp ~/wazuh-indexer-plugins/plugins/setup/build/distributions/wazuh-indexer-setup-"$version"."$revision".zip ~/wazuh-indexer/artifacts/plugins
+    cp /repositories/wazuh-indexer-plugins/plugins/setup/build/distributions/wazuh-indexer-setup-"$version"."$revision".zip ~/artifacts/plugins
     echo "Copying command-manager plugin..."
-    cp ~/wazuh-indexer-plugins/plugins/command-manager/build/distributions/wazuh-indexer-command-manager-"$version"."$revision".zip ~/wazuh-indexer/artifacts/plugins
+    cp /repositories/wazuh-indexer-plugins/plugins/command-manager/build/distributions/wazuh-indexer-command-manager-"$version"."$revision".zip ~/artifacts/plugins
     echo "Copying reporting..."
-    cp ~/wazuh-indexer-reporting/build/distributions/wazuh-indexer-reports-scheduler-"$version"."$revision".zip ~/wazuh-indexer/artifacts/plugins
+    cp /repositories/wazuh-indexer-reporting/build/distributions/wazuh-indexer-reports-scheduler-"$version"."$revision".zip ~/artifacts/plugins
 }
 
 # Function for packaging process
@@ -80,10 +80,10 @@ package_artifacts() {
     local package_min_name
     local package_name
 
-    cd ~/wazuh-indexer
-
-    plugins_hash=$(cd ~/wazuh-indexer-plugins && git rev-parse --short HEAD)
-    reporting_hash=$(cd ~/wazuh-indexer-reporting && git rev-parse --short HEAD)
+    plugins_hash=$(cd /repositories/wazuh-indexer-plugins && git rev-parse --short HEAD)
+    reporting_hash=$(cd /repositories/wazuh-indexer-reporting && git rev-parse --short HEAD)
+    
+    cd ~
 
     echo "Creating package minimum name..."
     package_min_name=$(bash build-scripts/baptizer.sh -m \
@@ -110,7 +110,7 @@ package_artifacts() {
 
     mkdir -p ~/artifacts/
     echo "Moving package to artifacts..."
-    mv ~/wazuh-indexer/artifacts/dist/"$package_name" ~/artifacts/
+    mv ~/artifacts/dist/"$package_name" ~/artifacts/
 }
 
 # Function for cleanup
@@ -118,9 +118,8 @@ cleanup() {
     echo "----------------------------------------"
     echo "Cleaning Up"
     echo "----------------------------------------"
-    rm -rf ~/wazuh-indexer
-    rm -rf ~/wazuh-indexer-plugins
-    rm -rf ~/wazuh-indexer-reporting
+    #rm -rf /repositories/wazuh-indexer-plugins
+    #rm -rf /repositories/wazuh-indexer-reporting
     echo "Cleanup completed."
 }
 

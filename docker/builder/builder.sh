@@ -87,7 +87,7 @@ function usage() {
   echo -e "-R REVISION\t[Optional] Package revision, default is '0'."
   echo -e "-s STAGE\t[Optional] Staging build, default is 'false'."
   echo -e "-d DISTRIBUTION\t[Optional] Distribution, default is 'rpm'."
-  echo -e "-d ARCHITECTURE\t[Optional] Architecture, default is 'x64'."
+  echo -e "-a ARCHITECTURE\t[Optional] Architecture, default is 'x64'."
   echo -e "-D\tDestroy the docker environment"
   echo -e "-h\tPrint help"
 }

@@ -15,13 +15,15 @@ fi
 
 export OPENSEARCH_PATH_CONF=${OPENSEARCH_PATH_CONF:-${path.conf}}
 
+echo "RUNNING POST INSTALL"
+
 IS_UPGRADE=false
 
 case "$1" in
 
     # Debian ####################################################
     configure)
-
+        echo "Configuring wazuh-indexer"
         # If $1=configure and $2 is set, this is an upgrade
         if [ -n $2 ]; then
             IS_UPGRADE=true
@@ -55,7 +57,9 @@ if command -v systemctl > /dev/null; then
     systemctl restart systemd-sysctl.service || true
 fi
 
+echo "Upgade: x$IS_UPGRADE"
 if [ "x$IS_UPGRADE" != "xtrue" ]; then
+    echo -n "Daemon reloading..."
     if command -v systemctl >/dev/null; then
         echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using systemd"
         echo " sudo systemctl daemon-reload"
@@ -102,9 +106,10 @@ fi
 
 # the equivalent code for rpm is in posttrans
 if [ "$PACKAGE" = "deb" ]; then
+    echo "Setting up wazuh-indexer keystore"
     if [ ! -f "${OPENSEARCH_PATH_CONF}"/opensearch.keystore ]; then
         /usr/share/wazuh-indexer/bin/opensearch-keystore create
-        chown root:wazuh-indexer "${OPENSEARCH_PATH_CONF}"/opensearch.keystore
+        chown wazuh-indexer:wazuh-indexer "${OPENSEARCH_PATH_CONF}"/opensearch.keystore
         chmod 660 "${OPENSEARCH_PATH_CONF}"/opensearch.keystore
         md5sum "${OPENSEARCH_PATH_CONF}"/opensearch.keystore > "${OPENSEARCH_PATH_CONF}"/.opensearch.keystore.initial_md5sum
     else
@@ -117,4 +122,5 @@ if [ "$PACKAGE" = "deb" ]; then
     fi
 fi
 
+echo "POST INSTALL DONE"
 ${scripts.footer}

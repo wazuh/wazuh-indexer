@@ -113,7 +113,7 @@ function main() {
         exit 0
     fi
 
-    $compose_cmd up --detach --build
+    $compose_cmd up
 }
 
 main "$@"

@@ -79,7 +79,17 @@ function parse_args() {
 # Displays usage
 # ====
 function usage() {
-  echo "Usage: ./builder.sh [-p INDEXER_PLUGINS_BRANCH] [-r INDEXER_REPORTING_BRANCH] [-R REVISION] [-s IS_STAGE] [-d DISTRIBUTION] [-a ARCHITECTURE] [-D (destroy the docker env)]"
+  echo "Usage: $0 [args]"
+  echo ""
+  echo "Arguments:"
+  echo -e "-p INDEXER_PLUGINS_BRANCH\t[Optional] wazuh-indexer-plugins repo branch, default is 'master'."
+  echo -e "-r INDEXER_REPORTING_BRANCH\t[Optional] wazuh-indexer-reporting repo branch, default is 'master'."
+  echo -e "-R REVISION\t[Optional] Package revision, default is '0'."
+  echo -e "-s STAGE\t[Optional] Staging build, default is 'false'."
+  echo -e "-d DISTRIBUTION\t[Optional] Distribution, default is 'rpm'."
+  echo -e "-d ARCHITECTURE\t[Optional] Architecture, default is 'x64'."
+  echo -e "-D\tDestroy the docker environment"
+  echo -e "-h\tPrint help"
 }
 
 # ====

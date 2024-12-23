@@ -1,11 +1,18 @@
 services:
-
   wazuh-indexer-builder:
     image: wazuh-indexer-builder:${VERSION}
     container_name: wazuh-indexer-builder_${VERSION}
     build:
       context: ./../..
       dockerfile: ${REPO_PATH}/docker/builder/Dockerfile
+    environment:
+      INDEXER_BRANCH=${INDEXER_BRANCH}
+      INDEXER_PLUGINS_BRANCH=${INDEXER_PLUGINS_BRANCH}
+      INDEXER_REPORTING_BRANCH=${INDEXER_REPORTING_BRANCH}
+      REVISION=${REVISION}
+      IS_STAGE=${IS_STAGE}
+      DISTRIBUTION=${DISTRIBUTION}
+      ARCHITECTURE=${ARCHITECTURE}
     volumes:
      - ${REPO_PATH}:/home/wazuh-indexer
      - wazuh-indexer-plugins:/home/wazuh-indexer/wazuh-indexer-plugins

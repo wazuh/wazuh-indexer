@@ -6,17 +6,17 @@ services:
       context: ./../..
       dockerfile: ${REPO_PATH}/docker/builder/Dockerfile
     environment:
-      INDEXER_BRANCH=${INDEXER_BRANCH}
-      INDEXER_PLUGINS_BRANCH=${INDEXER_PLUGINS_BRANCH}
-      INDEXER_REPORTING_BRANCH=${INDEXER_REPORTING_BRANCH}
-      REVISION=${REVISION}
-      IS_STAGE=${IS_STAGE}
-      DISTRIBUTION=${DISTRIBUTION}
-      ARCHITECTURE=${ARCHITECTURE}
+      - INDEXER_BRANCH=${INDEXER_BRANCH:-master}
+      - INDEXER_PLUGINS_BRANCH=${INDEXER_PLUGINS_BRANCH:-master}
+      - INDEXER_REPORTING_BRANCH=${INDEXER_REPORTING_BRANCH:-master}
+      - REVISION=${REVISION:-0}
+      - IS_STAGE=${IS_STAGE:-false}
+      - DISTRIBUTION=${DISTRIBUTION:-rpm}
+      - ARCHITECTURE=${ARCHITECTURE:-x64}
     volumes:
-     - ${REPO_PATH}:/home/wazuh-indexer
-     - wazuh-indexer-plugins:/home/wazuh-indexer/wazuh-indexer-plugins
-     - wazuh-indexer-reporting:/home/wazuh-indexer/wazuh-indexer-reporting
+      - ${REPO_PATH}:/home/wazuh-indexer
+      - wazuh-indexer-plugins:/home/wazuh-indexer/wazuh-indexer-plugins
+      - wazuh-indexer-reporting:/home/wazuh-indexer/wazuh-indexer-reporting
     entrypoint: ["/bin/bash", "/entrypoint.sh"]
     user: "1000:1000"
     working_dir: /home/wazuh-indexer

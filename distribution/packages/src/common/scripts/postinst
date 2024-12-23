@@ -23,7 +23,7 @@ case "$1" in
 
     # Debian ####################################################
     configure)
-
+        echo "Configuring wazuh-indexer"
         # If $1=configure and $2 is set, this is an upgrade
         if [ -n $2 ]; then
             IS_UPGRADE=true
@@ -58,6 +58,7 @@ if command -v systemctl > /dev/null; then
 fi
 
 if [ "x$IS_UPGRADE" != "xtrue" ]; then
+    echo -n "Daemon reloading..."
     if command -v systemctl >/dev/null; then
         echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using systemd"
         echo " sudo systemctl daemon-reload"
@@ -104,6 +105,7 @@ fi
 
 # the equivalent code for rpm is in posttrans
 if [ "$PACKAGE" = "deb" ]; then
+    echo "Setting up wazuh-indexer keystore"
     if [ ! -f "${OPENSEARCH_PATH_CONF}"/opensearch.keystore ]; then
         /usr/share/wazuh-indexer/bin/opensearch-keystore create
         chown wazuh-indexer:wazuh-indexer "${OPENSEARCH_PATH_CONF}"/opensearch.keystore
@@ -119,4 +121,6 @@ if [ "$PACKAGE" = "deb" ]; then
     fi
 fi
 
+echo "POST INSTALL DONE"
+echo "Footer: ${scripts.footer}"
 ${scripts.footer}

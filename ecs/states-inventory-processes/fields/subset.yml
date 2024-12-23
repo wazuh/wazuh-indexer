@@ -14,8 +14,6 @@ fields:
       version: {}
       host:
         fields: "*"
-  host:
-    fields: "*"
   process:
     fields:
       pid: {}
@@ -47,3 +45,8 @@ fields:
       thread:
         fields:
           id: ""
+      tty:
+        fields:
+          char_device:
+            fields:
+              major: ""

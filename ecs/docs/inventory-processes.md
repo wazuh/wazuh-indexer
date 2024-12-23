@@ -8,25 +8,24 @@ Based on ECS:
 
 - [Process Fields](https://www.elastic.co/guide/en/ecs/current/ecs-process.html).
 
-|     | Field name               | Data type | Description                                                                                          | Examples                                           | Comments                                                   |
-| --- | ------------------------ | --------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------- | ---------------------------------------------------------- |
-|     | `@timestamp`             | date      | Date/time when the event originated.                                                                 | `2016-05-23T08:05:34.853Z`                         |                                                            |
-|     | `agent.id`               | keyword   | Unique identifier of this agent.                                                                      | `8a4f500d`                                         |                                                            |
-|     | `process.args`           | keyword   | Array of process arguments.                                                                          | `["/usr/bin/ssh", "-l", "user", "10.0.0.16"]`      |                                                            |
-|     | `process.command_line`   | wildcard  | process.command_line.                                                                                | `/usr/bin/ssh -l user 10.0.0.16`                   |                                                            |
-|     | `process.name`           | keyword   | Process name.                                                                                        | `ssh`                                              |                                                            |
-|     | `process.parent.pid`     | long      | Parent process ID.                                                                                   | `4242`                                             |                                                            |
-|     | `process.pid`            | long      | Process ID.                                                                                          | `4242`                                             |                                                            |
-|     | `process.real_group.id`  | keyword   | Unique identifier for the group on the system/platform.                                              |                                                    |                                                            |
-|     | `process.real_user.id`   | keyword   | Unique identifier of the user.                                                                       | `S-1-5-21-202424912787-2692429404-2351956786-1000` |                                                            |
-|     | `process.saved_group.id` | keyword   | Unique identifier for the group on the system/platform.                                              |                                                    |                                                            |
-|     | `process.saved_user.id`  | keyword   | Unique identifier of the user.                                                                       | `S-1-5-21-202424912787-2692429404-2351956786-1000` |                                                            |
-|     | `process.start`          | date      | The time the process started.                                                                        | `2016-05-23T08:05:34.853Z`                         |                                                            |
-|     | `process.user.id`        | keyword   | Unique identifier of the user.                                                                       | `S-1-5-21-202424912787-2692429404-2351956786-1000` |                                                            |
-| !   | `process.thread.id`      | long      | Thread ID.                                                                                           |                                                    | `thread.group` is **not part of ECS;** but `thread.id` is. |
-| !   | `process.tty`            | object    | Information about the controlling TTY device. If set, the process belongs to an interactive session. |                                                    | Needs clarification                                        |
-| \*  | `process.group.id`       | keyword   | Unique identifier for the effective group on the system/platform.                                    |                                                    |                                                            |
-| \*  | `agent.groups`           | keyword   | List of groups the agent belong to.                                                                  |                                                    |                                                            |
+|    | Field name                      | Data type | Description                                                                                          | Examples                                           | Comments                                                   |
+|----|---------------------------------| --------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------- | ---------------------------------------------------------- |
+|    | `agent.*`                       | object    | All the agent fields.                                                                                | `                                                  |
+|    | `@timestamp`                    | date      | Date/time when the event originated.                                                                 | `2016-05-23T08:05:34.853Z`                         |                                                            |
+|    | `process.args`                  | keyword   | Array of process arguments.                                                                          | `["/usr/bin/ssh", "-l", "user", "10.0.0.16"]`      |                                                            |
+|    | `process.command_line`          | wildcard  | process.command_line.                                                                                | `/usr/bin/ssh -l user 10.0.0.16`                   |                                                            |
+|    | `process.name`                  | keyword   | Process name.                                                                                        | `ssh`                                              |                                                            |
+|    | `process.parent.pid`            | long      | Parent process ID.                                                                                   | `4242`                                             |                                                            |
+|    | `process.pid`                   | long      | Process ID.                                                                                          | `4242`                                             |                                                            |
+|    | `process.real_group.id`         | keyword   | Unique identifier for the group on the system/platform.                                              |                                                    |                                                            |
+|    | `process.real_user.id`          | keyword   | Unique identifier of the user.                                                                       | `S-1-5-21-202424912787-2692429404-2351956786-1000` |                                                            |
+|    | `process.saved_group.id`        | keyword   | Unique identifier for the group on the system/platform.                                              |                                                    |                                                            |
+|    | `process.saved_user.id`         | keyword   | Unique identifier of the user.                                                                       | `S-1-5-21-202424912787-2692429404-2351956786-1000` |                                                            |
+|    | `process.start`                 | date      | The time the process started.                                                                        | `2016-05-23T08:05:34.853Z`                         |                                                            |
+|    | `process.user.id`               | keyword   | Unique identifier of the user.                                                                       | `S-1-5-21-202424912787-2692429404-2351956786-1000` |                                                            |
+| !  | `process.thread.id`             | long      | Thread ID.                                                                                           |                                                    | `thread.group` is **not part of ECS;** but `thread.id` is. |
+|    | `process.tty.char_device.major` | object    | Information about the controlling TTY device. If set, the process belongs to an interactive session. |                                                    | Needs clarification                                        |
+| \* | `process.group.id`              | keyword   | Unique identifier for the effective group on the system/platform.                                    |                                                    |                                                            |
 
 \* Custom field
 
@@ -51,7 +50,6 @@ Based on ECS:
 | x   | session    | `process.session`         | **No ECS mapping** | Session ID                                                                                           |         | **Not part of ECS;** Needs clarification.                  |
 | x   | nlwp       | `process.nlwp`            | **No ECS mapping** | Number of light-weight processes                                                                     |         | **Not part of ECS;** Needs clarification.                  |
 | !   | tgid       | `process.thread.id`       | **No ECS mapping** | Thread ID ID                                                                                         |         | `thread.group` is **not part of ECS;** but `thread.id` is. |
-| !   | tty        | `process.tty`             | object             | Information about the controlling TTY device. If set, the process belongs to an interactive session. |         | Needs clarification                                        |
 | x   | processor  | `host.cpu.processor`      | **No ECS mapping** | Processor number                                                                                     |         | No ECS field refers to the core number of the CPU.         |
 
 </p>
@@ -66,10 +64,16 @@ fields:
   base:
     fields:
       "@timestamp": {}
+      tags: []
   agent:
     fields:
-      id: {}
       groups: {}
+      id: {}
+      name: {}
+      type: {}
+      version: {}
+      host:
+        fields: "*"
   process:
     fields:
       pid: {}
@@ -101,7 +105,11 @@ fields:
       thread:
         fields:
           id: ""
-      tty: {}
+      tty:
+        fields:
+          char_device:
+            fields:
+              major: ""
 ```
 
 ### Index settings

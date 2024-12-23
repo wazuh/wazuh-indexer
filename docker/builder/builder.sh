@@ -51,7 +51,7 @@ function parse_args() {
             ARCHITECTURE=$OPTARG
             ;;
         D)
-            DESTROY="true"
+            DESTROY=$OPTARG
             ;;
         :)
             echo "Error: -${OPTARG} requires an argument"
@@ -72,6 +72,7 @@ function parse_args() {
     [ -z "$IS_STAGE" ] && IS_STAGE="false"
     [ -z "$DISTRIBUTION" ] && DISTRIBUTION="rpm"
     [ -z "$ARCHITECTURE" ] && ARCHITECTURE="x64"
+    [ -z "$DESTROY" ] && DESTROY=false
 }
 
 

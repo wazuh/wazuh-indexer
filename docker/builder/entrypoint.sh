@@ -9,7 +9,7 @@ INDEXER_PLUGINS_BRANCH=${INDEXER_PLUGINS_BRANCH:-master}
 INDEXER_REPORTING_BRANCH=${INDEXER_REPORTING_BRANCH:-master}
 REVISION=${REVISION:-0}
 IS_STAGE=${IS_STAGE:-false}
-DISTRIBUTION=${DISTRIBUTION:-tar}
+DISTRIBUTION=${DISTRIBUTION:-rpm}
 ARCHITECTURE=${ARCHITECTURE:-x64}
 
 # Function to clone repositories
@@ -17,7 +17,6 @@ clone_repositories() {
     echo "----------------------------------------"
     echo "Cloning Repositories"
     echo "----------------------------------------"
-    #git clone --branch "$INDEXER_BRANCH" https://github.com/wazuh/wazuh-indexer --depth 1 ~/wazuh-indexer
     git clone --branch "$INDEXER_PLUGINS_BRANCH" https://github.com/wazuh/wazuh-indexer-plugins --depth 1 /repositories/wazuh-indexer-plugins
     git clone --branch "$INDEXER_REPORTING_BRANCH" https://github.com/wazuh/wazuh-indexer-reporting --depth 1 /repositories/wazuh-indexer-reporting
 }
@@ -108,19 +107,6 @@ package_artifacts() {
     echo "Assembling package..."
     bash build-scripts/assemble.sh -a "$architecture" -d "$distribution" -r "$revision"
 
-    mkdir -p ~/artifacts/
-    echo "Moving package to artifacts..."
-    mv ~/artifacts/dist/"$package_name" ~/artifacts/
-}
-
-# Function for cleanup
-cleanup() {
-    echo "----------------------------------------"
-    echo "Cleaning Up"
-    echo "----------------------------------------"
-    #rm -rf /repositories/wazuh-indexer-plugins
-    #rm -rf /repositories/wazuh-indexer-reporting
-    echo "Cleanup completed."
 }
 
 # Main script execution
@@ -134,8 +120,8 @@ main() {
     build_reporting "$VERSION" "$REVISION"
     copy_builds "$VERSION" "$REVISION"
     package_artifacts "$ARCHITECTURE" "$DISTRIBUTION" "$REVISION" "$IS_STAGE"
+    
     # Clean the environment
-    cleanup
     echo "----------------------------------------"
     echo "Build and Packaging Process Completed Successfully!"
     echo "----------------------------------------"

@@ -4,7 +4,6 @@
 set -e
 
 # Set default values for environment variables
-INDEXER_BRANCH=${INDEXER_BRANCH:-master}
 INDEXER_PLUGINS_BRANCH=${INDEXER_PLUGINS_BRANCH:-master}
 INDEXER_REPORTING_BRANCH=${INDEXER_REPORTING_BRANCH:-master}
 REVISION=${REVISION:-0}
@@ -17,8 +16,23 @@ clone_repositories() {
     echo "----------------------------------------"
     echo "Cloning Repositories"
     echo "----------------------------------------"
-    git clone --branch "$INDEXER_PLUGINS_BRANCH" https://github.com/wazuh/wazuh-indexer-plugins --depth 1 /repositories/wazuh-indexer-plugins
-    git clone --branch "$INDEXER_REPORTING_BRANCH" https://github.com/wazuh/wazuh-indexer-reporting --depth 1 /repositories/wazuh-indexer-reporting
+
+    PLUGINS_REPO_DIR="/repositories/wazuh-indexer-plugins"
+    REPORTING_REPO_DIR="/repositories/wazuh-indexer-reporting"
+
+    if [ -d "$PLUGINS_REPO_DIR/.git" ]
+    then
+      git -C "$PLUGINS_REPO_DIR" checkout "$INDEXER_PLUGINS_BRANCH"
+    else
+      git clone --branch "$INDEXER_PLUGINS_BRANCH" https://github.com/wazuh/wazuh-indexer-plugins --depth 1 "$PLUGINS_REPO_DIR"
+    fi
+    
+    if [ -d "$REPORTING_REPO_DIR/.git" ]
+    then
+      git -C "$REPORTING_REPO_DIR" checkout "$INDEXER_REPORTING_BRANCH"
+    else
+      git clone --branch "$INDEXER_REPORTING_BRANCH" https://github.com/wazuh/wazuh-indexer-reporting --depth 1 "$REPORTING_REPO_DIR"
+    fi
 }
 
 # Function to build wazuh-indexer-plugins

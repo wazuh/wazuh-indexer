@@ -6,7 +6,6 @@ services:
       context: ./../..
       dockerfile: ${REPO_PATH}/docker/builder/Dockerfile
     environment:
-      - INDEXER_BRANCH=${INDEXER_BRANCH:-master}
       - INDEXER_PLUGINS_BRANCH=${INDEXER_PLUGINS_BRANCH:-master}
       - INDEXER_REPORTING_BRANCH=${INDEXER_REPORTING_BRANCH:-master}
       - REVISION=${REVISION:-0}

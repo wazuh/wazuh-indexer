@@ -13,7 +13,7 @@ This guide includes development worthy information about the process to generate
 
 ## Scripts reference
 
-There is a script for each of the steps, `build.sh` and `assemble.sh`. Along them, there are some utility scripts, such as `provision.sh` and `baptizer.sh`. This one takes generates the names for the packages depending of the combination of parameters given. Refer to the definition below for more details about these scripts.
+There is a script for each of the steps, `build.sh` and `assemble.sh`. Along them, there are some utility scripts, such as `provision.sh` and `baptizer.sh`. This one generates the names for the packages depending on the combination of parameters given. Refer to the definition below for more details about these scripts.
 
 ```yml
 scripts:
@@ -60,7 +60,7 @@ scripts:
 
 ### Build
 
-The build process is identical for every distribution and architecture. Although the process is driven by the `build.sh` script, the compilation and bundling is perfomed by Gradle tasks.
+The build process is identical for every distribution and architecture. Although the process is driven by the `build.sh` script, the compilation and bundling is performed by Gradle tasks.
 
 ```bash
 ./build.sh -h

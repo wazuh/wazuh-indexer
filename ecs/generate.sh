@@ -54,6 +54,10 @@ generate_mappings() {
   # Replace "wildcard" type (showing as "unknown" on dashboard) with "keyword"
   echo "Replacing \"wildcard\" type with \"keyword\""
   find "$OUT_DIR" -type f -exec sed -i 's/wildcard/keyword/g' {} \;
+  
+  # Replace "match_only_text" type (showing as "unknown" on dashboard) with "keyword"
+  echo "Replacing \"match_only_text\" type with \"keyword\""
+  find "$OUT_DIR" -type f -exec sed -i 's/match_only_text/keyword/g' {} \;
 
   # Replace "flattened" type (not supported by OpenSearch) with "flat_object"
   echo "Replacing \"flattened\" type with \"flat_object\""

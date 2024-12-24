@@ -11,40 +11,40 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
     && apt-get upgrade -y \
     && apt-get install -y \
-        wget \
-        curl \
-        unzip \
-        gnupg2 \
-        git \
-        build-essential \
-        debmake \
-        debhelper-compat \
-        libxrender1 \
-        libxtst6 \
-        libxi6 \
-        libatk1.0-0 \
-        libatk-bridge2.0-0 \
-        libcups2 \
-        libdrm2 \
-        libatspi2.0-dev \
-        libxcomposite-dev \
-        libxdamage1 \
-        libxfixes3 \
-        libxfixes-dev \
-        libxrandr2 \
-        libgbm-dev \
-        libxkbcommon-x11-0 \
-        libpangocairo-1.0-0 \
-        libcairo2 \
-        libcairo2-dev \
-        libnss3 \
-        libnspr4 \
-        libnspr4-dev \
-        aptly \
-        cpio \
-        rpm \
-        rpm2cpio \
-        maven \
+    wget \
+    curl \
+    unzip \
+    gnupg2 \
+    git \
+    build-essential \
+    debmake \
+    debhelper-compat \
+    libxrender1 \
+    libxtst6 \
+    libxi6 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libatspi2.0-dev \
+    libxcomposite-dev \
+    libxdamage1 \
+    libxfixes3 \
+    libxfixes-dev \
+    libxrandr2 \
+    libgbm-dev \
+    libxkbcommon-x11-0 \
+    libpangocairo-1.0-0 \
+    libcairo2 \
+    libcairo2-dev \
+    libnss3 \
+    libnspr4 \
+    libnspr4-dev \
+    aptly \
+    cpio \
+    rpm \
+    rpm2cpio \
+    maven \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install OpenJDK 21
@@ -70,14 +70,14 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Create a non-root user
 RUN addgroup --gid 1000 wazuh-indexer && \
-adduser --ingroup wazuh-indexer --uid 1000 wazuh-indexer
+    adduser --ingroup wazuh-indexer --uid 1000 wazuh-indexer
 
 # Create repositories path
 
 RUN mkdir -p /repositories/wazuh-indexer-plugins && \
-  mkdir -p /repositories/wazuh-indexer-reporting && \
-  chown wazuh-indexer:wazuh-indexer /repositories/wazuh-indexer-plugins && \
-  chown wazuh-indexer:wazuh-indexer /repositories/wazuh-indexer-reporting
+    mkdir -p /repositories/wazuh-indexer-reporting && \
+    chown wazuh-indexer:wazuh-indexer /repositories/wazuh-indexer-plugins && \
+    chown wazuh-indexer:wazuh-indexer /repositories/wazuh-indexer-reporting
 
 # Copy your build scripts into the container as root
 COPY docker/builder/entrypoint.sh /

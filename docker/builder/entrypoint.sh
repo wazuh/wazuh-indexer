@@ -20,18 +20,16 @@ clone_repositories() {
     PLUGINS_REPO_DIR="/repositories/wazuh-indexer-plugins"
     REPORTING_REPO_DIR="/repositories/wazuh-indexer-reporting"
 
-    if [ -d "$PLUGINS_REPO_DIR/.git" ]
-    then
-      git -C "$PLUGINS_REPO_DIR" checkout "$INDEXER_PLUGINS_BRANCH"
+    if [ -d "$PLUGINS_REPO_DIR/.git" ]; then
+        git -C "$PLUGINS_REPO_DIR" checkout "$INDEXER_PLUGINS_BRANCH"
     else
-      git clone --branch "$INDEXER_PLUGINS_BRANCH" https://github.com/wazuh/wazuh-indexer-plugins --depth 1 "$PLUGINS_REPO_DIR"
+        git clone --branch "$INDEXER_PLUGINS_BRANCH" https://github.com/wazuh/wazuh-indexer-plugins --depth 1 "$PLUGINS_REPO_DIR"
     fi
-    
-    if [ -d "$REPORTING_REPO_DIR/.git" ]
-    then
-      git -C "$REPORTING_REPO_DIR" checkout "$INDEXER_REPORTING_BRANCH"
+
+    if [ -d "$REPORTING_REPO_DIR/.git" ]; then
+        git -C "$REPORTING_REPO_DIR" checkout "$INDEXER_REPORTING_BRANCH"
     else
-      git clone --branch "$INDEXER_REPORTING_BRANCH" https://github.com/wazuh/wazuh-indexer-reporting --depth 1 "$REPORTING_REPO_DIR"
+        git clone --branch "$INDEXER_REPORTING_BRANCH" https://github.com/wazuh/wazuh-indexer-reporting --depth 1 "$REPORTING_REPO_DIR"
     fi
 }
 
@@ -95,7 +93,7 @@ package_artifacts() {
 
     plugins_hash=$(cd /repositories/wazuh-indexer-plugins && git rev-parse --short HEAD)
     reporting_hash=$(cd /repositories/wazuh-indexer-reporting && git rev-parse --short HEAD)
-    
+
     cd ~
 
     echo "Creating package minimum name..."
@@ -134,7 +132,7 @@ main() {
     build_reporting "$VERSION" "$REVISION"
     copy_builds "$VERSION" "$REVISION"
     package_artifacts "$ARCHITECTURE" "$DISTRIBUTION" "$REVISION" "$IS_STAGE"
-    
+
     # Clean the environment
     echo "----------------------------------------"
     echo "Build and Packaging Process Completed Successfully!"

@@ -31,48 +31,30 @@ Once the `wi-dev:x.y.z` container is up, attach a shell to it and run `./gradlew
 
 The `builder` image automates the build and assemble process for the Wazuh Indexer and its plugins, making it easy to create packages on any system.
 
-### Usage
-1. Build the image:
-    ```bash
-    cd docker/builder && docker build -t wazuh-indexer-builder .
-    ```
-2. Execute the package build process
-    ```bash
-    docker run --rm -v /path/to/local/artifacts:/home/indexer/artifacts wazuh-indexer-builder
-    ```
-    > Replace `/path/to/local/artifacts` with the actual path on your host system where you want to store the resulting package.
+In the example below, it will generate a wazuh-indexer package for Debian based systems, for the x64 architecture, using 1 as revision number and using the production naming convention.
 
-#### Environment Variables
-You can customize the build process by setting the following environment variables:
-
-- `INDEXER_BRANCH`: The branch to use for the Wazuh Indexer (default: `master`).
-- `INDEXER_PLUGINS_BRANCH`: The branch to use for the Wazuh Indexer plugins (default: `master`).
-- `INDEXER_REPORTING_BRANCH`: The branch to use for the Wazuh Indexer reporting (default: `master`).
-- `REVISION`: The revision number for the build (default: `0`).
-- `IS_STAGE`: Whether the build is a staging build (default: `false`).
-- `DISTRIBUTION`: The distribution format for the package (default: `tar`).
-- `ARCHITECTURE`: The architecture for the package (default: `x64`).
-
-Example usage with custom environment variables:
 ```bash
-docker run --rm -e INDEXER_BRANCH="5.0.0" -e INDEXER_PLUGINS_BRANCH="5.0.0" -e INDEXER_REPORTING_BRANCH="5.0.0" -v ./artifacts/dist:/home/indexer/artifacts wazuh-indexer-builder
+# Wihtin wazu-indexer/docker/builder
+bash builder.sh -d deb -a x64 -R 1 -s true
 ```
 
 Refer to [build-scripts/README.md](../build-scripts/README.md) for details about how to build packages.
-
-[docker]: https://docs.docker.com/engine/install
-[wi-repo]: https://github.com/wazuh/wazuh-indexer
 
 ## Building Docker images
 
 The [prod](./prod) folder contains the code to build Docker images. A tarball of `wazuh-indexer` needs to be located at the same level that the Dockerfile. Below there is an example of the command needed to build the image. Set the build arguments and the image tag accordingly.
 
-```console
+```bash
 docker build --build-arg="VERSION=5.0.0" --build-arg="INDEXER_TAR_NAME=wazuh-indexer-5.0.0-1_linux-x64_cfca84f.tar.gz" --tag=wazuh-indexer:5.0.0 --progress=plain --no-cache .
 ```
 
 Then, start a container with:
 
-```console
+```bash
 docker run -it --rm wazuh-indexer:5.0.0
 ```
+
+<!-- Links -->
+
+[docker]: https://docs.docker.com/engine/install
+[wi-repo]: https://github.com/wazuh/wazuh-indexer

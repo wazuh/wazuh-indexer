@@ -19,8 +19,12 @@ remove_multi_fields() {
   local OUT_FILE="$2"
 
   jq 'del(
+    .mappings.properties.agent.properties.host.properties.os.properties.full.fields,
+    .mappings.properties.agent.properties.host.properties.os.properties.name.fields,
     .mappings.properties.host.properties.os.properties.full.fields,
     .mappings.properties.host.properties.os.properties.name.fields,
+    .mappings.properties.process.properties.command_line.fields,
+    .mappings.properties.process.properties.name.fields,
     .mappings.properties.vulnerability.properties.description.fields
   )' "$IN_FILE" > "$OUT_FILE"
 }
@@ -46,6 +50,14 @@ generate_mappings() {
   # Replace "constant_keyword" type (not supported by OpenSearch) with "keyword"
   echo "Replacing \"constant_keyword\" type with \"keyword\""
   find "$OUT_DIR" -type f -exec sed -i 's/constant_keyword/keyword/g' {} \;
+  
+  # Replace "wildcard" type (showing as "unknown" on dashboard) with "keyword"
+  echo "Replacing \"wildcard\" type with \"keyword\""
+  find "$OUT_DIR" -type f -exec sed -i 's/wildcard/keyword/g' {} \;
+  
+  # Replace "match_only_text" type (showing as "unknown" on dashboard) with "keyword"
+  echo "Replacing \"match_only_text\" type with \"keyword\""
+  find "$OUT_DIR" -type f -exec sed -i 's/match_only_text/keyword/g' {} \;
 
   # Replace "flattened" type (not supported by OpenSearch) with "flat_object"
   echo "Replacing \"flattened\" type with \"flat_object\""

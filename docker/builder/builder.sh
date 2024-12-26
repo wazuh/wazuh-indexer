@@ -4,7 +4,7 @@
 # Requires Docker
 # Script usage: bash ./builder.sh
 
-set -e
+set -ex
 
 # ====
 # Checks that the script is run from the intended location
@@ -103,6 +103,12 @@ function main() {
     VERSION=$(cat VERSION)
     export REPO_PATH
     export VERSION
+    export INDEXER_PLUGINS_BRANCH
+    export INDEXER_REPORTING_BRANCH
+    export REVISION
+    export IS_STAGE
+    export DISTRIBUTION
+    export ARCHITECTURE
 
     parse_args "${@}"
 

@@ -5,15 +5,6 @@ name: Build and push Docker image
 # - Run manually
 # - Invoked from another workflow
 on:
-  # For testing purposes. Must be removed before merging.
-  push:
-    branches:
-      - '524-automate-generation-of-docker-images'
-  pull_request:
-    branches:
-      - 'master' 
-    paths:
-      - '.github/workflows/build-push-docker-image.yml'
   workflow_dispatch:
     inputs:
       revision:

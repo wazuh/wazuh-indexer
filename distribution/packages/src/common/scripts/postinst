@@ -27,6 +27,8 @@ case "$1" in
         echo "Configuring wazuh-indexer"
         # If $1=configure and $2 is set, this is an upgrade
         if [ -n $2 ]; then
+            echo "Second argument is set (${2}), upgrading wazuh-indexer"
+            echo "Upgrading wazuh-indexer"
             IS_UPGRADE=true
         fi
         PACKAGE=deb

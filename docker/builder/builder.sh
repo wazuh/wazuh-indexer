@@ -4,7 +4,7 @@
 # Requires Docker
 # Script usage: bash ./builder.sh
 
-set -ex
+set -e
 
 # ====
 # Checks that the script is run from the intended location

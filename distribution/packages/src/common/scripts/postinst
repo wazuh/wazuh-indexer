@@ -16,6 +16,7 @@ fi
 export OPENSEARCH_PATH_CONF=${OPENSEARCH_PATH_CONF:-${path.conf}}
 
 echo "RUNNING POST INSTALL"
+echo "Executing with parameters: $1 $2"
 
 IS_UPGRADE=false
 

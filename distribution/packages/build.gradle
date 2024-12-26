@@ -219,6 +219,7 @@ Closure commonPackageConfig(String type, boolean jdk, String architecture) {
     }
 
     // ========= config files =========
+    println "[BUILD GRADLE] Configuring ${type} package"
     configurationFile '/etc/wazuh-indexer/opensearch.yml'
     configurationFile '/etc/wazuh-indexer/jvm.options'
     configurationFile '/etc/wazuh-indexer/log4j2.properties'
@@ -247,6 +248,8 @@ Closure commonPackageConfig(String type, boolean jdk, String architecture) {
       fileType CONFIG | NOREPLACE
     }
     String envFile = expansionsForDistribution(type, jdk)['path.env']
+    println "[BUILD GRADLE] Configuring ${type} package with env file: ${envFile}"
+    println "[BUILD GRADLE] Using source file: ${packagingFiles}/env/wazuh-indexer"
     configurationFile envFile
     into(new File(envFile).getParent()) {
       fileType CONFIG | NOREPLACE

@@ -9,7 +9,9 @@ set -euo pipefail
 
 # Default values
 ECS_VERSION="${ECS_VERSION:-v8.11.0}"
-ECS_SOURCE=/source
+ECS_SOURCE="${ECS_SOURCE:-/source}"
+UPLOAD="${UPLOAD:-false}"
+URL="${URL:-https://localhost:9200}"
 
 # Function to display usage information
 show_usage() {
@@ -17,6 +19,9 @@ show_usage() {
   echo "Environment Variables:"
   echo "  * ECS_MODULE:   Module to generate mappings for"
   echo "  * ECS_VERSION:  (Optional) ECS version to generate mappings for (default: v8.11.0)"
+  echo "  * ECS_SOURCE:   (Optional) Path to the wazuh-indexer repository (default: /source)"
+  echo "  * UPLOAD:       (Optional) Upload generated index template to the Wazuh Indexer cluster (default: false)"
+  echo "  * URL:          (Optional) URL of the Wazuh Indexer cluster (default: https://localhost:9200)"
   echo "Example: docker run -e ECS_MODULE=alerts -e ECS_VERSION=v8.11.0 ecs-generator"
 }
 
@@ -32,8 +37,12 @@ remove_multi_fields() {
   local out_file="$2"
 
   jq 'del(
+    .mappings.properties.agent.properties.host.properties.os.properties.full.fields,
+    .mappings.properties.agent.properties.host.properties.os.properties.name.fields,
     .mappings.properties.host.properties.os.properties.full.fields,
     .mappings.properties.host.properties.os.properties.name.fields,
+    .mappings.properties.process.properties.command_line.fields,
+    .mappings.properties.process.properties.name.fields,
     .mappings.properties.vulnerability.properties.description.fields
   )' "$in_file" > "$out_file"
 }
@@ -43,6 +52,8 @@ generate_mappings() {
   local ecs_module="$1"
   local indexer_path="$2"
   local ecs_version="$3"
+  local upload="$4"
+  local url="$5"
 
   local in_files_dir="$indexer_path/ecs/$ecs_module/fields"
   local out_dir="$indexer_path/ecs/$ecs_module/mappings/$ecs_version"
@@ -62,6 +73,8 @@ generate_mappings() {
   # Replace unsupported types
   echo "Replacing unsupported types in generated mappings"
   find "$out_dir" -type f -exec sed -i 's/constant_keyword/keyword/g' {} \;
+  find "$out_dir" -type f -exec sed -i 's/wildcard/keyword/g' {} \;
+  find "$out_dir" -type f -exec sed -i 's/match_only_text/keyword/g' {} \;
   find "$out_dir" -type f -exec sed -i 's/flattened/flat_object/g' {} \;
   find "$out_dir" -type f -exec sed -i 's/scaled_float/float/g' {} \;
   find "$out_dir" -type f -exec sed -i '/scaling_factor/d' {} \;
@@ -93,4 +106,4 @@ generate_mappings() {
 }
 
 # Generate mappings
-generate_mappings "$ECS_MODULE" "$ECS_SOURCE" "$ECS_VERSION"
+generate_mappings "$ECS_MODULE" "$ECS_SOURCE" "$ECS_VERSION" "$UPLOAD" "$URL"

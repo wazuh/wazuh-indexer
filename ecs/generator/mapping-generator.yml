@@ -4,7 +4,7 @@ services:
     container_name: wazuh-ecs-generator
     build:
       context: ./../..
-      dockerfile: ${REPO_PATH:-.}/docker/ecs/images/Dockerfile
+      dockerfile: ${REPO_PATH:-.}/ecs/generator/images/Dockerfile
     volumes:
       - ${REPO_PATH:-.}/ecs:/source/ecs
     environment:

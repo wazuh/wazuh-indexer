@@ -68,7 +68,7 @@ jobs:
             export REPO_PATH=$(pwd)
             for ecs_module in "${relevant_modules[@]}"; do
               # Run the ECS generator script for each relevant module
-              bash docker/ecs/mapping-generator.sh run "$ecs_module"
+              bash ecs/generator/mapping-generator.sh run "$ecs_module"
               echo "Processed ECS module: $ecs_module"
             done
             echo "relevant_modules=${relevant_modules[*]}" >> $GITHUB_ENV
@@ -79,7 +79,7 @@ jobs:
 
       - name: Tear down ECS Generator
         if: always()
-        run: bash docker/ecs/mapping-generator.sh down
+        run: bash ecs/generator/mapping-generator.sh down
 
       - name: Upload artifact
         if: always()

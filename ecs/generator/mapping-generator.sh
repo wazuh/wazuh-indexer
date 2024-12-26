@@ -42,7 +42,7 @@ function usage() {
 }
 
 function main() {
-    local compose_filename="docker/ecs/mapping-generator.yml"
+    local compose_filename="ecs/generator/mapping-generator.yml"
     local compose_command
     local module
     local repo_path

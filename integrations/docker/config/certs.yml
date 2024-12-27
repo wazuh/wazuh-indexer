@@ -1,20 +1,12 @@
+
 nodes:
-  # Wazuh indexer and OpenSearch server nodes
   indexer:
     - name: wazuh.indexer
-      ip: wazuh.indexer
-    - name: opensearch.node
-      ip: opensearch.node
-
-  # Wazuh server nodes
-  # Use node_type only with more than one Wazuh manager
+      ip: "wazuh.indexer"
   server:
     - name: wazuh.manager
-      ip: wazuh.manager
-
-  # Wazuh dashboard and OpenSearch Dashboards nodes
+      ip: "wazuh.manager"
   dashboard:
     - name: wazuh.dashboard
-      ip: wazuh.dashboard
-    - name: opensearch.dashboards
-      ip: opensearch.dashboards
+      ip: "wazuh.dashboard"
+

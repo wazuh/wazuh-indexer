@@ -45,14 +45,16 @@ Refer to [build-scripts/README.md](../build-scripts/README.md) for details about
 The [prod](./prod) folder contains the code to build Docker images. A tarball of `wazuh-indexer` needs to be located at the same level that the Dockerfile. Below there is an example of the command needed to build the image. Set the build arguments and the image tag accordingly.
 
 ```bash
-docker build --build-arg="VERSION=5.0.0" --build-arg="INDEXER_TAR_NAME=wazuh-indexer-5.0.0-1_linux-x64_cfca84f.tar.gz" --tag=wazuh-indexer:5.0.0 --progress=plain --no-cache .
+docker build --build-arg="VERSION=5.0.0" --build-arg="INDEXER_TAR_NAME=wazuh-indexer_5.0.0-0_linux-x64.tar.gz" --tag=wazuh-indexer:5.0.0-0 --progress=plain --no-cache .
 ```
 
 Then, start a container with:
 
 ```bash
-docker run -it --rm wazuh-indexer:5.0.0
+docker run -p 9200:9200 -it --rm quay.io/wazuh/wazuh-indexer:5.0.0-latest
 ```
+
+Refer to [build-scripts/README.md](../build-scripts/README.md) for details about how to build and push Wazuh Indexer Docker images.
 
 <!-- Links -->
 

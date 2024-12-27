@@ -143,7 +143,7 @@ Closure commonPackageConfig(String type, boolean jdk, String architecture) {
     }
 
     String packagingFiles = "build/packaging/${jdk ? '' : 'no-jdk-'}${type}"
-
+    println "[BUILD GRADLE] Packaging files: ${packagingFiles}"
     String scripts = "${packagingFiles}/scripts"
     preInstall file("${scripts}/preinst")
     postInstall file("${scripts}/postinst")

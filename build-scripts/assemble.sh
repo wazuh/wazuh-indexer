@@ -382,11 +382,11 @@ function assemble_deb() {
     ls -ll
     # Extracts debian control files (preinst, postrm, ...)
     # We need to use some custom files, otherwise debuild fails
-    cp "./debian/control" "./debian/wazuh-control"
-    ar xf "${ARTIFACT_BUILD_NAME}" control.tar.gz
-    tar zvxf control.tar.gz -C "debian"
-    mv "./debian/wazuh-control" "./debian/control"
-    rm "./debian/conffiles"
+    # cp "./debian/control" "./debian/wazuh-control"
+    # ar xf "${ARTIFACT_BUILD_NAME}" control.tar.gz
+    # tar zvxf control.tar.gz -C "debian"
+    # mv "./debian/wazuh-control" "./debian/control"
+    # rm "./debian/conffiles"
 
     local version
     version=$(cat ./usr/share/wazuh-indexer/VERSION)

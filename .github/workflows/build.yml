@@ -222,7 +222,7 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJson(needs.matrix.outputs.matrix) }}
     outputs:
-      package_name: ${{ steps.package.outputs.name }}
+      name: ${{ steps.package.outputs.name }}
     steps:
       - uses: actions/checkout@v4
 

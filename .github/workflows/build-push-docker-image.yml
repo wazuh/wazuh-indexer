@@ -115,6 +115,6 @@ jobs:
           QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
           QUAY_TOKEN: ${{ secrets.QUAY_TOKEN }}
         run: |
-          bash build-scripts/build-and-push-docker-image.sh -n ${{ needs.call-build-workflow.outputs }}
+          bash build-scripts/build-and-push-docker-image.sh -n ${{ needs.call-build-workflow.outputs.name }}
 
         # echo ${{ needs.job1.outputs.firstword }}

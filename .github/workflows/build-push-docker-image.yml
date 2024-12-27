@@ -103,7 +103,7 @@ jobs:
         with:
           path: ${{env.docker_path }}
           merge-multiple: true
-      
+
       - name: Display structure of downloaded files
         run: ls -lR ${{env.docker_path }}
 
@@ -116,5 +116,3 @@ jobs:
           QUAY_TOKEN: ${{ secrets.QUAY_TOKEN }}
         run: |
           bash build-scripts/build-and-push-docker-image.sh -n ${{ needs.call-build-workflow.outputs.name }}
-
-        # echo ${{ needs.job1.outputs.firstword }}

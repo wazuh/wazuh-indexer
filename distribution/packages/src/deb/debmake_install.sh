@@ -27,7 +27,7 @@ config_dir="/etc/${name}"
 pid_dir="/run/${name}"
 service_dir="/usr/lib/systemd/system"
 
-buildroot="${curdir}/scripts/${name}"
+buildroot="${curdir}/debian/${name}"
 
 # Create necessary directories
 mkdir -p "${buildroot}"

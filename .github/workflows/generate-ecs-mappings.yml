@@ -1,0 +1,35 @@
+name: ECS Generator
+
+on:
+  push:
+    paths:
+      - 'ecs/**/*.json'
+      - 'ecs/**/*.yml'
+
+jobs:
+  run-ecs-generator:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Extract branch name
+        shell: bash
+        run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+        id: branch-name
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set up Docker Compose
+        run: sudo apt-get install docker-compose
+
+      - name: Generate PR to wazuh-indxer-plugins
+        env:
+          GITHUB_TOKEN: ${{ secrets.ACTION_TOKEN }}
+        run: |
+          bash ecs/scripts/generate-pr-to-plugins.sh \
+            -b ${{ steps.branch-name.outputs.branch }}

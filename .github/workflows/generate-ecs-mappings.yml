@@ -32,4 +32,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.ACTION_TOKEN }}
         run: |
           bash ecs/scripts/generate-pr-to-plugins.sh \
-            -b ${{ steps.branch-name.outputs.branch }}
+            -b ${{ steps.branch-name.outputs.branch }} \
+            -o ../ecs-templates
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ecs-templates
+          path: "../ecs-templates"

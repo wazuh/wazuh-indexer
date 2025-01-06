@@ -16,14 +16,23 @@ case "$1" in
     ;;
     remove)
         echo "Running Wazuh Indexer Pre-Removal Script"
-        # Stop existing service
+        # Stop existin wazuh-indexer.service
         if command -v systemctl >/dev/null && systemctl is-active wazuh-indexer.service >/dev/null; then
             echo "Stop existing wazuh-indexer.service"
             systemctl --no-reload stop wazuh-indexer.service
+        elif command -v service >/dev/null && service wazuh-indexer status >/dev/null; then
+            service wazuh-indexer stop
+        elif command -v /etc/init.d/wazuh-indexer >/dev/null && /etc/init.d/wazuh-indexer status >/dev/null; then
+            /etc/init.d/wazuh-indexer stop
         fi
+        # Stop existing wazuh-indexer-performance-analyzer.service
         if command -v systemctl >/dev/null && systemctl is-active wazuh-indexer-performance-analyzer.service >/dev/null; then
             echo "Stop existing wazuh-indexer-performance-analyzer.service"
             systemctl --no-reload stop wazuh-indexer-performance-analyzer.service
+        elif command -v service >/dev/null && service wazuh-indexer-performance-analyzer status >/dev/null; then
+            service wazuh-indexer-performance-analyzer stop
+        elif command -v /etc/init.d/wazuh-indexer >/dev/null && /etc/init.d/wazuh-indexer status >/dev/null; then
+            /etc/init.d/wazuh-indexer stop
         fi
     ;;
     failed-upgrade)

@@ -28,6 +28,7 @@
 %define log_dir %{_localstatedir}/log/%{name}
 %define pid_dir %{_localstatedir}/run/%{name}
 %define tmp_dir %{log_dir}/tmp
+%define restart_service %{tmp_dir}/%{name}.restart
 %{!?_version: %define _version 0.0.0 }
 %{!?_architecture: %define _architecture x86_64 }
 
@@ -158,16 +159,35 @@ exit 0
 
 %pre
 set -e
-# Stop existing service
+
+
+# Stop existing wazuh-indexer service
 if command -v systemctl >/dev/null && systemctl is-active %{name}.service >/dev/null; then
     echo "Stop existing %{name}.service"
+    touch %{restart_service}
     systemctl --no-reload stop %{name}.service
-    touch %{tmp_dir}/wazuh-indexer.restart
+elif command -v service >/dev/null && service %{name} status >/dev/null; then
+    echo "Stop existing %{name} service"
+    touch %{restart_service}
+    service %{name} stop
+elif command -v /etc/init.d/%{name} >/dev/null && /etc/init.d/%{name} status >/dev/null; then
+    echo "Stop existing %{name} service"
+    touch %{restart_service}
+    /etc/init.d/%{name} stop
 fi
+# Stop existing wazuh-indexer performance-analyzer service
 if command -v systemctl >/dev/null && systemctl is-active %{name}-performance-analyzer.service >/dev/null; then
     echo "Stop existing %{name}-performance-analyzer.service"
     systemctl --no-reload stop %{name}-performance-analyzer.service
+elif command -v service >/dev/null && service %{name}-performance-analyzer status >/dev/null; then
+    echo "Stop existing %{name}-performance-analyzer service"
+    service %{name}-performance-analyzer stop
+elif command -v /etc/init.d/%{name}-performance-analyzer >/dev/null && /etc/init.d/%{name}-performance-analyzer status >/dev/null; then
+    echo "Stop existing %{name}-performance-analyzer service"
+    /etc/init.d/%{name}-performance-analyzer stop
+
 fi
+
 # Create user and group if they do not already exist.
 getent group %{name} > /dev/null 2>&1 || groupadd -r %{name}
 getent passwd %{name} > /dev/null 2>&1 || \
@@ -213,32 +233,62 @@ if ! [ -d %{config_dir}/certs ] && [ -f %{product_dir}/plugins/opensearch-securi
     bash %{product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh > %{log_dir}/install_demo_certificates.log 2>&1
 fi
 
-if [ -f %{tmp_dir}/wazuh-indexer.restart ]; then
-    rm -f %{tmp_dir}/wazuh-indexer.restart
+if [ -f %{restart_service} ]; then
+    echo "Restarting wazuh-indexer service..."
     if command -v systemctl > /dev/null; then
-        echo "Restarting wazuh-indexer service..."
         systemctl restart wazuh-indexer.service > /dev/null 2>&1
-        exit 0
+    elif command -v service > /dev/null; then
+        service wazuh-indexer restart > /dev/null 2>&1
+    elif command -v /etc/init.d/wazuh-indexer > /dev/null; then
+        /etc/init.d/wazuh-indexer restart > /dev/null 2>&1
     fi
+    rm -f %{restart_service}
+    exit 0
 fi
 
 # Messages
-echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using systemd"
-echo " sudo systemctl daemon-reload"
-echo " sudo systemctl enable wazuh-indexer.service"
-echo "### You can start wazuh-indexer service by executing"
-echo " sudo systemctl start wazuh-indexer.service"
+if command -v systemctl >/dev/null; then
+    echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using systemd"
+    echo " sudo systemctl daemon-reload"
+    echo " sudo systemctl enable wazuh-indexer.service"
+    echo "### You can start wazuh-indexer service by executing"
+    echo " sudo systemctl start wazuh-indexer.service"
+elif command -v chkconfig >/dev/null; then
+    echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using chkconfig"
+    echo " sudo chkconfig --add wazuh-indexer"
+    echo "### You can start wazuh-indexer service by executing"
+    echo " sudo service wazuh-indexer start"
+elif command -v update-rc.d >/dev/null; then
+    echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using update-rc.d"
+    echo " sudo update-rc.d wazuh-indexer defaults 95 10"
+    echo "### You can start wazuh-indexer service by executing"
+    echo " sudo /etc/init.d/wazuh-indexer start"
+fi
 exit 0
 
 %preun
 set -e
+# Stop existing wazuh-indexer service
 if command -v systemctl >/dev/null && systemctl is-active %{name}.service >/dev/null; then
     echo "Stop existing %{name}.service"
     systemctl --no-reload stop %{name}.service
+elif command -v service >/dev/null && service %{name} status >/dev/null; then
+    echo "Stop existing %{name} service"
+    service %{name} stop
+elif command -v /etc/init.d/%{name} >/dev/null && /etc/init.d/%{name} status >/dev/null; then
+    echo "Stop existing %{name} service"
+    /etc/init.d/%{name} stop
 fi
+# Stop existing wazuh-indexer performance-analyzer service
 if command -v systemctl >/dev/null && systemctl is-active %{name}-performance-analyzer.service >/dev/null; then
     echo "Stop existing %{name}-performance-analyzer.service"
     systemctl --no-reload stop %{name}-performance-analyzer.service
+elif command -v service >/dev/null && service %{name}-performance-analyzer status >/dev/null; then
+    echo "Stop existing %{name}-performance-analyzer service"
+    service %{name}-performance-analyzer stop
+elif command -v /etc/init.d/%{name}-performance-analyzer >/dev/null && /etc/init.d/%{name}-performance-analyzer status >/dev/null; then
+    echo "Stop existing %{name}-performance-analyzer service"
+    /etc/init.d/%{name}-performance-analyzer stop
 fi
 exit 0
 

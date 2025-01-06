@@ -31,8 +31,8 @@ case "$1" in
             systemctl --no-reload stop wazuh-indexer-performance-analyzer.service
         elif command -v service >/dev/null && service wazuh-indexer-performance-analyzer status >/dev/null; then
             service wazuh-indexer-performance-analyzer stop
-        elif command -v /etc/init.d/wazuh-indexer >/dev/null && /etc/init.d/wazuh-indexer status >/dev/null; then
-            /etc/init.d/wazuh-indexer stop
+        elif command -v /etc/init.d/wazuh-indexer-performance-analyzer >/dev/null && /etc/init.d/wazuh-indexer-performance-analyzer status >/dev/null; then
+            /etc/init.d/wazuh-indexer-performance-analyzer stop
         fi
     ;;
     failed-upgrade)

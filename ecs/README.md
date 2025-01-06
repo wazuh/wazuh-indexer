@@ -4,9 +4,8 @@ This script generates the ECS mappings for the Wazuh indices.
 
 ### Requirements
 
-- ECS repository clone. The script is meant to be launched from the root level of that repository.
-- `Python` 3.6 or higher + `venv` module
-- `jq`
+- [Docker Desktop](https://docs.docker.com/desktop/setup/install/linux/)
+    > Other option is to install the [docker-compose plugin](https://docs.docker.com/compose/install/#scenario-two-install-the-docker-compose-plugin).  
 
 ### Folder structure
 
@@ -15,67 +14,21 @@ files to generate the mappings. These are the inputs for the ECS generator.
 
 ### Usage
 
-1. Get a copy of the ECS repository at the same level as the `wazuh-indexer` repo:
-
-    ```console
-    git clone git@github.com:elastic/ecs.git
-    ```
-
-2. Install the dependencies:
-
-    ```console
-    cd ecs
-    python3 -m venv env
-    source env/bin/activate
-    pip install -r scripts/requirements.txt
-    ```
-
-2. Copy the `generate.sh` script to the root level of the ECS repository.
-
-    ```console
-    cp generate.sh ../../ecs
-    cd ../../ecs
-    bash generate.sh
-    ```
-
-    Expected output:
-    ```
-    Usage: generate.sh <ECS_VERSION> <INDEXER_SRC> <MODULE> [--upload <URL>]
-      * ECS_VERSION: ECS version to generate mappings for
-      * INDEXER_SRC: Path to the wazuh-indexer repository
-      * MODULE: Module to generate mappings for
-      * --upload <URL>: Upload generated index template to the OpenSearch cluster. Defaults to https://localhost:9200
-    Example: generate.sh v8.11.0 ~/wazuh-indexer states-vulnerabilities --upload https://indexer:9200
-    ```
-
-3. Use the `generate.sh` script to generate the mappings for a module. The script takes 3 arguments,
-plus 2 optional arguments to upload the mappings to the `wazuh-indexer`. Both, composable and legacy mappings
-are generated. For example, to generate the mappings for the `states-vulnerabilities` module using the
-    ECS version `v8.11.0` and assuming that path of this repository is `~/wazuh/wazuh-indexer`:
-
+1. Execute the mapping-generator tool
     ```bash
-    ./generate.sh v8.11.0 ~/wazuh/wazuh-indexer states-vulnerabilities
+    bash ecs/generator/mapping-generator.sh run <MODULE_NAME>
     ```
-
-    The tool will output the folder where they have been generated.
-
-    ```console
-    Loading schemas from git ref v8.11.0
-    Running generator. ECS version 8.11.0
-    Mappings saved to ~/wazuh/wazuh-indexer/ecs/states-vulnerabilities/mappings/v8.11.0
-    ```
-
-4. When you are done. Exit the virtual environment.
-
-    ```console
-    deactivate
+2. (Optional) Run the tool's cleanup
+    > The tool stops the container automatically, but it is recommended to run the down command if the tool is not going to be used anymore.
+    ```bash
+    bash ecs/generator/mapping-generator.sh down
     ```
 
 ### Output
 
 A new `mappings` folder will be created inside the module folder, containing all the generated files.
 The files are versioned using the ECS version, so different versions of the same module can be generated.
-For our use case, the most important files are under `mappings/<ECS_VERSION>/generated/elasticsearch/legacy/`:
+For our use case, the most important files are under `mappings/v8.11.0/generated/elasticsearch/legacy/`:
 
 - `template.json`: Elasticsearch compatible index template for the module
 - `opensearch-template.json`: OpenSearch compatible index template for the module
@@ -137,31 +90,3 @@ The script uses log file. Check it out for debugging or additional information.
 - [ECS repository](https://github.com/elastic/ecs)
 - [ECS usage](https://github.com/elastic/ecs/blob/main/USAGE.md)
 - [ECS field reference](https://www.elastic.co/guide/en/ecs/current/ecs-field-reference.html)
-
-### All-in-one script
-
-```bash
-#!/bin/bash
-
-indices=(
-    agent
-    alerts
-    command
-    states-fim
-    states-inventory-hardware
-    states-inventory-hotfixes
-    states-inventory-networks
-    states-inventory-packages
-    states-inventory-ports
-    states-inventory-processes
-    states-inventory-system
-    states-vulnerabilities
-)
-
-ECS="v8.11.0"
-WI_REPO_PATH=~/wazuh/wazuh-indexer
-
-for index in "${indices[@]}"; do
-    bash generate.sh $ECS $WI_REPO_PATH "$index"
-done
-```

@@ -159,8 +159,7 @@ exit 0
 
 %pre
 set -e
-
-
+echo "pre-install script"
 # Stop existing wazuh-indexer service
 if command -v systemctl >/dev/null && systemctl is-active %{name}.service >/dev/null; then
     echo "Stop existing %{name}.service"
@@ -170,7 +169,7 @@ elif command -v service >/dev/null && service %{name} status >/dev/null; then
     echo "Stop existing %{name} service"
     touch %{restart_service}
     service %{name} stop
-elif command -v /etc/init.d/%{name} >/dev/null && /etc/init.d/%{name} status >/dev/null; then
+elif command -v /etc/init.d/%{name} >/dev/null && /etc/init.d/%{name} status >/dev/null 2>&1; then
     echo "Stop existing %{name} service"
     touch %{restart_service}
     /etc/init.d/%{name} stop
@@ -185,7 +184,6 @@ elif command -v service >/dev/null && service %{name}-performance-analyzer statu
 elif command -v /etc/init.d/%{name}-performance-analyzer >/dev/null && /etc/init.d/%{name}-performance-analyzer status >/dev/null; then
     echo "Stop existing %{name}-performance-analyzer service"
     /etc/init.d/%{name}-performance-analyzer stop
-
 fi
 
 # Create user and group if they do not already exist.
@@ -243,6 +241,7 @@ if [ -f %{restart_service} ]; then
         /etc/init.d/wazuh-indexer restart > /dev/null 2>&1
     fi
     rm -f %{restart_service}
+    echo "wazuh-indexer service restarted."
     exit 0
 fi
 
@@ -268,6 +267,7 @@ exit 0
 
 %preun
 set -e
+echo "pre-uninstall script"
 # Stop existing wazuh-indexer service
 if command -v systemctl >/dev/null && systemctl is-active %{name}.service >/dev/null; then
     echo "Stop existing %{name}.service"
@@ -275,7 +275,7 @@ if command -v systemctl >/dev/null && systemctl is-active %{name}.service >/dev/
 elif command -v service >/dev/null && service %{name} status >/dev/null; then
     echo "Stop existing %{name} service"
     service %{name} stop
-elif command -v /etc/init.d/%{name} >/dev/null && /etc/init.d/%{name} status >/dev/null; then
+elif command -v /etc/init.d/%{name} >/dev/null && /etc/init.d/%{name} status >/dev/null 2>&1; then
     echo "Stop existing %{name} service"
     /etc/init.d/%{name} stop
 fi

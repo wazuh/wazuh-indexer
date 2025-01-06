@@ -16,16 +16,32 @@ echo "Running Wazuh Indexer Pre-Installation Script"
 # Reference to restore actual service status
 restart_service=/tmp/wazuh-indexer.restart
 
-# Stop existing service
-if command -v systemctl >/dev/null && systemctl is-active wazuh-indexer.service >/dev/null; then
-    echo "Stop existing wazuh-indexer.service"
-    systemctl --no-reload stop wazuh-indexer.service
-    touch $restart_service
-fi
-if command -v systemctl >/dev/null && systemctl is-active wazuh-indexer-performance-analyzer.service >/dev/null; then
-    echo "Stop existing wazuh-indexer-performance-analyzer.service"
-    systemctl --no-reload stop wazuh-indexer-performance-analyzer.service
-fi
+case "$1" in
+    upgrade)
+        # Stop existing wazuh-indexer.service
+        echo "Stop existing wazuh-indexer.service"
+        if command -v systemctl >/dev/null && systemctl is-active wazuh-indexer.service >/dev/null; then
+            systemctl --no-reload stop wazuh-indexer.service
+        elif command -v service >/dev/null && service wazuh-indexer status >/dev/null; then
+            service wazuh-indexer stop
+        elif command -v initctl >/dev/null && initctl status wazuh-indexer >/dev/null; then
+            initctl stop wazuh-indexer
+        fi
+        touch $restart_service
+
+        echo "Stop existing wazuh-indexer-performance-analyzer.service"
+        if command -v systemctl >/dev/null && systemctl is-active wazuh-indexer-performance-analyzer.service >/dev/null; then
+            systemctl --no-reload stop wazuh-indexer-performance-analyzer.service
+        elif command -v service >/dev/null && service wazuh-indexer-performance-analyzer status >/dev/null; then
+            service wazuh-indexer-performance-analyzer stop
+        elif command -v initctl >/dev/null && initctl status wazuh-indexer-performance-analyzer >/dev/null; then
+            initctl stop wazuh-indexer-performance-analyzer
+        fi
+        ;;
+    *)
+        ;;
+esac
+
 
 # Create user and group if they do not already exist.
 getent group wazuh-indexer > /dev/null 2>&1 || groupadd -r wazuh-indexer

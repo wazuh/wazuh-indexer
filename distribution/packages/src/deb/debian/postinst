@@ -32,6 +32,12 @@ chown -R wazuh-indexer:wazuh-indexer ${data_dir}
 chown -R wazuh-indexer:wazuh-indexer ${pid_dir}
 chown -R wazuh-indexer:wazuh-indexer ${tmp_dir}
 
+# Check if the script is executed on upgrade
+is_upgrade=false
+if [ -n "$2" ]; then
+    is_upgrade=true
+fi
+
 export OPENSEARCH_PATH_CONF=${OPENSEARCH_PATH_CONF:-${config_dir}}
 # Apply Performance Analyzer settings, as per https://github.com/opensearch-project/opensearch-build/blob/2.18.0/scripts/pkg/build_templates/current/opensearch/deb/debian/postinst#L28-L37
 if ! grep -q '## OpenSearch Performance Analyzer' "$OPENSEARCH_PATH_CONF/jvm.options"; then
@@ -66,20 +72,37 @@ if ! [ -d "${config_dir}/certs" ] && [ -f "${product_dir}/plugins/opensearch-sec
     bash "${product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh" >"${log_dir}/install_demo_certificates.log" 2>&1
 fi
 
-if [ -f $restart_service ]; then
-    rm -f $restart_service
+# Check if its upgrade and restart service
+if [ -f $restart_service ] && [ "$is_upgrade" = true ]; then
     echo "Restarting wazuh-indexer service..."
     if command -v systemctl >/dev/null; then
         systemctl restart wazuh-indexer.service >/dev/null 2>&1
+    elif command -v service >/dev/null; then
+        service wazuh-indexer restart >/dev/null 2>&1
+    elif command -v /etc/init.d/wazuh-indexer >/dev/null; then
+        /etc/init.d/wazuh-indexer restart >/dev/null 2>&1
     fi
+    rm -f $restart_service
     exit 0
 fi
 
 # Messages
-echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using systemd"
-echo " sudo systemctl daemon-reload"
-echo " sudo systemctl enable wazuh-indexer.service"
-echo "### You can start wazuh-indexer service by executing"
-echo " sudo systemctl start wazuh-indexer.service"
+if command -v systemctl >/dev/null; then
+    echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using systemd"
+    echo " sudo systemctl daemon-reload"
+    echo " sudo systemctl enable wazuh-indexer.service"
+    echo "### You can start wazuh-indexer service by executing"
+    echo " sudo systemctl start wazuh-indexer.service"
+elif command -v chkconfig >/dev/null; then
+    echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using chkconfig"
+    echo " sudo chkconfig --add wazuh-indexer"
+    echo "### You can start wazuh-indexer service by executing"
+    echo " sudo service wazuh-indexer start"
+elif command -v update-rc.d >/dev/null; then
+    echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using update-rc.d"
+    echo " sudo update-rc.d wazuh-indexer defaults 95 10"
+    echo "### You can start wazuh-indexer service by executing"
+    echo " sudo /etc/init.d/wazuh-indexer start"
+fi
 
 exit 0

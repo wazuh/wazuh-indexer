@@ -34,14 +34,13 @@ case "$1" in
             systemctl --no-reload stop wazuh-indexer-performance-analyzer.service
         elif command -v service >/dev/null && service wazuh-indexer-performance-analyzer status >/dev/null; then
             service wazuh-indexer-performance-analyzer stop
-        elif command -v initctl >/dev/null && initctl status wazuh-indexer-performance-analyzer >/dev/null; then
-            initctl stop wazuh-indexer-performance-analyzer
+        elif command -v /etc/init.d/wazuh-indexer >/dev/null && /etc/init.d/wazuh-indexer status >/dev/null; then
+            /etc/init.d/wazuh-indexer stop
         fi
         ;;
     *)
         ;;
 esac
-
 
 # Create user and group if they do not already exist.
 getent group wazuh-indexer > /dev/null 2>&1 || groupadd -r wazuh-indexer

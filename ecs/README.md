@@ -9,8 +9,7 @@ This script generates the ECS mappings for the Wazuh indices.
 
 ### Folder structure
 
-There is a folder for each module. Inside each folder, there is a `fields` folder with the required
-files to generate the mappings. These are the inputs for the ECS generator.
+There is a folder for each module. Inside each folder, there is a `fields` folder with the required files to generate the mappings. These are the inputs for the ECS generator.
 
 ### Usage
 
@@ -33,8 +32,8 @@ For our use case, the most important files are under `mappings/v8.11.0/generated
 - `template.json`: Elasticsearch compatible index template for the module
 - `opensearch-template.json`: OpenSearch compatible index template for the module
 
-The original output is `template.json`, which is not compatible with OpenSearch by default. In order
-to make this template compatible with OpenSearch, the following changes are made:
+The original output is `template.json`, which is not compatible with OpenSearch by default.
+In order to make this template compatible with OpenSearch, the following changes are made:
 
 - The `order` property is renamed to `priority`.
 - The `mappings` and `settings` properties are nested under the `template` property.
@@ -57,11 +56,9 @@ Notes:
 ### Adding new mappings
 
 The easiest way to create mappings for a new module is to take a previous one as a base.
-Copy a folder and rename it to the new module name. Then, edit the `fields` files to
-match the new module fields.
+Copy a folder and rename it to the new module name. Then, edit the `fields` files to match the new module fields.
 
-The name of the folder will be the name of the module to be passed to the script. All 3 files
-are required.
+The name of the folder will be the name of the module to be passed to the script. All 3 files are required.
 
 - `fields/subset.yml`: This file contains the subset of ECS fields to be used for the module.
 - `fields/template-settings-legacy.json`: This file contains the legacy template settings for the module.
@@ -69,20 +66,13 @@ are required.
 
 ### Event generator
 
-For testing purposes, the script `generate_events.py` can be used to generate events for a given module.
-Currently, it is only able to generate events for the `states-vulnerabilities` module. To support other
-modules, please extend of refactor the script.
-
-The script prompts for the required parameters, so it can be launched without arguments:
+Each module contains a Python script to generate events for its module. The script prompts for the required parameters, so it can be launched without arguments:
   
 ```bash
 ./event_generator.py
 ```
 
-The script will generate a JSON file with the events, and will also ask whether to upload them to the
-indexer. If the upload option is selected, the script will ask for the indexer URL and port, credentials,
-and index name.
-
+The script will generate a JSON file with the events, and will also ask whether to upload them to the indexer. If the upload option is selected, the script will ask for the indexer URL and port, credentials, and index name.
 The script uses log file. Check it out for debugging or additional information.
 
 #### References

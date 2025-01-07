@@ -76,7 +76,7 @@ void addProcessFilesTask(String type, boolean jdk) {
     with copySpec {
       from 'src/common'
       from "src/${type}"
-      MavenFilteringHack.filter(it, expansionsForDistribution(type, jdk))
+      // MavenFilteringHack.filter(it, expansionsForDistribution(type, jdk))
     }
 
     into('etc/wazuh-indexer') {

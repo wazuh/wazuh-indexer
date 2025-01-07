@@ -13,10 +13,14 @@ PLUGINS_LOCAL_PATH=${PLUGINS_LOCAL_PATH:-"$CURRENT_PATH"/../wazuh-indexer-plugin
 declare -a relevant_modules
 declare -A module_to_file
 
+# Check if a command exists on the system.
+# Parameters:
+#   $1: Command to check.
 command_exists() {
     command -v "$1" &> /dev/null
 }
 
+# Validate that all required dependencies are installed.
 validate_dependencies() {
     local required_commands=("docker" "docker-compose" "gh")
     for cmd in "${required_commands[@]}"; do
@@ -27,6 +31,7 @@ validate_dependencies() {
     done
 }
 
+# Detect modified ECS modules by comparing the current branch with the base branch.
 detect_modified_modules() {
     echo
     echo "---> Fetching and extracting modified ECS modules..."
@@ -71,6 +76,7 @@ detect_modified_modules() {
     echo "Relevant ECS modules: ${relevant_modules[*]}"
 }
 
+# Run the ECS generator script for relevant modules.
 run_ecs_generator() {
     echo
     echo "---> Running ECS Generator script..."
@@ -86,7 +92,7 @@ run_ecs_generator() {
     fi
 }
 
-
+# Clone the target repository and set up GitHub authentication.
 clone_target_repo() {
     echo
     echo "---> Cloning ${PLUGINS_REPO} repository..."
@@ -103,6 +109,7 @@ clone_target_repo() {
     gh repo set-default https://"$GITHUB_TOKEN"@github.com/$PLUGINS_REPO.git
 }
 
+# Commit and push changes to the target repository.
 commit_and_push_changes() {
     echo
     echo "---> Committing and pushing changes to ${PLUGINS_REPO} repository..."
@@ -145,6 +152,7 @@ commit_and_push_changes() {
     fi
 }
 
+# Create or update a Pull Request with the modified ECS templates.
 create_or_update_pr() {
     echo
     echo "---> Creating or updating Pull Request..."
@@ -178,6 +186,7 @@ create_or_update_pr() {
     fi
 }
 
+# Display usage information.
 usage() {
     echo "Usage: $0 -b <BRANCH_NAME> -t <GITHUB_TOKEN>"
     echo "  -b [BRANCH_NAME]    (Optional) Branch name to create or update the PR. Default: current branch."
@@ -186,6 +195,7 @@ usage() {
     exit 1
 }
 
+# Main function
 main() {
     while getopts ":b:t:o:" opt; do
         case ${opt} in

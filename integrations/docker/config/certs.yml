@@ -3,10 +3,14 @@ nodes:
   indexer:
     - name: wazuh.indexer
       ip: "wazuh.indexer"
+    - name: opensearch.node
+      ip: "opensearch.node"
   server:
     - name: wazuh.manager
       ip: "wazuh.manager"
   dashboard:
     - name: wazuh.dashboard
       ip: "wazuh.dashboard"
+    - name: opensearch.dashboards
+      ip: "opensearch.dashboards"
 

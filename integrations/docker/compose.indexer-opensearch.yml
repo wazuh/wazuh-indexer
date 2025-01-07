@@ -11,7 +11,7 @@ services:
     command: bash -c "python run.py -a wazuh.indexer"
 
   wazuh.indexer:
-    image: opensearchproject/opensearch:${WAZUH_INDEXER_VERSION}
+    image: quay.io/wazuh/wazuh-indexer:${WAZUH_INDEXER_VERSION}
     depends_on:
       wazuh-certs-generator:
         condition: service_completed_successfully
@@ -19,20 +19,7 @@ services:
     ports:
       - 9200:9200
     environment:
-      - WAZUH_INDEXER_VERSION=${WAZUH_INDEXER_VERSION}
-      - node.name=wazuh.indexer
-      - discovery.type=single-node
-      - bootstrap.memory_lock=true
       - "DISABLE_INSTALL_DEMO_CONFIG=true"
-      - plugins.security.ssl.http.enabled=true
-      - plugins.security.allow_default_init_securityindex=true
-      - plugins.security.ssl.http.pemcert_filepath=/usr/share/opensearch/config/wazuh.indexer.pem
-      - plugins.security.ssl.transport.pemcert_filepath=/usr/share/opensearch/config/wazuh.indexer.pem
-      - plugins.security.ssl.http.pemkey_filepath=/usr/share/opensearch/config/wazuh.indexer-key.pem
-      - plugins.security.ssl.transport.pemkey_filepath=/usr/share/opensearch/config/wazuh.indexer-key.pem
-      - plugins.security.ssl.http.pemtrustedcas_filepath=/usr/share/opensearch/config/root-ca.pem
-      - plugins.security.ssl.transport.pemtrustedcas_filepath=/usr/share/opensearch/config/root-ca.pem
-      - plugins.security.authcz.admin_dn="CN=wazuh.indexer,OU=Wazuh,O=Wazuh,L=California, C=US"
       - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
     ulimits:
       memlock:
@@ -46,10 +33,11 @@ services:
       start_period: 10s
       start_interval: 3s
     volumes:
-      - data:/usr/share/opensearch/data
-      - ./certs/wazuh.indexer.pem:/usr/share/opensearch/config/wazuh.indexer.pem
-      - ./certs/wazuh.indexer-key.pem:/usr/share/opensearch/config/wazuh.indexer-key.pem
-      - ./certs/root-ca.pem:/usr/share/opensearch/config/root-ca.pem
+      - ./config/opensearch.yml:/usr/share/wazuh-indexer/config/opensearch.yml
+      - data:/usr/share/wazuh-indexer/data
+      - ./certs/wazuh.indexer.pem:/usr/share/wazuh-indexer/config/certs/wazuh.indexer.pem
+      - ./certs/wazuh.indexer-key.pem:/usr/share/wazuh-indexer/config/certs/wazuh.indexer-key.pem
+      - ./certs/root-ca.pem:/usr/share/wazuh-indexer/config/certs/root-ca.pem
 
   wazuh.dashboard:
     image: opensearchproject/opensearch-dashboards:${WAZUH_DASHBOARD_VERSION}

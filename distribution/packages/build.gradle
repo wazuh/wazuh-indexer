@@ -150,7 +150,12 @@ Closure commonPackageConfig(String type, boolean jdk, String architecture) {
       preUninstall file("${scripts}/prerm")
     } else {
       String scripts = "${packagingFiles}"
-      spec file("${scripts}/wazuh-indexer.rpm.spec")
+      def specFile = file("${scripts}/wazuh-indexer.rpm.spec")
+      def specContent = specFile.text
+      spec { 
+        from(specContent)
+      }
+      // spec file("${scripts}/wazuh-indexer.rpm.spec")
     }
     // if (type == 'rpm') {
     //   postTrans file("${scripts}/posttrans")

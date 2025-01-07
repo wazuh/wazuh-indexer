@@ -20,23 +20,23 @@ case "$1" in
     upgrade)
         # Stop existing wazuh-indexer.service
         echo "Stop existing wazuh-indexer.service"
-        if command -v systemctl >/dev/null && systemctl is-active wazuh-indexer.service >/dev/null; then
+        if command -v systemctl > /dev/null && systemctl is-active wazuh-indexer.service > /dev/null; then
             touch $restart_service
             systemctl --no-reload stop wazuh-indexer.service
-        elif command -v service >/dev/null && service wazuh-indexer status >/dev/null; then
+        elif command -v service > /dev/null && service wazuh-indexer status > /dev/null; then
             touch $restart_service
             service wazuh-indexer stop
-        elif command -v /etc/init.d/wazuh-indexer >/dev/null && /etc/init.d/wazuh-indexer status >/dev/null; then
+        elif command -v /etc/init.d/wazuh-indexer > /dev/null && /etc/init.d/wazuh-indexer status > /dev/null; then
             touch $restart_service
             /etc/init.d/wazuh-indexer stop
         fi
 
         echo "Stop existing wazuh-indexer-performance-analyzer.service"
-        if command -v systemctl >/dev/null && systemctl is-active wazuh-indexer-performance-analyzer.service >/dev/null; then
+        if command -v systemctl > /dev/null && systemctl is-active wazuh-indexer-performance-analyzer.service > /dev/null; then
             systemctl --no-reload stop wazuh-indexer-performance-analyzer.service
-        elif command -v service >/dev/null && service wazuh-indexer-performance-analyzer status >/dev/null; then
+        elif command -v service > /dev/null && service wazuh-indexer-performance-analyzer status > /dev/null; then
             service wazuh-indexer-performance-analyzer stop
-        elif command -v /etc/init.d/wazuh-indexer-performance-analyzer >/dev/null && /etc/init.d/wazuh-indexer-performance-analyzer status >/dev/null; then
+        elif command -v /etc/init.d/wazuh-indexer-performance-analyzer > /dev/null && /etc/init.d/wazuh-indexer-performance-analyzer status > /dev/null; then
             /etc/init.d/wazuh-indexer-performance-analyzer stop
         fi
         ;;

@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 #
 # wazuh-indexer <summary>
 #
@@ -7,21 +7,20 @@
 #
 
 ### BEGIN INIT INFO
-# Provides: OpenSearch
+# Provides: Wazuh-indexer
 # Required-Start: $network $named
 # Required-Stop: $network $named
 # Default-Start: 2 3 4 5
 # Default-Stop: 0 1 6
 # Short-Description: This service manages the wazuh-indexer daemon
-# Description: OpenSearch is a very scalable, schema-free and high-performance search solution supporting multi-tenancy and near realtime search.
+# Description: Wazuh-indexer is a very scalable, schema-free and high-performance search solution supporting multi-tenancy and near realtime search.
 ### END INIT INFO
-
-set -e -o pipefail
 
 #
 # init.d / servicectl compatibility (openSUSE)
 #
 if [ -f /etc/rc.status ]; then
+    # shellcheck disable=SC1091
     . /etc/rc.status
     rc_reset
 fi
@@ -30,6 +29,7 @@ fi
 # Source function library.
 #
 if [ -f /etc/rc.d/init.d/functions ]; then
+    # shellcheck disable=SC1091
     . /etc/rc.d/init.d/functions
 fi
 
@@ -37,25 +37,25 @@ fi
 OPENSEARCH_HOME="/usr/share/wazuh-indexer"
 MAX_OPEN_FILES=65535
 MAX_MAP_COUNT=262144
-OPENSEARCH_PATH_CONF="${path.conf}"
+OPENSEARCH_PATH_CONF="/etc/wazuh-indexer"
 
 PID_DIR="/run/wazuh-indexer"
 
 # Source the default env file
-OPENSEARCH_ENV_FILE="${path.env}"
-if [ -f "$OPENSEARCH_ENV_FILE" ]; then
-    . "$OPENSEARCH_ENV_FILE"
+WI_ENV_FILE="/etc/sysconfig/wazuh-indexer"
+if [ -f "$WI_ENV_FILE" ]; then
+    # shellcheck source=/dev/null
+    . "$WI_ENV_FILE"
 fi
 
 exec="$OPENSEARCH_HOME/bin/opensearch"
 prog="wazuh-indexer"
 pidfile="$PID_DIR/${prog}.pid"
 
-export OPENSEARCH_JAVA_OPTS
+export WI_JAVA_OPTS
 export JAVA_HOME
 export OPENSEARCH_PATH_CONF
-export OPENSEARCH_STARTUP_SLEEP_TIME
-export OPENSEARCH_JAVA_HOME
+export WI_STARTUP_SLEEP_TIME
 
 lockfile=/var/lock/subsys/$prog
 
@@ -71,9 +71,9 @@ start() {
         ulimit -n $MAX_OPEN_FILES
     fi
     if [ -n "$MAX_LOCKED_MEMORY" ]; then
-        ulimit -l $MAX_LOCKED_MEMORY
+        ulimit -l "$MAX_LOCKED_MEMORY"
     fi
-    if [ -n "$MAX_MAP_COUNT" -a -f /proc/sys/vm/max_map_count ] && [ "$MAX_MAP_COUNT" -gt $(cat /proc/sys/vm/max_map_count) ]; then
+    if [ -n "$MAX_MAP_COUNT" ] && [ -f /proc/sys/vm/max_map_count ] && [ "$MAX_MAP_COUNT" -gt "$(cat /proc/sys/vm/max_map_count)" ]; then
         sysctl -q -w vm.max_map_count=$MAX_MAP_COUNT
     fi
 
@@ -85,20 +85,24 @@ start() {
         touch "$pidfile" && chown wazuh-indexer:wazuh-indexer "$pidfile"
     fi
 
-    cd $OPENSEARCH_HOME
+    cd $OPENSEARCH_HOME || exit
     echo -n $"Starting $prog: "
     # if not running, start it up here, usually something like "daemon $exec"
-    daemon --user wazuh-indexer --pidfile $pidfile $exec -p $pidfile -d
+    if command -v systemctl; then
+        daemon --user wazuh-indexer --pidfile $pidfile $exec -p $pidfile -d
+    else
+        runuser wazuh-indexer --shell="/bin/bash" --command="$exec -p $pidfile -d"
+    fi
     retval=$?
     echo
-    [ $retval -eq 0 ] && touch $lockfile
+    [ $retval -eq 0 ] && touch $lockfile > /dev/null 2>&1
     return $retval
 }
 
 stop() {
     echo -n $"Stopping $prog: "
     # stop it here, often "killproc $prog"
-    killproc -p $pidfile -d ${stopping.timeout} $prog
+    killproc -p $pidfile -d 86400 $prog
     retval=$?
     echo
     [ $retval -eq 0 ] && rm -f $lockfile
@@ -111,6 +115,7 @@ restart() {
 }
 
 reload() {
+    # shellcheck disable=SC2317
     restart
 }
 

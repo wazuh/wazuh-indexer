@@ -171,7 +171,7 @@ if [ $1 = 2 ]; then
         echo "Stop existing %{name} service"
         touch %{restart_service}
         service %{name} stop
-    elif command -v /etc/init.d/%{name} > /dev/null /dev/null 2>&1 && /etc/init.d/%{name} status > /dev/null 2>&1; then
+    elif command -v /etc/init.d/%{name} > /dev/null 2>&1 && /etc/init.d/%{name} status > /dev/null 2>&1; then
         echo "Stop existing %{name} service"
         touch %{restart_service}
         /etc/init.d/%{name} stop
@@ -228,43 +228,53 @@ if command -v systemd-tmpfiles > /dev/null; then
     systemd-tmpfiles --create %{name}.conf
 fi
 
-if ! [ -d %{config_dir}/certs ] && [ -f %{product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh ]; then
-    echo "No certificates detected in %{config_dir}, installing demo certificates..."
-    echo "### If you are using a custom certificates path, ignore this message."
-    bash %{product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh > %{log_dir}/install_demo_certificates.log 2>&1
-fi
-
-if [ -f %{restart_service} ] && [ $1 = 2 ]; then
-    echo "Restarting wazuh-indexer service..."
-    if command -v systemctl > /dev/null; then
-        systemctl restart wazuh-indexer.service > /dev/null 2>&1
-    elif command -v service > /dev/null; then
-        service wazuh-indexer restart > /dev/null 2>&1
-    elif command -v /etc/init.d/wazuh-indexer > /dev/null; then
-        /etc/init.d/wazuh-indexer restart > /dev/null 2>&1
+if [ $1 = 2 ]; then
+    if [ -f %{restart_service} ]; then
+        echo "Restarting wazuh-indexer service after upgrade"
+        if command -v systemctl > /dev/null; then
+            systemctl restart wazuh-indexer.service > /dev/null 2>&1
+        elif command -v service > /dev/null; then
+            service wazuh-indexer restart > /dev/null 2>&1
+        elif command -v /etc/init.d/wazuh-indexer > /dev/null; then
+            /etc/init.d/wazuh-indexer restart > /dev/null 2>&1
+        fi
+        rm -f %{restart_service}
+    else
+        echo "### NOT restarting wazuh-indexer service after upgrade"
+        echo "### You can start wazuh-indexer service by executing"
+        if command -v systemctl > /dev/null; then
+            echo " sudo systemctl start wazuh-indexer.service"
+        elif command -v service > /dev/null; then
+            echo " sudo service wazuh-indexer start"
+        elif command -v /etc/init.d/wazuh-indexer > /dev/null; then
+            echo " sudo /etc/init.d/wazuh-indexer start"
+        fi
     fi
-    rm -f %{restart_service}
-    echo "wazuh-indexer service restarted."
-    exit 0
-fi
-
-# Messages
-if command -v systemctl > /dev/null; then
-    echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using systemd"
-    echo " sudo systemctl daemon-reload"
-    echo " sudo systemctl enable wazuh-indexer.service"
-    echo "### You can start wazuh-indexer service by executing"
-    echo " sudo systemctl start wazuh-indexer.service"
-elif command -v chkconfig > /dev/null; then
-    echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using chkconfig"
-    echo " sudo chkconfig --add wazuh-indexer"
-    echo "### You can start wazuh-indexer service by executing"
-    echo " sudo service wazuh-indexer start"
-elif command -v update-rc.d > /dev/null; then
-    echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using update-rc.d"
-    echo " sudo update-rc.d wazuh-indexer defaults 95 10"
-    echo "### You can start wazuh-indexer service by executing"
-    echo " sudo /etc/init.d/wazuh-indexer start"
+else 
+    # Messages
+    if command -v systemctl > /dev/null; then
+        echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using systemd"
+        echo " sudo systemctl daemon-reload"
+        echo " sudo systemctl enable wazuh-indexer.service"
+        echo "### You can start wazuh-indexer service by executing"
+        echo " sudo systemctl start wazuh-indexer.service"
+    elif command -v chkconfig > /dev/null; then
+        echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using chkconfig"
+        echo " sudo chkconfig --add wazuh-indexer"
+        echo "### You can start wazuh-indexer service by executing"
+        echo " sudo service wazuh-indexer start"
+    elif command -v update-rc.d > /dev/null; then
+        echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using update-rc.d"
+        echo " sudo update-rc.d wazuh-indexer defaults 95 10"
+        echo "### You can start wazuh-indexer service by executing"
+        echo " sudo /etc/init.d/wazuh-indexer start"
+    fi
+    if ! [ -d %{config_dir}/certs ] && [ -f %{product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh ]; then
+        echo "### Installing wazuh-indexer demo certificates in %{config_dir}"
+        echo " If you are using a custom certificates path, ignore this message"
+        echo " See demo certs creation log in %{log_dir}/install_demo_certificates.log"
+        bash %{product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh > %{log_dir}/install_demo_certificates.log 2>&1
+    fi
 fi
 exit 0
 
@@ -280,7 +290,7 @@ if [ $1 = 0 ]; then
     elif command -v service > /dev/null && service %{name} status > /dev/null; then
         echo "Stop existing %{name} service"
         service %{name} stop
-    elif command -v /etc/init.d/%{name} > /dev/null /dev/null 2>&1 && /etc/init.d/%{name} status > /dev/null 2>&1; then
+    elif command -v /etc/init.d/%{name} > /dev/null 2>&1 && /etc/init.d/%{name} status > /dev/null 2>&1; then
         echo "Stop existing %{name} service"
         /etc/init.d/%{name} stop
     fi

@@ -160,30 +160,34 @@ exit 0
 %pre
 set -e
 echo "pre-install script"
-# Stop existing wazuh-indexer service
-if command -v systemctl >/dev/null && systemctl is-active %{name}.service >/dev/null; then
-    echo "Stop existing %{name}.service"
-    touch %{restart_service}
-    systemctl --no-reload stop %{name}.service
-elif command -v service >/dev/null && service %{name} status >/dev/null; then
-    echo "Stop existing %{name} service"
-    touch %{restart_service}
-    service %{name} stop
-elif command -v /etc/init.d/%{name} >/dev/null && /etc/init.d/%{name} status >/dev/null 2>&1; then
-    echo "Stop existing %{name} service"
-    touch %{restart_service}
-    /etc/init.d/%{name} stop
-fi
-# Stop existing wazuh-indexer performance-analyzer service
-if command -v systemctl >/dev/null && systemctl is-active %{name}-performance-analyzer.service >/dev/null; then
-    echo "Stop existing %{name}-performance-analyzer.service"
-    systemctl --no-reload stop %{name}-performance-analyzer.service
-elif command -v service >/dev/null && service %{name}-performance-analyzer status >/dev/null; then
-    echo "Stop existing %{name}-performance-analyzer service"
-    service %{name}-performance-analyzer stop
-elif command -v /etc/init.d/%{name}-performance-analyzer >/dev/null && /etc/init.d/%{name}-performance-analyzer status >/dev/null; then
-    echo "Stop existing %{name}-performance-analyzer service"
-    /etc/init.d/%{name}-performance-analyzer stop
+
+# Stop the services to upgrade the package
+if [ $1 = 2 ]; then
+    # Stop wazuh-indexer service
+    if command -v systemctl >/dev/null && systemctl is-active %{name}.service >/dev/null; then
+        echo "Stop existing %{name}.service"
+        touch %{restart_service}
+        systemctl --no-reload stop %{name}.service
+    elif command -v service >/dev/null && service %{name} status >/dev/null; then
+        echo "Stop existing %{name} service"
+        touch %{restart_service}
+        service %{name} stop
+    elif command -v /etc/init.d/%{name} >/dev/null /dev/null 2>&1 && /etc/init.d/%{name} status >/dev/null 2>&1; then
+        echo "Stop existing %{name} service"
+        touch %{restart_service}
+        /etc/init.d/%{name} stop
+    fi
+    # Stop wazuh-indexer-performance-analyzer service
+    if command -v systemctl >/dev/null && systemctl is-active %{name}-performance-analyzer.service >/dev/null; then
+        echo "Stop existing %{name}-performance-analyzer.service"
+        systemctl --no-reload stop %{name}-performance-analyzer.service
+    elif command -v service >/dev/null && service %{name}-performance-analyzer status >/dev/null; then
+        echo "Stop existing %{name}-performance-analyzer service"
+        service %{name}-performance-analyzer stop
+    elif command -v /etc/init.d/%{name}-performance-analyzer >/dev/null && /etc/init.d/%{name}-performance-analyzer status >/dev/null; then
+        echo "Stop existing %{name}-performance-analyzer service"
+        /etc/init.d/%{name}-performance-analyzer stop
+    fi
 fi
 
 # Create user and group if they do not already exist.
@@ -268,29 +272,33 @@ exit 0
 %preun
 set -e
 echo "pre-uninstall script"
-# Stop existing wazuh-indexer service
-if command -v systemctl >/dev/null && systemctl is-active %{name}.service >/dev/null; then
-    echo "Stop existing %{name}.service"
-    systemctl --no-reload stop %{name}.service
-elif command -v service >/dev/null && service %{name} status >/dev/null; then
-    echo "Stop existing %{name} service"
-    service %{name} stop
-elif command -v /etc/init.d/%{name} >/dev/null && /etc/init.d/%{name} status >/dev/null 2>&1; then
-    echo "Stop existing %{name} service"
-    /etc/init.d/%{name} stop
+
+# Stop the services to remove the package
+if [ $1 = 0 ]; then
+    # Stop wazuh-indexer service
+    if command -v systemctl >/dev/null && systemctl is-active %{name}.service >/dev/null; then
+        echo "Stop existing %{name}.service"
+        systemctl --no-reload stop %{name}.service
+    elif command -v service >/dev/null && service %{name} status >/dev/null; then
+        echo "Stop existing %{name} service"
+        service %{name} stop
+    elif command -v /etc/init.d/%{name} >/dev/null /dev/null 2>&1 && /etc/init.d/%{name} status >/dev/null 2>&1; then
+        echo "Stop existing %{name} service"
+        /etc/init.d/%{name} stop
+    fi
+    # Stop wazuh-indexer-performance-analyzer service
+    if command -v systemctl >/dev/null && systemctl is-active %{name}-performance-analyzer.service >/dev/null; then
+        echo "Stop existing %{name}-performance-analyzer.service"
+        systemctl --no-reload stop %{name}-performance-analyzer.service
+    elif command -v service >/dev/null && service %{name}-performance-analyzer status >/dev/null; then
+        echo "Stop existing %{name}-performance-analyzer service"
+        service %{name}-performance-analyzer stop
+    elif command -v /etc/init.d/%{name}-performance-analyzer > /dev/null 2>&1 && /etc/init.d/%{name}-performance-analyzer status > /dev/null 2>&1; then
+        echo "Stop existing %{name}-performance-analyzer service"
+        /etc/init.d/%{name}-performance-analyzer stop
+    fi
+    exit 0
 fi
-# Stop existing wazuh-indexer performance-analyzer service
-if command -v systemctl >/dev/null && systemctl is-active %{name}-performance-analyzer.service >/dev/null; then
-    echo "Stop existing %{name}-performance-analyzer.service"
-    systemctl --no-reload stop %{name}-performance-analyzer.service
-elif command -v service >/dev/null && service %{name}-performance-analyzer status >/dev/null; then
-    echo "Stop existing %{name}-performance-analyzer service"
-    service %{name}-performance-analyzer stop
-elif command -v /etc/init.d/%{name}-performance-analyzer >/dev/null && /etc/init.d/%{name}-performance-analyzer status >/dev/null; then
-    echo "Stop existing %{name}-performance-analyzer service"
-    /etc/init.d/%{name}-performance-analyzer stop
-fi
-exit 0
 
 %files -f %{_topdir}/filelist.txt
 %defattr(640, %{name}, %{name}, 750)

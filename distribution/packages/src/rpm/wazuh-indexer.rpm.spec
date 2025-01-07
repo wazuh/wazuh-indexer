@@ -159,32 +159,31 @@ exit 0
 
 %pre
 set -e
-echo "pre-install script"
 
 # Stop the services to upgrade the package
 if [ $1 = 2 ]; then
     # Stop wazuh-indexer service
-    if command -v systemctl >/dev/null && systemctl is-active %{name}.service >/dev/null; then
+    if command -v systemctl > /dev/null && systemctl is-active %{name}.service > /dev/null; then
         echo "Stop existing %{name}.service"
         touch %{restart_service}
         systemctl --no-reload stop %{name}.service
-    elif command -v service >/dev/null && service %{name} status >/dev/null; then
+    elif command -v service > /dev/null && service %{name} status > /dev/null; then
         echo "Stop existing %{name} service"
         touch %{restart_service}
         service %{name} stop
-    elif command -v /etc/init.d/%{name} >/dev/null /dev/null 2>&1 && /etc/init.d/%{name} status >/dev/null 2>&1; then
+    elif command -v /etc/init.d/%{name} > /dev/null /dev/null 2>&1 && /etc/init.d/%{name} status > /dev/null 2>&1; then
         echo "Stop existing %{name} service"
         touch %{restart_service}
         /etc/init.d/%{name} stop
     fi
     # Stop wazuh-indexer-performance-analyzer service
-    if command -v systemctl >/dev/null && systemctl is-active %{name}-performance-analyzer.service >/dev/null; then
+    if command -v systemctl > /dev/null && systemctl is-active %{name}-performance-analyzer.service > /dev/null; then
         echo "Stop existing %{name}-performance-analyzer.service"
         systemctl --no-reload stop %{name}-performance-analyzer.service
-    elif command -v service >/dev/null && service %{name}-performance-analyzer status >/dev/null; then
+    elif command -v service > /dev/null && service %{name}-performance-analyzer status > /dev/null; then
         echo "Stop existing %{name}-performance-analyzer service"
         service %{name}-performance-analyzer stop
-    elif command -v /etc/init.d/%{name}-performance-analyzer >/dev/null && /etc/init.d/%{name}-performance-analyzer status >/dev/null; then
+    elif command -v /etc/init.d/%{name}-performance-analyzer > /dev/null 2>&1 && /etc/init.d/%{name}-performance-analyzer status > /dev/null 2>&1; then
         echo "Stop existing %{name}-performance-analyzer service"
         /etc/init.d/%{name}-performance-analyzer stop
     fi
@@ -235,7 +234,7 @@ if ! [ -d %{config_dir}/certs ] && [ -f %{product_dir}/plugins/opensearch-securi
     bash %{product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh > %{log_dir}/install_demo_certificates.log 2>&1
 fi
 
-if [ -f %{restart_service} ]; then
+if [ -f %{restart_service} ] && [ $1 = 2 ]; then
     echo "Restarting wazuh-indexer service..."
     if command -v systemctl > /dev/null; then
         systemctl restart wazuh-indexer.service > /dev/null 2>&1
@@ -250,18 +249,18 @@ if [ -f %{restart_service} ]; then
 fi
 
 # Messages
-if command -v systemctl >/dev/null; then
+if command -v systemctl > /dev/null; then
     echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using systemd"
     echo " sudo systemctl daemon-reload"
     echo " sudo systemctl enable wazuh-indexer.service"
     echo "### You can start wazuh-indexer service by executing"
     echo " sudo systemctl start wazuh-indexer.service"
-elif command -v chkconfig >/dev/null; then
+elif command -v chkconfig > /dev/null; then
     echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using chkconfig"
     echo " sudo chkconfig --add wazuh-indexer"
     echo "### You can start wazuh-indexer service by executing"
     echo " sudo service wazuh-indexer start"
-elif command -v update-rc.d >/dev/null; then
+elif command -v update-rc.d > /dev/null; then
     echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using update-rc.d"
     echo " sudo update-rc.d wazuh-indexer defaults 95 10"
     echo "### You can start wazuh-indexer service by executing"
@@ -271,26 +270,25 @@ exit 0
 
 %preun
 set -e
-echo "pre-uninstall script"
 
 # Stop the services to remove the package
 if [ $1 = 0 ]; then
     # Stop wazuh-indexer service
-    if command -v systemctl >/dev/null && systemctl is-active %{name}.service >/dev/null; then
+    if command -v systemctl > /dev/null && systemctl is-active %{name}.service > /dev/null; then
         echo "Stop existing %{name}.service"
         systemctl --no-reload stop %{name}.service
-    elif command -v service >/dev/null && service %{name} status >/dev/null; then
+    elif command -v service > /dev/null && service %{name} status > /dev/null; then
         echo "Stop existing %{name} service"
         service %{name} stop
-    elif command -v /etc/init.d/%{name} >/dev/null /dev/null 2>&1 && /etc/init.d/%{name} status >/dev/null 2>&1; then
+    elif command -v /etc/init.d/%{name} > /dev/null /dev/null 2>&1 && /etc/init.d/%{name} status > /dev/null 2>&1; then
         echo "Stop existing %{name} service"
         /etc/init.d/%{name} stop
     fi
     # Stop wazuh-indexer-performance-analyzer service
-    if command -v systemctl >/dev/null && systemctl is-active %{name}-performance-analyzer.service >/dev/null; then
+    if command -v systemctl > /dev/null && systemctl is-active %{name}-performance-analyzer.service > /dev/null; then
         echo "Stop existing %{name}-performance-analyzer.service"
         systemctl --no-reload stop %{name}-performance-analyzer.service
-    elif command -v service >/dev/null && service %{name}-performance-analyzer status >/dev/null; then
+    elif command -v service > /dev/null && service %{name}-performance-analyzer status > /dev/null; then
         echo "Stop existing %{name}-performance-analyzer service"
         service %{name}-performance-analyzer stop
     elif command -v /etc/init.d/%{name}-performance-analyzer > /dev/null 2>&1 && /etc/init.d/%{name}-performance-analyzer status > /dev/null 2>&1; then
@@ -314,14 +312,12 @@ fi
 %attr(0644, root, root) %config(noreplace) %{_prefix}/lib/sysctl.d/%{name}.conf
 %attr(0644, root, root) %config(noreplace) %{_prefix}/lib/tmpfiles.d/%{name}.conf
 
-
 # Configuration files
 %config(noreplace) %attr(0660, root, %{name}) "%{_sysconfdir}/sysconfig/%{name}"
 %config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/log4j2.properties
 %config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/jvm.options
 %config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/opensearch.yml
 %config(noreplace) %attr(640, %{name}, %{name}) %{config_dir}/opensearch-security/*
-
 
 %if %observability_plugin
 %config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/opensearch-observability/observability.yml
@@ -330,7 +326,6 @@ fi
 %if %reportsscheduler_plugin
 %config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/wazuh-indexer-reports-scheduler/reports-scheduler.yml
 %endif
-
 
 # Files that need other permissions
 %attr(440, %{name}, %{name}) %{product_dir}/VERSION

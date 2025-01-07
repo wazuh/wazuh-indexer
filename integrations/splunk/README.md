@@ -51,7 +51,7 @@ The dashboards for Splunk are included in this folder. The steps to import them 
 - In the Splunk UI, go to `Settings` > `Data Inputs` > `HTTP Event Collector` and make sure that the `hec` token is enabled and uses the `wazuh-alerts` index.
 - Open a dashboard file and copy all its content.
 - In the Splunk UI, navigate to `Search & Reporting`, `Dashboards`, click `Create New Dashboard`, write the title and select `Dashboard Studio`, select `Grid` and click on `Create`.
-- On the top menu, there is a `Source` icon. Click on it, and replace all the content with the copied content from the dashboard file. After that, click on `Back` and click on `Save`.
+- On the top menu, there is a `Source` icon. Click on it, and replace all the content with the contents from one of the dashboard files under `integrations/splunk`. After that, click on `Back` and click on `Save`.
 - Repeat the steps for all the desired dashboards.
 
 Imported dashboards will appear under `Search & Reporting` > `Dashboards`.

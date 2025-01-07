@@ -8,4 +8,4 @@ services:
     volumes:
       - ${REPO_PATH:-.}/ecs:/source/ecs
     environment:
-      - ECS_MODULE=${ECS_MODULE:-default_module}
+      - ECS_MODULE=${ECS_MODULE}

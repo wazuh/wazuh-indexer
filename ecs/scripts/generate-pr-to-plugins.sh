@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
 # Constants
-MAPPINGS_SUBPATH="mappings/v8.11.0/generated/elasticsearch/legacy/template.json"
+ECS_VERSION=${ECS_VERSION:-v8.11.0}
+MAPPINGS_SUBPATH="mappings/${ECS_VERSION}/generated/elasticsearch/legacy/template.json"
 TEMPLATES_PATH="plugins/setup/src/main/resources/"
 PLUGINS_REPO="wazuh/wazuh-indexer-plugins"
 CURRENT_PATH=$(pwd)
@@ -26,7 +27,7 @@ validate_dependencies() {
     done
 }
 
-fetch_and_extract_modules() {
+detect_modified_modules() {
     echo
     echo "---> Fetching and extracting modified ECS modules..."
     git fetch origin +refs/heads/master:refs/remotes/origin/master
@@ -105,15 +106,15 @@ clone_target_repo() {
 commit_and_push_changes() {
     echo
     echo "---> Committing and pushing changes to ${PLUGINS_REPO} repository..."
-    git ls-remote --exit-code --heads origin "$branch_name" >/dev/null 2>&1
+    git ls-remote --exit-code --heads origin "$BRANCH_NAME" >/dev/null 2>&1
     EXIT_CODE=$?
 
     if [[ $EXIT_CODE == '0' ]]; then
-        git checkout "$branch_name"
-        git pull origin "$branch_name"
+        git checkout "$BRANCH_NAME"
+        git pull origin "$BRANCH_NAME"
     else
-        git checkout -b "$branch_name"
-        git push --set-upstream origin "$branch_name"
+        git checkout -b "$BRANCH_NAME"
+        git push --set-upstream origin "$BRANCH_NAME"
     fi
 
     echo "Copying ECS templates to the plugins repository..."
@@ -154,7 +155,7 @@ create_or_update_pr() {
     local title
     local body
 
-    existing_pr=$(gh pr list --head "$branch_name" --json number --jq '.[].number')
+    existing_pr=$(gh pr list --head "$BRANCH_NAME" --json number --jq '.[].number')
     # Format modules
     modules_title=$(IFS=", "; echo "${relevant_modules[*]}")
     modules_body=$(printf -- '- %s\n' "${relevant_modules[@]}")
@@ -168,7 +169,7 @@ create_or_update_pr() {
             --title "$title" \
             --body "$body" \
             --base master \
-            --head "$branch_name"
+            --head "$BRANCH_NAME"
     else
         echo "PR already exists: $existing_pr. Updating the PR..."
         gh pr edit "$existing_pr" \
@@ -178,8 +179,8 @@ create_or_update_pr() {
 }
 
 usage() {
-    echo "Usage: $0 -b <branch_name> -t <GITHUB_TOKEN>"
-    echo "  -b <branch_name>    Branch name to create or update the PR."
+    echo "Usage: $0 -b <BRANCH_NAME> -t <GITHUB_TOKEN>"
+    echo "  -b [BRANCH_NAME]    (Optional) Branch name to create or update the PR. Default: current branch."
     echo "  -t [GITHUB_TOKEN]   (Optional) GitHub token to authenticate with GitHub API."
     echo "                      If not provided, the script will use the GITHUB_TOKEN environment variable."
     exit 1
@@ -189,7 +190,7 @@ main() {
     while getopts ":b:t:o:" opt; do
         case ${opt} in
             b )
-                branch_name=$OPTARG
+                BRANCH_NAME=$OPTARG
                 ;;
             t )
                 GITHUB_TOKEN=$OPTARG
@@ -206,12 +207,23 @@ main() {
                 ;;
         esac
     done
-    if [ -z "$branch_name" ] || [ -z "$GITHUB_TOKEN" ]; then
+
+    if [ -z "$BRANCH_NAME" ]; then
+        # Check if we are in a Git repository
+        if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+            BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
+        else
+            echo "Error: You are not in a Git repository." >&2
+            exit 1
+        fi
+    fi
+
+    if [ -z "$BRANCH_NAME" ] || [ -z "$GITHUB_TOKEN" ]; then
         usage
     fi
 
     validate_dependencies
-    fetch_and_extract_modules
+    detect_modified_modules
     run_ecs_generator # Exit if no changes on relevant modules.
     clone_target_repo
     commit_and_push_changes # Exit if no changes detected.

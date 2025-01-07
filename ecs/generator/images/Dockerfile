@@ -1,5 +1,8 @@
 FROM python:3.10
 
+# Define the version as a build argument 
+ARG ECS_VERSION=v8.11.0
+
 # Update the package list and upgrade all packages
 RUN apt-get update && \
     apt-get upgrade -y && \
@@ -9,7 +12,7 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
     # Clone elastic ECS repository and install required Python libraries
-    git clone https://github.com/elastic/ecs.git -b v8.11.0 --depth 1 && \
+    git clone https://github.com/elastic/ecs.git -b ${ECS_VERSION} --depth 1 && \
     pip install -r ecs/scripts/requirements.txt && \
     # Create the directory for the ecs definitions (this will be used as a volume)
     mkdir -p /source/ecs

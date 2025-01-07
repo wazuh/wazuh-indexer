@@ -27,7 +27,8 @@ jobs:
       - name: Set up Docker Compose
         run: sudo apt-get install docker-compose
 
-      - name: Generate PR to wazuh-indxer-plugins
+      - name: Generate PR to wazuh-indexer-plugins
+        if: github.repository == 'wazuh/wazuh-indexer'
         env:
           GITHUB_TOKEN: ${{ secrets.ACTION_TOKEN }}
         run: |
@@ -35,6 +36,7 @@ jobs:
             -b ${{ steps.branch-name.outputs.branch }} \
             -o ../ecs-templates
       - name: Upload artifact
+        if: github.repository == 'wazuh/wazuh-indexer'
         uses: actions/upload-artifact@v4
         with:
           name: ecs-templates

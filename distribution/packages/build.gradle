@@ -150,11 +150,7 @@ Closure commonPackageConfig(String type, boolean jdk, String architecture) {
       preUninstall file("${scripts}/prerm")
     } else {
       String scripts = "${packagingFiles}"
-      // spec file("${scripts}/wazuh-indexer.rpm.spec")
     }
-    // if (type == 'rpm') {
-    //   postTrans file("${scripts}/posttrans")
-    // }
 
     // top level "into" directive is not inherited from ospackage for some reason, so we must
     // specify it again explicitly for copying common files

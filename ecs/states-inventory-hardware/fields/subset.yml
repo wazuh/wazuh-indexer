@@ -8,7 +8,6 @@ fields:
   agent:
     fields:
       groups: {}
-      id: {}
       name: {}
       type: {}
       version: {}

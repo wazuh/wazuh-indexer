@@ -3,8 +3,8 @@ name: ECS Generator
 on:
   push:
     paths:
-      - 'ecs/**/*.json'
-      - 'ecs/**/*.yml'
+      - "ecs/**/*.json"
+      - "ecs/**/*.yml"
 
 jobs:
   run-ecs-generator:
@@ -34,9 +34,10 @@ jobs:
         run: |
           bash ecs/scripts/generate-pr-to-plugins.sh \
             -b ${{ steps.branch-name.outputs.branch }} \
-            -o ../ecs-templates
+            -o ./ecs-templates
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ecs-templates
-          path: "../ecs-templates"
+          path: "./ecs-templates"

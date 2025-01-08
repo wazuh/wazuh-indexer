@@ -16,7 +16,7 @@ case "$1" in
     ;;
     remove)
         echo "Running Wazuh Indexer Pre-Removal Script"
-        # Stop existin wazuh-indexer.service
+        # Stop existing wazuh-indexer.service
         if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1 && systemctl is-active wazuh-indexer.service > /dev/null 2>&1; then
             echo "Stop existing wazuh-indexer.service"
             systemctl --no-reload stop wazuh-indexer.service > /dev/null 2>&1

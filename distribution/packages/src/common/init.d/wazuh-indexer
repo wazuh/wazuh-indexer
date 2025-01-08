@@ -88,7 +88,7 @@ start() {
     cd $OPENSEARCH_HOME || exit
     echo -n $"Starting $prog: "
     # if not running, start it up here, usually something like "daemon $exec"
-    if command -v systemctl; then
+    if command -v daemon; then
         daemon --user wazuh-indexer --pidfile $pidfile $exec -p $pidfile -d
     else
         runuser wazuh-indexer --shell="/bin/bash" --command="$exec -p $pidfile -d"

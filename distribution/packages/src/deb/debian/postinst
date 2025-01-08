@@ -32,12 +32,6 @@ chown -R wazuh-indexer:wazuh-indexer ${data_dir}
 chown -R wazuh-indexer:wazuh-indexer ${pid_dir}
 chown -R wazuh-indexer:wazuh-indexer ${tmp_dir}
 
-# Check if the script is executed on upgrade
-is_upgrade=false
-if [ -n "$2" ]; then
-    is_upgrade=true
-fi
-
 export OPENSEARCH_PATH_CONF=${OPENSEARCH_PATH_CONF:-${config_dir}}
 # Apply Performance Analyzer settings, as per https://github.com/opensearch-project/opensearch-build/blob/2.18.0/scripts/pkg/build_templates/current/opensearch/deb/debian/postinst#L28-L37
 if ! grep -q '## OpenSearch Performance Analyzer' "$OPENSEARCH_PATH_CONF/jvm.options"; then
@@ -66,10 +60,16 @@ if command -v systemd-tmpfiles > /dev/null 2>&1 && systemctl > /dev/null 2>&1; t
     systemd-tmpfiles --create wazuh-indexer.conf > /dev/null 2>&1
 fi
 
-# Check if its upgrade and restart service
-if [ "$is_upgrade" = true ]; then
+if command -v /etc/init.d/wazuh-indexer > /dev/null 2>&1; then
+    # Ensure the script is executable
+    chmod +x /etc/init.d/wazuh-indexer > /dev/null 2>&1
+fi
+
+# Check if the script is executed on upgrade
+if [ -n "$2" ]; then
     if [ -f $restart_service ]; then
         echo "Restarting wazuh-indexer service after upgrade"
+        rm -f $restart_service
         if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
             systemctl restart wazuh-indexer.service > /dev/null 2>&1
         elif command -v service > /dev/null 2>&1; then
@@ -77,7 +77,6 @@ if [ "$is_upgrade" = true ]; then
         elif command -v /etc/init.d/wazuh-indexer > /dev/null 2>&1; then
             /etc/init.d/wazuh-indexer restart > /dev/null 2>&1
         fi
-        rm -f $restart_service
     else
         echo "### NOT restarting wazuh-indexer service after upgrade"
         echo "### You can start wazuh-indexer service by executing"
@@ -102,7 +101,7 @@ else
         echo " sudo chkconfig --add wazuh-indexer"
         echo "### You can start wazuh-indexer service by executing"
         echo " sudo service wazuh-indexer start"
-    elif command -v update-rc.d > /dev/null 2>&1; then
+    elif command -v update-rc.d > /dev/null 2>&1 && command -v /etc/init.d/wazuh-indexer > /dev/null 2>&1; then
         echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using update-rc.d"
         echo " sudo update-rc.d wazuh-indexer defaults 95 10"
         echo "### You can start wazuh-indexer service by executing"

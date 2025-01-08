@@ -230,8 +230,8 @@ fi
 
 if [ $1 = 2 ]; then
     if [ -f %{restart_service} ]; then
-        rm -f %{restart_service}
         echo "Restarting wazuh-indexer service after upgrade"
+        rm -f %{restart_service}
         if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
             systemctl restart wazuh-indexer.service > /dev/null 2>&1
         elif command -v service > /dev/null 2>&1; then

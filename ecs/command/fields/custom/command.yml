@@ -33,7 +33,7 @@
       description: >
         The requested action type. Examples: `restart`, `update`, `change_group`, `apply_policy`, ...
     - name: action.args
-      type: keyword
+      type: object
       level: custom
       description: >
         Array of command arguments, starting with the absolute path to the executable.

@@ -60,11 +60,6 @@ if command -v systemd-tmpfiles > /dev/null 2>&1 && systemctl > /dev/null 2>&1; t
     systemd-tmpfiles --create wazuh-indexer.conf > /dev/null 2>&1
 fi
 
-if command -v /etc/init.d/wazuh-indexer > /dev/null 2>&1; then
-    # Ensure the script is executable
-    chmod +x /etc/init.d/wazuh-indexer > /dev/null 2>&1
-fi
-
 # Check if the script is executed on upgrade
 if [ -n "$2" ]; then
     if [ -f $restart_service ]; then

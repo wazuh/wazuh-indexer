@@ -96,6 +96,10 @@ start() {
     if [ -n "$pidfile" ] && [ ! -e "$pidfile" ]; then
         touch "$pidfile" && chown wazuh-indexer:wazuh-indexer "$pidfile"
     fi
+    # Ensure that the lockfile directory exists
+    if [ ! -d "/var/lock/subsys/" ]; then
+        mkdir -p "/var/lock/subsys/"
+    fi
 
     cd $OPENSEARCH_HOME || exit
     echo -n $"Starting $prog..."
@@ -108,7 +112,9 @@ start() {
     retval=$?
     echo
     if [ $retval -eq 0 ]; then
-        touch $lockfile > /dev/null 2>&1
+        if [ ! -f $lockfile ]; then
+            touch $lockfile > /dev/null 2>&1
+        fi
         echo "$prog started successfully"
     else
         echo "Failed to start $prog"

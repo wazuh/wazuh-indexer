@@ -98,12 +98,12 @@ start() {
     fi
 
     cd $OPENSEARCH_HOME || exit
-    echo -n $"Starting $prog: "
+    echo -n $"Starting $prog..."
     # if not running, start it up here, usually something like "daemon $exec"
     if command -v daemon > /dev/null 2>&1; then
-        daemon --user wazuh-indexer --pidfile $pidfile $exec -d
+        nohup daemon --user wazuh-indexer --pidfile $pidfile $exec -d > /dev/null 2>&1
     else
-        runuser wazuh-indexer --shell="/bin/bash" --command="$exec -p $pidfile -d"
+        nohup runuser wazuh-indexer --shell="/bin/bash" --command="$exec -p $pidfile -d" > /dev/null 2>&1
     fi
     retval=$?
     echo
@@ -112,13 +112,24 @@ start() {
 }
 
 stop() {
-    echo -n $"Stopping $prog: "
-    # stop it here, often "killproc $prog"
-    killproc -p $pidfile -d 86400 $prog
-    retval=$?
+    echo -n $"Stopping $prog... "
+    if [ -f "$pidfile" ]; then
+        pid=$(cat "$pidfile")
+        if kill -0 "$pid" > /dev/null 2>&1; then
+            kill "$pid"
+            retval=$?
+            echo
+            [ $retval -eq 0 ] && rm -f $lockfile
+            return $retval
+        else
+            echo "$prog is not running"
+            rm -f "$pidfile"
+        fi
+    else
+        echo "$prog is not running"
+    fi
     echo
-    [ $retval -eq 0 ] && rm -f $lockfile
-    return $retval
+    return 0
 }
 
 restart() {
@@ -131,13 +142,29 @@ reload() {
     restart
 }
 
+status() {
+    if [ -f "$pidfile" ]; then
+        pid=$(cat "$pidfile")
+        if [ -d "/proc/$pid" ]; then
+            echo "$prog is running (PID: $pid)"
+            return 0
+        else
+            echo "$prog is not running, but pidfile exists"
+            return 1
+        fi
+    else
+        echo "$prog is not running"
+        return 3
+    fi
+}
+
 force_reload() {
     restart
 }
 
 rh_status() {
     # run checks to determine if the service is running or use generic status
-    status -p $pidfile $prog
+    status
 }
 
 rh_status_q() {

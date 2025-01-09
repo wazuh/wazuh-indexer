@@ -41,8 +41,8 @@ fi
 
 # overwrite settings from default file
 if [ -f "$DEFAULT" ]; then
-	# shellcheck disable=SC1090
-	. "$DEFAULT"
+    # shellcheck disable=SC1090
+    . "$DEFAULT"
 fi
 
 # Sets the default values for wazuh-indexer variables used in this script
@@ -72,7 +72,7 @@ export WI_STARTUP_SLEEP_TIME
 lockfile=/var/lock/subsys/$prog
 
 if [ ! -x "$exec" ]; then
-    echo "The wazuh-indexer startup script does not exists or it is not executable, tried: $exec"
+    echo "The wazuh-indexer startup script does not exist or it is not executable, tried: $exec"
     exit 1
 fi
 
@@ -107,7 +107,12 @@ start() {
     fi
     retval=$?
     echo
-    [ $retval -eq 0 ] && touch $lockfile > /dev/null 2>&1
+    if [ $retval -eq 0 ]; then
+        touch $lockfile > /dev/null 2>&1
+        echo "$prog started successfully"
+    else
+        echo "Failed to start $prog"
+    fi
     return $retval
 }
 
@@ -119,7 +124,12 @@ stop() {
             kill "$pid"
             retval=$?
             echo
-            [ $retval -eq 0 ] && rm -f $lockfile
+            if [ $retval -eq 0 ]; then
+                rm -f $lockfile
+                echo "$prog stopped successfully"
+            else
+                echo "Failed to stop $prog"
+            fi
             return $retval
         else
             echo "$prog is not running"
@@ -138,7 +148,6 @@ restart() {
 }
 
 reload() {
-    # shellcheck disable=SC2317
     restart
 }
 
@@ -163,7 +172,6 @@ force_reload() {
 }
 
 rh_status() {
-    # run checks to determine if the service is running or use generic status
     status
 }
 

@@ -230,50 +230,51 @@ fi
 
 if [ $1 = 2 ]; then
     if [ -f %{restart_service} ]; then
-        echo "Restarting wazuh-indexer service after upgrade"
+        echo "Restarting %{name} service after upgrade"
         rm -f %{restart_service}
         if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
-            systemctl restart wazuh-indexer.service > /dev/null 2>&1
+            systemctl restart %{name}.service > /dev/null 2>&1
         elif command -v service > /dev/null 2>&1; then
-            service wazuh-indexer restart > /dev/null 2>&1
-        elif command -v /etc/init.d/wazuh-indexer > /dev/null 2>&1; then
-            /etc/init.d/wazuh-indexer restart > /dev/null 2>&1
+            service %{name} restart > /dev/null 2>&1
+        elif command -v /etc/init.d/%{name} > /dev/null 2>&1; then
+            /etc/init.d/%{name} restart > /dev/null 2>&1
         fi
     else
-        echo "### NOT restarting wazuh-indexer service after upgrade"
-        echo "### You can start wazuh-indexer service by executing"
+        echo "### NOT restarting %{name} service after upgrade"
+        echo "### You can start %{name} service by executing"
         if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
-            echo " sudo systemctl start wazuh-indexer.service"
+            echo " sudo systemctl start %{name}.service"
         elif command -v service > /dev/null 2>&1; then
-            echo " sudo service wazuh-indexer start"
-        elif command -v /etc/init.d/wazuh-indexer > /dev/null 2>&1; then
-            echo " sudo /etc/init.d/wazuh-indexer start"
+            echo " sudo service %{name} start"
+        elif command -v /etc/init.d/%{name} > /dev/null 2>&1; then
+            echo " sudo /etc/init.d/%{name} start"
         fi
     fi
-else 
+else
     # Messages
     if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
-        echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using systemd"
+        echo "### NOT starting on installation, please execute the following statements to configure %{name} service to start automatically using systemd"
         echo " sudo systemctl daemon-reload"
-        echo " sudo systemctl enable wazuh-indexer.service"
-        echo "### You can start wazuh-indexer service by executing"
-        echo " sudo systemctl start wazuh-indexer.service"
+        echo " sudo systemctl enable %{name}.service"
+        echo "### You can start %{name} service by executing"
+        echo " sudo systemctl start %{name}.service"
     elif command -v chkconfig > /dev/null 2>&1; then
-        echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using chkconfig"
-        echo " sudo chkconfig --add wazuh-indexer"
-        echo "### You can start wazuh-indexer service by executing"
-        echo " sudo service wazuh-indexer start"
+        echo "### NOT starting on installation, please execute the following statements to configure %{name} service to start automatically using chkconfig"
+        echo " sudo chkconfig --add %{name}"
+        echo "### You can start %{name} service by executing"
+        echo " sudo service %{name} start"
     elif command -v update-rc.d > /dev/null 2>&1; then
-        echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using update-rc.d"
-        echo " sudo update-rc.d wazuh-indexer defaults 95 10"
-        echo "### You can start wazuh-indexer service by executing"
-        echo " sudo /etc/init.d/wazuh-indexer start"
+        echo "### NOT starting on installation, please execute the following statements to configure %{name} service to start automatically using update-rc.d"
+        echo " sudo update-rc.d %{name} defaults 95 10"
+        echo "### You can start %{name} service by executing"
+        echo " sudo /etc/init.d/%{name} start"
     fi
     if ! [ -d %{config_dir}/certs ] && [ -f %{product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh ]; then
-        echo "### Installing wazuh-indexer demo certificates in %{config_dir}"
+        echo "### Installing %{name} demo certificates in %{config_dir}"
         echo " If you are using a custom certificates path, ignore this message"
         echo " See demo certs creation log in %{log_dir}/install_demo_certificates.log"
         bash %{product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh > %{log_dir}/install_demo_certificates.log 2>&1
+        yes | /usr/share/%{name}/jdk/bin/keytool -trustcacerts -keystore /usr/share/%{name}/jdk/lib/security/cacerts -importcert -alias wazuh-root-ca -file %{config_dir}/certs/root-ca.pem
     fi
 fi
 exit 0

@@ -124,12 +124,12 @@ start() {
 
 stop() {
     echo -n $"Stopping $prog... "
+    echo
     if [ -f "$pidfile" ]; then
         pid=$(cat "$pidfile")
         if kill -0 "$pid" > /dev/null 2>&1; then
             kill "$pid"
             retval=$?
-            echo
             if [ $retval -eq 0 ]; then
                 rm -f $lockfile
                 echo "$prog stopped successfully"
@@ -144,12 +144,12 @@ stop() {
     else
         echo "$prog is not running"
     fi
-    echo
     return 0
 }
 
 restart() {
     stop
+    sleep 2  # Adding a short delay
     start
 }
 

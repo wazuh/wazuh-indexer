@@ -22,8 +22,6 @@ name="wazuh-indexer"
 
 product_dir="/usr/share/${name}"
 config_dir="/etc/${name}"
-# data_dir="/var/lib/${name}"
-# log_dir="/var/log/${name}"
 pid_dir="/run/${name}"
 service_dir="/usr/lib/systemd/system"
 
@@ -51,6 +49,9 @@ systemd_files+=("${buildroot}/usr/lib/tmpfiles.d/${name}.conf")
 for i in "${systemd_files[@]}"; do
 	chmod -c 0644 "$i"
 done
+
+# Permissions for the default source file
+chmod -c 0640 "${buildroot}/default/${name}"
 
 # Permissions for config files
 config_files=()

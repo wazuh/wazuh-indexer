@@ -91,16 +91,21 @@ else
         echo " sudo systemctl enable wazuh-indexer.service"
         echo "### You can start wazuh-indexer service by executing"
         echo " sudo systemctl start wazuh-indexer.service"
-    elif command -v chkconfig > /dev/null 2>&1; then
-        echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using chkconfig"
-        echo " sudo chkconfig --add wazuh-indexer"
-        echo "### You can start wazuh-indexer service by executing"
-        echo " sudo service wazuh-indexer start"
-    elif command -v update-rc.d > /dev/null 2>&1 && command -v /etc/init.d/wazuh-indexer > /dev/null 2>&1; then
-        echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using update-rc.d"
-        echo " sudo update-rc.d wazuh-indexer defaults 95 10"
-        echo "### You can start wazuh-indexer service by executing"
-        echo " sudo /etc/init.d/wazuh-indexer start"
+    else
+        if command -v chkconfig > /dev/null 2>&1; then
+            echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using chkconfig"
+            echo " sudo chkconfig --add wazuh-indexer"
+        elif command -v update-rc.d > /dev/null 2>&1; then
+            echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using update-rc.d"
+            echo " sudo update-rc.d wazuh-indexer defaults 95 10"
+        fi
+        if command -v service > /dev/null 2>&1; then
+            echo "### You can start wazuh-indexer service by executing"
+            echo " sudo service wazuh-indexer start"
+        elif command -v /etc/init.d/wazuh-indexer > /dev/null 2>&1; then
+            echo "### You can start wazuh-indexer service by executing"
+            echo " sudo /etc/init.d/wazuh-indexer start"
+        fi
     fi
     if ! [ -d "${config_dir}/certs" ] && [ -f "${product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh" ]; then
         echo "### Installing wazuh-indexer demo certificates in ${config_dir}"

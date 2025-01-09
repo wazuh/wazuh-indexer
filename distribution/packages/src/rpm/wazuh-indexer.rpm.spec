@@ -258,16 +258,21 @@ else
         echo " sudo systemctl enable %{name}.service"
         echo "### You can start %{name} service by executing"
         echo " sudo systemctl start %{name}.service"
-    elif command -v chkconfig > /dev/null 2>&1; then
-        echo "### NOT starting on installation, please execute the following statements to configure %{name} service to start automatically using chkconfig"
-        echo " sudo chkconfig --add %{name}"
-        echo "### You can start %{name} service by executing"
-        echo " sudo service %{name} start"
-    elif command -v update-rc.d > /dev/null 2>&1; then
-        echo "### NOT starting on installation, please execute the following statements to configure %{name} service to start automatically using update-rc.d"
-        echo " sudo update-rc.d %{name} defaults 95 10"
-        echo "### You can start %{name} service by executing"
-        echo " sudo /etc/init.d/%{name} start"
+    else
+        if command -v chkconfig > /dev/null 2>&1; then
+            echo "### NOT starting on installation, please execute the following statements to configure %{name} service to start automatically using chkconfig"
+            echo " sudo chkconfig --add %{name}"
+        elif command -v update-rc.d > /dev/null 2>&1; then
+            echo "### NOT starting on installation, please execute the following statements to configure %{name} service to start automatically using update-rc.d"
+            echo " sudo update-rc.d %{name} defaults 95 10"
+        fi
+        if command -v service > /dev/null 2>&1; then
+            echo "### You can start %{name} service by executing"
+            echo " sudo service %{name} start"
+        elif command -v /etc/init.d/%{name} > /dev/null 2>&1; then
+            echo "### You can start %{name} service by executing"
+            echo " sudo /etc/init.d/%{name} start"
+        fi
     fi
     if ! [ -d %{config_dir}/certs ] && [ -f %{product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh ]; then
         echo "### Installing %{name} demo certificates in %{config_dir}"

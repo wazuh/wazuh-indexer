@@ -50,9 +50,6 @@ for i in "${systemd_files[@]}"; do
 	chmod -c 0644 "$i"
 done
 
-# Permissions for the default source file
-chmod -c 0640 "${buildroot}/default/${name}"
-
 # Permissions for config files
 config_files=()
 config_files+=("${buildroot}/${config_dir}/log4j2.properties")

@@ -154,7 +154,8 @@ def generate_random_vulnerability():
         'report_id': f'report{random.randint(0, 9999)}',
         'scanner': {
             'source': random.choice(['Nessus', 'OpenVAS']),
-            'vendor': random.choice(['Tenable', 'Greenbone'])
+            'vendor': random.choice(['Tenable', 'Greenbone']),
+            'condition': random.choice(['is', 'is not'])
         },
         'score': {
             'base': random.uniform(0, 10),

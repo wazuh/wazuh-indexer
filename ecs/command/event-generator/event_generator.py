@@ -44,7 +44,7 @@ def generate_random_command(include_all_fields=False):
         },
         "action": {
             "name": random.choice(["restart", "update","change_group", "apply_policy"]),
-            "args": [f"/path/to/executable/arg{random.randint(1, 10)}"],
+            "args": { "arg1": f"/path/to/executable/arg{random.randint(1, 10)}"},
             "version": f"v{random.randint(1, 5)}"
         },
         "timeout": random.randint(10, 100)

@@ -3,15 +3,12 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See the [CONTRIBUTING guide](./CONTRIBUTING.md#Changelog) for instructions on how to add changelog entries.
 
-## [Unreleased 4.10.x]
+## [Unreleased 4.12.x]
 ### Added
 
 ### Dependencies
 
 ### Changed
-- Upgrade third-party integrations to the latest versions ([#445](https://github.com/wazuh/wazuh-indexer/issues/445))
-- Changes on the Vulnerability Detector index template ([#25485](https://github.com/wazuh/wazuh/issues/25485)) ([#382](https://github.com/wazuh/wazuh-indexer/issues/382))
-- Packages refinement - Stage 1 ([#484](https://github.com/wazuh/wazuh-indexer/issues/484))
 
 ### Deprecated
 
@@ -21,4 +18,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Security
 
-[Unreleased 4.10.x]: https://github.com/wazuh/wazuh-indexer/compare/4.10.2...4.10.3
+[Unreleased 4.12.x]: https://github.com/wazuh/wazuh-indexer/compare/4.11.0...4.12.0

@@ -19,7 +19,7 @@ This index stores information about the commands executed by the agents. The ind
 | \*  | `command.target.id`      | keyword | Unique identifier of the destination to send the command to.                                                                        |
 | \*  | `command.target.type`    | keyword | The destination type. One of [`group`, `agent`, `server`],                                                                          |
 | \*  | `command.action.name`    | keyword | The requested action type. Examples: `restart`, `update`, `change_group`, `apply_policy`, ...                                       |
-| \*  | `command.action.args`    | Object  | Array of command arguments, starting with the absolute path to the executable.                                                      |
+| \*  | `command.action.args`    | object  | Command arguments. The Object type allows for ad-hoc format of the value.                                                           |
 | \*  | `command.action.version` | keyword | Version of the command's schema.                                                                                                    |
 | \*  | `command.timeout`        | short   | Time window in which the command has to be sent to its target.                                                                      |
 | \*  | `command.status`         | keyword | Status within the Command Manager's context. One of [`pending`, `sent`, `success`, `failure`].                                      |

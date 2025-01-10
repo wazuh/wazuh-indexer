@@ -36,7 +36,7 @@
       type: object
       level: custom
       description: >
-        Array of command arguments, starting with the absolute path to the executable.
+        Command arguments object.
     - name: action.version
       type: keyword
       level: custom

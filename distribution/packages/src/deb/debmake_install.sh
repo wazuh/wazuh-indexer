@@ -22,8 +22,6 @@ name="wazuh-indexer"
 
 product_dir="/usr/share/${name}"
 config_dir="/etc/${name}"
-# data_dir="/var/lib/${name}"
-# log_dir="/var/log/${name}"
 pid_dir="/run/${name}"
 service_dir="/usr/lib/systemd/system"
 
@@ -45,7 +43,6 @@ find "${buildroot}" -type f -exec chmod 640 {} \;
 systemd_files=()
 systemd_files+=("${buildroot}/${service_dir}/${name}.service")
 systemd_files+=("${buildroot}/${service_dir}/${name}-performance-analyzer.service")
-systemd_files+=("${buildroot}/etc/init.d/${name}")
 systemd_files+=("${buildroot}/usr/lib/sysctl.d/${name}.conf")
 systemd_files+=("${buildroot}/usr/lib/tmpfiles.d/${name}.conf")
 
@@ -85,6 +82,7 @@ binary_files+=("${buildroot}${product_dir}"/jdk/bin/*)
 binary_files+=("${buildroot}${product_dir}"/jdk/lib/jspawnhelper)
 binary_files+=("${buildroot}${product_dir}"/jdk/lib/modules)
 binary_files+=("${buildroot}${product_dir}"/performance-analyzer-rca/bin/*)
+binary_files+=("${buildroot}/etc/init.d/${name}")
 
 for i in "${binary_files[@]}"; do
 	chmod -c 750 "$i"

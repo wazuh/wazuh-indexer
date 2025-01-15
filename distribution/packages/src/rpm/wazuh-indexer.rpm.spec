@@ -28,6 +28,7 @@
 %define log_dir %{_localstatedir}/log/%{name}
 %define pid_dir %{_localstatedir}/run/%{name}
 %define tmp_dir %{log_dir}/tmp
+%define restart_service %{tmp_dir}/%{name}.restart
 %{!?_version: %define _version 0.0.0 }
 %{!?_architecture: %define _architecture x86_64 }
 
@@ -158,16 +159,36 @@ exit 0
 
 %pre
 set -e
-# Stop existing service
-if command -v systemctl >/dev/null && systemctl is-active %{name}.service >/dev/null; then
-    echo "Stop existing %{name}.service"
-    systemctl --no-reload stop %{name}.service
-    touch %{tmp_dir}/wazuh-indexer.restart
+
+# Stop the services to upgrade the package
+if [ $1 = 2 ]; then
+    # Stop wazuh-indexer service
+    if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1 && systemctl is-active %{name}.service > /dev/null 2>&1; then
+        echo "Stop existing %{name}.service"
+        systemctl --no-reload stop %{name}.service > /dev/null 2>&1
+        touch %{restart_service}
+    elif command -v service > /dev/null 2>&1 && service %{name} status > /dev/null 2>&1; then
+        echo "Stop existing %{name} service"
+        service %{name} stop > /dev/null 2>&1
+        touch %{restart_service}
+    elif command -v /etc/init.d/%{name} > /dev/null 2>&1 && /etc/init.d/%{name} status > /dev/null 2>&1; then
+        echo "Stop existing %{name} service"
+        /etc/init.d/%{name} stop > /dev/null 2>&1
+        touch %{restart_service}
+    fi
+    # Stop wazuh-indexer-performance-analyzer service
+    if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1 && systemctl is-active %{name}-performance-analyzer.service > /dev/null 2>&1; then
+        echo "Stop existing %{name}-performance-analyzer.service"
+        systemctl --no-reload stop %{name}-performance-analyzer.service > /dev/null 2>&1
+    elif command -v service > /dev/null 2>&1 && service %{name}-performance-analyzer status > /dev/null 2>&1; then
+        echo "Stop existing %{name}-performance-analyzer service"
+        service %{name}-performance-analyzer stop > /dev/null 2>&1
+    elif command -v /etc/init.d/%{name}-performance-analyzer > /dev/null 2>&1 && /etc/init.d/%{name}-performance-analyzer status > /dev/null 2>&1; then
+        echo "Stop existing %{name}-performance-analyzer service"
+        /etc/init.d/%{name}-performance-analyzer stop > /dev/null 2>&1
+    fi
 fi
-if command -v systemctl >/dev/null && systemctl is-active %{name}-performance-analyzer.service >/dev/null; then
-    echo "Stop existing %{name}-performance-analyzer.service"
-    systemctl --no-reload stop %{name}-performance-analyzer.service
-fi
+
 # Create user and group if they do not already exist.
 getent group %{name} > /dev/null 2>&1 || groupadd -r %{name}
 getent passwd %{name} > /dev/null 2>&1 || \
@@ -195,52 +216,103 @@ if ! grep -q '## OpenSearch Performance Analyzer' "$OPENSEARCH_PATH_CONF/jvm.opt
 fi
 
 # Reload systemctl daemon
-if command -v systemctl > /dev/null; then
-    systemctl daemon-reload
+if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
+    systemctl daemon-reload > /dev/null 2>&1
 fi
 # Reload other configs
-if command -v systemctl > /dev/null; then
+if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
     systemctl restart systemd-sysctl.service || true
 fi
 
-if command -v systemd-tmpfiles > /dev/null; then
-    systemd-tmpfiles --create %{name}.conf
+if command -v systemd-tmpfiles > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
+    systemd-tmpfiles --create %{name}.conf /dev/null 2>&1
 fi
 
-if ! [ -d %{config_dir}/certs ] && [ -f %{product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh ]; then
-    echo "No certificates detected in %{config_dir}, installing demo certificates..."
-    echo "### If you are using a custom certificates path, ignore this message."
-    bash %{product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh > %{log_dir}/install_demo_certificates.log 2>&1
-fi
-
-if [ -f %{tmp_dir}/wazuh-indexer.restart ]; then
-    rm -f %{tmp_dir}/wazuh-indexer.restart
-    if command -v systemctl > /dev/null; then
-        echo "Restarting wazuh-indexer service..."
-        systemctl restart wazuh-indexer.service > /dev/null 2>&1
-        exit 0
+if [ $1 = 2 ]; then
+    if [ -f %{restart_service} ]; then
+        echo "Restarting %{name} service after upgrade"
+        rm -f %{restart_service}
+        if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
+            systemctl restart %{name}.service > /dev/null 2>&1
+        elif command -v service > /dev/null 2>&1; then
+            service %{name} restart > /dev/null 2>&1
+        elif command -v /etc/init.d/%{name} > /dev/null 2>&1; then
+            /etc/init.d/%{name} restart > /dev/null 2>&1
+        fi
+    else
+        echo "### NOT restarting %{name} service after upgrade"
+        echo "### You can start %{name} service by executing"
+        if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
+            echo " sudo systemctl start %{name}.service"
+        elif command -v service > /dev/null 2>&1; then
+            echo " sudo service %{name} start"
+        elif command -v /etc/init.d/%{name} > /dev/null 2>&1; then
+            echo " sudo /etc/init.d/%{name} start"
+        fi
+    fi
+else
+    # Messages
+    if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
+        echo "### NOT starting on installation, please execute the following statements to configure %{name} service to start automatically using systemd"
+        echo " sudo systemctl daemon-reload"
+        echo " sudo systemctl enable %{name}.service"
+        echo "### You can start %{name} service by executing"
+        echo " sudo systemctl start %{name}.service"
+    else
+        if command -v chkconfig > /dev/null 2>&1; then
+            echo "### NOT starting on installation, please execute the following statements to configure %{name} service to start automatically using chkconfig"
+            echo " sudo chkconfig --add %{name}"
+        elif command -v update-rc.d > /dev/null 2>&1; then
+            echo "### NOT starting on installation, please execute the following statements to configure %{name} service to start automatically using update-rc.d"
+            echo " sudo update-rc.d %{name} defaults 95 10"
+        fi
+        if command -v service > /dev/null 2>&1; then
+            echo "### You can start %{name} service by executing"
+            echo " sudo service %{name} start"
+        elif command -v /etc/init.d/%{name} > /dev/null 2>&1; then
+            echo "### You can start %{name} service by executing"
+            echo " sudo /etc/init.d/%{name} start"
+        fi
+    fi
+    if ! [ -d %{config_dir}/certs ] && [ -f %{product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh ]; then
+        echo "### Installing %{name} demo certificates in %{config_dir}"
+        echo " If you are using a custom certificates path, ignore this message"
+        echo " See demo certs creation log in %{log_dir}/install_demo_certificates.log"
+        bash %{product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh > %{log_dir}/install_demo_certificates.log 2>&1
+        yes | /usr/share/%{name}/jdk/bin/keytool -trustcacerts -keystore /usr/share/%{name}/jdk/lib/security/cacerts -importcert -alias wazuh-root-ca -file %{config_dir}/certs/root-ca.pem > /dev/null 2>&1
     fi
 fi
-
-# Messages
-echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using systemd"
-echo " sudo systemctl daemon-reload"
-echo " sudo systemctl enable wazuh-indexer.service"
-echo "### You can start wazuh-indexer service by executing"
-echo " sudo systemctl start wazuh-indexer.service"
 exit 0
 
 %preun
 set -e
-if command -v systemctl >/dev/null && systemctl is-active %{name}.service >/dev/null; then
-    echo "Stop existing %{name}.service"
-    systemctl --no-reload stop %{name}.service
+
+# Stop the services to remove the package
+if [ $1 = 0 ]; then
+    # Stop wazuh-indexer service
+    if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1 && systemctl is-active %{name}.service > /dev/null 2>&1; then
+        echo "Stop existing %{name}.service"
+        systemctl --no-reload stop %{name}.service > /dev/null 2>&1
+    elif command -v service > /dev/null 2>&1 && service %{name} status > /dev/null 2>&1; then
+        echo "Stop existing %{name} service"
+        service %{name} stop > /dev/null 2>&1
+    elif command -v /etc/init.d/%{name} > /dev/null 2>&1 && /etc/init.d/%{name} status > /dev/null 2>&1; then
+        echo "Stop existing %{name} service"
+        /etc/init.d/%{name} stop > /dev/null 2>&1
+    fi
+    # Stop wazuh-indexer-performance-analyzer service
+    if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1 && systemctl is-active %{name}-performance-analyzer.service > /dev/null 2>&1; then
+        echo "Stop existing %{name}-performance-analyzer.service"
+        systemctl --no-reload stop %{name}-performance-analyzer.service > /dev/null 2>&1
+    elif command -v service > /dev/null 2>&1 && service %{name}-performance-analyzer status > /dev/null 2>&1; then
+        echo "Stop existing %{name}-performance-analyzer service"
+        service %{name}-performance-analyzer stop > /dev/null 2>&1
+    elif command -v /etc/init.d/%{name}-performance-analyzer > /dev/null 2>&1 && /etc/init.d/%{name}-performance-analyzer status > /dev/null 2>&1; then
+        echo "Stop existing %{name}-performance-analyzer service"
+        /etc/init.d/%{name}-performance-analyzer stop > /dev/null 2>&1
+    fi
+    exit 0
 fi
-if command -v systemctl >/dev/null && systemctl is-active %{name}-performance-analyzer.service >/dev/null; then
-    echo "Stop existing %{name}-performance-analyzer.service"
-    systemctl --no-reload stop %{name}-performance-analyzer.service
-fi
-exit 0
 
 %files -f %{_topdir}/filelist.txt
 %defattr(640, %{name}, %{name}, 750)
@@ -256,14 +328,12 @@ exit 0
 %attr(0644, root, root) %config(noreplace) %{_prefix}/lib/sysctl.d/%{name}.conf
 %attr(0644, root, root) %config(noreplace) %{_prefix}/lib/tmpfiles.d/%{name}.conf
 
-
 # Configuration files
 %config(noreplace) %attr(0660, root, %{name}) "%{_sysconfdir}/sysconfig/%{name}"
 %config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/log4j2.properties
 %config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/jvm.options
 %config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/opensearch.yml
 %config(noreplace) %attr(640, %{name}, %{name}) %{config_dir}/opensearch-security/*
-
 
 %if %observability_plugin
 %config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/opensearch-observability/observability.yml
@@ -272,7 +342,6 @@ exit 0
 %if %reportsscheduler_plugin
 %config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/wazuh-indexer-reports-scheduler/reports-scheduler.yml
 %endif
-
 
 # Files that need other permissions
 %attr(440, %{name}, %{name}) %{product_dir}/VERSION

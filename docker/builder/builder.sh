@@ -51,7 +51,7 @@ function parse_args() {
             ARCHITECTURE=$OPTARG
             ;;
         D)
-            DESTROY=$OPTARG
+            DESTROY=true
             ;;
         :)
             echo "Error: -${OPTARG} requires an argument"

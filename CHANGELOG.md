@@ -37,4 +37,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Block ptrace and process memory access syscalls in the system call filter ([#23491](https://github.com/opensearch-project/OpenSearch/pull/23491))
 
 
-[Unreleased 4.10.x]: https://github.com/wazuh/wazuh-indexer/compare/b39a219a318a2b9101fa146eb195192a945963d7...4.10.0
+[Unreleased 4.10.x]: https://github.com/wazuh/wazuh-indexer/compare/v4.10.0...4.10.1

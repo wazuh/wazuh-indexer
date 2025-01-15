@@ -43,6 +43,7 @@ else
     wazuh_plugins=(
         "wazuh-indexer-setup"
         "wazuh-indexer-command-manager"
+        "wazuh-indexer-content-manager"
         "wazuh-indexer-reports-scheduler"
     )
 fi

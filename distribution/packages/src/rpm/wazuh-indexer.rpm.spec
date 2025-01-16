@@ -7,6 +7,7 @@
 
 # No build, no debuginfo
 %define debug_package %{nil}
+%define _build_id_links none
 
 # Disable brp-java-repack-jars, so jars will not be decompressed and repackaged
 %define __jar_repack 0

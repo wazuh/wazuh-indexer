@@ -121,6 +121,8 @@ set -- "$@" "%{_sysconfdir}/sysconfig/%{name}"
 set -- "$@" "%{config_dir}/log4j2.properties"
 set -- "$@" "%{config_dir}/jvm.options"
 set -- "$@" "%{config_dir}/opensearch.yml"
+set -- "$@" "%{config_dir}/opensearch-security/.*\.yml"
+set -- "$@" "%{config_dir}/opensearch-security/opensearch.yml.example"
 set -- "$@" "%{product_dir}/VERSION"
 set -- "$@" "%{product_dir}/plugins/opensearch-security/tools/.*\.sh"
 set -- "$@" "%{product_dir}/bin/.*"
@@ -356,7 +358,7 @@ fi
 %changelog
 * Mon Jun 23 2025 support <info@wazuh.com> - 5.0.0
 - More info: https://documentation.wazuh.com/current/release-notes/release-5.0.0-0.html
-* Tue Feb 20 2025 support <info@wazuh.com> - 4.10.2
+* Thu Feb 20 2025 support <info@wazuh.com> - 4.10.2
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-10-2.html
 * Tue Jan 28 2025 support <info@wazuh.com> - 4.10.1
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-10-1.html

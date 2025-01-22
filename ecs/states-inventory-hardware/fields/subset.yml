@@ -8,9 +8,9 @@ fields:
   agent:
     fields:
       groups: {}
+      id: {}
       name: {}
       type: {}
-      version: {}
       host:
         fields: "*"
   observer:

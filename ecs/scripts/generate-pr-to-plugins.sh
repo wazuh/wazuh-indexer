@@ -9,6 +9,11 @@ CURRENT_PATH=$(pwd)
 OUTPUT_PATH=${OUTPUT_PATH:-"$CURRENT_PATH"/../output}
 BASE_BRANCH=${BASE_BRANCH:-master}
 PLUGINS_LOCAL_PATH=${PLUGINS_LOCAL_PATH:-"$CURRENT_PATH"/../wazuh-indexer-plugins}
+
+# Committer's identity
+COMMITER_EMAIL=${COMMITER_EMAIL:-$(git config user.email)}
+COMMITTER_USERNAME=${COMMITTER_USERNAME:-$(git config user.name)} # Human readable username
+
 # Global variables
 declare -a relevant_modules
 declare -A module_to_file
@@ -94,19 +99,40 @@ run_ecs_generator() {
 
 # Clone the target repository and set up GitHub authentication.
 clone_target_repo() {
+    # Clone the remote repository and change working directory to the
+    # folder it was cloned to.
     echo
     echo "---> Cloning ${PLUGINS_REPO} repository..."
     if [ ! -d "$PLUGINS_LOCAL_PATH" ]; then
-        git clone https://github.com/$PLUGINS_REPO.git "$PLUGINS_LOCAL_PATH"
+        git clone \
+            https://"$GITHUB_TOKEN"@github.com/$PLUGINS_REPO.git \
+            "$PLUGINS_LOCAL_PATH"
     fi
     cd "$PLUGINS_LOCAL_PATH" || exit
-    git config --global user.email "github-actions@github.com"
-    git config --global user.name "GitHub Actions"
-    git pull
-    # Set up authentication with GitHub token
-    git remote set-url origin https://"$GITHUB_TOKEN"@github.com/$PLUGINS_REPO.git
-    # Set up the default remote URL
-    gh repo set-default https://"$GITHUB_TOKEN"@github.com/$PLUGINS_REPO.git
+
+    # Only for the GH Workflow
+    if [ "${INDEXER_BOT_PRIVATE_SSH_KEY}" ] && [ "${INDEXER_BOT_PUBLIC_SSH_KEY}" ]; then
+        configure_git
+    fi
+}
+
+# Configure Git with the committer's identity and commit signing.
+configure_git() {
+    # Setup the committers identity.
+    git config --global user.email "${COMMITER_EMAIL}"
+    git config --global user.name "${COMMITTER_USERNAME}"
+
+    # Store the SSH key pair so Git can read it.
+    echo "${SSH_PRIVATE_KEY}" > ~/.ssh/id_ed25519_bot
+    echo "${SSH_PUBLIC_KEY}" > ~/.ssh/id_ed25519_bot.pub
+    chmod 600 ~/.ssh/id_ed25519_bot
+    chmod 644 ~/.ssh/id_ed25519_bot.pub
+
+    # Setup commit signing
+    ssh-add ~/.ssh/id_ed25519_bot
+    git config --global gpg.format ssh
+    git config --global commit.gpgsign true
+    git config --global user.signingkey ~/.ssh/id_ed25519_bot.pub
 }
 
 # Commit and push changes to the target repository.
@@ -172,6 +198,13 @@ create_or_update_pr() {
     title="Update ECS templates for modified modules: ${modules_title[*]}"
     body="This PR updates the ECS templates for the following modules:${modules_body}"
 
+    # Store the PAT in a file that can be accessed by the GitHub CLI.
+    echo "${GITHUB_TOKEN}" > token.txt
+
+    # Authorize GitHub CLI for the current repository and
+    # create a pull-requests containing the updates.
+    gh auth login --with-token < token.txt
+
     if [ -z "$existing_pr" ]; then
         gh pr create \
             --title "$title" \
@@ -189,8 +222,8 @@ create_or_update_pr() {
 # Display usage information.
 usage() {
     echo "Usage: $0 -b <BRANCH_NAME> -t <GITHUB_TOKEN>"
+    echo "  -t [GITHUB_TOKEN]   (Required) GitHub token to authenticate with GitHub API."
     echo "  -b [BRANCH_NAME]    (Optional) Branch name to create or update the PR. Default: current branch."
-    echo "  -t [GITHUB_TOKEN]   (Optional) GitHub token to authenticate with GitHub API."
     echo "                      If not provided, the script will use the GITHUB_TOKEN environment variable."
     exit 1
 }

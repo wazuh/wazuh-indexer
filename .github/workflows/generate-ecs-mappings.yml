@@ -31,6 +31,10 @@ jobs:
       - name: Generate PR to wazuh-indexer-plugins
         env:
           GITHUB_TOKEN: ${{ secrets.ACTION_TOKEN }}
+          COMMITER_EMAIL: ${{ secrets.INDEXER_BOT_EMAIL }}
+          COMMITTER_USERNAME: "Wazuh Indexer Bot"
+          SSH_PRIVATE_KEY: ${{ secrets.INDEXER_BOT_PRIVATE_SSH_KEY }}
+          SSH_PUBLIC_KEY: ${{ secrets.INDEXER_BOT_PUBLIC_SSH_KEY }}
         run: |
           bash ecs/scripts/generate-pr-to-plugins.sh \
             -b ${{ steps.branch-name.outputs.branch }} \

@@ -124,6 +124,7 @@ configure_git() {
     git config --global user.name "${COMMITTER_USERNAME}"
 
     # Store the SSH key pair so Git can read it.
+    mkdir -p ~/.ssh/
     echo "${SSH_PRIVATE_KEY}" > ~/.ssh/id_ed25519_bot
     echo "${SSH_PUBLIC_KEY}" > ~/.ssh/id_ed25519_bot.pub
     chmod 600 ~/.ssh/id_ed25519_bot

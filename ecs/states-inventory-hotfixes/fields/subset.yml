@@ -10,7 +10,7 @@ fields:
       groups: {}
       id: {}
       name: {}
-      type: {}
+      version: {}
       host:
         fields: "*"
   package:

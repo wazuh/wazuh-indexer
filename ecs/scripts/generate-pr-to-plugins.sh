@@ -205,7 +205,7 @@ create_or_update_pr() {
 
     # Create title and body with formatted modules list
     title="[ECS Generator] Update index templates"
-    body="This PR updates the ECS templates for the following modules:
+    body="This PR updates the ECS templates for the following modules:\n
     ${modules_body}"
 
     # Store the PAT in a file that can be accessed by the GitHub CLI.
@@ -254,6 +254,9 @@ main() {
                 GITHUB_TOKEN=$OPTARG
                 ;;
             o )
+                if [[ "$OPTARG" == "./"* || ! "$OPTARG" =~ ^/ ]]; then
+                    OPTARG="$(pwd)/${OPTARG#./}"
+                fi
                 OUTPUT_PATH=$OPTARG
                 ;;
             \? )

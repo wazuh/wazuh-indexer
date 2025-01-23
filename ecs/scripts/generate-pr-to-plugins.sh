@@ -205,8 +205,11 @@ create_or_update_pr() {
 
     # Create title and body with formatted modules list
     title="[ECS Generator] Update index templates"
-    body="This PR updates the ECS templates for the following modules:\n  ${modules_body}"
-
+    body=$(cat <<EOF
+This PR updates the ECS templates for the following modules:
+${modules_body}
+EOF
+)
     # Store the PAT in a file that can be accessed by the GitHub CLI.
     echo "${GITHUB_TOKEN}" > token.txt
 
@@ -221,7 +224,7 @@ create_or_update_pr() {
         echo "New pull request created: $PR_URL"
     else
         echo "PR already exists: $existing_pr. Updating the PR..."
-        gh pr edit "$existing_pr" --title "$title" --body "$body"
+        gh pr edit "$existing_pr" --body "$body"
         pr_url=$(gh pr view "$existing_pr" --json url -q '.url')
         export PR_URL="$pr_url"
         echo "Pull request updated: $PR_URL"

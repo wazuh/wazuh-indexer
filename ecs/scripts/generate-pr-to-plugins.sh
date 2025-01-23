@@ -205,8 +205,7 @@ create_or_update_pr() {
 
     # Create title and body with formatted modules list
     title="[ECS Generator] Update index templates"
-    body="This PR updates the ECS templates for the following modules:\n
-    ${modules_body}"
+    body="This PR updates the ECS templates for the following modules:\n  ${modules_body}"
 
     # Store the PAT in a file that can be accessed by the GitHub CLI.
     echo "${GITHUB_TOKEN}" > token.txt

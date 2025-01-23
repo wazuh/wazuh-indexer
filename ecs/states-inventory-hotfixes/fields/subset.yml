@@ -9,7 +9,7 @@ fields:
     fields:
       groups: {}
       id: {}
-      name: {}
+      type: {}
       version: {}
       host:
         fields: "*"

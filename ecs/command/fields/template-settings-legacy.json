@@ -1,7 +1,5 @@
 {
-  "index_patterns": [
-    "wazuh-commands*"
-  ],
+  "index_patterns": ["wazuh-commands*"],
   "order": 1,
   "settings": {
     "index": {

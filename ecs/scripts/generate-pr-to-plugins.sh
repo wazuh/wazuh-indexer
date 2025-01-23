@@ -36,6 +36,15 @@ validate_dependencies() {
     done
 }
 
+# Check if the script is being executed in a GHA Workflow
+check_running_on_gha() {
+    if [[ -n "${GITHUB_RUN_ID}" ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
 # Detect modified ECS modules by comparing the current branch with the base branch.
 detect_modified_modules() {
     echo
@@ -44,7 +53,7 @@ detect_modified_modules() {
     local modified_files
     local updated_modules=()
     modified_files=$(git diff --name-only origin/"$BASE_BRANCH")
-    
+
     for file in $modified_files; do
         if [[ $file == ecs/* ]]; then
             ecs_module=$(echo "$file" | cut -d'/' -f2)
@@ -111,7 +120,7 @@ clone_target_repo() {
     cd "$PLUGINS_LOCAL_PATH" || exit
 
     # Only for the GH Workflow
-    if [[ -z "${INDEXER_BOT_PRIVATE_SSH_KEY}" ]] && [[ -z "${INDEXER_BOT_PUBLIC_SSH_KEY}" ]]; then
+    if check_running_on_gha; then
         echo "Configuring Git for ${COMMITTER_USERNAME}"
         configure_git
     fi
@@ -186,19 +195,18 @@ create_or_update_pr() {
     echo "---> Creating or updating Pull Request..."
 
     local existing_pr
-    local modules_title
     local modules_body
     local title
     local body
 
     existing_pr=$(gh pr list --head "$BRANCH_NAME" --json number --jq '.[].number')
     # Format modules
-    modules_title=$(IFS=", "; echo "${relevant_modules[*]}")
     modules_body=$(printf -- '- %s\n' "${relevant_modules[@]}")
 
     # Create title and body with formatted modules list
-    title="Update ECS templates for modified modules: ${modules_title[*]}"
-    body="This PR updates the ECS templates for the following modules:${modules_body}"
+    title="[ECS Generator] Update index templates"
+    body="This PR updates the ECS templates for the following modules:
+    ${modules_body}"
 
     # Store the PAT in a file that can be accessed by the GitHub CLI.
     echo "${GITHUB_TOKEN}" > token.txt
@@ -208,16 +216,16 @@ create_or_update_pr() {
     gh auth login --with-token < token.txt
 
     if [ -z "$existing_pr" ]; then
-        gh pr create \
-            --title "$title" \
-            --body "$body" \
-            --base master \
-            --head "$BRANCH_NAME"
+        output=$(gh pr create --title "$title" --body "$body" --base master --head "$BRANCH_NAME")
+        pr_url=$(echo "$output" | grep -oP 'https://github.com/\S+')
+        export PR_URL="$pr_url"
+        echo "New pull request created: $PR_URL"
     else
         echo "PR already exists: $existing_pr. Updating the PR..."
-        gh pr edit "$existing_pr" \
-            --title "$title" \
-            --body "$body"
+        gh pr edit "$existing_pr" --title "$title" --body "$body"
+        pr_url=$(gh pr view "$existing_pr" --json url -q '.url')
+        export PR_URL="$pr_url"
+        echo "Pull request updated: $PR_URL"
     fi
 }
 

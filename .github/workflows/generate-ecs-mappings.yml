@@ -29,6 +29,7 @@ jobs:
         run: sudo apt-get install docker-compose
 
       - name: Generate PR to wazuh-indexer-plugins
+        id: generate-pr
         env:
           GITHUB_TOKEN: ${{ secrets.ACTION_TOKEN }}
           COMMITER_EMAIL: ${{ secrets.INDEXER_BOT_EMAIL }}
@@ -38,10 +39,13 @@ jobs:
         run: |
           bash ecs/scripts/generate-pr-to-plugins.sh \
             -b ${{ steps.branch-name.outputs.branch }} \
-            -o ./ecs-templates
+            -o ecs-templates && echo "PR_URL=$PR_URL" >> $GITHUB_OUTPUT
+
+      - name: Show PR URL as a notation
+        run: echo "::notice title=Pull Request URL::${{ steps.generate-pr.outputs.PR_URL }}"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ecs-templates
-          path: "./ecs-templates"
+          path: "ecs-templates"

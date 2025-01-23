@@ -111,7 +111,8 @@ clone_target_repo() {
     cd "$PLUGINS_LOCAL_PATH" || exit
 
     # Only for the GH Workflow
-    if [ "${INDEXER_BOT_PRIVATE_SSH_KEY}" ] && [ "${INDEXER_BOT_PUBLIC_SSH_KEY}" ]; then
+    if [[ -z "${INDEXER_BOT_PRIVATE_SSH_KEY}" ]] && [[ -z "${INDEXER_BOT_PUBLIC_SSH_KEY}" ]]; then
+        echo "Configuring Git for ${COMMITTER_USERNAME}"
         configure_git
     fi
 }

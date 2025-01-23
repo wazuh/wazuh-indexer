@@ -11,14 +11,15 @@ fields:
       id: {}
       name: {}
       type: {}
+      version: {}
       host:
         fields: "*"
   observer:
     fields:
       serial_number: {}
   host:
-    fields: 
-      memory: 
+    fields:
+      memory:
         fields: "*"
-      cpu: 
+      cpu:
         fields: "*"

@@ -10,7 +10,6 @@ fields:
       groups: {}
       id: {}
       name: {}
-      type: {}
       host:
         fields: "*"
   observer:

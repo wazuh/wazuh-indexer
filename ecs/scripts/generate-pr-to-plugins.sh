@@ -169,7 +169,7 @@ commit_and_push_changes() {
         fi
         # Save the template on the output path
         mkdir -p "$OUTPUT_PATH"
-        cp "$CURRENT_PATH/ecs/$ecs_module/$MAPPINGS_SUBPATH" "$TEMPLATES_PATH/$target_file"
+        cp "$CURRENT_PATH/ecs/$ecs_module/$MAPPINGS_SUBPATH" "$OUTPUT_PATH/$target_file"
         # Copy the template to the plugins repository
         mkdir -p $TEMPLATES_PATH
         echo "  - Copy template for module '$ecs_module' to '$target_file'"
@@ -226,6 +226,11 @@ create_or_update_pr() {
         pr_url=$(gh pr view "$existing_pr" --json url -q '.url')
         export PR_URL="$pr_url"
         echo "Pull request updated: $PR_URL"
+    fi
+
+    # If the script is executed in a GHA, add a notice command.
+    if check_running_on_gha; then
+        echo "::notice::Pull Request URL:${PR_URL}"
     fi
 }
 

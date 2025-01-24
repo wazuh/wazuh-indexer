@@ -13,7 +13,7 @@ LOG_FILE = 'generate_data.log'
 GENERATED_DATA_FILE = 'generatedData.json'
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 # Default values
-INDEX_NAME = ".commands"
+INDEX_NAME = "wazuh-commands"
 USERNAME = "admin"
 PASSWORD = "admin"
 IP = "127.0.0.1"

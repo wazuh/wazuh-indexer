@@ -48,7 +48,7 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
-COMMANDS_INDEX=".commands"
+COMMANDS_INDEX="wazuh-commands"
 SRC="Engine"
 USR="TestUser"
 TRG_ID="TestTarget"
@@ -81,7 +81,7 @@ curl -s -k -u "$USERNAME:$PASSWORD" -X POST "https://$CLUSTER_IP:9200/_forcemerg
 sleep 2
 
 # Fetch the indices
-echo "Validating .commands index is created..."
+echo "Validating $COMMANDS_INDEX index is created..."
 INDICES_RESPONSE=$(curl -s -k -u "$USERNAME:$PASSWORD" "https://$CLUSTER_IP:9200/_cat/indices/.*?v")
 # shellcheck disable=SC2181
 if [ $? -ne 0 ]; then
@@ -98,7 +98,7 @@ fi
 sleep 5
 echo "Validate the command is created"
 # Validate the command was created
-SEARCH_RESPONSE=$(curl -s -k -u "$USERNAME:$PASSWORD" "https://$CLUSTER_IP:9200/.commands/_search")
+SEARCH_RESPONSE=$(curl -s -k -u "$USERNAME:$PASSWORD" "https://$CLUSTER_IP:9200/$COMMANDS_INDEX/_search")
 # Check if the request was successful
 # shellcheck disable=SC2181
 if [ $? -ne 0 ]; then

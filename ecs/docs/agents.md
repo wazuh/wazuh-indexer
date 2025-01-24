@@ -83,12 +83,11 @@ fields:
 
 ```json
 {
-  "index_patterns": [".agents*"],
+  "index_patterns": ["wazuh-agents*"],
   "priority": 1,
   "template": {
     "settings": {
       "index": {
-        "hidden": true,
         "number_of_shards": "1",
         "number_of_replicas": "0",
         "refresh_interval": "5s",

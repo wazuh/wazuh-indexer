@@ -68,7 +68,7 @@ detect_modified_modules() {
     module_to_file=(
         [agent]="index-template-agent.json"
         [alerts]="index-template-alerts.json"
-        [commands]="index-template-commands.json"
+        [command]="index-template-commands.json"
         [states-fim]="index-template-fim.json"
         [states-inventory-hardware]="index-template-hardware.json"
         [states-inventory-hotfixes]="index-template-hotfixes.json"

@@ -129,6 +129,8 @@ services:
       AWS_ENDPOINT: "http://s3.ninja:9000"
       SOURCE_LOCATION: "wazuh"
       ACCOUNT_ID: "111111111111"
+      ROLE_ARN: "arn:aws:iam::111111111111:role/lambda-s3-execution-role"
+      EXTERNAL_ID: "111111111111"
       IS_DEV: true
       OCSF_CLASS: SECURITY_FINDING
     volumes:

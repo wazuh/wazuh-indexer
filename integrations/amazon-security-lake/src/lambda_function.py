@@ -9,7 +9,6 @@ import pyarrow.parquet as pq
 from botocore.exceptions import ClientError
 import wazuh_ocsf_converter
 
-
 logger = logging.getLogger()
 logger.setLevel("INFO")
 
@@ -32,7 +31,7 @@ def assume_role(arn: str, external_id: str, session_name: str) -> dict:
             'SessionToken': credentials['SessionToken']
         }
     except ClientError as e:
-        logger.error(f"Failed to assume role {arn}: {e}")
+        logger.error(f"Failed to assume role {arn} with external ID {external_id}: {e}")
         return None
 
 
@@ -60,8 +59,7 @@ def get_events(bucket: str, key: str, client: boto3.client) -> list:
         data = gzip.decompress(response['Body'].read()).decode('utf-8')
         return data.splitlines()
     except ClientError as e:
-        logger.error(
-            f"Failed to read S3 object {key} from bucket {bucket}: {e}")
+        logger.error(f"Failed to read S3 object {key} from bucket {bucket}: {e}")
         return []
 
 
@@ -83,8 +81,7 @@ def upload_to_s3(bucket: str, key: str, filename: str, client: boto3.client) -> 
             client.put_object(Bucket=bucket, Key=key, Body=data)
         return True
     except ClientError as e:
-        logger.error(
-            f"Failed to upload file {filename} to bucket {bucket}: {e}")
+        logger.error(f"Failed to upload file {filename} to bucket {bucket}: {e}")
         return False
 
 
@@ -94,7 +91,7 @@ def exit_on_error(error_message):
     Args:
         error_message (str): Error message to display.
     """
-    print(f"Error: {error_message}")
+    logger.error(f"Error: {error_message}")
     exit(1)
 
 
@@ -142,8 +139,7 @@ def get_full_key(src_location: str, account_id: str, region: str, key: str, form
 def lambda_handler(event, context):
 
     # Define required environment variables
-    required_variables = ['AWS_BUCKET',
-                          'SOURCE_LOCATION', 'ACCOUNT_ID', 'REGION']
+    required_variables = ['AWS_BUCKET', 'SOURCE_LOCATION', 'ACCOUNT_ID', 'REGION']
 
     # Check if all required environment variables are set
     if not check_environment_variables(required_variables):
@@ -164,14 +160,20 @@ def lambda_handler(event, context):
     key = urllib.parse.unquote_plus(
         event['Records'][0]['s3']['object']['key'], encoding='utf-8')
     logger.info(f"Lambda function invoked due to {key}.")
-    logger.info(
-        f"Source bucket name is {src_bucket}. Destination bucket is {dst_bucket}.")
+    logger.info(f"Source bucket name is {src_bucket}. Destination bucket is {dst_bucket}.")
 
     # Assume role if ARN and External ID are provided
     credentials = None
     if role_arn and external_id:
         credentials = assume_role(role_arn, external_id, 'lake-session')
+        if not credentials:
+            logger.error("Failed to assume role, cannot proceed.")
+            return
+    else:
+        # Log a warning if cross-account credentials are not used
+        logger.warning("Cross-account access is not being used. Lambda will run with default credentials from the same account.")
 
+    # Create the S3 client
     client = get_s3_client(credentials)
 
     # Read events from source S3 bucket
@@ -189,18 +191,15 @@ def lambda_handler(event, context):
         with open(tmp_filename, "w") as fd:
             fd.write(json.dumps(ocsf_events))
         ocsf_key = get_full_key(src_location, account_id, region, key, 'json')
-        ocsf_upload_success = upload_to_s3(
-            ocsf_bucket, ocsf_key, tmp_filename, client)
+        ocsf_upload_success = upload_to_s3(ocsf_bucket, ocsf_key, tmp_filename, client)
 
     # Write OCSF events to Parquet file
     tmp_filename = '/tmp/tmp.parquet'
     write_parquet_file(ocsf_events, tmp_filename)
 
     # Upload Parquet file to destination S3 bucket
-    parquet_key = get_full_key(
-        src_location, account_id, region, key, 'parquet')
-    upload_success = upload_to_s3(
-        dst_bucket, parquet_key, tmp_filename, client)
+    parquet_key = get_full_key(src_location, account_id, region, key, 'parquet')
+    upload_success = upload_to_s3(dst_bucket, parquet_key, tmp_filename, client)
 
     # Clean up temporary file
     os.remove(tmp_filename)

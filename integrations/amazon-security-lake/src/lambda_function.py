@@ -122,6 +122,13 @@ def get_full_key(src_location: str, account_id: str, region: str, key: str, form
         format (str): File extension.
     Returns:
         str: Full S3 key path for storing the Parquet file.
+
+    Example:
+         If key is '20240417_ls.s3.0055f22e-200e-4259-b865-8ccea05812be.2024-04-17T15.45.part29.txt',
+         this function will return:
+
+
+         'ext/src_location/region=region/accountId=account_id/eventDay=20240417/0055f22e200e4259b8658ccea05812be.parquet'
     """
     # Extract event day from the key (first 8 characters)
     event_day = key[:8]

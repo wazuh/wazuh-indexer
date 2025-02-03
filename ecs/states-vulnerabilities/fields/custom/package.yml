@@ -1,0 +1,14 @@
+- name: package
+  title: Package
+  group: 2
+  short: Fields to describe the package relevant to an event.
+  description: >
+    The package fields describe information about a package that is
+    relevant to an event.
+  type: group
+  fields:
+    - name: size
+      type: unsigned_long
+      level: custom
+      description: >
+        Size of the package.

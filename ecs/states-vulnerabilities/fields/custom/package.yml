@@ -1,10 +1,11 @@
 - name: package
   title: Package
   group: 2
-  short: Fields to describe the package relevant to an event.
+  short: These fields contain information about an installed software package.
   description: >
-    The package fields describe information about a package that is
-    relevant to an event.
+    These fields contain information about an installed software package.
+    It contains general information about a package, such as name, version or size.
+    It also contains installation details, such as time or location.
   type: group
   fields:
     - name: size

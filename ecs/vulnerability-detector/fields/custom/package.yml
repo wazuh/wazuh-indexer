@@ -11,4 +11,4 @@
       type: unsigned_long
       level: custom
       description: >
-        Size of the package.
+        Package size in bytes.

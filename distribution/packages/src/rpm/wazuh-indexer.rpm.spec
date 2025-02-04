@@ -277,7 +277,9 @@ exit 0
 
 %changelog
 * Tue Jan 28 2025 support <info@wazuh.com> - 4.11.0
-- More info: https://documentation.wazuh.com/current/release-notes/release-4-10-1.html
+- More info: https://documentation.wazuh.com/current/release-notes/release-4-11-0.html
+* Thu Jan 23 2025 support <info@wazuh.com> - 4.10.2
+- More info: https://documentation.wazuh.com/current/release-notes/release-4-10-2.html
 * Thu Jan 16 2025 support <info@wazuh.com> - 4.10.1
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-10-1.html
 * Wed Jan 08 2025 support <info@wazuh.com> - 4.10.0

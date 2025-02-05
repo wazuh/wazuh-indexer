@@ -13,10 +13,6 @@ This document describes how to prepare a Docker Compose environment to test the 
    ```bash
    docker compose -f ./docker/compose.indexer-elastic.yml up -d
    ```
-3. If you prefer, you can start the integration with the Wazuh Manager as data source:
-   ```bash
-   docker compose -f ./docker/compose.manager-elastic.yml up -d
-   ```
 
 The Docker Compose project will bring up the following services:
 
@@ -25,18 +21,12 @@ The Docker Compose project will bring up the following services:
 - 1x Logstash
 - 1x Elastic
 - 1x Kibana
-- 1x Wazuh Manager (optional).
 
 For custom configurations, you may need to modify these files:
 
 - [docker/compose.indexer-elastic.yml](../docker/compose.indexer-elastic.yml): Docker Compose file.
 - [docker/.env](../docker/.env): Environment variables file.
 - [elastic/logstash/pipeline/indexer-to-elastic.conf](./logstash/pipeline/indexer-to-elastic.conf): Logstash Pipeline configuration file.
-
-If you opted to start the integration with the Wazuh Manager, you can modify the following files:
-
-- [docker/compose.manager-elastic.yml](../docker/compose.manager-elastic.yml): Docker Compose file.
-- [elastic/logstash/pipeline/manager-to-elastic.conf](./logstash/pipeline/manager-to-elastic.conf): Logstash Pipeline configuration file.
 
 Check the files above for **credentials**, ports, and other configurations.
 

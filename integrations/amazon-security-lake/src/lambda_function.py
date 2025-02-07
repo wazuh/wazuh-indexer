@@ -13,6 +13,15 @@ logger = logging.getLogger()
 logger.setLevel("INFO")
 
 
+def get_dev_credentials():
+    return {
+        'AccessKeyId': os.environ['AWS_ACCESS_KEY_ID'],
+        'SecretAccessKey': os.environ['AWS_SECRET_ACCESS_KEY'],
+        'Region': os.environ['REGION'],
+        'AWSEndpoint': os.environ['AWS_ENDPOINT']
+    }
+
+
 def assume_role(arn: str, external_id: str, session_name: str) -> dict:
     """
     Assume a role and return temporary security credentials.
@@ -35,18 +44,26 @@ def assume_role(arn: str, external_id: str, session_name: str) -> dict:
         return None
 
 
-def get_s3_client(credentials: dict = None) -> boto3.client:
+def get_s3_client(credentials: dict = None, is_dev=False) -> boto3.client:
     """
     Return an S3 client using temporary credentials if provided, otherwise use default credentials.
     """
-    if credentials:
+    if not credentials:
+        return boto3.client('s3')
+    if is_dev:
         return boto3.client(
-            's3',
+            service_name='s3',
             aws_access_key_id=credentials['AccessKeyId'],
             aws_secret_access_key=credentials['SecretAccessKey'],
-            aws_session_token=credentials['SessionToken']
+            region_name=credentials['Region'],
+            endpoint_url=credentials['AWSEndpoint'],
         )
-    return boto3.client('s3')
+    return boto3.client(
+        service_name='s3',
+        aws_access_key_id=credentials['AccessKeyId'],
+        aws_secret_access_key=credentials['SecretAccessKey'],
+        aws_session_token=credentials['SessionToken']
+    )
 
 
 def get_events(bucket: str, key: str, client: boto3.client) -> list:
@@ -161,6 +178,7 @@ def lambda_handler(event, context):
     external_id = os.environ.get('EXTERNAL_ID')
     ocsf_bucket = os.environ.get('S3_BUCKET_OCSF')
     ocsf_class = os.environ.get('OCSF_CLASS', 'SECURITY_FINDING')
+    is_dev = os.environ.get('IS_DEV', 'false').lower() == 'true'
 
     # Extract bucket and key from S3 event
     src_bucket = event['Records'][0]['s3']['bucket']['name']
@@ -171,17 +189,19 @@ def lambda_handler(event, context):
 
     # Assume role if ARN and External ID are provided
     credentials = None
-    if role_arn and external_id:
+    if is_dev:
+        credentials = get_dev_credentials()
+    elif role_arn and external_id:
         credentials = assume_role(role_arn, external_id, 'lake-session')
         if not credentials:
             logger.error("Failed to assume role, cannot proceed.")
             return
     else:
         # Log a warning if cross-account credentials are not used
-        logger.warning("Cross-account access is not being used. Lambda will run with default credentials from the same account.")
+        logger.warning("Cross-account access is not used. Lambda running with default credentials.")
 
     # Create the S3 client
-    client = get_s3_client(credentials)
+    client = get_s3_client(credentials, is_dev)
 
     # Read events from source S3 bucket
     raw_events = get_events(src_bucket, key, client)

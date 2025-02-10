@@ -19,4 +19,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Security
 
-[Unreleased 5.0.x]: https://github.com/wazuh/wazuh-indexer/compare/4.10.2...master
+[Unreleased 5.0.x]: https://github.com/wazuh/wazuh-indexer/compare/99a9a81da366173b0c2b963b26ea92e15ef34547...main

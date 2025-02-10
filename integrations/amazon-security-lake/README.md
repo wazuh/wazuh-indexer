@@ -104,14 +104,16 @@ Follow the [official documentation](https://docs.aws.amazon.com/lambda/latest/dg
 - Use the [Makefile](./Makefile) to generate the zip package `wazuh_to_amazon_security_lake.zip`, and upload it to the S3 bucket created previously as per [these instructions](https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-package.html#gettingstarted-package-zip). See [CONTRIBUTING](./CONTRIBUTING.md) for details about the Makefile.
 - Configure the Lambda with the at least the required _Environment Variables_ below:
 
-  | Environment variable | Required | Value                                                                                              |
-  | -------------------- | -------- | -------------------------------------------------------------------------------------------------- |
-  | AWS_BUCKET           | True     | The name of the Amazon S3 bucket in which Security Lake stores your custom source data             |
-  | SOURCE_LOCATION      | True     | The _Data source name_ of the _Custom Source_                                                      |
-  | ACCOUNT_ID           | True     | Enter the ID that you specified when creating your Amazon Security Lake custom source              |
-  | REGION               | True     | AWS Region to which the data is written                                                            |
-  | S3_BUCKET_OCSF       | False    | S3 bucket to which the mapped events are written                                                   |
-  | OCSF_CLASS           | False    | The OCSF class to map the events into. Can be "SECURITY_FINDING" (default) or "DETECTION_FINDING". |
+  | Environment variable | Required | Value                                                                                                     |
+  | -------------------- | -------- | --------------------------------------------------------------------------------------------------------- |
+  | AWS_BUCKET           | True     | The name of the Amazon S3 bucket in which Security Lake stores your custom source data                    |
+  | SOURCE_LOCATION      | True     | The _Data source name_ of the _Custom Source_                                                             |
+  | ACCOUNT_ID           | True     | Enter the ID that you specified when creating your Amazon Security Lake custom source                     |
+  | ROLE_ARN             | True     | The ARN of the role that the Lambda function assumes to write data to the Amazon Security Lake S3 bucket  |
+  | EXTERNAL_ID          | True     | The External ID that you specified when creating your Amazon Security Lake custom source                  |
+  | REGION               | True     | AWS Region to which the data is written                                                                   |
+  | S3_BUCKET_OCSF       | False    | S3 bucket to which the mapped events are written                                                          |
+  | OCSF_CLASS           | False    | The OCSF class to map the events into. Can be "SECURITY_FINDING" (default) or "DETECTION_FINDING".        |
 
 ### Validation
 

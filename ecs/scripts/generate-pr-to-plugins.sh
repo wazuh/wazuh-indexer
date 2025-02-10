@@ -7,7 +7,7 @@ TEMPLATES_PATH="plugins/setup/src/main/resources/"
 PLUGINS_REPO="wazuh/wazuh-indexer-plugins"
 CURRENT_PATH=$(pwd)
 OUTPUT_PATH=${OUTPUT_PATH:-"$CURRENT_PATH"/../output}
-BASE_BRANCH=${BASE_BRANCH:-master}
+BASE_BRANCH=${BASE_BRANCH:-main}
 PLUGINS_LOCAL_PATH=${PLUGINS_LOCAL_PATH:-"$CURRENT_PATH"/../wazuh-indexer-plugins}
 
 # Committer's identity
@@ -49,7 +49,7 @@ check_running_on_gha() {
 detect_modified_modules() {
     echo
     echo "---> Fetching and extracting modified ECS modules..."
-    git fetch origin +refs/heads/master:refs/remotes/origin/master
+    git fetch origin +refs/heads/main:refs/remotes/origin/main
     local modified_files
     local updated_modules=()
     modified_files=$(git diff --name-only origin/"$BASE_BRANCH")
@@ -218,7 +218,7 @@ EOF
     gh auth login --with-token < token.txt
 
     if [ -z "$existing_pr" ]; then
-        output=$(gh pr create --title "$title" --body "$body" --base master --head "$BRANCH_NAME")
+        output=$(gh pr create --title "$title" --body "$body" --base main --head "$BRANCH_NAME")
         pr_url=$(echo "$output" | grep -oP 'https://github.com/\S+')
         export PR_URL="$pr_url"
         echo "New pull request created: $PR_URL"

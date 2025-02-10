@@ -2,17 +2,28 @@
 
 ## Table of Contents
 
-- [Introduction](#introduction)
-- [Prerequisites](#prerequisites)
-- [Integration guide](#integration-guide)
-  - [Configure Amazon Security Lake](#configure-amazon-security-lake)
-  - [Create an AWS S3 bucket](#create-an-s3-bucket-to-store-events)
-  - [Configure the AWS Lambda function](#create-an-aws-lambda-function)
-  - [Validation](#validation)
-  - [Install and configure Logstash](#install-and-configure-logstash)
-- [OCSF mapping](#ocsf-mapping)
-- [Troubleshooting](#troubleshooting)
-- [Support](#support)
+- [Wazuh to Amazon Security Lake Integration Guide](#wazuh-to-amazon-security-lake-integration-guide)
+  - [Table of Contents](#table-of-contents)
+  - [Introduction](#introduction)
+    - [Amazon Security Lake](#amazon-security-lake)
+    - [Open Cybersecurity Schema Framework](#open-cybersecurity-schema-framework)
+    - [Wazuh Security Events](#wazuh-security-events)
+    - [Wazuh Security Events to Amazon Security Lake](#wazuh-security-events-to-amazon-security-lake)
+  - [Prerequisites](#prerequisites)
+  - [Integration guide](#integration-guide)
+    - [Configure Amazon Security Lake](#configure-amazon-security-lake)
+      - [Create a custom source for Wazuh](#create-a-custom-source-for-wazuh)
+    - [Create an S3 bucket to store events](#create-an-s3-bucket-to-store-events)
+    - [Create an AWS Lambda function](#create-an-aws-lambda-function)
+    - [Validation](#validation)
+    - [Install and configure Logstash](#install-and-configure-logstash)
+      - [Configure the Logstash pipeline](#configure-the-logstash-pipeline)
+      - [Running Logstash](#running-logstash)
+  - [OCSF Mapping](#ocsf-mapping)
+    - [Metadata](#metadata)
+      - [Security events](#security-events)
+  - [Troubleshooting](#troubleshooting)
+  - [Support](#support)
 
 ## Introduction
 
@@ -31,8 +42,8 @@ Wazuh uses rules to monitor the events and logs in your network to detect securi
 **References**:
 
 - https://documentation.wazuh.com/current/user-manual/ruleset/getting-started.html#github-repository
-- https://github.com/wazuh/wazuh/tree/master/ruleset/rules
-- https://github.com/wazuh/wazuh/blob/master/extensions/elasticsearch/7.x/wazuh-template.json
+- https://github.com/wazuh/wazuh/tree/main/ruleset/rules
+- https://github.com/wazuh/wazuh/blob/main/extensions/elasticsearch/7.x/wazuh-template.json
 
 ### Wazuh Security Events to Amazon Security Lake
 

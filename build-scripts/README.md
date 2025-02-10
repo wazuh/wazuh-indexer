@@ -25,8 +25,8 @@ Use the script under `wazuh-indexer/docker/builder/builder.sh` to build a packag
 Usage: ./builder.sh [args]
 
 Arguments:
--p INDEXER_PLUGINS_BRANCH     [Optional] wazuh-indexer-plugins repo branch, default is 'master'.
--r INDEXER_REPORTING_BRANCH   [Optional] wazuh-indexer-reporting repo branch, default is 'master'.
+-p INDEXER_PLUGINS_BRANCH     [Optional] wazuh-indexer-plugins repo branch, default is 'main'.
+-r INDEXER_REPORTING_BRANCH   [Optional] wazuh-indexer-reporting repo branch, default is 'main'.
 -R REVISION                   [Optional] Package revision, default is '0'.
 -s STAGE                      [Optional] Staging build, default is 'false'.
 -d DISTRIBUTION               [Optional] Distribution, default is 'rpm'.

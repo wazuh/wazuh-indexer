@@ -93,7 +93,7 @@ jobs:
     needs: [call-build-workflow]
     runs-on: ubuntu-24.04
     env:
-      docker_path: ./docker/prod
+      docker_path: ./build-scripts/docker
     steps:
       - uses: actions/checkout@v4
 
@@ -108,7 +108,7 @@ jobs:
         run: ls -lR ${{env.docker_path }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: build-scripts/setup-buildx-action@v3
 
       - name: Build and push
         env:

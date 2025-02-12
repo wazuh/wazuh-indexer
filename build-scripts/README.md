@@ -18,7 +18,7 @@ Before you get started, make sure to clean your environment by running `./gradle
 
 ## Building wazuh-indexer packages
 
-Use the script under `wazuh-indexer/docker/builder/builder.sh` to build a package.
+Use the script under `wazuh-indexer/build-scripts/builder/builder.sh` to build a package.
 
 ```bash
 ./builder.sh -h
@@ -43,7 +43,7 @@ The resulting package will be stored at `wazuh-indexer/artifacts/dist`.
 
 The `build-and-push-docker-image.sh` script automates the process to build and push Wazuh Indexer Docker images to our repository in quay.io. The script takes serveral parameters. Use the `-h` option to display them.
 
-The Docker image is built from a wazuh-indexer tarball (tar.gz), which must be present in the same folder as the Dockerfile in `wazuh-indexer/docker/prod`.
+The Docker image is built from a wazuh-indexer tarball (tar.gz), which must be present in the same folder as the Dockerfile in `wazuh-indexer/build-scripts/docker`.
 
 To push images, credentials must be set at environment level:
 
@@ -62,5 +62,3 @@ Arguments:
 The script will stop if the credentials are not set, or if any of the required parameters are not provided.
 
 This script is used in the `build-push-docker-image.yml` **GitHub Workflow**, which is used to automate the process even more. When possible, **prefer this method**.
-
-For manual building refer to [our Docker containers guide](../docker/README.md).

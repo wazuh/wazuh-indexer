@@ -108,7 +108,7 @@ jobs:
         run: ls -lR ${{env.docker_path }}
 
       - name: Set up Docker Buildx
-        uses: build-scripts/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v3
 
       - name: Build and push
         env:

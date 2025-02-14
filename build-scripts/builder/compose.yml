@@ -4,7 +4,7 @@ services:
     container_name: wazuh-indexer-builder_${VERSION}
     build:
       context: ./../..
-      dockerfile: ${REPO_PATH}/docker/builder/Dockerfile
+      dockerfile: ${REPO_PATH}/build-scripts/builder/Dockerfile
     environment:
       - INDEXER_PLUGINS_BRANCH=${INDEXER_PLUGINS_BRANCH:-main}
       - INDEXER_REPORTING_BRANCH=${INDEXER_REPORTING_BRANCH:-main}

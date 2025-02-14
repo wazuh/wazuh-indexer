@@ -97,7 +97,7 @@ function usage() {
 # ====
 function main() {
     check_project_root_folder $0
-    compose_file="docker/${current}/compose.yml"
+    compose_file="build-scripts/${current}/compose.yml"
     compose_cmd="docker compose -f $compose_file"
     REPO_PATH=$(pwd)
     VERSION=$(cat VERSION)

@@ -80,7 +80,7 @@ RUN mkdir -p /repositories/wazuh-indexer-plugins && \
     chown wazuh-indexer:wazuh-indexer /repositories/wazuh-indexer-reporting
 
 # Copy your build scripts into the container as root
-COPY docker/builder/entrypoint.sh /
+COPY build-scripts/builder/entrypoint.sh /
 
 # Change file permissions as root
 RUN chmod +x /entrypoint.sh

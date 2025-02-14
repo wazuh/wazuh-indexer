@@ -2,9 +2,8 @@
 
 # This script builds and pushes wazuh-indexer docker images to the quay.io registry.
 # The Docker image is built from a wazuh-indexer tarball (tar.gz), which must be
-# present in the same folder as the Dockerfile in wazuh-indexer/docker/prod.
-# For addtional information, read these documents:
-#   - wazuh-indexer/docker/README.md
+# present in the same folder as the Dockerfile in wazuh-indexer/build-scripts/docker.
+# For addtional information, read this document:
 #   - wazuh-indexer/build-scripts/README.md
 #
 # To push images, credentials must be set at environment level:
@@ -98,7 +97,7 @@ function main() {
     docker login -u="${QUAY_USERNAME}" -p="${QUAY_TOKEN}" "${DOCKER_REGISTRY}"
 
     # Build the Docker image.
-    local dockerfile_path="docker/prod"
+    local dockerfile_path="build-scripts/docker"
     cd ${dockerfile_path}
     docker build \
         --build-arg="VERSION=${VERSION}" \

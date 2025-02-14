@@ -93,7 +93,7 @@ jobs:
     needs: [call-build-workflow]
     runs-on: ubuntu-24.04
     env:
-      docker_path: ./docker/prod
+      docker_path: ./build-scripts/docker
     steps:
       - uses: actions/checkout@v4
 

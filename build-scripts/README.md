@@ -28,6 +28,7 @@ Before you get started, make sure to clean your environment by running `./gradle
    The more resources the better ☺
 
 3. Clone the [wazuh-indexer](https://github.com/wazuh/wazuh-indexer).
+
 ## Building wazuh-indexer packages
 
 The `builder` image automates the build and assemble process for the Wazuh Indexer and its plugins, making it easy to create packages on any system.
@@ -49,7 +50,7 @@ Arguments:
 -h      Print help
 ```
 
-In the example below, it will generate a wazuh-indexer package for Debian based systems, for the x64 architecture, using 1 as revision number and using the production naming convention.
+The example below it will generate a wazuh-indexer package for Debian based systems, for the x64 architecture, using 1 as revision number and using the production naming convention.
 
 ```bash
 # Wihtin wazuh-indexer/build-scripts/builder
@@ -62,7 +63,9 @@ The resulting package will be stored at `wazuh-indexer/artifacts/dist`.
 
 ## Building wazuh-indexer Docker images
 
-The [docker](./docker) folder contains the code to build Docker images. A tarball of wazuh-indexer needs to be located at the same level that the Dockerfile. Below there is an example of the command needed to build the image. Set the build arguments and the image tag accordingly.
+The [docker](./docker) folder contains the code to build Docker images. Below there is an example of the command needed to build the image. Set the build arguments and the image tag accordingly.
+
+The Docker image is built from a wazuh-indexer tarball (tar.gz), which must be present in the same folder as the Dockerfile in `wazuh-indexer/build-scripts/docker`.
 
 ```bash
 docker build --build-arg="VERSION=5.0.0" --build-arg="INDEXER_TAR_NAME=wazuh-indexer_5.0.0-0_linux-x64.tar.gz" --tag=wazuh-indexer:5.0.0-0 --progress=plain --no-cache .
@@ -71,12 +74,10 @@ docker build --build-arg="VERSION=5.0.0" --build-arg="INDEXER_TAR_NAME=wazuh-ind
 Then, start a container with:
 
 ```bash
-docker run -p 9200:9200 -it --rm quay.io/wazuh/wazuh-indexer:5.0.0-latest
+docker run -p 9200:9200 -it --rm wazuh-indexer:5.0.0-0
 ```
 
 The `build-and-push-docker-image.sh` script automates the process to build and push Wazuh Indexer Docker images to our repository in quay.io. The script takes serveral parameters. Use the `-h` option to display them.
-
-The Docker image is built from a wazuh-indexer tarball (tar.gz), which must be present in the same folder as the Dockerfile in `wazuh-indexer/build-scripts/docker`.
 
 To push images, credentials must be set at environment level:
 

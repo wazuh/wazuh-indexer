@@ -120,6 +120,7 @@ set -- "$@" "%{config_dir}/log4j2.properties"
 set -- "$@" "%{config_dir}/jvm.options"
 set -- "$@" "%{config_dir}/opensearch.yml"
 set -- "$@" "%{product_dir}/VERSION.json"
+set -- "$@" "%{product_dir}/VERSION"
 set -- "$@" "%{product_dir}/plugins/opensearch-security/tools/.*\.sh"
 set -- "$@" "%{product_dir}/bin/.*"
 set -- "$@" "%{product_dir}/jdk/bin/.*"
@@ -268,6 +269,7 @@ exit 0
 
 # Files that need other permissions
 %attr(440, %{name}, %{name}) %{product_dir}/VERSION.json
+%attr(440, %{name}, %{name}) %{product_dir}/VERSION
 %attr(740, %{name}, %{name}) %{product_dir}/plugins/opensearch-security/tools/*.sh
 %attr(750, %{name}, %{name}) %{product_dir}/bin/*
 %attr(750, %{name}, %{name}) %{product_dir}/jdk/bin/*

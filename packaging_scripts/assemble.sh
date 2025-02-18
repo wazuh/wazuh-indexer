@@ -278,6 +278,13 @@ function assemble_tar() {
 function assemble_rpm() {
     # Copy spec
     cp "distribution/packages/src/rpm/wazuh-indexer.rpm.spec" "${TMP_DIR}"
+    
+    # Get the commit hash
+    local hash=$(git rev-parse --short HEAD)
+    # Add the commit hash to the VERSION.json file and
+    # add it to the package
+    jq --arg hash "${hash}" '. + {"commit": $hash}' VERSION.json > "${TMP_DIR}"/usr/share/wazuh-indexer/VERSION.json
+    
     # Copy performance analyzer service file
     enable_performance_analyzer
 
@@ -286,13 +293,14 @@ function assemble_rpm() {
     PATH_CONF="./etc/wazuh-indexer"
     PATH_BIN="${src_path}/bin"
     PATH_PLUGINS="${src_path}/plugins"
+   
 
     # Extract min-package. Creates usr/, etc/ and var/ in the current directory
     echo "Extract ${ARTIFACT_BUILD_NAME} archive"
     rpm2cpio "${ARTIFACT_BUILD_NAME}" | cpio -imdv
 
     local version
-    version=$(cat ./usr/share/wazuh-indexer/VERSION.json)
+    version=$(cat ./usr/share/wazuh-indexer/VERSION)
 
     # Install plugins
     install_plugins
@@ -333,6 +341,12 @@ function assemble_deb() {
     chmod a+x "${TMP_DIR}/debmake_install.sh"
     # Copy performance analyzer service file
     enable_performance_analyzer
+    
+    # Get the commit hash
+    local hash=$(git rev-parse --short HEAD)
+    # Add the commit hash to the VERSION.json file and
+    # add it to the package
+    jq --arg hash "${hash}" '. + {"commit": $hash}' VERSION.json > "${TMP_DIR}"/usr/share/wazuh-indexer/VERSION.json
 
     cd "${TMP_DIR}"
     local src_path="./usr/share/wazuh-indexer"
@@ -346,7 +360,7 @@ function assemble_deb() {
     tar zvxf data.tar.gz
 
     local version
-    version=$(cat ./usr/share/wazuh-indexer/VERSION.json)
+    version=$(cat ./usr/share/wazuh-indexer/VERSION)
 
     # Install plugins
     install_plugins

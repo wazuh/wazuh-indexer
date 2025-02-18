@@ -282,6 +282,9 @@ function assemble_rpm() {
     # Copy performance analyzer service file
     enable_performance_analyzer
     
+    # Get the commit hash
+    local hash=$(<distribution/packages/src/commit.txt)
+    
     # Store the top level dir path
     local repo_dir="$(pwd)"
 
@@ -296,8 +299,6 @@ function assemble_rpm() {
     echo "Extract ${ARTIFACT_BUILD_NAME} archive"
     rpm2cpio "${ARTIFACT_BUILD_NAME}" | cpio -imdv
     
-    # Get the commit hash
-    local hash=$(git rev-parse --short HEAD)
     # Add the commit hash to the VERSION.json file and
     # add it to the package
     jq --arg hash "${hash}" '. + {"commit": $hash}' "${repo_dir}"/VERSION.json > "${TMP_DIR}"/usr/share/wazuh-indexer/VERSION.json
@@ -345,6 +346,9 @@ function assemble_deb() {
     # Copy performance analyzer service file
     enable_performance_analyzer
     
+    # Get the commit hash
+    local hash=$(<distribution/packages/src/commit.txt)
+    
     # Store the top level dir path
     local repo_dir="$(pwd)"
 
@@ -359,11 +363,9 @@ function assemble_deb() {
     ar xf "${ARTIFACT_BUILD_NAME}" data.tar.gz
     tar zvxf data.tar.gz
     
-    # Get the commit hash
-    local hash=$(git rev-parse --short HEAD)
     # Add the commit hash to the VERSION.json file and
     # add it to the package
-    jq --arg hash "${hash}" '. + {"commit": $hash}' "${repo_dir}"/VERSION.json > "${TMP_DIR}"/usr/share/wazuh-indexer/VERSION.json
+    jq --arg hash "${hash}" '. + {"commit": $hash}' "${repo_dir}"/VERSION.json > ./usr/share/wazuh-indexer/VERSION.json
 
     local version
     version=$(cat ./usr/share/wazuh-indexer/VERSION)

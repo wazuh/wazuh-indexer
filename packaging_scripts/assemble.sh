@@ -252,7 +252,7 @@ function assemble_tar() {
     cd "$(ls -d wazuh-indexer-*/)"
 
     local version
-    version="$(jq -r .version < VERSION)"
+    version="$(jq -r .version < VERSION.json)"
 
     # Install plugins
     install_plugins
@@ -292,7 +292,7 @@ function assemble_rpm() {
     rpm2cpio "${ARTIFACT_BUILD_NAME}" | cpio -imdv
 
     local version
-    version=$(cat ./usr/share/wazuh-indexer/VERSION)
+    version=$(cat ./usr/share/wazuh-indexer/VERSION.json)
 
     # Install plugins
     install_plugins
@@ -346,7 +346,7 @@ function assemble_deb() {
     tar zvxf data.tar.gz
 
     local version
-    version=$(cat ./usr/share/wazuh-indexer/VERSION)
+    version=$(cat ./usr/share/wazuh-indexer/VERSION.json)
 
     # Install plugins
     install_plugins

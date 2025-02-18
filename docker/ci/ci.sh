@@ -36,7 +36,7 @@ function main() {
     compose_file="docker/${current}/ci.yml"
     compose_cmd="docker compose -f $compose_file"
     REPO_PATH="$(pwd)"
-    VERSION="$(jq -r .version<VERSION)"
+    VERSION="$(jq -r .version<VERSION.json)"
     export REPO_PATH
     export VERSION
 

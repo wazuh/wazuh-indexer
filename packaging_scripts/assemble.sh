@@ -252,7 +252,7 @@ function assemble_tar() {
     cd "$(ls -d wazuh-indexer-*/)"
 
     local version
-    version=$(cat VERSION)
+    version="$(jq -r .version < VERSION)"
 
     # Install plugins
     install_plugins

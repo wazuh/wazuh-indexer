@@ -151,5 +151,5 @@ function main() {
 }
 
 GIT_COMMIT=$(git rev-parse --short HEAD)
-VERSION=$(<VERSION)
+VERSION="$(jq -r .version < VERSION)"
 main "${@}"

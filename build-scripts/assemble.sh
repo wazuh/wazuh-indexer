@@ -281,7 +281,7 @@ function assemble_tar() {
     decompressed_tar_dir=$(ls -d wazuh-indexer-*/)
 
     local version
-    version=$(cat "${decompressed_tar_dir}"/VERSION)
+    version="$(jq .version "${decompressed_tar_dir}"/VERSION.json)"
 
     PATH_CONF="${decompressed_tar_dir}/config"
     PATH_BIN="${decompressed_tar_dir}/bin"
@@ -325,7 +325,7 @@ function assemble_rpm() {
     rpm2cpio "${ARTIFACT_BUILD_NAME}" | cpio -imdv
 
     local version
-    version=$(cat ./usr/share/wazuh-indexer/VERSION)
+    version="$(jq .version ./usr/share/wazuh-indexer/VERSION.json)"
 
     # Install plugins
     install_plugins "${version}"
@@ -380,7 +380,7 @@ function assemble_deb() {
     tar zvxf data.tar.gz
 
     local version
-    version=$(cat ./usr/share/wazuh-indexer/VERSION)
+    version="$(jq .version ./usr/share/wazuh-indexer/VERSION.json)"
 
     # Install plugins
     install_plugins "${version}"

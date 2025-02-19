@@ -131,7 +131,7 @@ main() {
     echo "---------Starting Build Process---------"
     clone_repositories
     # Set version env var
-    VERSION=$(cat ~/VERSION)
+    VERSION=$(bash ~/build-scripts/product_version.sh)
     # Build and assemble the package
     build_plugins "$VERSION" "$REVISION"
     build_reporting "$VERSION" "$REVISION"

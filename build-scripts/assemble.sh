@@ -272,9 +272,6 @@ function clean() {
 # Tar assemble
 # ====
 function assemble_tar() {
-    local version
-    version="$(bash build-scripts/product_version.sh)"
-
     cd "${TMP_DIR}"
 
     # Extract
@@ -288,16 +285,16 @@ function assemble_tar() {
     PATH_PLUGINS="${decompressed_tar_dir}/plugins"
 
     # Install plugins
-    install_plugins "${version}"
+    install_plugins "${VERSION}"
     fix_log_rotation "${PATH_CONF}"
     add_demo_certs_installer
     # Swap configuration files
     add_configuration_files
     remove_unneeded_files
-    add_wazuh_tools "${version}"
+    add_wazuh_tools "${VERSION}"
 
     # Pack
-    archive_name="wazuh-indexer-${version}"
+    archive_name="wazuh-indexer-${VERSION}"
     tar -cvf "${archive_name}-${SUFFIX}.${EXT}" "${archive_name}"
     cd ../../..
     cp "${TMP_DIR}/${archive_name}-${SUFFIX}.${EXT}" "${OUTPUT}/dist/$ARTIFACT_PACKAGE_NAME"
@@ -309,9 +306,6 @@ function assemble_tar() {
 # RPM assemble
 # ====
 function assemble_rpm() {
-    local version
-    version="$(bash build-scripts/product_version.sh)"
-
     # Copy spec
     cp "distribution/packages/src/rpm/wazuh-indexer.rpm.spec" "${TMP_DIR}"
     # Copy performance analyzer service file
@@ -328,14 +322,14 @@ function assemble_rpm() {
     rpm2cpio "${ARTIFACT_BUILD_NAME}" | cpio -imdv
 
     # Install plugins
-    install_plugins "${version}"
+    install_plugins "${VERSION}"
     fix_log_rotation ${PATH_CONF}
     enable_performance_analyzer_rca ${src_path}
     add_demo_certs_installer
     # Swap configuration files
     add_configuration_files
     remove_unneeded_files
-    add_wazuh_tools "${version}"
+    add_wazuh_tools "${VERSION}"
 
     # Generate final package
     local topdir
@@ -343,14 +337,14 @@ function assemble_rpm() {
     topdir=$(pwd)
     rpmbuild --bb \
         --define "_topdir ${topdir}" \
-        --define "_version ${version}" \
+        --define "_version ${VERSION}" \
         --define "_architecture ${SUFFIX}" \
         --define "_release ${REVISION}" \
         ${spec_file}
 
     # Move to the root folder, copy the package and clean.
     cd ../../..
-    package_name="wazuh-indexer-${version}-${REVISION}.${SUFFIX}.${EXT}"
+    package_name="wazuh-indexer-${VERSION}-${REVISION}.${SUFFIX}.${EXT}"
     cp "${TMP_DIR}/RPMS/${SUFFIX}/${package_name}" "${OUTPUT}/dist/$ARTIFACT_PACKAGE_NAME"
 
     clean
@@ -360,9 +354,6 @@ function assemble_rpm() {
 # DEB assemble
 # ====
 function assemble_deb() {
-    local version
-    version="$(bash build-scripts/product_version.sh)"
-
     # Copy spec
     cp "distribution/packages/src/deb/Makefile" "${TMP_DIR}"
     cp "distribution/packages/src/deb/debmake_install.sh" "${TMP_DIR}"
@@ -383,14 +374,14 @@ function assemble_deb() {
     tar zvxf data.tar.gz
 
     # Install plugins
-    install_plugins "${version}"
+    install_plugins "${VERSION}"
     fix_log_rotation ${PATH_CONF}
     enable_performance_analyzer_rca ${src_path}
     add_demo_certs_installer
     # Swap configuration files
     add_configuration_files
     remove_unneeded_files
-    add_wazuh_tools "${version}"
+    add_wazuh_tools "${VERSION}"
 
     # Configure debmake to only generate binaries
     echo 'DEBUILD_DPKG_BUILDPACKAGE_OPTS="-us -uc -ui -b"' >~/.devscripts
@@ -405,7 +396,7 @@ function assemble_deb() {
         --package wazuh-indexer \
         --native \
         --revision "${REVISION}" \
-        --upstreamversion "${version}-${REVISION}"
+        --upstreamversion "${VERSION}-${REVISION}"
 
     # Move to the root folder, copy the package and clean.
     cd ../../..

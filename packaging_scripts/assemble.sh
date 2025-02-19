@@ -301,7 +301,7 @@ function assemble_rpm() {
     
     # Add the commit hash to the VERSION.json file and
     # add it to the package
-    jq --arg hash "${hash}" '. + {"commit": $hash}' "${repo_dir}"/VERSION.json > "${TMP_DIR}"/usr/share/wazuh-indexer/VERSION.json
+    jq --arg hash "${hash}" '. + {"commit": $hash}' "${repo_dir}"/VERSION.json > ./usr/share/wazuh-indexer/VERSION.json
 
     local version
     version=$(cat ./usr/share/wazuh-indexer/VERSION)

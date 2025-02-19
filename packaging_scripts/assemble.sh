@@ -283,7 +283,7 @@ function assemble_rpm() {
     enable_performance_analyzer
     
     # Get the commit hash
-    local hash=$(<distribution/packages/src/commit.txt)
+    local hash=$(git rev-parse --short HEAD)
     
     # Store the top level dir path
     local repo_dir="$(pwd)"
@@ -347,7 +347,7 @@ function assemble_deb() {
     enable_performance_analyzer
     
     # Get the commit hash
-    local hash=$(<distribution/packages/src/commit.txt)
+    local hash=$(git rev-parse --short HEAD)
     
     # Store the top level dir path
     local repo_dir="$(pwd)"

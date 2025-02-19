@@ -175,7 +175,6 @@ function build() {
 function main() {
     parse_args "${@}"
 
-    echo "$(git rev-parse --short HEAD)" > distribution/packages/src/commit.txt
     echo "Building OpenSearch for $PLATFORM-$DISTRIBUTION-$ARCHITECTURE"
     build
 

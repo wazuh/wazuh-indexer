@@ -272,6 +272,9 @@ function clean() {
 # Tar assemble
 # ====
 function assemble_tar() {
+    local version
+    version="$(bash build-scripts/product_version.sh)"
+
     cd "${TMP_DIR}"
 
     # Extract
@@ -279,9 +282,6 @@ function assemble_tar() {
     tar -zvxf "${ARTIFACT_BUILD_NAME}"
     local decompressed_tar_dir
     decompressed_tar_dir=$(ls -d wazuh-indexer-*/)
-
-    local version
-    version="$(bash build-scripts/product_version.sh)"
 
     PATH_CONF="${decompressed_tar_dir}/config"
     PATH_BIN="${decompressed_tar_dir}/bin"
@@ -309,6 +309,9 @@ function assemble_tar() {
 # RPM assemble
 # ====
 function assemble_rpm() {
+    local version
+    version="$(bash build-scripts/product_version.sh)"
+
     # Copy spec
     cp "distribution/packages/src/rpm/wazuh-indexer.rpm.spec" "${TMP_DIR}"
     # Copy performance analyzer service file
@@ -323,9 +326,6 @@ function assemble_rpm() {
     # Extract min-package. Creates usr/, etc/ and var/ in the current directory
     echo "Extract ${ARTIFACT_BUILD_NAME} archive"
     rpm2cpio "${ARTIFACT_BUILD_NAME}" | cpio -imdv
-
-    local version
-    version="$(bash build-scripts/product_version.sh)"
 
     # Install plugins
     install_plugins "${version}"
@@ -360,6 +360,9 @@ function assemble_rpm() {
 # DEB assemble
 # ====
 function assemble_deb() {
+    local version
+    version="$(bash build-scripts/product_version.sh)"
+
     # Copy spec
     cp "distribution/packages/src/deb/Makefile" "${TMP_DIR}"
     cp "distribution/packages/src/deb/debmake_install.sh" "${TMP_DIR}"
@@ -378,9 +381,6 @@ function assemble_deb() {
     echo "Extract ${ARTIFACT_BUILD_NAME} archive"
     ar xf "${ARTIFACT_BUILD_NAME}" data.tar.gz
     tar zvxf data.tar.gz
-
-    local version
-    version="$(bash build-scripts/product_version.sh)"
 
     # Install plugins
     install_plugins "${version}"

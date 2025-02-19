@@ -72,7 +72,7 @@ Arguments:
 -p PLATFORM     [Optional] Platform, default is 'uname -s'.
 -a ARCHITECTURE [Optional] Build architecture, default is 'uname -m'.
 -d DISTRIBUTION [Optional] Distribution, default is 'tar'.
--b BRANCH       [Optional] Branch from wazuh/wazuh to download the index template from, default is 'jq -r .version<VERSION.json'
+-b BRANCH       [Optional] Branch from wazuh/wazuh to download the index template from, default is $(bash build-scripts/product_version.sh)
 -n NAME [optional] Package name, default is set automatically.
 -o OUTPUT       [Optional] Output path, default is 'artifacts'.
 -h help

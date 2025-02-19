@@ -269,7 +269,6 @@ exit 0
 
 # Files that need other permissions
 %attr(440, %{name}, %{name}) %{product_dir}/VERSION.json
-%attr(440, %{name}, %{name}) %{product_dir}/VERSION
 %attr(740, %{name}, %{name}) %{product_dir}/plugins/opensearch-security/tools/*.sh
 %attr(750, %{name}, %{name}) %{product_dir}/bin/*
 %attr(750, %{name}, %{name}) %{product_dir}/jdk/bin/*

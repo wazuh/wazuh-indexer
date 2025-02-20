@@ -1,0 +1,116 @@
+#!/bin/bash
+
+# Copyright Wazuh Indexer Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# The Wazuh Indexer Contributors require contributions made to
+# this file be licensed under the Apache-2.0 license or a
+# compatible open source license.
+
+# deb wazuh-indexer postinst script
+
+set -e
+
+echo "Running Wazuh Indexer Post-Installation Script"
+
+product_dir=/usr/share/wazuh-indexer
+config_dir=/etc/wazuh-indexer
+data_dir=/var/lib/wazuh-indexer
+log_dir=/var/log/wazuh-indexer
+pid_dir=/run/wazuh-indexer
+tmp_dir=${data_dir}/tmp
+restart_service=${tmp_dir}/wazuh-indexer.restart
+
+# Set owner
+chown -R wazuh-indexer:wazuh-indexer ${product_dir}
+chown -R wazuh-indexer:wazuh-indexer ${config_dir}
+chown -R wazuh-indexer:wazuh-indexer ${log_dir}
+chown -R wazuh-indexer:wazuh-indexer ${data_dir}
+chown -R wazuh-indexer:wazuh-indexer ${pid_dir}
+chown -R wazuh-indexer:wazuh-indexer ${tmp_dir}
+
+export OPENSEARCH_PATH_CONF=${OPENSEARCH_PATH_CONF:-${config_dir}}
+# Apply Performance Analyzer settings, as per https://github.com/opensearch-project/opensearch-build/blob/2.18.0/scripts/pkg/build_templates/current/opensearch/deb/debian/postinst#L28-L37
+if ! grep -q '## OpenSearch Performance Analyzer' "$OPENSEARCH_PATH_CONF/jvm.options"; then
+    CLK_TCK=$(/usr/bin/getconf CLK_TCK)
+    {
+        echo
+        echo "## OpenSearch Performance Analyzer"
+        echo "-Dclk.tck=$CLK_TCK"
+        echo "-Djdk.attach.allowAttachSelf=true"
+        echo "-Djava.security.policy=file://$OPENSEARCH_PATH_CONF/opensearch-performance-analyzer/opensearch_security.policy"
+        echo "--add-opens=jdk.attach/sun.tools.attach=ALL-UNNAMED"
+    } >>"$OPENSEARCH_PATH_CONF/jvm.options"
+fi
+
+# Reload systemctl daemon
+if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
+    systemctl daemon-reload > /dev/null 2>&1
+fi
+
+# Reload other configs
+if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
+    systemctl restart systemd-sysctl.service || true
+fi
+
+if command -v systemd-tmpfiles > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
+    systemd-tmpfiles --create wazuh-indexer.conf > /dev/null 2>&1
+fi
+
+# Check if the script is executed on upgrade
+if [ -n "$2" ]; then
+    if [ -f $restart_service ]; then
+        echo "Restarting wazuh-indexer service after upgrade"
+        rm -f $restart_service
+        if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
+            systemctl restart wazuh-indexer.service > /dev/null 2>&1
+        elif command -v service > /dev/null 2>&1; then
+            service wazuh-indexer restart > /dev/null 2>&1
+        elif command -v /etc/init.d/wazuh-indexer > /dev/null 2>&1; then
+            /etc/init.d/wazuh-indexer restart > /dev/null 2>&1
+        fi
+    else
+        echo "### NOT restarting wazuh-indexer service after upgrade"
+        echo "### You can start wazuh-indexer service by executing"
+        if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
+            echo " sudo systemctl start wazuh-indexer.service"
+        elif command -v service > /dev/null 2>&1; then
+            echo " sudo service wazuh-indexer start"
+        elif command -v /etc/init.d/wazuh-indexer > /dev/null 2>&1; then
+            echo " sudo /etc/init.d/wazuh-indexer start"
+        fi
+    fi
+else
+    # Messages
+    if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
+        echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using systemd"
+        echo " sudo systemctl daemon-reload"
+        echo " sudo systemctl enable wazuh-indexer.service"
+        echo "### You can start wazuh-indexer service by executing"
+        echo " sudo systemctl start wazuh-indexer.service"
+    else
+        if command -v chkconfig > /dev/null 2>&1; then
+            echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using chkconfig"
+            echo " sudo chkconfig --add wazuh-indexer"
+        elif command -v update-rc.d > /dev/null 2>&1; then
+            echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using update-rc.d"
+            echo " sudo update-rc.d wazuh-indexer defaults 95 10"
+        fi
+        if command -v service > /dev/null 2>&1; then
+            echo "### You can start wazuh-indexer service by executing"
+            echo " sudo service wazuh-indexer start"
+        elif command -v /etc/init.d/wazuh-indexer > /dev/null 2>&1; then
+            echo "### You can start wazuh-indexer service by executing"
+            echo " sudo /etc/init.d/wazuh-indexer start"
+        fi
+    fi
+    if ! [ -d "${config_dir}/certs" ] && [ -f "${product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh" ]; then
+        echo "### Installing wazuh-indexer demo certificates in ${config_dir}"
+        echo " If you are using a custom certificates path, ignore this message"
+        echo " See demo certs creation log in ${log_dir}/install_demo_certificates.log"
+        bash "${product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh" >"${log_dir}/install_demo_certificates.log" 2>&1
+        yes | ${product_dir}/jdk/bin/keytool -trustcacerts -keystore ${product_dir}/jdk/lib/security/cacerts -importcert -alias wazuh-root-ca -file ${config_dir}/certs/root-ca.pem > /dev/null 2>&1
+    fi
+fi
+
+exit 0

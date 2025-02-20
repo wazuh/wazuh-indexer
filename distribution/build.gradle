@@ -380,7 +380,7 @@ configure(subprojects.findAll { ['archives', 'packages'].contains(it.name) }) {
           // strip the version since jvm.options is using agent without version
           rename("opensearch-agent-${project.version}.jar", "opensearch-agent.jar")
         }
-        from(rootProject.file('VERSION'))
+        from(rootProject.file('VERSION.json'))
         filePermissions{
           unix 0644
         }

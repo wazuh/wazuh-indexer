@@ -79,7 +79,7 @@ function parse_args() {
     [ -z "$PLATFORM" ] && PLATFORM=$(uname -s | awk '{print tolower($0)}')
     [ -z "$ARCHITECTURE" ] && ARCHITECTURE=$(uname -m)
     [ -z "$DISTRIBUTION" ] && DISTRIBUTION="tar"
-    [ -z "$BRANCH" ] && BRANCH=$(bash build-scripts/product_name.sh)
+    [ -z "$BRANCH" ] && BRANCH=$(bash build-scripts/product_version.sh)
 
     case $PLATFORM-$DISTRIBUTION-$ARCHITECTURE in
     linux-tar-x64 | darwin-tar-x64)

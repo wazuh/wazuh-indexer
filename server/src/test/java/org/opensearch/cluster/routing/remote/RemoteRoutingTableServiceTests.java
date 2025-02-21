@@ -17,6 +17,7 @@ import org.opensearch.cluster.coordination.CoordinationMetadata;
 import org.opensearch.cluster.metadata.IndexMetadata;
 import org.opensearch.cluster.metadata.Metadata;
 import org.opensearch.cluster.routing.IndexRoutingTable;
+import org.opensearch.cluster.routing.IndexShardRoutingTable;
 import org.opensearch.cluster.routing.RoutingTable;
 import org.opensearch.cluster.routing.RoutingTableIncrementalDiff;
 import org.opensearch.cluster.routing.StringKeyDiffProvider;

@@ -129,6 +129,14 @@ public class ClusterStatsRequest extends BaseNodesRequest<ClusterStatsRequest> {
         return new HashSet<>(indexMetricsRequested);
     }
 
+    public boolean useAggregatedNodeLevelResponses() {
+        return useAggregatedNodeLevelResponses;
+    }
+
+    public void useAggregatedNodeLevelResponses(boolean useAggregatedNodeLevelResponses) {
+        this.useAggregatedNodeLevelResponses = useAggregatedNodeLevelResponses;
+    }
+
     @Override
     public void writeTo(StreamOutput out) throws IOException {
         super.writeTo(out);

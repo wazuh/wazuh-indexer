@@ -307,7 +307,7 @@ public class MasterService extends AbstractLifecycleComponent {
         }
 
         if (!lifecycle.started()) {
-            logger.debug("processing [{}]: ignoring, cluster-manager service not started", summary);
+            logger.debug("processing [{}]: ignoring, cluster-manager service not started", shortSummary);
             return;
         }
 
@@ -320,7 +320,7 @@ public class MasterService extends AbstractLifecycleComponent {
         final ClusterState previousClusterState = state();
 
         if (!previousClusterState.nodes().isLocalNodeElectedClusterManager() && taskInputs.runOnlyWhenClusterManager()) {
-            logger.debug("failing [{}]: local node is no longer cluster-manager", summary);
+            logger.debug("failing [{}]: local node is no longer cluster-manager", shortSummary);
             taskInputs.onNoLongerClusterManager();
             return;
         }
@@ -329,7 +329,7 @@ public class MasterService extends AbstractLifecycleComponent {
         final TaskOutputs taskOutputs = calculateTaskOutputs(taskInputs, previousClusterState, summary);
         taskOutputs.notifyFailedTasks();
         final TimeValue computationTime = getTimeSince(computationStartTime);
-        logExecutionTime(computationTime, "compute cluster state update", summary);
+        logExecutionTime(computationTime, "compute cluster state update", shortSummary);
 
         clusterManagerMetrics.recordLatency(
             clusterManagerMetrics.clusterStateComputeHistogram,
@@ -341,17 +341,17 @@ public class MasterService extends AbstractLifecycleComponent {
             final long notificationStartTime = threadPool.preciseRelativeTimeInNanos();
             taskOutputs.notifySuccessfulTasksOnUnchangedClusterState();
             final TimeValue executionTime = getTimeSince(notificationStartTime);
-            logExecutionTime(executionTime, "notify listeners on unchanged cluster state", summary);
+            logExecutionTime(executionTime, "notify listeners on unchanged cluster state", shortSummary);
         } else {
             final ClusterState newClusterState = taskOutputs.newClusterState;
             if (logger.isTraceEnabled()) {
-                logger.trace("cluster state updated, source [{}]\n{}", summary, newClusterState);
+                logger.trace("cluster state updated, source [{}]\n{}", longSummary, newClusterState);
             } else {
-                logger.debug("cluster state updated, version [{}], source [{}]", newClusterState.version(), summary);
+                logger.debug("cluster state updated, version [{}], source [{}]", newClusterState.version(), shortSummary);
             }
             final long publicationStartTime = threadPool.preciseRelativeTimeInNanos();
             try {
-                ClusterChangedEvent clusterChangedEvent = new ClusterChangedEvent(summary, newClusterState, previousClusterState);
+                ClusterChangedEvent clusterChangedEvent = new ClusterChangedEvent(shortSummary, newClusterState, previousClusterState);
                 // new cluster state, notify all listeners
                 final DiscoveryNodes.Delta nodesDelta = clusterChangedEvent.nodesDelta();
                 if (nodesDelta.hasChanges() && logger.isInfoEnabled()) {
@@ -359,7 +359,7 @@ public class MasterService extends AbstractLifecycleComponent {
                     if (nodesDeltaSummary.length() > 0) {
                         logger.info(
                             "{}, term: {}, version: {}, delta: {}",
-                            summary,
+                            shortSummary,
                             newClusterState.term(),
                             newClusterState.version(),
                             nodesDeltaSummary
@@ -370,7 +370,7 @@ public class MasterService extends AbstractLifecycleComponent {
                 logger.debug("publishing cluster state version [{}]", newClusterState.version());
                 publish(clusterChangedEvent, taskOutputs, publicationStartTime);
             } catch (Exception e) {
-                handleException(summary, publicationStartTime, newClusterState, e);
+                handleException(shortSummary, publicationStartTime, newClusterState, e);
             }
         }
     }

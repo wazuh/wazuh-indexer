@@ -145,6 +145,20 @@ public class ShardsBatchGatewayAllocator implements ExistingShardsAllocator {
         Setting.Property.Dynamic
     );
 
+    public static final Setting<TimeValue> PRIMARY_BATCH_ALLOCATOR_TIMEOUT_SETTING = Setting.timeSetting(
+        PRIMARY_BATCH_ALLOCATOR_TIMEOUT_SETTING_KEY,
+        TimeValue.MINUS_ONE,
+        Setting.Property.NodeScope,
+        Setting.Property.Dynamic
+    );
+
+    public static final Setting<TimeValue> REPLICA_BATCH_ALLOCATOR_TIMEOUT_SETTING = Setting.timeSetting(
+        REPLICA_BATCH_ALLOCATOR_TIMEOUT_SETTING_KEY,
+        TimeValue.MINUS_ONE,
+        Setting.Property.NodeScope,
+        Setting.Property.Dynamic
+    );
+
     private final RerouteService rerouteService;
     private final PrimaryShardBatchAllocator primaryShardBatchAllocator;
     private final ReplicaShardBatchAllocator replicaShardBatchAllocator;

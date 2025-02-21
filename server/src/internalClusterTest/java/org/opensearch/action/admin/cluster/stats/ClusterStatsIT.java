@@ -234,7 +234,6 @@ public class ClusterStatsIT extends OpenSearchIntegTestCase {
     }
 
     public void testIndicesShardStatsWithNodeLevelAggregations() {
-
         internalCluster().startNode();
         ensureGreen();
         ClusterStatsResponse response = client().admin().cluster().prepareClusterStats().useAggregatedNodeLevelResponses(true).get();

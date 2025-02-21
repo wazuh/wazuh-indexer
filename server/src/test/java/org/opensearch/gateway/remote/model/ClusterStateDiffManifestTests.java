@@ -10,6 +10,7 @@ package org.opensearch.gateway.remote.model;
 
 import org.opensearch.Version;
 import org.opensearch.cluster.ClusterState;
+import org.opensearch.cluster.DiffableUtils;
 import org.opensearch.cluster.coordination.CoordinationMetadata;
 import org.opensearch.cluster.metadata.IndexMetadata;
 import org.opensearch.cluster.metadata.IndexTemplateMetadata;
@@ -43,6 +44,7 @@ import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.opensearch.Version.CURRENT;
 import static org.opensearch.cluster.ClusterState.EMPTY_STATE;
+import static org.opensearch.cluster.routing.remote.RemoteRoutingTableService.CUSTOM_ROUTING_TABLE_DIFFABLE_VALUE_SERIALIZER;
 import static org.opensearch.core.common.transport.TransportAddress.META_ADDRESS;
 import static org.opensearch.gateway.remote.ClusterMetadataManifest.CODEC_V3;
 import static org.opensearch.gateway.remote.ClusterMetadataManifest.CODEC_V4;

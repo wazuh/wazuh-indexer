@@ -21,6 +21,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.concurrent.ExecutorService;
 
+import static org.opensearch.gateway.remote.RemoteClusterStateUtils.CLUSTER_STATE_PATH_TOKEN;
+
 /**
  * Abstract class for a blob type storage
  *

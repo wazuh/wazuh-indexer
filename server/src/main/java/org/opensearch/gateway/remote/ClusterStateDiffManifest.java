@@ -366,6 +366,11 @@ public class ClusterStateDiffManifest implements ToXContentFragment, Writeable {
                                     builder.indicesRoutingDiffPath(parser.textOrNull());
                                 }
                                 break;
+                            case DIFF_FIELD:
+                                if (codec_version >= CODEC_V3) {
+                                    builder.indicesRoutingDiffPath(parser.textOrNull());
+                                }
+                                break;
                             default:
                                 throw new XContentParseException("Unexpected field [" + currentFieldName + "]");
                         }
@@ -483,6 +488,10 @@ public class ClusterStateDiffManifest implements ToXContentFragment, Writeable {
 
     public List<String> getIndicesRoutingUpdated() {
         return indicesRoutingUpdated;
+    }
+
+    public String getIndicesRoutingDiffPath() {
+        return indicesRoutingDiffPath;
     }
 
     public List<String> getIndicesRoutingDeleted() {
@@ -689,6 +698,11 @@ public class ClusterStateDiffManifest implements ToXContentFragment, Writeable {
 
         public Builder indicesRoutingDeleted(List<String> indicesRoutingDeleted) {
             this.indicesRoutingDeleted = indicesRoutingDeleted;
+            return this;
+        }
+
+        public Builder indicesRoutingDiffPath(String indicesRoutingDiffPath) {
+            this.indicesRoutingDiff = indicesRoutingDiffPath;
             return this;
         }
 

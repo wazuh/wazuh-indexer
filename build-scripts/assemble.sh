@@ -59,6 +59,8 @@ function usage() {
     echo -e "-a ARCHITECTURE\t[Optional] Build architecture, default is 'uname -m'."
     echo -e "-d DISTRIBUTION\t[Optional] Distribution, default is 'tar'."
     echo -e "-r REVISION\t[Optional] Package revision, default is '0'."
+    echo -e "-l PLUGINS_HASH\t[Optional] wazuh-indexer-plugins commit hash, default is '0'."
+    echo -e "-e REPORTING_HASH\t[Optional] wazuh-indexer-reporting commit hash, default is '0'."
     echo -e "-o OUTPUT\t[Optional] Output path, default is 'artifacts'."
     echo -e "-h help"
 }
@@ -68,7 +70,7 @@ function usage() {
 # ====
 function parse_args() {
 
-    while getopts ":h:o:p:a:d:r:" arg; do
+    while getopts ":h:o:p:a:d:r:l:e:" arg; do
         case $arg in
         h)
             usage
@@ -88,6 +90,12 @@ function parse_args() {
             ;;
         r)
             REVISION=$OPTARG
+            ;;
+        l)
+            PLUGINS_HASH=$OPTARG
+            ;;
+        e)
+            REPORTING_HASH=$OPTARG
             ;;
         :)
             echo "Error: -${OPTARG} requires an argument"
@@ -110,6 +118,8 @@ function parse_args() {
     [ -z "$ARCHITECTURE" ] && ARCHITECTURE=$(uname -m)
     [ -z "$DISTRIBUTION" ] && DISTRIBUTION="tar"
     [ -z "$REVISION" ] && REVISION="0"
+    [ -z "$PLUGINS_HASH" ] && PLUGINS_HASH="0"
+    [ -z "$REPORTING_HASH" ] && REPORTING_HASH="0"
 
     case $PLATFORM-$DISTRIBUTION-$ARCHITECTURE in
     linux-tar-x64 | darwin-tar-x64)
@@ -280,6 +290,13 @@ function assemble_tar() {
     local decompressed_tar_dir
     decompressed_tar_dir=$(ls -d wazuh-indexer-*/)
 
+    jq \
+      --arg indexer_hash "${INDEXER_HASH}" \
+      --arg plugins_hash "${PLUGINS_HASH}" \
+      --arg reporting_hash "${REPORTING_HASH}" \
+      '. + {"commit": $indexer_hash-$plugins_hash-$reporting_hash}' \
+      "${REPO_PATH}"/VERSION.json > "${decompressed_tar_dir}"/VERSION.json
+
     PATH_CONF="${decompressed_tar_dir}/config"
     PATH_BIN="${decompressed_tar_dir}/bin"
     PATH_PLUGINS="${decompressed_tar_dir}/plugins"
@@ -320,6 +337,13 @@ function assemble_rpm() {
     # Extract min-package. Creates usr/, etc/ and var/ in the current directory
     echo "Extract ${ARTIFACT_BUILD_NAME} archive"
     rpm2cpio "${ARTIFACT_BUILD_NAME}" | cpio -imdv
+    
+    jq \
+      --arg indexer_hash "${INDEXER_HASH}" \
+      --arg plugins_hash "${PLUGINS_HASH}" \
+      --arg reporting_hash "${REPORTING_HASH}" \
+      '. + {"commit": $indexer_hash-$plugins_hash-$reporting_hash}' \
+      "${REPO_PATH}"/VERSION.json > "${src_path}"/VERSION.json
 
     # Install plugins
     install_plugins "${PRODUCT_VERSION}"
@@ -372,6 +396,13 @@ function assemble_deb() {
     echo "Extract ${ARTIFACT_BUILD_NAME} archive"
     ar xf "${ARTIFACT_BUILD_NAME}" data.tar.gz
     tar zvxf data.tar.gz
+    
+    jq \
+      --arg indexer_hash "${INDEXER_HASH}" \
+      --arg plugins_hash "${PLUGINS_HASH}" \
+      --arg reporting_hash "${REPORTING_HASH}" \
+      '. + {"commit": $indexer_hash-$plugins_hash-$reporting_hash}' \
+      "${REPO_PATH}"/VERSION.json > "${src_path}"/VERSION.json
 
     # Install plugins
     install_plugins "${PRODUCT_VERSION}"
@@ -415,8 +446,12 @@ function main() {
 
     echo "Assembling wazuh-indexer for $PLATFORM-$DISTRIBUTION-$ARCHITECTURE"
 
+    REPO_PATH="$(pwd)"
+
     UPSTREAM_VERSION=$(bash build-scripts/upstream-version.sh)
     PRODUCT_VERSION=$(bash build-scripts/product_version.sh)
+    ### Get the commit hash ID
+    INDEXER_HASH=$(git rev-parse --short HEAD)
     ARTIFACT_BUILD_NAME=$(ls "${OUTPUT}/dist/" | grep "wazuh-indexer-min.*$SUFFIX.*\.$EXT")
     ARTIFACT_PACKAGE_NAME=${ARTIFACT_BUILD_NAME/-min/}
 

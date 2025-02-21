@@ -118,6 +118,7 @@ function main() {
     fi
 
     $compose_cmd up
+    #$compose_cmd down -v
 }
 
 main "$@"

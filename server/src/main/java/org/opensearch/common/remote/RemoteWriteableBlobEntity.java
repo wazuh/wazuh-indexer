@@ -31,10 +31,6 @@ public abstract class RemoteWriteableBlobEntity<T> implements RemoteWriteableEnt
         this.compressor = compressor;
     }
 
-    public AbstractRemoteWritableBlobEntity(final String clusterUUID, final Compressor compressor) {
-        this(clusterUUID, compressor, null);
-    }
-
     public abstract BlobPathParameters getBlobPathParameters();
 
     public abstract String getType();

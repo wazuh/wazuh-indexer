@@ -11,14 +11,12 @@ package org.opensearch.cluster.routing.remote;
 import org.opensearch.action.LatchedActionListener;
 import org.opensearch.cluster.Diff;
 import org.opensearch.cluster.routing.IndexRoutingTable;
-import org.opensearch.cluster.routing.IndexShardRoutingTable;
 import org.opensearch.cluster.routing.RoutingTable;
 import org.opensearch.cluster.routing.StringKeyDiffProvider;
 import org.opensearch.common.lifecycle.LifecycleComponent;
 import org.opensearch.gateway.remote.ClusterMetadataManifest;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -74,7 +72,5 @@ public interface RemoteRoutingTableService extends LifecycleComponent {
     void deleteStaleIndexRoutingPaths(List<String> stalePaths) throws IOException;
 
     void deleteStaleIndexRoutingDiffPaths(List<String> stalePaths) throws IOException;
-
-    public void deleteStaleIndexRoutingDiffPaths(List<String> stalePaths) throws IOException;
 
 }

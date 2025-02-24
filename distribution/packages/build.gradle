@@ -102,23 +102,17 @@ addProcessFilesTask('deb', false)
 addProcessFilesTask('rpm', true)
 addProcessFilesTask('rpm', false)
 
-task getWazuhVersion(type:Exec) {
-  workingDir './packaging_scripts'
-
-  commandLine 'bash', 'product_version.sh'
-
-  standardOutput = new ByteArrayOutputStream()
-
-  ext.output = {
-    return standardOutput.toString()
-  }
-}
 
 // Common configuration that is package dependent. This can't go in ospackage
 // since we have different templated files that need to be consumed, but the structure
 // is the same
 Closure commonPackageConfig(String type, boolean jdk, String architecture) {
-  project.version = getWazuhVersion.output()
+  def commandLine = ['/bin/bash', 'product_version.sh']
+  def execProcess = new ProcessBuilder(commandLine)
+    .directory(new File('./packaging_scripts'))
+    .start()
+  project.version = new String(execProcess.getInputStream().readAllBytes(), "UTF-8").trim()
+  execProcess.waitFor()
   return {
     onlyIf {
       OS.current().equals(OS.WINDOWS) == false

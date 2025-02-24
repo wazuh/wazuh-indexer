@@ -32,21 +32,15 @@ import org.opensearch.gradle.JavaPackageType
 
 apply plugin: 'opensearch.internal-distribution-archive-setup'
 
-task getWazuhVersion(type:Exec) {
-  workingDir './packaging_scripts'
-
-  commandLine 'bash', 'product_version.sh'
-
-  standardOutput = new ByteArrayOutputStream()
-
-  ext.output = {
-    return standardOutput.toString()
-  }
-}
 
 CopySpec archiveFiles(CopySpec modulesFiles, String distributionType, String platform, String architecture, JavaPackageType java) {
-  version = getWazuhVersion.output()
   return copySpec {
+    def commandLine = ['/bin/bash', 'product_version.sh']
+    def execProcess = new ProcessBuilder(commandLine)
+        .directory(new File('./packaging_scripts'))
+        .start()
+    def version = new String(execProcess.getInputStream().readAllBytes(), "UTF-8").trim()
+    execProcess.waitFor()
     into("wazuh-indexer-${version}") {
       into('lib') {
         with libFiles()

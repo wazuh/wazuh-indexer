@@ -293,7 +293,9 @@ jobs:
           bash build-scripts/assemble.sh \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }} \
-            -r ${{ inputs.revision }}
+            -r ${{ inputs.revision }} \
+            -l ${{ needs.build-wazuh-plugins.outputs.hash }} \
+            -e ${{ needs.build-reporting-plugin.outputs.hash }}
 
       - name: Test RPM package
         if: ${{ matrix.distribution == 'rpm' }}

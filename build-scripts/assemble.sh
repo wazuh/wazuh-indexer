@@ -428,7 +428,7 @@ function assemble_deb() {
 
     # Move to the root folder, copy the package and clean.
     cd ../../..
-    package_name="wazuh-indexer_${version}-${REVISION}_${SUFFIX}.${EXT}"
+    package_name="wazuh-indexer_${PRODUCT_VERSION}-${REVISION}_${SUFFIX}.${EXT}"
     # debmake creates the package one level above
     cp "${TMP_DIR}/../${package_name}" "${OUTPUT}/dist/$ARTIFACT_PACKAGE_NAME"
 

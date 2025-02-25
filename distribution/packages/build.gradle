@@ -106,7 +106,12 @@ addProcessFilesTask('rpm', false)
 // since we have different templated files that need to be consumed, but the structure
 // is the same
 Closure commonPackageConfig(String type, boolean jdk, String architecture) {
-  project.version = rootProject.file('VERSION').getText()
+  def commandLine = ['/bin/bash', 'product_version.sh']
+  def execProcess = new ProcessBuilder(commandLine)
+    .directory(new File('./build-scripts'))
+    .start()
+  project.version = new String(execProcess.getInputStream().readAllBytes(), "UTF-8").trim()
+  execProcess.waitFor()
   return {
     onlyIf {
       OS.current().equals(OS.WINDOWS) == false

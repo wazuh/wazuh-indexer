@@ -122,7 +122,12 @@ package_artifacts() {
     echo "Building package..."
     bash build-scripts/build.sh -a "$architecture" -d "$distribution" -n "$package_min_name"
     echo "Assembling package..."
-    bash build-scripts/assemble.sh -a "$architecture" -d "$distribution" -r "$revision"
+    bash build-scripts/assemble.sh \
+        -a "$architecture" \
+        -d "$distribution" \
+        -r "$revision" \
+        -l "$plugins_hash" \
+        -e "$reporting_hash"
 
 }
 
@@ -131,7 +136,7 @@ main() {
     echo "---------Starting Build Process---------"
     clone_repositories
     # Set version env var
-    VERSION=$(cat ~/VERSION)
+    VERSION=$(bash ~/build-scripts/product_version.sh)
     # Build and assemble the package
     build_plugins "$VERSION" "$REVISION"
     build_reporting "$VERSION" "$REVISION"

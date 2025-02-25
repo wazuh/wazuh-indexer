@@ -165,5 +165,5 @@ function main() {
 }
 
 GIT_COMMIT=$(git rev-parse --short HEAD)
-VERSION=$(<VERSION)
+VERSION=$(bash build-scripts/product_version.sh)
 main "${@}"

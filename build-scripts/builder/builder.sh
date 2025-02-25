@@ -100,7 +100,7 @@ function main() {
     compose_file="build-scripts/${current}/compose.yml"
     compose_cmd="docker compose -f $compose_file"
     REPO_PATH=$(pwd)
-    VERSION=$(cat VERSION)
+    VERSION="$(bash ${REPO_PATH}/build-scripts/product_version.sh)"
     export REPO_PATH
     export VERSION
     export INDEXER_PLUGINS_BRANCH
@@ -118,6 +118,7 @@ function main() {
     fi
 
     $compose_cmd up
+    #$compose_cmd down -v
 }
 
 main "$@"

@@ -45,6 +45,7 @@ RUN apt-get update \
     rpm \
     rpm2cpio \
     maven \
+    jq \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install OpenJDK 21

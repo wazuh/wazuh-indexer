@@ -283,7 +283,7 @@ function clean() {
 # ====
 function generate_installer_version_file() {
     local dir
-    dir = "${1}"
+    dir="${1}"
     jq \
       --arg commit "${INDEXER_HASH}-${PLUGINS_HASH}-${REPORTING_HASH}" \
       '. + {"commit": $commit}' \

@@ -279,6 +279,18 @@ function clean() {
 }
 
 # ====
+# Add commit to VERSION.json
+# ====
+function generate_installer_version_file() {
+    local dir
+    dir = "${1}"
+    jq \
+      --arg commit "${INDEXER_HASH}-${PLUGINS_HASH}-${REPORTING_HASH}" \
+      '. + {"commit": $commit}' \
+      "${REPO_PATH}"/VERSION.json > "${dir}"/VERSION.json
+}
+
+# ====
 # Tar assemble
 # ====
 function assemble_tar() {
@@ -290,12 +302,7 @@ function assemble_tar() {
     local decompressed_tar_dir
     decompressed_tar_dir=$(ls -d wazuh-indexer-*/)
 
-    jq \
-      --arg indexer_hash "${INDEXER_HASH}" \
-      --arg plugins_hash "${PLUGINS_HASH}" \
-      --arg reporting_hash "${REPORTING_HASH}" \
-      '. + {"commit": $indexer_hash-$plugins_hash-$reporting_hash}' \
-      "${REPO_PATH}"/VERSION.json > "${decompressed_tar_dir}"/VERSION.json
+    generate_installer_version_file "${decompressed_tar_dir}"
 
     PATH_CONF="${decompressed_tar_dir}/config"
     PATH_BIN="${decompressed_tar_dir}/bin"
@@ -338,12 +345,7 @@ function assemble_rpm() {
     echo "Extract ${ARTIFACT_BUILD_NAME} archive"
     rpm2cpio "${ARTIFACT_BUILD_NAME}" | cpio -imdv
     
-    jq \
-      --arg indexer_hash "${INDEXER_HASH}" \
-      --arg plugins_hash "${PLUGINS_HASH}" \
-      --arg reporting_hash "${REPORTING_HASH}" \
-      '. + {"commit": $indexer_hash-$plugins_hash-$reporting_hash}' \
-      "${REPO_PATH}"/VERSION.json > "${src_path}"/VERSION.json
+    generate_installer_version_file "${src_path}"
 
     # Install plugins
     install_plugins "${PRODUCT_VERSION}"
@@ -397,12 +399,7 @@ function assemble_deb() {
     ar xf "${ARTIFACT_BUILD_NAME}" data.tar.gz
     tar zvxf data.tar.gz
     
-    jq \
-      --arg indexer_hash "${INDEXER_HASH}" \
-      --arg plugins_hash "${PLUGINS_HASH}" \
-      --arg reporting_hash "${REPORTING_HASH}" \
-      '. + {"commit": $indexer_hash-$plugins_hash-$reporting_hash}' \
-      "${REPO_PATH}"/VERSION.json > "${src_path}"/VERSION.json
+    generate_installer_version_file "${src_path}"
 
     # Install plugins
     install_plugins "${PRODUCT_VERSION}"

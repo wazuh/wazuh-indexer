@@ -79,7 +79,7 @@ function parse_args() {
     fi
 
     REVISION="${REVISION:-0}"
-    VERSION=$(<VERSION)
+    VERSION=$(bash build-scripts/product_name.sh)
 }
 
 # ====

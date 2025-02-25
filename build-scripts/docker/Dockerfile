@@ -4,7 +4,7 @@ FROM amazonlinux:2023.6.20241212.0 AS builder
 ARG VERSION
 ARG INDEXER_TAR_NAME
 
-RUN yum install openssl tar findutils shadow-utils -y
+RUN yum install openssl tar findutils shadow-utils jq -y
 
 COPY ${INDEXER_TAR_NAME} /
 
@@ -30,7 +30,7 @@ ENV USER="wazuh-indexer" \
     NAME="wazuh-indexer" \
     INSTALL_DIR="/usr/share/wazuh-indexer"
 
-RUN yum install curl-minimal shadow-utils findutils hostname -y
+RUN yum install curl-minimal shadow-utils findutils hostname jq -y
 
 RUN getent group $GROUP || groupadd -r -g 1000 $GROUP
 

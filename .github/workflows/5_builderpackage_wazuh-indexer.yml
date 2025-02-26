@@ -159,7 +159,7 @@ jobs:
 
       - name: Get version
         id: version
-        run: echo "version=$(<VERSION)" >> "$GITHUB_OUTPUT"
+        run: echo "version=$(jq -r .version<VERSION.json)" >> "$GITHUB_OUTPUT"
 
       - name: Build with Gradle
         working-directory: ./plugins/${{ matrix.plugins }}

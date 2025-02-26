@@ -1,0 +1,45 @@
+---
+name: wazuh-states-fim
+fields:
+  base:
+    fields:
+      tags: []
+      "@timestamp": {}
+  agent:
+    fields:
+      host:
+        fields:
+          ip: {}
+          architecture: {}
+      id: {}
+      name: {}
+      version: {}
+  data_stream:
+    fields:
+      type: {}
+  event:
+    fields:
+      action: {}
+      category: {}
+      type: {}
+  file:
+    fields:
+      gid: {}
+      group: {}
+      hash:
+        fields:
+          md5: {}
+          sha1: {}
+          sha256: {}
+      inode: {}
+      mtime: {}
+      owner: {}
+      path: {}
+      size: {}
+      uid: {}
+  registry:
+    fields:
+      data:
+        fields:
+          type: {}
+      value: {}

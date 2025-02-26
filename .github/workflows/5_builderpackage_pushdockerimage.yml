@@ -4,7 +4,10 @@ name: Build and push Docker image
 # This workflow runs when any of the following occur:
 # - Run manually
 # - Invoked from another workflow
+# - Any change
+
 on:
+  push:
   workflow_dispatch:
     inputs:
       revision:
@@ -78,15 +81,15 @@ on:
 
 jobs:
   call-build-workflow:
-    uses: ./.github/workflows/build.yml
+    uses: ./.github/workflows/5_builderpackage_wazuh-indexer.yml
     with:
-      revision: ${{ inputs.revision }}
-      is_stage: ${{ inputs.is_stage }}
+      revision: ${{ inputs.revision || '0' }}
+      is_stage: ${{ inputs.is_stage || false }}
       distribution: '[ "tar" ]'
       architecture: '[ "x64" ]'
       id: ${{ inputs.id }}
-      wazuh_plugins_ref: ${{ inputs.wazuh_plugins_ref }}
-      reporting_plugin_ref: ${{ inputs.reporting_plugin_ref }}
+      wazuh_plugins_ref: ${{ inputs.wazuh_plugins_ref || 'main' }}
+      reporting_plugin_ref: ${{ inputs.reporting_plugin_ref || 'main' }}
     secrets: inherit
 
   build-and-push-docker-image:

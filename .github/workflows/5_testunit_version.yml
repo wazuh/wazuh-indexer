@@ -3,7 +3,7 @@ name: Version check
 on:
   push:
     paths:
-      - "VERSION"
+      - "VERSION.json"
 
 jobs:
   check-version:

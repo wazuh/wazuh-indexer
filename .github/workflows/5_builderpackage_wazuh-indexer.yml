@@ -1,10 +1,11 @@
-run-name: Build ${{ inputs.distribution }} Wazuh Indexer on ${{ inputs.architecture }} | ${{ inputs.id }}
+run-name: Build ${{ inputs.distribution || '[ "deb", "rpm" ]'}} Wazuh Indexer on ${{ inputs.architecture || '[ "x64", "arm64" ]' }} | ${{ inputs.id }}
 name: Build packages (on demand)
 
 # This workflow runs when any of the following occur:
 # - Run manually
 # - Invoked from another workflow
 on:
+  push:
   workflow_dispatch:
     inputs:
       revision:
@@ -125,8 +126,8 @@ jobs:
       - id: setup
         run: |
           matrix=$(jq -cn \
-              --argjson distribution '${{ inputs.distribution }}' \
-              --argjson architecture '${{ inputs.architecture }}' \
+              --argjson distribution '${{ inputs.distribution || '[ "deb", "rpm" ]' }}' \
+              --argjson architecture '${{ inputs.architecture  || '[ "x64", "arm64" ]' }}' \
               '{distribution: $distribution, architecture: $architecture}'
           )
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
@@ -293,9 +294,7 @@ jobs:
           bash build-scripts/assemble.sh \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }} \
-            -r ${{ inputs.revision }} \
-            -l ${{ needs.build-wazuh-plugins.outputs.hash }} \
-            -e ${{ needs.build-reporting-plugin.outputs.hash }}
+            -r ${{ inputs.revision }}
 
       - name: Test RPM package
         if: ${{ matrix.distribution == 'rpm' }}

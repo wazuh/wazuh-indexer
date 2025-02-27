@@ -165,6 +165,7 @@ set -e
 
 # Stop the services to upgrade the package
 if [ $1 = 2 ]; then
+    mkdir -p %{tmp_dir}
     # Stop wazuh-indexer service
     if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1 && systemctl is-active %{name}.service > /dev/null 2>&1; then
         echo "Stop existing %{name}.service"

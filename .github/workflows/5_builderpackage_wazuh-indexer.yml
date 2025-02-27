@@ -133,7 +133,7 @@ jobs:
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
 
   build-wazuh-plugins:
-    if: ${{ inputs.wazuh_plugins_ref != '' }} || (github.event_name == 'push')
+    if: ${{ inputs.wazuh_plugins_ref != '' || github.event_name == 'push' }}
     strategy:
       fail-fast: false
       matrix:
@@ -180,7 +180,7 @@ jobs:
           if-no-files-found: error
 
   build-reporting-plugin:
-    if: ${{ inputs.reporting_plugin_ref != '' }} || (github.event_name == 'push')
+    if: ${{ inputs.reporting_plugin_ref != '' || github.event_name == 'push' }}
     runs-on: ubuntu-24.04
     outputs:
       hash: ${{ steps.save-hash.outputs.hash }}
@@ -234,13 +234,13 @@ jobs:
       # Download plugins
       - name: Download plugins
         uses: actions/download-artifact@v4
-        if: ${{ inputs.wazuh_plugins_ref != '' || inputs.reporting_plugin_ref != ''}}
+        if: ${{ inputs.wazuh_plugins_ref != '' || inputs.reporting_plugin_ref != '' || github.event_name == 'push' }}
         with:
           path: ./artifacts/plugins
           merge-multiple: true
 
       - name: Display structure of downloaded files
-        if: ${{ inputs.wazuh_plugins_ref != '' || inputs.reporting_plugin_ref != ''}}
+        if: ${{ inputs.wazuh_plugins_ref != '' || inputs.reporting_plugin_ref != '' || github.event_name == 'push' }}
         run: ls -lR ./artifacts/plugins
 
       - uses: actions/setup-java@v4

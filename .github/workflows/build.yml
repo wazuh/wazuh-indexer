@@ -158,7 +158,7 @@ jobs:
 
       - name: Get version
         id: version
-        run: echo "version=$(bash build-scripts/product_version.sh)" >> "$GITHUB_OUTPUT"
+        run: echo "version=$(jq .version VERSION.json)" >> "$GITHUB_OUTPUT"
 
       - name: Build with Gradle
         working-directory: ./plugins/${{ matrix.plugins }}
@@ -201,7 +201,7 @@ jobs:
 
       - name: Get version
         id: version
-        run: echo "version=$(bash build-scripts/product_version.sh)" >> "$GITHUB_OUTPUT"
+        run: echo "version=$(jq .version VERSION.json)" >> "$GITHUB_OUTPUT"
 
       - name: Build with Gradle
         run: ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }}

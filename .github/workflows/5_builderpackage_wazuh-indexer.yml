@@ -133,7 +133,7 @@ jobs:
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
 
   build-wazuh-plugins:
-    if: ${{ inputs.wazuh_plugins_ref != '' }}
+    if: ${{ inputs.wazuh_plugins_ref != '' }} || (github.event_name == 'push')
     strategy:
       fail-fast: false
       matrix:
@@ -147,7 +147,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: wazuh/wazuh-indexer-plugins
-          ref: ${{ inputs.wazuh_plugins_ref }}
+          ref: ${{ inputs.wazuh_plugins_ref || 'main'}}
 
       - uses: actions/setup-java@v4
         with:
@@ -180,7 +180,7 @@ jobs:
           if-no-files-found: error
 
   build-reporting-plugin:
-    if: ${{ inputs.reporting_plugin_ref != '' }}
+    if: ${{ inputs.reporting_plugin_ref != '' }} || (github.event_name == 'push')
     runs-on: ubuntu-24.04
     outputs:
       hash: ${{ steps.save-hash.outputs.hash }}
@@ -190,7 +190,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: wazuh/wazuh-indexer-reporting
-          ref: ${{ inputs.reporting_plugin_ref }}
+          ref: ${{ inputs.reporting_plugin_ref  || 'main'}}
 
       - uses: actions/setup-java@v4
         with:

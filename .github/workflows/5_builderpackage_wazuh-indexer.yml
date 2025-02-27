@@ -163,7 +163,7 @@ jobs:
 
       - name: Build with Gradle
         working-directory: ./plugins/${{ matrix.plugins }}
-        run: ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }}
+        run: ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision || '0' }}
 
       - run: ls -lR build/distributions
         working-directory: ./plugins/${{ matrix.plugins }}
@@ -175,8 +175,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
-          path: "./plugins/${{ matrix.plugins }}/build/distributions/${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip"
+          name: ${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision || '0' }}.zip
+          path: "./plugins/${{ matrix.plugins }}/build/distributions/${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision || '0' }}.zip"
           if-no-files-found: error
 
   build-reporting-plugin:
@@ -205,7 +205,7 @@ jobs:
         run: echo "version=$(jq -r .version<VERSION.json)" >> "$GITHUB_OUTPUT"
 
       - name: Build with Gradle
-        run: ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }}
+        run: ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision || '0'}}
 
       - run: ls -lR build/distributions
 
@@ -216,8 +216,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
-          path: build/distributions/${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
+          name: ${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision || '0' }}.zip
+          path: build/distributions/${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision || '0'}}.zip
           if-no-files-found: error
 
   build:
@@ -255,16 +255,16 @@ jobs:
         if: ${{ matrix.distribution == 'deb' }}
         run: |
           sudo bash build-scripts/provision.sh
-
+      
       - name: Run `baptizer.sh` (min)
         run: |
           name=$(bash build-scripts/baptizer.sh -m \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }}  \
-            -r ${{ inputs.revision }} \
+            -r ${{ inputs.revision || '0'}} \
             -l ${{ needs.build-wazuh-plugins.outputs.hash }} \
             -e ${{ needs.build-reporting-plugin.outputs.hash }} \
-            ${{ inputs.is_stage && '-x' || '' }} \
+           ${{ inputs.is_stage && github.event_name != 'push' && '-x' || '' }} \
           )
           echo "name=$name" >> $GITHUB_OUTPUT
         id: min_package
@@ -274,10 +274,10 @@ jobs:
           name=$(bash build-scripts/baptizer.sh \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }}  \
-            -r ${{ inputs.revision }} \
+            -r ${{ inputs.revision || '0'}} \
             -l ${{ needs.build-wazuh-plugins.outputs.hash }} \
             -e ${{ needs.build-reporting-plugin.outputs.hash }} \
-            ${{ inputs.is_stage && '-x' || '' }} \
+            ${{ inputs.is_stage && github.event_name != 'push' && '-x' || '' }} \
           )
           echo "name=$name" >> $GITHUB_OUTPUT
         id: package
@@ -294,7 +294,7 @@ jobs:
           bash build-scripts/assemble.sh \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }} \
-            -r ${{ inputs.revision }}
+            -r ${{ inputs.revision || '0'}}
 
       - name: Test RPM package
         if: ${{ matrix.distribution == 'rpm' }}

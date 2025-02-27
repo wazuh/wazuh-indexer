@@ -163,6 +163,7 @@ set -e
 if command -v systemctl >/dev/null && systemctl is-active %{name}.service >/dev/null; then
     echo "Stop existing %{name}.service"
     systemctl --no-reload stop %{name}.service
+    mkdir -p %{tmp_dir}
     touch %{tmp_dir}/wazuh-indexer.restart
 fi
 if command -v systemctl >/dev/null && systemctl is-active %{name}-performance-analyzer.service >/dev/null; then

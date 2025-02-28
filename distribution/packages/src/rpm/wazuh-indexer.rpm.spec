@@ -207,6 +207,22 @@ if command -v systemd-tmpfiles > /dev/null; then
     systemd-tmpfiles --create %{name}.conf
 fi
 
+if [ ! -f %{tmp_dir}/wazuh-indexer.restart ]; then
+  # Messages
+  echo "###"
+  echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using systemd"
+  echo " sudo systemctl daemon-reload"
+  echo " sudo systemctl enable wazuh-indexer.service"
+  echo "### You can start wazuh-indexer service by executing"
+  echo " sudo systemctl start wazuh-indexer.service"
+  echo "###"
+fi
+
+exit 0
+
+%preun
+set -e
+
 if [ -f %{tmp_dir}/wazuh-indexer.restart ]; then
     rm -f %{tmp_dir}/wazuh-indexer.restart
     if command -v systemctl > /dev/null; then
@@ -216,16 +232,6 @@ if [ -f %{tmp_dir}/wazuh-indexer.restart ]; then
     fi
 fi
 
-# Messages
-echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using systemd"
-echo " sudo systemctl daemon-reload"
-echo " sudo systemctl enable wazuh-indexer.service"
-echo "### You can start wazuh-indexer service by executing"
-echo " sudo systemctl start wazuh-indexer.service"
-exit 0
-
-%preun
-set -e
 if command -v systemctl >/dev/null && systemctl is-active %{name}.service >/dev/null; then
     echo "Stop existing %{name}.service"
     systemctl --no-reload stop %{name}.service
@@ -234,6 +240,7 @@ if command -v systemctl >/dev/null && systemctl is-active %{name}-performance-an
     echo "Stop existing %{name}-performance-analyzer.service"
     systemctl --no-reload stop %{name}-performance-analyzer.service
 fi
+
 exit 0
 
 %files -f %{_topdir}/filelist.txt

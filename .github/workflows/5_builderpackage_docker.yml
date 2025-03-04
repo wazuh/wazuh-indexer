@@ -4,6 +4,7 @@ name: Build and push Docker image
 # This workflow runs when any of the following occur:
 # - Run manually
 # - Invoked from another workflow
+
 on:
   workflow_dispatch:
     inputs:
@@ -78,7 +79,7 @@ on:
 
 jobs:
   call-build-workflow:
-    uses: ./.github/workflows/build.yml
+    uses: ./.github/workflows/5_builderpackage_indexer.yml
     with:
       revision: ${{ inputs.revision }}
       is_stage: ${{ inputs.is_stage }}

@@ -1,9 +1,10 @@
 run-name: Build ${{ inputs.distribution }} Wazuh Indexer on ${{ inputs.architecture }} | ${{ inputs.id }}
-name: Build packages (on demand)
+name: Build packages
 
 # This workflow runs when any of the following occur:
 # - Run manually
 # - Invoked from another workflow
+
 on:
   workflow_dispatch:
     inputs:
@@ -118,7 +119,7 @@ on:
 jobs:
   matrix:
     name: Set up matrix
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     outputs:
       matrix: ${{ steps.setup.outputs.matrix }}
     steps:
@@ -158,7 +159,7 @@ jobs:
 
       - name: Get version
         id: version
-        run: echo "version=$(<VERSION)" >> "$GITHUB_OUTPUT"
+        run: echo "version=$(jq .version -r VERSION.json)" >> "$GITHUB_OUTPUT"
 
       - name: Build with Gradle
         working-directory: ./plugins/${{ matrix.plugins }}
@@ -201,7 +202,7 @@ jobs:
 
       - name: Get version
         id: version
-        run: echo "version=$(<VERSION)" >> "$GITHUB_OUTPUT"
+        run: echo "version=$(jq .version -r VERSION.json)" >> "$GITHUB_OUTPUT"
 
       - name: Build with Gradle
         run: ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }}
@@ -221,7 +222,7 @@ jobs:
 
   build:
     needs: [matrix, build-wazuh-plugins, build-reporting-plugin]
-    runs-on: ${{ matrix.architecture == 'arm64' && 'wz-linux-arm64' || 'ubuntu-22.04' }}
+    runs-on: ${{ matrix.architecture == 'arm64' && 'wz-linux-arm64' || 'ubuntu-24.04' }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.matrix.outputs.matrix) }}
@@ -233,13 +234,13 @@ jobs:
       # Download plugins
       - name: Download plugins
         uses: actions/download-artifact@v4
-        if: ${{ inputs.wazuh_plugins_ref != '' || inputs.reporting_plugin_ref != ''}}
+        if: ${{ inputs.wazuh_plugins_ref != '' || inputs.reporting_plugin_ref != '' }}
         with:
           path: ./artifacts/plugins
           merge-multiple: true
 
       - name: Display structure of downloaded files
-        if: ${{ inputs.wazuh_plugins_ref != '' || inputs.reporting_plugin_ref != ''}}
+        if: ${{ inputs.wazuh_plugins_ref != '' || inputs.reporting_plugin_ref != '' }}
         run: ls -lR ./artifacts/plugins
 
       - uses: actions/setup-java@v4

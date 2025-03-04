@@ -205,4 +205,3 @@ jobs:
           aws s3 cp "$src" "$dest"
           s3uri="${dest}${{ steps.package.outputs.name }}.sha512"
           echo "S3 sha512 URI: ${s3uri}"
-

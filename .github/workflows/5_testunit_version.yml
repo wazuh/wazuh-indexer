@@ -1,4 +1,4 @@
-name: Version check
+name: Version file integrity check
 
 on:
   push:

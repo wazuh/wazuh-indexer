@@ -255,7 +255,7 @@ jobs:
         if: ${{ matrix.distribution == 'deb' }}
         run: |
           sudo bash build-scripts/provision.sh
-      
+
       - name: Run `baptizer.sh` (min)
         run: |
           name=$(bash build-scripts/baptizer.sh -m \

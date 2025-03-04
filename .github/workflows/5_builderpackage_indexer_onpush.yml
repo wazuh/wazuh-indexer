@@ -1,0 +1,14 @@
+name: Build packages (on push)
+
+# This workflow runs when any of the following occur:
+# - Push
+
+on:
+  push:
+
+jobs:
+  call-build-workflow:
+    uses: ./.github/workflows/5_builderpackage_indexer.yml
+    secrets: inherit
+    with:
+      id: ${{ github.ref }}

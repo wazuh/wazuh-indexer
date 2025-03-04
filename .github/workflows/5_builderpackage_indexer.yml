@@ -1,11 +1,11 @@
-run-name: Build ${{ inputs.distribution || '[ "deb", "rpm" ]'}} Wazuh Indexer on ${{ inputs.architecture || '[ "x64", "arm64" ]' }} | ${{ inputs.id }}
+run-name: Build ${{ inputs.distribution }} Wazuh Indexer on ${{ inputs.architecture }} | ${{ inputs.id }}
 name: Build packages
 
 # This workflow runs when any of the following occur:
 # - Run manually
 # - Invoked from another workflow
+
 on:
-  push:
   workflow_dispatch:
     inputs:
       revision:
@@ -119,21 +119,21 @@ on:
 jobs:
   matrix:
     name: Set up matrix
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     outputs:
       matrix: ${{ steps.setup.outputs.matrix }}
     steps:
       - id: setup
         run: |
           matrix=$(jq -cn \
-              --argjson distribution '${{ inputs.distribution || '[ "deb", "rpm" ]' }}' \
-              --argjson architecture '${{ inputs.architecture  || '[ "x64", "arm64" ]' }}' \
+              --argjson distribution '${{ inputs.distribution }}' \
+              --argjson architecture '${{ inputs.architecture }}' \
               '{distribution: $distribution, architecture: $architecture}'
           )
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
 
   build-wazuh-plugins:
-    if: ${{ inputs.wazuh_plugins_ref != '' || github.event_name == 'push' }}
+    if: ${{ inputs.wazuh_plugins_ref != '' }}
     strategy:
       fail-fast: false
       matrix:
@@ -147,7 +147,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: wazuh/wazuh-indexer-plugins
-          ref: ${{ inputs.wazuh_plugins_ref || 'main'}}
+          ref: ${{ inputs.wazuh_plugins_ref }}
 
       - uses: actions/setup-java@v4
         with:
@@ -163,7 +163,7 @@ jobs:
 
       - name: Build with Gradle
         working-directory: ./plugins/${{ matrix.plugins }}
-        run: ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision || '0' }}
+        run: ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }}
 
       - run: ls -lR build/distributions
         working-directory: ./plugins/${{ matrix.plugins }}
@@ -175,12 +175,12 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision || '0' }}.zip
-          path: "./plugins/${{ matrix.plugins }}/build/distributions/${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision || '0' }}.zip"
+          name: ${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
+          path: "./plugins/${{ matrix.plugins }}/build/distributions/${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip"
           if-no-files-found: error
 
   build-reporting-plugin:
-    if: ${{ inputs.reporting_plugin_ref != '' || github.event_name == 'push' }}
+    if: ${{ inputs.reporting_plugin_ref != '' }}
     runs-on: ubuntu-24.04
     outputs:
       hash: ${{ steps.save-hash.outputs.hash }}
@@ -190,7 +190,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: wazuh/wazuh-indexer-reporting
-          ref: ${{ inputs.reporting_plugin_ref  || 'main'}}
+          ref: ${{ inputs.reporting_plugin_ref }}
 
       - uses: actions/setup-java@v4
         with:
@@ -205,7 +205,7 @@ jobs:
         run: echo "version=$(jq -r .version<VERSION.json)" >> "$GITHUB_OUTPUT"
 
       - name: Build with Gradle
-        run: ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision || '0'}}
+        run: ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }}
 
       - run: ls -lR build/distributions
 
@@ -216,13 +216,13 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision || '0' }}.zip
-          path: build/distributions/${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision || '0'}}.zip
+          name: ${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
+          path: build/distributions/${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
           if-no-files-found: error
 
   build:
     needs: [matrix, build-wazuh-plugins, build-reporting-plugin]
-    runs-on: ${{ matrix.architecture == 'arm64' && 'wz-linux-arm64' || 'ubuntu-22.04' }}
+    runs-on: ${{ matrix.architecture == 'arm64' && 'wz-linux-arm64' || 'ubuntu-24.04' }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.matrix.outputs.matrix) }}
@@ -234,13 +234,13 @@ jobs:
       # Download plugins
       - name: Download plugins
         uses: actions/download-artifact@v4
-        if: ${{ inputs.wazuh_plugins_ref != '' || inputs.reporting_plugin_ref != '' || github.event_name == 'push' }}
+        if: ${{ inputs.wazuh_plugins_ref != '' || inputs.reporting_plugin_ref != '' }}
         with:
           path: ./artifacts/plugins
           merge-multiple: true
 
       - name: Display structure of downloaded files
-        if: ${{ inputs.wazuh_plugins_ref != '' || inputs.reporting_plugin_ref != '' || github.event_name == 'push' }}
+        if: ${{ inputs.wazuh_plugins_ref != '' || inputs.reporting_plugin_ref != '' }}
         run: ls -lR ./artifacts/plugins
 
       - uses: actions/setup-java@v4
@@ -261,10 +261,10 @@ jobs:
           name=$(bash build-scripts/baptizer.sh -m \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }}  \
-            -r ${{ inputs.revision || '0'}} \
+            -r ${{ inputs.revision }} \
             -l ${{ needs.build-wazuh-plugins.outputs.hash }} \
             -e ${{ needs.build-reporting-plugin.outputs.hash }} \
-           ${{ inputs.is_stage && github.event_name != 'push' && '-x' || '' }} \
+            ${{ inputs.is_stage && '-x' || '' }} \
           )
           echo "name=$name" >> $GITHUB_OUTPUT
         id: min_package
@@ -274,10 +274,10 @@ jobs:
           name=$(bash build-scripts/baptizer.sh \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }}  \
-            -r ${{ inputs.revision || '0'}} \
+            -r ${{ inputs.revision }} \
             -l ${{ needs.build-wazuh-plugins.outputs.hash }} \
             -e ${{ needs.build-reporting-plugin.outputs.hash }} \
-            ${{ inputs.is_stage && github.event_name != 'push' && '-x' || '' }} \
+            ${{ inputs.is_stage && '-x' || '' }} \
           )
           echo "name=$name" >> $GITHUB_OUTPUT
         id: package
@@ -294,7 +294,7 @@ jobs:
           bash build-scripts/assemble.sh \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }} \
-            -r ${{ inputs.revision || '0'}}
+            -r ${{ inputs.revision }}
 
       - name: Test RPM package
         if: ${{ matrix.distribution == 'rpm' }}

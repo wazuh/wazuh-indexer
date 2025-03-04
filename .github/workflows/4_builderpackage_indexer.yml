@@ -1,14 +1,11 @@
-run-name: Build ${{ inputs.distribution || '[ "rpm", "deb" ]' }} Wazuh Indexer on ${{ inputs.architecture || '[ "x64" ]' }} | ${{ inputs.id }}
+run-name: Build ${{ inputs.distribution }} Wazuh Indexer on ${{ inputs.architecture }} | ${{ inputs.id }}
 name: Build packages 4.x
 
 # This workflow runs when any of the following occur:
 # - Run manually
 # - Invoked from another workflow
-# - when a pull request (pr) is created or updated that targets a branch starting with "4."
+
 on:
-  pull_request:
-    branches:
-      - 4.*
   workflow_dispatch:
     inputs:
       revision:
@@ -92,22 +89,22 @@ on:
 jobs:
   matrix:
     name: Set up matrix
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       matrix: ${{ steps.setup.outputs.matrix }}
     steps:
       - id: setup
         run: |
           matrix=$(jq -cn \
-              --argjson distribution '${{ inputs.distribution || '[ "rpm", "deb" ]' }}' \
-              --argjson architecture '${{ inputs.architecture || '[ "x64" ]' }}' \
+              --argjson distribution '${{ inputs.distribution }}' \
+              --argjson architecture '${{ inputs.architecture }}' \
               '{distribution: $distribution, architecture: $architecture}'
           )
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
 
   build:
     needs: [matrix]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.matrix.outputs.matrix) }}
@@ -116,10 +113,10 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 11
+          java-version: 21
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Provision
         if: ${{ matrix.distribution == 'deb' }}
@@ -131,8 +128,8 @@ jobs:
           name=$(bash packaging_scripts/baptizer.sh -m \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }}  \
-            -r ${{ inputs.revision || '0' }} \
-            ${{ inputs.is_stage && github.event_name != 'pull_request' && '-x' || '' }} \
+            -r ${{ inputs.revision }} \
+            ${{ inputs.is_stage && '-x' || '' }} \
           )
           echo "name=$name" >> $GITHUB_OUTPUT
         id: min_package
@@ -142,8 +139,8 @@ jobs:
           name=$(bash packaging_scripts/baptizer.sh \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }}  \
-            -r ${{ inputs.revision || '0' }} \
-            ${{ inputs.is_stage && github.event_name != 'pull_request' && '-x' || '' }} \
+            -r ${{ inputs.revision }} \
+            ${{ inputs.is_stage && '-x' || '' }} \
           )
           echo "name=$name" >> $GITHUB_OUTPUT
         id: package
@@ -160,7 +157,7 @@ jobs:
           bash packaging_scripts/assemble.sh \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }} \
-            -r ${{ inputs.revision || '0'}}
+            -r ${{ inputs.revision }}
 
       - name: Test RPM package
         if: ${{ matrix.distribution == 'rpm' }}

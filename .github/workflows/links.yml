@@ -1,6 +1,7 @@
 name: Link Checker
 on:
-  push:
+  schedule:
+    - cron: "00 8 * * 5"
 
 jobs:
   linkchecker:

@@ -1,5 +1,5 @@
 run-name: Build ${{ inputs.distribution || '[ "deb", "rpm" ]'}} Wazuh Indexer on ${{ inputs.architecture || '[ "x64", "arm64" ]' }} | ${{ inputs.id }}
-name: Build packages (on demand)
+name: Build packages
 
 # This workflow runs when any of the following occur:
 # - Run manually

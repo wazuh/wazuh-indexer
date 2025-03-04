@@ -1,11 +1,12 @@
 name: Link Checker
 on:
-  push:
+  schedule:
+    - cron: '00 8 * * 5'
 
 jobs:
   linkchecker:
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v2

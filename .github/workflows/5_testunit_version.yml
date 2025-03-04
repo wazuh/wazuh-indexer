@@ -1,9 +1,9 @@
-name: Version check
+name: Version file integrity check
 
 on:
   push:
     paths:
-      - "VERSION"
+      - "VERSION.json"
 
 jobs:
   check-version:

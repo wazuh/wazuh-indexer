@@ -6,7 +6,6 @@ name: Build and push Docker image
 # - Invoked from another workflow
 
 on:
-  push:
   workflow_dispatch:
     inputs:
       revision:
@@ -80,7 +79,7 @@ on:
 
 jobs:
   call-build-workflow:
-    uses: ./.github/workflows/5_builderpackage_indexer.yml
+    uses: ./.github/workflows/5_builderpackage_wazuh-indexer.yml
     with:
       revision: ${{ inputs.revision }}
       is_stage: ${{ inputs.is_stage }}

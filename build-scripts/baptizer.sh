@@ -140,7 +140,7 @@ function get_devel_name() {
     if [ -n "$PLUGINS_HASH" ] && [ -n "$REPORTING_HASH" ]; then
         COMMIT_HASH="$GIT_COMMIT"-"$PLUGINS_HASH"-"$REPORTING_HASH"
     fi
-    PACKAGE_NAME="$PREFIX"_"$VERSION"-"$REVISION"_"$SUFFIX"_"$COMMIT_HASH"."$EXT"
+    PACKAGE_NAME="$PREFIX"_"$VERSION"-"$REVISION"_"$SUFFIX"_latest."$EXT"
 }
 
 # ====

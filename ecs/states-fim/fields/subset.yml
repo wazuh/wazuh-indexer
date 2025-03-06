@@ -37,6 +37,9 @@ fields:
       path: {}
       size: {}
       uid: {}
+  operation:
+    fields:
+      name: {}
   registry:
     fields:
       data:

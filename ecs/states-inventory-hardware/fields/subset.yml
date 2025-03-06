@@ -1,0 +1,34 @@
+---
+name: wazuh-states-inventory-hardware
+fields:
+  base:
+    fields:
+      tags: []
+      "@timestamp": {}
+  agent:
+    fields:
+      id: {}
+      name: {}
+      version: {}
+      host:
+        fields:
+          architecture: {}
+          ip: {}
+  observer:
+    fields:
+      serial_number: {}
+  host:
+    fields:
+      memory:
+        fields:
+          total: {}
+          free: {}
+          used: {}
+      cpu:
+        fields:
+          name: {}
+          cores: {}
+          speed: {}
+  operation:
+    fields:
+      name: {}

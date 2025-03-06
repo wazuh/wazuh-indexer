@@ -149,7 +149,6 @@ function get_devel_name() {
         COMMIT_HASH="$GIT_COMMIT"-"$PLUGINS_HASH"-"$REPORTING_HASH"
     fi
     PACKAGE_NAME="$PREFIX"_"$VERSION"-"$REVISION"_"$SUFFIX"_"$COMMIT_HASH"."$EXT"
-    echo $PACKAGE_NAME
 }
 
 # ====

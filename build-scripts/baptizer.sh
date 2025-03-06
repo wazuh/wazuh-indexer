@@ -144,12 +144,12 @@ function get_devel_name() {
     # Add -latest to the prefix if corresponds
     if "$IS_LATEST"; then
         COMMIT_HASH=latest
-    fi
     # Generate composed commit hash
-    if [ -n "$PLUGINS_HASH" ] && [ -n "$REPORTING_HASH" ]; then
+    elif [ -n "$PLUGINS_HASH" ] && [ -n "$REPORTING_HASH" ]; then
         COMMIT_HASH="$GIT_COMMIT"-"$PLUGINS_HASH"-"$REPORTING_HASH"
     fi
     PACKAGE_NAME="$PREFIX"_"$VERSION"-"$REVISION"_"$SUFFIX"_"$COMMIT_HASH"."$EXT"
+    echo $PACKAGE_NAME
 }
 
 # ====

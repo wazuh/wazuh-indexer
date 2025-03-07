@@ -87,7 +87,7 @@ def generate_random_process():
 def generate_random_unix_timestamp():
     start_time = datetime.datetime(2000, 1, 1)
     end_time = datetime.datetime.now()
-    random_time = start_date + datetime.timedelta(
+    random_time = start_time + datetime.timedelta(
         seconds=random.randint(0, int((end_time - start_time).total_seconds()))
     )
     return int(random_time.timestamp())

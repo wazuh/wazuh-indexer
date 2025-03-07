@@ -72,7 +72,7 @@ def generate_random_host(is_root_level_level=False):
 
 
 def generate_random_event():
-    return {"event": f"{random.randint(1000,10000000000)}"}
+    return {"event": f"{random.randint(1000, 10000000000)}"}
 
 
 def generate_random_geo():

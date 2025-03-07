@@ -66,7 +66,7 @@ def generate_random_package():
     return {
         "architecture": random.choice(["x86_64", "arm64"]),
         "description": f"description{random.randint(0, 9999)}",
-        "groups": f"group{random.randint(1,100)}",
+        "groups": f"group{random.randint(1, 100)}",
         "installed": generate_random_date(),
         "name": f"package{random.randint(0, 9999)}",
         "path": f"/path/to/package{random.randint(0, 9999)}",

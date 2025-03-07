@@ -93,7 +93,7 @@ def generate_random_file():
         "inode": f"inode{random.randint(0, 1000)}",
         "mtime": generate_random_date(),
         "owner": f"owner{random.randint(0, 1000)}",
-        "path": f"/path/to/file",
+        "path": "/path/to/file",
         "size": random.randint(1000, 1000000),
         "uid": f"uid{random.randint(0, 1000)}",
     }

@@ -68,6 +68,10 @@ def generate_random_package():
     return package
 
 
+def generate_random_operation():
+    return {"operation": {"name": random.choice(["INSERTED", "MODIFIED", "DELETED"])}}
+
+
 def inject_events(ip, port, index, username, password, data):
     url = f"https://{ip}:{port}/{index}/_doc"
     session = requests.Session()

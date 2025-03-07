@@ -12,7 +12,7 @@ LOG_FILE = 'generate_data.log'
 GENERATED_DATA_FILE = 'generatedData.json'
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 # Default values
-INDEX_NAME = "wazuh-states-fim"
+INDEX_NAME = "wazuh-states-inventory-ports"
 USERNAME = "admin"
 PASSWORD = "admin"
 IP = "127.0.0.1"
@@ -30,15 +30,22 @@ def generate_random_data(number):
         event_data = {
             '@timestamp': generate_random_date(),
             'agent': generate_random_agent(),
-            'data_stream': generate_random_data_stream(),
-            'event': generate_random_event(),
+            'destination': generate_random_destination(),
+            'device': generate_random_device(),
             'file': generate_random_file(),
-            'operation': generate_random_operation(),
-            'registry': generate_random_registry()
+            'host': generate_random_host(True),
+            'interface': {
+                'state': random.choice(['LISTEN', 'ESTABLISHED'])
+            },
+            'network': {
+                'transport': random.choice(['TCP', 'UDP', 'ICMP'])
+            },
+            'process': generate_random_process(),
+            'source': generate_random_source(),
+            'operation': generate_random_operation()
         }
         data.append(event_data)
     return data
-
 
 def generate_random_date():
     start_date = datetime.datetime.now()
@@ -52,50 +59,60 @@ def generate_random_agent():
         'id': f'agent{random.randint(0, 99)}',
         'name': f'Agent{random.randint(0, 99)}',
         'version': f'v{random.randint(0, 9)}-stable',
-        'host': generate_random_host()
+        'host': generate_random_host(False)
     }
     return agent
 
-
-def generate_random_host():
-    host = {
-        'architecture': random.choice(['x86_64', 'arm64']),
-        'ip': f'{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}',
-    }
-    return host
-
-def generate_random_data_stream():
-    data_stream = {
-        'type': random.choice(['Scheduled','Realtime'])
-    }
-    return data_stream
-
-def generate_random_event():
-    return {
-        'event': {
-          'action': random.choice(['added','modified','deleted']),
-          'category': random.choice(['registy_value','registry_key','file']),
-          'type': 'event'
+def generate_random_host(is_root_level=False):
+    if is_root_level:
+        return {
+            'network': {
+                'egress': {
+                    'queue': random.randint(0, 1000)
+                },
+                'ingress': {
+                    'queue': random.randint(0, 1000)
+                }
+            }
         }
+    else:
+        return {
+            'architecture': random.choice(['x86_64', 'arm64']),
+            'ip': f'{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}'
+        }
+
+def generate_random_destination():
+    destination = {
+        'ip': f'{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}',
+        'port': random.randint(0, 65535)
     }
+    return destination
+
+def generate_random_device():
+    device = {
+        'id': f'device{random.randint(0, 9999)}'
+    }
+    return device
 
 def generate_random_file():
     file = {
-        'gid': f'gid{random.randint(0, 1000)}',
-        'group': f'group{random.randint(0, 1000)}',
-        'hash': {
-            'md5': f'{random.randint(0, 9999)}',
-            'sha1': f'{random.randint(0, 9999)}',
-            'sha256': f'{random.randint(0, 9999)}'
-        },
-        'inode': f'inode{random.randint(0, 1000)}',
-        'mtime': generate_random_date(),
-        'owner': f'owner{random.randint(0, 1000)}',
-        'path': f'/path/to/file',
-        'size': random.randint(1000, 1000000),
-        'uid': f'uid{random.randint(0, 1000)}'
+        'inode': f'inode{random.randint(0, 9999)}'
     }
     return file
+
+def generate_random_process():
+    process = {
+        'name': f'process{random.randint(0, 9999)}',
+        'pid': random.randint(0, 99999)
+    }
+    return process
+
+def generate_random_source():
+    source = {
+        'ip': f'{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}',
+        'port': random.randint(0, 65535)
+    }
+    return source
 
 def generate_random_operation():
   return {
@@ -103,14 +120,6 @@ def generate_random_operation():
         'name': random.choice(['INSERTED','MODIFIED','DELETED'])
     }
   }
-
-def generate_random_registry():
-    return {
-        'data': {
-            'type': random.choice(['REG_SZ','REG_DWORD'])
-        },
-        'value': f'registry_value{random.randint(0, 1000)}'
-    }
 
 def inject_events(ip, port, index, username, password, data):
     url = f'https://{ip}:{port}/{index}/_doc'

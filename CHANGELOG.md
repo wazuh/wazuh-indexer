@@ -14,6 +14,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Bump shadow-gradle-plugin from 8.1.1 to 8.3.10 ([#20569](https://github.com/opensearch-project/OpenSearch/pull/20569))
 - Update HDFS test fixture dependencies ([#20768](https://github.com/opensearch-project/OpenSearch/pull/20768))
 
+### Changed
+- Version file standarization [[#693]](https://github.com/wazuh/wazuh-indexer/pull/693)
+
 ### Deprecated
 
 ### Removed

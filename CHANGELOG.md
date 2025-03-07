@@ -113,6 +113,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Bump `io.grpc` deps from 1.68.2 to 1.75.0 ([#19495](https://github.com/opensearch-project/OpenSearch/pull/19495))
 - Bump Apache Lucene from 10.3.0 to 10.3.1 ([#19540](https://github.com/opensearch-project/OpenSearch/pull/19540))
 
+### Changed
+- Version file standarization [[#693]](https://github.com/wazuh/wazuh-indexer/pull/693)
+
 ### Deprecated
 
 ### Removed

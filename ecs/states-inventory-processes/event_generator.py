@@ -12,7 +12,7 @@ LOG_FILE = 'generate_data.log'
 GENERATED_DATA_FILE = 'generatedData.json'
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 # Default values
-INDEX_NAME = "wazuh-states-fim"
+INDEX_NAME = "wazuh-states-inventory-processes"
 USERNAME = "admin"
 PASSWORD = "admin"
 IP = "127.0.0.1"
@@ -30,15 +30,11 @@ def generate_random_data(number):
         event_data = {
             '@timestamp': generate_random_date(),
             'agent': generate_random_agent(),
-            'data_stream': generate_random_data_stream(),
-            'event': generate_random_event(),
-            'file': generate_random_file(),
-            'operation': generate_random_operation(),
-            'registry': generate_random_registry()
+            'process': generate_random_process(),
+            'operation': generate_random_operation()
         }
         data.append(event_data)
     return data
-
 
 def generate_random_date():
     start_date = datetime.datetime.now()
@@ -56,46 +52,32 @@ def generate_random_agent():
     }
     return agent
 
-
 def generate_random_host():
-    host = {
+    return {
         'architecture': random.choice(['x86_64', 'arm64']),
         'ip': f'{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}',
     }
-    return host
 
-def generate_random_data_stream():
-    data_stream = {
-        'type': random.choice(['Scheduled','Realtime'])
-    }
-    return data_stream
-
-def generate_random_event():
-    return {
-        'event': {
-          'action': random.choice(['added','modified','deleted']),
-          'category': random.choice(['registy_value','registry_key','file']),
-          'type': 'event'
-        }
-    }
-
-def generate_random_file():
-    file = {
-        'gid': f'gid{random.randint(0, 1000)}',
-        'group': f'group{random.randint(0, 1000)}',
-        'hash': {
-            'md5': f'{random.randint(0, 9999)}',
-            'sha1': f'{random.randint(0, 9999)}',
-            'sha256': f'{random.randint(0, 9999)}'
+def generate_random_process():
+    process = {
+        'args': f'arg{random.randint(0, 9999)}',
+        'command_line': f'command{random.randint(0, 9999)}',
+        'name': f'process{random.randint(0, 9999)}',
+        'parent': {
+            'pid': random.randint(1, 9999)
         },
-        'inode': f'inode{random.randint(0, 1000)}',
-        'mtime': generate_random_date(),
-        'owner': f'owner{random.randint(0, 1000)}',
-        'path': f'/path/to/file',
-        'size': random.randint(1000, 1000000),
-        'uid': f'uid{random.randint(0, 1000)}'
+        'pid': random.randint(1, 9999),
+        'state': random.choice(['Running','Uninterruptible Sleep','Interruptable Sleep', 'Stopped', 'Zombie']),
+        'stime': generate_random_unix_timestamp(),
+        'utime': generate_random_unix_timestamp()
     }
-    return file
+    return process
+
+def generate_random_unix_timestamp():
+    start_time = datetime.datetime(2000,1,1)
+    end_time = datetime.datetime.now()
+    random_time = start_date + datetime.timedelta(seconds=random.randint(0, int((end_time - start_time).total_seconds())))
+    return int(random_time.timestamp())
 
 def generate_random_operation():
   return {
@@ -103,14 +85,6 @@ def generate_random_operation():
         'name': random.choice(['INSERTED','MODIFIED','DELETED'])
     }
   }
-
-def generate_random_registry():
-    return {
-        'data': {
-            'type': random.choice(['REG_SZ','REG_DWORD'])
-        },
-        'value': f'registry_value{random.randint(0, 1000)}'
-    }
 
 def inject_events(ip, port, index, username, password, data):
     url = f'https://{ip}:{port}/{index}/_doc'

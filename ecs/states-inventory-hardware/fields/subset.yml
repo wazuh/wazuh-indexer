@@ -14,9 +14,6 @@ fields:
         fields:
           architecture: {}
           ip: {}
-  observer:
-    fields:
-      serial_number: {}
   host:
     fields:
       memory:
@@ -29,6 +26,9 @@ fields:
           name: {}
           cores: {}
           speed: {}
+  observer:
+    fields:
+      serial_number: {}
   operation:
     fields:
       name: {}

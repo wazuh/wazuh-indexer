@@ -8,8 +8,8 @@ import requests
 import urllib3
 
 # Constants and Configuration
-LOG_FILE = 'generate_data.log'
-GENERATED_DATA_FILE = 'generatedData.json'
+LOG_FILE = "generate_data.log"
+GENERATED_DATA_FILE = "generatedData.json"
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 # Default values
 INDEX_NAME = "wazuh-states-inventory-system"
@@ -24,17 +24,19 @@ logging.basicConfig(filename=LOG_FILE, level=logging.INFO)
 # Suppress warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+
 def generate_random_data(number):
     data = []
     for _ in range(number):
         event_data = {
-            '@timestamp': generate_random_date(),
-            'agent': generate_random_agent(),
-            'host': generate_random_host(True),
-            'operation': generate_random_operation()
+            "@timestamp": generate_random_date(),
+            "agent": generate_random_agent(),
+            "host": generate_random_host(True),
+            "operation": generate_random_operation(),
         }
         data.append(event_data)
     return data
+
 
 def generate_random_date():
     start_date = datetime.datetime.now()
@@ -45,69 +47,68 @@ def generate_random_date():
 
 def generate_random_agent():
     agent = {
-        'id': f'agent{random.randint(0, 99)}',
-        'name': f'Agent{random.randint(0, 99)}',
-        'version': f'v{random.randint(0, 9)}-stable',
-        'host': generate_random_host(False)
+        "id": f"agent{random.randint(0, 99)}",
+        "name": f"Agent{random.randint(0, 99)}",
+        "version": f"v{random.randint(0, 9)}-stable",
+        "host": generate_random_host(False),
     }
     return agent
+
 
 def generate_random_host(is_root_level=False):
     if is_root_level:
         host = {
-            'architecture': random.choice(['x86_64', 'arm64']),
-            'hostname': f'host{random.randint(0, 1000)}',
-            'os': {
-                'build': f'{random.randint(0,1000)}',
-                'codename': random.choice(['Jammy', 'Noble', 'Ventura']),
-                'distribution': {
-                    'release': f'{random.randint(1,20).random.randint(1,100)}'
+            "architecture": random.choice(["x86_64", "arm64"]),
+            "hostname": f"host{random.randint(0, 1000)}",
+            "os": {
+                "build": f"{random.randint(0,1000)}",
+                "codename": random.choice(["Jammy", "Noble", "Ventura"]),
+                "distribution": {
+                    "release": f"{random.randint(1,20).random.randint(1,100)}"
                 },
-                'full': f'{random.choice(["debian", "ubuntu", "macos", "ios", "android", "RHEL"])} {random.randint(0, 99)}.{random.randint(0, 99)}',
-                'kernel': {
-                    'name': random.choice(['Linux', 'Darwin', 'NT']),
-                    'release': f'{random.randint(1,1000)}',
-                    'version': f'{random.randint(1,1000)}'
+                "full": f'{random.choice(["debian", "ubuntu", "macos", "ios", "android", "RHEL"])} {random.randint(0, 99)}.{random.randint(0, 99)}',
+                "kernel": {
+                    "name": random.choice(["Linux", "Darwin", "NT"]),
+                    "release": f"{random.randint(1,1000)}",
+                    "version": f"{random.randint(1,1000)}",
                 },
-                'major': f'{random.randint(1,100)}',
-                'minor': f'{random.randint(1,100)}',
-                'name': random.choice(['Linux', 'Windows', 'macOS']),
-                'patch': f'{random.randint(1,100)}',
-                'platform': random.choice(['platform1', 'platform2']),
-                'version': f'{random.randint(0, 9)}.{random.randint(0, 9)}.{random.randint(0, 9)}'
-            }
+                "major": f"{random.randint(1,100)}",
+                "minor": f"{random.randint(1,100)}",
+                "name": random.choice(["Linux", "Windows", "macOS"]),
+                "patch": f"{random.randint(1,100)}",
+                "platform": random.choice(["platform1", "platform2"]),
+                "version": f"{random.randint(0, 9)}.{random.randint(0, 9)}.{random.randint(0, 9)}",
+            },
         }
     else:
         host = {
-            'architecture': random.choice(['x86_64', 'arm64']),
-            'ip': f'{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}',
+            "architecture": random.choice(["x86_64", "arm64"]),
+            "ip": f"{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}",
         }
     return host
 
+
 def generate_random_operation():
-  return {
-    'operation': {
-        'name': random.choice(['INSERTED','MODIFIED','DELETED'])
-    }
-  }
+    return {"operation": {"name": random.choice(["INSERTED", "MODIFIED", "DELETED"])}}
+
 
 def inject_events(ip, port, index, username, password, data):
-    url = f'https://{ip}:{port}/{index}/_doc'
+    url = f"https://{ip}:{port}/{index}/_doc"
     session = requests.Session()
     session.auth = (username, password)
     session.verify = False
-    headers = {'Content-Type': 'application/json'}
+    headers = {"Content-Type": "application/json"}
 
     try:
         for event_data in data:
             response = session.post(url, json=event_data, headers=headers)
             if response.status_code != 201:
-                logging.error(f'Error: {response.status_code}')
+                logging.error(f"Error: {response.status_code}")
                 logging.error(response.text)
                 break
-        logging.info('Data injection completed successfully.')
+        logging.info("Data injection completed successfully.")
     except Exception as e:
-        logging.error(f'Error: {str(e)}')
+        logging.error(f"Error: {str(e)}")
 
 
 def main():
@@ -120,21 +121,26 @@ def main():
     logging.info(f"Generating {number} events...")
     data = generate_random_data(number)
 
-    with open(GENERATED_DATA_FILE, 'a') as outfile:
+    with open(GENERATED_DATA_FILE, "a") as outfile:
         for event_data in data:
             json.dump(event_data, outfile)
-            outfile.write('\n')
+            outfile.write("\n")
 
-    logging.info('Data generation completed.')
+    logging.info("Data generation completed.")
 
-    inject = input("Do you want to inject the generated data into your indexer? (y/n) ").strip().lower()
-    if inject == 'y':
+    inject = (
+        input("Do you want to inject the generated data into your indexer? (y/n) ")
+        .strip()
+        .lower()
+    )
+    if inject == "y":
         ip = input(f"Enter the IP of your Indexer (default: '{IP}'): ") or IP
         port = input(f"Enter the port of your Indexer (default: '{PORT}'): ") or PORT
         index = input(f"Enter the index name (default: '{INDEX_NAME}'): ") or INDEX_NAME
         username = input(f"Username (default: '{USERNAME}'): ") or USERNAME
         password = input(f"Password (default: '{PASSWORD}'): ") or PASSWORD
         inject_events(ip, port, index, username, password, data)
+
 
 if __name__ == "__main__":
     main()

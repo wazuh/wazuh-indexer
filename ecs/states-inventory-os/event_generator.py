@@ -63,7 +63,7 @@ def generate_random_host(is_root_level=False):
                 "build": f"{random.randint(0, 1000)}",
                 "codename": random.choice(["Jammy", "Noble", "Ventura"]),
                 "distribution": {
-                    "release": f"{random.randint(1, 20).random.randint(1, 100)}"
+                    "release": f"{random.randint(1, 20)}.{random.randint(1, 100)}"
                 },
                 "full": f"{random.choice(['debian', 'ubuntu', 'macos', 'ios', 'android', 'RHEL'])} {random.randint(0, 99)}.{random.randint(0, 99)}",
                 "kernel": {

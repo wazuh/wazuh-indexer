@@ -19,7 +19,7 @@ IP = "127.0.0.1"
 PORT = "9200"
 
 # Configure logging
-logging.basicConfig(filename=LOG_FILE, level=logging.INFO)
+logging.basicConfig(level=logging.INFO)
 
 # Suppress warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -49,21 +49,19 @@ def generate_random_date():
 
 
 def generate_random_agent():
-    agent = {
+    return {
         "id": f"agent{random.randint(0, 99)}",
         "name": f"Agent{random.randint(0, 99)}",
         "version": f"v{random.randint(0, 9)}-stable",
         "host": generate_random_host(),
     }
-    return agent
 
 
 def generate_random_host():
-    host = {
+    return {
         "architecture": random.choice(["x86_64", "arm64"]),
         "ip": f"{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}",
     }
-    return host
 
 
 def generate_random_data_stream():
@@ -73,16 +71,14 @@ def generate_random_data_stream():
 
 def generate_random_event():
     return {
-        "event": {
-            "action": random.choice(["added", "modified", "deleted"]),
-            "category": random.choice(["registy_value", "registry_key", "file"]),
-            "type": "event",
-        }
+        "action": random.choice(["added", "modified", "deleted"]),
+        "category": random.choice(["registy_value", "registry_key", "file"]),
+        "type": "event",
     }
 
 
 def generate_random_file():
-    file = {
+    return {
         "gid": f"gid{random.randint(0, 1000)}",
         "group": f"group{random.randint(0, 1000)}",
         "hash": {
@@ -97,11 +93,10 @@ def generate_random_file():
         "size": random.randint(1000, 1000000),
         "uid": f"uid{random.randint(0, 1000)}",
     }
-    return file
 
 
 def generate_random_operation():
-    return {"operation": {"name": random.choice(["INSERTED", "MODIFIED", "DELETED"])}}
+    return { "name": random.choice(["INSERTED", "MODIFIED", "DELETED"]) }
 
 
 def generate_random_registry():

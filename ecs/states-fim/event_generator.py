@@ -36,7 +36,7 @@ def generate_random_data(number):
             "file": generate_random_file(),
             "operation": generate_random_operation(),
             "registry": generate_random_registry(),
-            "wazuh": generate_random_wazuh()
+            "wazuh": generate_random_wazuh(),
         }
         data.append(event_data)
     return data
@@ -97,7 +97,7 @@ def generate_random_file():
 
 
 def generate_random_operation():
-    return { "name": random.choice(["INSERTED", "MODIFIED", "DELETED"]) }
+    return {"name": random.choice(["INSERTED", "MODIFIED", "DELETED"])}
 
 
 def generate_random_registry():
@@ -132,7 +132,7 @@ def generate_random_wazuh():
             "name": f"wazuh-cluster-{random.randint(0, 10)}",
             "node": f"wazuh-cluster-node-{random.randint(0, 10)}",
         },
-        "schema": {"version": "1.7.0"}
+        "schema": {"version": "1.7.0"},
     }
 
 

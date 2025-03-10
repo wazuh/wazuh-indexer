@@ -34,7 +34,7 @@ def generate_random_data(number):
             "host": generate_random_host(True),
             "observer": generate_random_observer(),
             "operation": generate_random_operation(),
-            "wazuh": generate_random_wazuh()
+            "wazuh": generate_random_wazuh(),
         }
         data.append(event_data)
     return data
@@ -91,7 +91,7 @@ def generate_random_wazuh():
             "name": f"wazuh-cluster-{random.randint(0, 10)}",
             "node": f"wazuh-cluster-node-{random.randint(0, 10)}",
         },
-        "schema": {"version": "1.7.0"}
+        "schema": {"version": "1.7.0"},
     }
 
 

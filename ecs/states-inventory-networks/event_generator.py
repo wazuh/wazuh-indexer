@@ -70,7 +70,7 @@ def generate_random_host(is_root_level_level=False):
 
 
 def generate_random_event():
-    return {"event": f"{random.randint(1000, 10000000000)}"}
+    return { "id": f"{random.randint(1000, 10000000000)}" }
 
 
 def generate_random_network():
@@ -88,11 +88,11 @@ def generate_random_interface():
 
 
 def generate_random_observer():
-    return {"ingress": {"interface": generate_random_interface(False)}}
+    return {"ingress": {"interface": generate_random_interface()}}
 
 
 def generate_random_operation():
-    return {"operation": {"name": random.choice(["INSERTED", "MODIFIED", "DELETED"])}}
+    return { "name": random.choice(["INSERTED", "MODIFIED", "DELETED"]) }
 
 
 def inject_events(ip, port, index, username, password, data):

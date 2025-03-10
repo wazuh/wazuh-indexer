@@ -5,16 +5,6 @@
     expected:
       - { at: agent, as: host }
   fields:
-    - name: ip
-      description: >
-        IP address
-      type: ip
-      level: custom
-    - name: architecture
-      description: >
-        Architecture type
-      type: keyword
-      level: custom
     - name: network.ingress.queue
       type: long
       level: custom

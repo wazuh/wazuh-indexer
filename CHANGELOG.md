@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased 5.0.x]
 ### Added
+- "latest" sufix option for package building
 
 ### Dependencies
 

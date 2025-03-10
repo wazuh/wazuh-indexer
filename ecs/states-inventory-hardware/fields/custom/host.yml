@@ -23,7 +23,7 @@
     - name: memory.used
       description: >
         Used memory related data
-      type: object
+      type: long
       level: custom
     - name: cpu
       description: >

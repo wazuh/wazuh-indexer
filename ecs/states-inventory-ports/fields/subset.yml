@@ -51,3 +51,5 @@ fields:
   operation:
     fields:
       name: {}
+  wazuh:
+    fields: "*"

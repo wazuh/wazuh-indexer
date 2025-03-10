@@ -46,3 +46,5 @@ fields:
         fields:
           type: {}
       value: {}
+  wazuh:
+    fields: "*"

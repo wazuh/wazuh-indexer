@@ -15,7 +15,7 @@ function usage() {
     echo -e "-m MIN\t[Optional] Use naming convention for minimal packages, default is 'false'."
     echo -e "-x RELEASE\t[Optional] Use release naming convention, default is 'false'."
     echo -e "-h help"
-    echo -e "-t LATEST\t[Optional] Use latest naming convention, default is 'false'."
+    echo -e "-t LATEST\t[Optional] Add 'latest' suffix to the package name, default is 'false'."
 }
 
 # ====

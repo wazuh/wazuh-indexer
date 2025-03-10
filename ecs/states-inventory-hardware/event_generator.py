@@ -19,7 +19,7 @@ IP = "127.0.0.1"
 PORT = "9200"
 
 # Configure logging
-logging.basicConfig(filename=LOG_FILE, level=logging.INFO)
+logging.basicConfig(level=logging.INFO)
 
 # Suppress warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -47,18 +47,17 @@ def generate_random_date():
 
 
 def generate_random_agent():
-    agent = {
+    return {
         "id": f"agent{random.randint(0, 99)}",
         "name": f"Agent{random.randint(0, 99)}",
         "version": f"v{random.randint(0, 9)}-stable",
         "host": generate_random_host(False),
     }
-    return agent
 
 
 def generate_random_host(is_root_level=False):
     if is_root_level:
-        host = {
+        return {
             "cpu": {
                 "cores": random.randint(1, 16),
                 "name": f"CPU{random.randint(1, 999)}",
@@ -67,24 +66,22 @@ def generate_random_host(is_root_level=False):
             "memory": {
                 "free": random.randint(1000, 100000),
                 "total": random.randint(1000, 100000),
-                "used": random.randuniform(0, 100),
+                "used": random.randint(0, 100),
             },
         }
     else:
-        host = {
+        return {
             "architecture": random.choice(["x86_64", "arm64"]),
             "ip": f"{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}",
         }
-    return host
 
 
 def generate_random_observer():
-    observer = {"serial_number": f"serial{random.randint(0, 9999)}"}
-    return observer
+    return {"serial_number": f"serial{random.randint(0, 9999)}"}
 
 
 def generate_random_operation():
-    return {"operation": {"name": random.choice(["INSERTED", "MODIFIED", "DELETED"])}}
+    return {"name": random.choice(["INSERTED", "MODIFIED", "DELETED"])}
 
 
 def inject_events(ip, port, index, username, password, data):

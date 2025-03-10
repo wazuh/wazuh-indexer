@@ -19,7 +19,7 @@ IP = "127.0.0.1"
 PORT = "9200"
 
 # Configure logging
-logging.basicConfig(filename=LOG_FILE, level=logging.INFO)
+logging.basicConfig(level=logging.INFO)
 
 # Suppress warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -34,7 +34,6 @@ def generate_random_data(number):
             "host": generate_random_host(True),
             "network": generate_random_network(),
             "observer": generate_random_observer(),
-            "interface": generate_random_interface(),
             "operation": generate_random_operation(),
         }
         data.append(event_data)
@@ -49,20 +48,17 @@ def generate_random_date():
 
 
 def generate_random_agent():
-    agent = {
+    return {
         "id": f"agent{random.randint(0, 99)}",
         "name": f"Agent{random.randint(0, 99)}",
         "version": f"v{random.randint(0, 9)}-stable",
         "host": generate_random_host(False),
     }
-    return agent
 
 
 def generate_random_host(is_root_level_level=False):
     if is_root_level_level:
-        host = {
-            "ip": f"{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}",
-            "mac": f"{random.randint(0, 255):02x}:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}",
+        return {
             "network": {
                 "egress": {
                     "bytes": random.randint(1000, 1000000),
@@ -79,36 +75,14 @@ def generate_random_host(is_root_level_level=False):
             },
         }
     else:
-        host = {
+        return {
             "architecture": random.choice(["x86_64", "arm64"]),
             "ip": f"{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}",
         }
-    return host
-
-
-def generate_random_geo():
-    geo = {
-        "city_name": "CityName",
-        "continent_code": "NA",
-        "continent_name": "North America",
-        "country_iso_code": "US",
-        "country_name": "United States",
-        "location": {
-            "lat": round(random.uniform(-90, 90), 6),
-            "lon": round(random.uniform(-180, 180), 6),
-        },
-        "name": f"location{random.randint(0, 999)}",
-        "postal_code": f"{random.randint(10000, 99999)}",
-        "region_iso_code": "US-CA",
-        "region_name": "California",
-        "timezone": "America/Los_Angeles",
-    }
-    return geo
 
 
 def generate_random_network():
-    network = {"type": random.choice(["wired", "wireless"])}
-    return network
+    return {"type": random.choice(["wired", "wireless"])}
 
 
 def generate_random_interface(is_root_level=False):
@@ -123,12 +97,11 @@ def generate_random_interface(is_root_level=False):
 
 
 def generate_random_observer():
-    observer = {"ingress": {"interface": generate_random_interface(False)}}
-    return observer
+    return {"ingress": {"interface": generate_random_interface(False)}}
 
 
 def generate_random_operation():
-    return {"operation": {"name": random.choice(["INSERTED", "MODIFIED", "DELETED"])}}
+    return { "name": random.choice(["INSERTED", "MODIFIED", "DELETED"]) }
 
 
 def inject_events(ip, port, index, username, password, data):

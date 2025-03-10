@@ -19,7 +19,7 @@ IP = "127.0.0.1"
 PORT = "9200"
 
 # Configure logging
-logging.basicConfig(filename=LOG_FILE, level=logging.INFO)
+logging.basicConfig(level=logging.INFO)
 
 # Suppress warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -46,13 +46,12 @@ def generate_random_date():
 
 
 def generate_random_agent():
-    agent = {
+    return {
         "id": f"agent{random.randint(0, 99)}",
         "name": f"Agent{random.randint(0, 99)}",
         "version": f"v{random.randint(0, 9)}-stable",
         "host": generate_random_host(),
     }
-    return agent
 
 
 def generate_random_host():
@@ -76,7 +75,7 @@ def generate_random_package():
 
 
 def generate_random_operation():
-    return {"operation": {"name": random.choice(["INSERTED", "MODIFIED", "DELETED"])}}
+    return { "name": random.choice(["INSERTED", "MODIFIED", "DELETED"]) }
 
 
 def inject_events(ip, port, index, username, password, data):

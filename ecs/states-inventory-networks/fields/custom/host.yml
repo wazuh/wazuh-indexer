@@ -4,14 +4,3 @@
     top_level: true
     expected:
       - { at: agent, as: host }
-  fields:
-    - name: ip
-      description: >
-        Memory related data
-      type: object
-      level: custom
-    - name: architecture
-      description: >
-        Memory related data
-      type: object
-      level: custom

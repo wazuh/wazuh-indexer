@@ -45,13 +45,3 @@
         CPU clock speed
       type: long
       level: custom
-    - name: ip
-      description: >
-        IP address
-      type: ip
-      level: custom
-    - name: architecture
-      description: >
-        Architecture type
-      type: keyword
-      level: custom

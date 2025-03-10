@@ -36,6 +36,7 @@ def generate_random_data(number):
             "file": generate_random_file(),
             "operation": generate_random_operation(),
             "registry": generate_random_registry(),
+            "wazuh": generate_random_wazuh()
         }
         data.append(event_data)
     return data
@@ -123,6 +124,16 @@ def inject_events(ip, port, index, username, password, data):
         logging.info("Data injection completed successfully.")
     except Exception as e:
         logging.error(f"Error: {str(e)}")
+
+
+def generate_random_wazuh():
+    return {
+        "cluster": {
+            "name": f"wazuh-cluster-{random.randint(0, 10)}",
+            "node": f"wazuh-cluster-node-{random.randint(0, 10)}",
+        },
+        "schema": {"version": "1.7.0"}
+    }
 
 
 def main():

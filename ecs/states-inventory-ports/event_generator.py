@@ -40,6 +40,7 @@ def generate_random_data(number):
             "process": generate_random_process(),
             "source": generate_random_source(),
             "operation": generate_random_operation(),
+            "wazuh": generate_random_wazuh()
         }
         data.append(event_data)
     return data
@@ -107,6 +108,16 @@ def generate_random_source():
 
 def generate_random_operation():
     return { "name": random.choice(["INSERTED", "MODIFIED", "DELETED"]) }
+
+
+def generate_random_wazuh():
+    return {
+        "cluster": {
+            "name": f"wazuh-cluster-{random.randint(0, 10)}",
+            "node": f"wazuh-cluster-node-{random.randint(0, 10)}",
+        },
+        "schema": {"version": "1.7.0"}
+    }
 
 
 def inject_events(ip, port, index, username, password, data):

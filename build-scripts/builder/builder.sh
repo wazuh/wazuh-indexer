@@ -92,7 +92,7 @@ function usage() {
     echo -e "-d DISTRIBUTION\t[Optional] Distribution, default is 'rpm'."
     echo -e "-a ARCHITECTURE\t[Optional] Architecture, default is 'x64'."
     echo -e "-D\tDestroy the docker environment"
-    echo -e "-t\tUse latest naming convention, default is 'false'."
+    echo -e "-t\tAdd 'latest' suffix to the package name, default is 'false'."
     echo -e "-h\tPrint help"
 }
 

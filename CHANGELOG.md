@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased 5.0.x]
 ### Added
+- Add "latest" suffix option to name packages. [(#732)](https://github.com/wazuh/wazuh-indexer/pull/732)
 
 ### Dependencies
 

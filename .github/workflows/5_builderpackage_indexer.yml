@@ -46,7 +46,7 @@ on:
       plugins:
         description: "Plugins to build"
         type: string
-        default: "['setup', 'command-manager', 'content-manager']"
+        default: '["setup", "command-manager", "content-manager"]'
         required: true
       checksum:
         description: |
@@ -86,7 +86,7 @@ on:
         default: '[ "x64", "arm64"  ]'
       plugins:
         type: string
-        default: "['setup', 'command-manager', 'content-manager']"
+        default: '["setup", "command-manager", "content-manager"]'
       checksum:
         type: boolean
         default: false
@@ -130,6 +130,7 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       matrix: ${{ steps.setup.outputs.matrix }}
+      plugins: $${{ steps.setup.outputs.plugins }}
     steps:
       - id: setup
         run: |
@@ -140,12 +141,16 @@ jobs:
           )
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
 
+          plugins=$(jq -cn --argjson plugins '${{ inputs.plugins }}' '$plugins')
+          echo "plugins=$plugins" >> $GITHUB_OUTPUT
+
   build-wazuh-plugins:
     if: ${{ inputs.wazuh_plugins_ref != '' }}
+    needs: [matrix]
     strategy:
       fail-fast: false
       matrix:
-        plugins: ${{ inputs.plugins }}
+        plugins: ${{ fromJson(needs.matrix.outputs.plugins) }}
     runs-on: ubuntu-24.04
     env:
       plugin_name: wazuh-indexer-${{ matrix.plugins }}

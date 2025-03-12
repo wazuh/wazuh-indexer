@@ -22,7 +22,7 @@ on:
         type: boolean
         default: false
       distribution:
-        description: "Distribution format of the package [tar, rpm, deb]."
+        description: "Distribution format of the package"
         type: choice
         options:
           - '[ "tar" ]'
@@ -35,13 +35,18 @@ on:
         default: '[ "deb", "rpm" ]'
         required: true
       architecture:
-        description: "Architecture of the package [x64, arm64]."
+        description: "Architecture of the package"
         type: choice
         options:
           - '[ "x64" ]'
           - '[ "arm64" ]'
           - '[ "x64", "arm64" ]'
         default: '[ "x64", "arm64" ]'
+        required: true
+      plugins:
+        description: "Plugins to be build"
+        type: string
+        default: '["setup", "command-manager", "content-manager"]'
         required: true
       checksum:
         description: |
@@ -79,6 +84,9 @@ on:
       architecture:
         type: string
         default: '[ "x64", "arm64"  ]'
+      plugins:
+        type: string
+        default: '["setup", "command-manager", "content-manager"]'
       checksum:
         type: boolean
         default: false

@@ -6,6 +6,10 @@ name: Build and push Docker image (on push)
 on:
   push:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   call-docker-workflow:
     uses: ./.github/workflows/5_builderpackage_docker.yml

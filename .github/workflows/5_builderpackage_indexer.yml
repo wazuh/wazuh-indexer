@@ -143,6 +143,8 @@ jobs:
 
           plugins=$(jq -cn --argjson plugins '${{ inputs.plugins }}' '$plugins')
           echo "plugins=$plugins" >> $GITHUB_OUTPUT
+          echo $plugins
+          echo $GITHUB_OUTPUT
 
   build-wazuh-plugins:
     if: ${{ inputs.wazuh_plugins_ref != '' }}

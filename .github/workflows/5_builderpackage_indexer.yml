@@ -46,7 +46,7 @@ on:
       plugins:
         description: "Plugins to build"
         type: string
-        default: '["setup", "command-manager", "content-manager"]'
+        default: "['setup', 'command-manager', 'content-manager']"
         required: true
       checksum:
         description: |
@@ -86,7 +86,7 @@ on:
         default: '[ "x64", "arm64"  ]'
       plugins:
         type: string
-        default: '["setup", "command-manager", "content-manager"]'
+        default: "['setup', 'command-manager', 'content-manager']"
       checksum:
         type: boolean
         default: false

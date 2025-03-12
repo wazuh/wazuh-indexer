@@ -1,5 +1,5 @@
 ---
-name: wazuh-states-inventory-os
+name: wazuh-states-inventory-system
 fields:
   base:
     fields:

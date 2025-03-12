@@ -44,7 +44,7 @@ on:
         default: '[ "x64", "arm64" ]'
         required: true
       plugins:
-        description: "Plugins to be build"
+        description: "Plugins to build"
         type: string
         default: '["setup", "command-manager", "content-manager"]'
         required: true

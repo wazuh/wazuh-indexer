@@ -51,6 +51,22 @@ generate_mappings() {
   echo "Replacing \"constant_keyword\" type with \"keyword\""
   find "$OUT_DIR" -type f -exec sed -i 's/constant_keyword/keyword/g' {} \;
 
+  # Replace "wildcard" type (requires a default value in OpenSearch) with "keyword"
+  echo "Replacing \"wildcard\" type with \"keyword\""
+  find "$OUT_DIR" -type f -exec sed -i 's/wildcard/keyword/g' {} \;
+
+  # Replace "flattened" type (requires a default value in OpenSearch) with "flat_object"
+  echo "Replacing \"flattened\" type with \"flat_object\""
+  find "$OUT_DIR" -type f -exec sed -i 's/flattened/flat_object/g' {} \;
+
+  # Replace "scaled_float" type (requires a default value in OpenSearch) with "float"
+  echo "Replacing \"scaled_float\" type with \"float\""
+  find "$OUT_DIR" -type f -exec sed -i 's/scaled_float/float/g' {} \;
+
+  # Removing "scaling_factor"
+  echo "Removing \"scaling_factor\""
+  find "$OUT_DIR" -type f -exec sed -i '/scaling_factor/d' {} \;
+
   local IN_FILE="$OUT_DIR/generated/elasticsearch/legacy/template.json"
   local OUT_FILE="$OUT_DIR/generated/elasticsearch/legacy/template-tmp.json"
 

@@ -51,7 +51,7 @@ def generate_random_date():
 
 def generate_random_agent():
     return {
-        "id": f"agent{random.randint(0, 99)}",
+        "id": f"{random.randint(0, 99):03d}",
         "name": f"Agent{random.randint(0, 99)}",
         "version": f"v{random.randint(0, 9)}-stable",
         "host": generate_random_host(False),

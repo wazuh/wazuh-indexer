@@ -48,6 +48,15 @@ def generate_random_date():
     return random_date.strftime(DATE_FORMAT)
 
 
+def generate_random_unix_timestamp():
+  start_time = datetime.datetime(2000, 1, 1)
+  end_time = datetime.datetime.now()
+  random_time = start_time + datetime.timedelta(
+    seconds=random.randint(0, int((end_time - start_time).total_seconds()))
+  )
+  return int(random_time.timestamp())
+
+
 def generate_random_agent():
     return {
         "id": f"{random.randint(0, 99):03d}",
@@ -79,18 +88,19 @@ def generate_random_event():
 
 def generate_random_registry():
     return {
-        "data": {"type": random.choice(["REG_SZ", "REG_DWORD"])},
+        "data": {
+            "hash": {
+                "md5": f"{random.randint(0, 9999)}",
+                "sha1": f"{random.randint(0, 9999)}",
+                "sha256": f"{random.randint(0, 9999)}"
+            },
+            "type": random.choice(["REG_SZ", "REG_DWORD"]),
+        },
         "gid": f"gid{random.randint(0, 1000)}",
         "group": f"group{random.randint(0, 1000)}",
-        "hash": {
-            "md5": f"{random.randint(0, 9999)}",
-            "sha1": f"{random.randint(0, 9999)}",
-            "sha256": f"{random.randint(0, 9999)}",
-        },
         "hive": "HKLM",
         "key": "SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\winword.exe",
-        "inode": f"inode{random.randint(0, 1000)}",
-        "mtime": generate_random_date(),
+        "mtime": generate_random_unix_timestamp(),
         "owner": f"owner{random.randint(0, 1000)}",
         "path": "/path/to/file",
         "size": random.randint(1000, 1000000),

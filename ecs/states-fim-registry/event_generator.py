@@ -78,31 +78,29 @@ def generate_random_event():
 
 
 def generate_random_registry():
-  return {
-    "data": {"type": random.choice(["REG_SZ", "REG_DWORD"])},
-    "gid": f"gid{random.randint(0, 1000)}",
-    "group": f"group{random.randint(0, 1000)}",
-    "hash": {
-      "md5": f"{random.randint(0, 9999)}",
-      "sha1": f"{random.randint(0, 9999)}",
-      "sha256": f"{random.randint(0, 9999)}",
-    },
-    "hive": "HKLM",
-    "key": "SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\winword.exe",
-    "inode": f"inode{random.randint(0, 1000)}",
-    "mtime": generate_random_date(),
-    "owner": f"owner{random.randint(0, 1000)}",
-    "path": "/path/to/file",
-    "size": random.randint(1000, 1000000),
-    "uid": f"uid{random.randint(0, 1000)}",
-    "value": f"registry_value{random.randint(0, 1000)}"
-  }
+    return {
+        "data": {"type": random.choice(["REG_SZ", "REG_DWORD"])},
+        "gid": f"gid{random.randint(0, 1000)}",
+        "group": f"group{random.randint(0, 1000)}",
+        "hash": {
+            "md5": f"{random.randint(0, 9999)}",
+            "sha1": f"{random.randint(0, 9999)}",
+            "sha256": f"{random.randint(0, 9999)}",
+        },
+        "hive": "HKLM",
+        "key": "SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\winword.exe",
+        "inode": f"inode{random.randint(0, 1000)}",
+        "mtime": generate_random_date(),
+        "owner": f"owner{random.randint(0, 1000)}",
+        "path": "/path/to/file",
+        "size": random.randint(1000, 1000000),
+        "uid": f"uid{random.randint(0, 1000)}",
+        "value": f"registry_value{random.randint(0, 1000)}",
+    }
 
 
 def generate_random_operation():
     return {"name": random.choice(["INSERTED", "MODIFIED", "DELETED"])}
-
-
 
 
 def inject_events(ip, port, index, username, password, data):

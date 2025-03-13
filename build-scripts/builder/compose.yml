@@ -10,7 +10,6 @@ services:
       - INDEXER_REPORTING_BRANCH=${INDEXER_REPORTING_BRANCH:-main}
       - REVISION=${REVISION:-0}
       - IS_STAGE=${IS_STAGE:-false}
-      - IS_LATEST=${IS_LATEST:-false}
       - DISTRIBUTION=${DISTRIBUTION:-rpm}
       - ARCHITECTURE=${ARCHITECTURE:-x64}
     volumes:

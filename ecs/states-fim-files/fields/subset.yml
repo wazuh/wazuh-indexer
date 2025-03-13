@@ -40,11 +40,5 @@ fields:
   operation:
     fields:
       name: {}
-  registry:
-    fields:
-      data:
-        fields:
-          type: {}
-      value: {}
   wazuh:
     fields: "*"

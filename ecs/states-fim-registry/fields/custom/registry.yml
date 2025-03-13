@@ -1,0 +1,52 @@
+---
+- name: registry
+  title: Registry
+  description: >
+    Fields related to Windows Registry operations.
+  fields:
+    - name: registry.gid
+      type: keyword
+      level: custom
+      description: >
+        Group ID associated with the entity
+    - name: registry.group
+      type: keyword
+      level: custom
+      description: >
+        Name of the group that owns the entity
+    - name: registry.hash.md5
+      type: keyword
+      level: custom
+      description: >
+        MD5 hash of the file or registry value content
+    - name: registry.hash.sha1
+      type: keyword
+      level: custom
+      description: >
+        SHA-1 hash of the file or registry value content
+    - name: registry.hash.sha256
+      type: keyword
+      level: custom
+      description: >
+        SHA-256 hash of the file or registry value content
+    - name: registry.mtime
+      type: long
+      level: custom
+      description: >
+        Last modified timestamp of the entity
+    - name: registry.owner
+      type: keyword
+      level: custom
+      description: >
+        Name of the owner of the entity (user)
+    - name: registry.size
+      type: long
+      level: custom
+      description: >
+        Size of the file or registry value (in bytes)
+    - name: registry.uid
+      type: keyword
+      level: custom
+      description: >
+        User ID associated with the entity
+

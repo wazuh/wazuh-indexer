@@ -22,7 +22,7 @@ fields:
       action: {}
       category: {}
       type: {}
-  file:
+  registry:
     fields:
       gid: {}
       group: {}
@@ -31,20 +31,19 @@ fields:
           md5: {}
           sha1: {}
           sha256: {}
-      inode: {}
+      hive: {}
+      key: {}
       mtime: {}
       owner: {}
       path: {}
       size: {}
       uid: {}
-  operation:
-    fields:
-      name: {}
-  registry:
-    fields:
       data:
         fields:
           type: {}
       value: {}
+  operation:
+    fields:
+      name: {}
   wazuh:
     fields: "*"

@@ -8,7 +8,6 @@ INDEXER_PLUGINS_BRANCH=${INDEXER_PLUGINS_BRANCH:-main}
 INDEXER_REPORTING_BRANCH=${INDEXER_REPORTING_BRANCH:-main}
 REVISION=${REVISION:-0}
 IS_STAGE=${IS_STAGE:-false}
-IS_LATEST=${IS_LATEST:-false}
 DISTRIBUTION=${DISTRIBUTION:-rpm}
 ARCHITECTURE=${ARCHITECTURE:-x64}
 
@@ -91,7 +90,6 @@ package_artifacts() {
     local distribution="$2"
     local revision="$3"
     local is_stage="$4"
-    local is_latest="$5"
 
     local plugins_hash
     local reporting_hash
@@ -110,8 +108,7 @@ package_artifacts() {
         -r "$revision" \
         -l "$plugins_hash" \
         -e "$reporting_hash" \
-        "$(if [ "$is_stage" = "true" ]; then echo "-x"; fi)" \
-        "$(if [ "$is_latest" = "true" ]; then echo "-t"; fi)")
+        "$(if [ "$is_stage" = "true" ]; then echo "-x"; fi)")
 
     echo "Creating package name..."
     package_name=$(bash build-scripts/baptizer.sh \
@@ -120,8 +117,7 @@ package_artifacts() {
         -r "$revision" \
         -l "$plugins_hash" \
         -e "$reporting_hash" \
-        "$(if [ "$is_stage" = "true" ]; then echo "-x"; fi)" \
-        "$(if [ "$is_latest" = "true" ]; then echo "-t"; fi)")
+        "$(if [ "$is_stage" = "true" ]; then echo "-x"; fi)")
 
     echo "Building package..."
     bash build-scripts/build.sh -a "$architecture" -d "$distribution" -n "$package_min_name"
@@ -145,7 +141,7 @@ main() {
     build_plugins "$VERSION" "$REVISION"
     build_reporting "$VERSION" "$REVISION"
     copy_builds "$VERSION" "$REVISION"
-    package_artifacts "$ARCHITECTURE" "$DISTRIBUTION" "$REVISION" "$IS_STAGE" "$IS_LATEST"
+    package_artifacts "$ARCHITECTURE" "$DISTRIBUTION" "$REVISION" "$IS_STAGE"
 
     # Clean the environment
     echo "----------------------------------------"

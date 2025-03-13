@@ -26,7 +26,7 @@ function check_project_root_folder() {
 # ====
 function parse_args() {
 
-    while getopts ":p:r:R:s:d:a:Dht" arg; do
+    while getopts ":p:r:R:s:d:a:Dh" arg; do
         case $arg in
         h)
             usage
@@ -53,8 +53,6 @@ function parse_args() {
         D)
             DESTROY=true
             ;;
-        t)
-            IS_LATEST=true
         :)
             echo "Error: -${OPTARG} requires an argument"
             usage
@@ -75,7 +73,6 @@ function parse_args() {
     [ -z "$DISTRIBUTION" ] && DISTRIBUTION="rpm"
     [ -z "$ARCHITECTURE" ] && ARCHITECTURE="x64"
     [ -z "$DESTROY" ] && DESTROY=false
-    [ -z "$IS_LATEST" ] && IS_LATEST="false"
 }
 
 # ====
@@ -92,7 +89,6 @@ function usage() {
     echo -e "-d DISTRIBUTION\t[Optional] Distribution, default is 'rpm'."
     echo -e "-a ARCHITECTURE\t[Optional] Architecture, default is 'x64'."
     echo -e "-D\tDestroy the docker environment"
-    echo -e "-t\tAdd 'latest' suffix to the package name, default is 'false'."
     echo -e "-h\tPrint help"
 }
 
@@ -113,7 +109,6 @@ function main() {
     export IS_STAGE
     export DISTRIBUTION
     export ARCHITECTURE
-    export IS_LATEST
 
     parse_args "${@}"
 

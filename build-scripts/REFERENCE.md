@@ -52,7 +52,6 @@ scripts:
       reporting_hash: Commit hash of the `wazuh-indexer-reporting` repository.
       is_release: if set, uses release naming convention.
       is_min: if set, the package name will start by `wazuh-indexer-min`. Used on the build stage.
-      is_latest: if set, the package commit hash will be replaced by `latest`.
     outputs:
       package: the name of the wazuh-indexer package.
 ```

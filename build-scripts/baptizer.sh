@@ -15,7 +15,6 @@ function usage() {
     echo -e "-m MIN\t[Optional] Use naming convention for minimal packages, default is 'false'."
     echo -e "-x RELEASE\t[Optional] Use release naming convention, default is 'false'."
     echo -e "-h help"
-    echo -e "-t LATEST\t[Optional] Add 'latest' suffix to the package name, default is 'false'."
 }
 
 # ====
@@ -23,7 +22,7 @@ function usage() {
 # ====
 function parse_args() {
 
-    while getopts ":h:p:a:d:r:l:e:mxt" arg; do
+    while getopts ":h:p:a:d:r:l:e:mx" arg; do
         case $arg in
         h)
             usage
@@ -53,9 +52,6 @@ function parse_args() {
         x)
             IS_RELEASE=true
             ;;
-        t)
-            IS_LATEST=true
-            ;;
         :)
             echo "Error: -${OPTARG} requires an argument"
             usage
@@ -74,7 +70,6 @@ function parse_args() {
     [ -z "$REVISION" ] && REVISION="0"
     [ -z "$IS_MIN" ] && IS_MIN=false
     [ -z "$IS_RELEASE" ] && IS_RELEASE=false
-    [ -z "$IS_LATEST" ] && IS_LATEST=false
 
     case $PLATFORM-$DISTRIBUTION-$ARCHITECTURE in
     linux-tar-x64 | darwin-tar-x64)
@@ -141,11 +136,8 @@ function get_devel_name() {
     if "$IS_MIN"; then
         PREFIX="$PREFIX"-min
     fi
-    # Add -latest to the prefix if corresponds
-    if "$IS_LATEST"; then
-        COMMIT_HASH=latest
     # Generate composed commit hash
-    elif [ -n "$PLUGINS_HASH" ] && [ -n "$REPORTING_HASH" ]; then
+    if [ -n "$PLUGINS_HASH" ] && [ -n "$REPORTING_HASH" ]; then
         COMMIT_HASH="$GIT_COMMIT"-"$PLUGINS_HASH"-"$REPORTING_HASH"
     fi
     PACKAGE_NAME="$PREFIX"_"$VERSION"-"$REVISION"_"$SUFFIX"_"$COMMIT_HASH"."$EXT"

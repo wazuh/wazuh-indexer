@@ -1,0 +1,17 @@
+---
+- name: operation
+  reusable:
+    top_level: true
+    expected:
+      - { at: host, as: operation }
+  title: Operation
+  type: group
+  group: 2
+  description: >
+    Operation related data
+  fields:
+    - name: name
+      type: keyword
+      level: custom
+      description: >
+        Type of operation performed

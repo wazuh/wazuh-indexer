@@ -24,6 +24,9 @@ fields:
       type: {}
   registry:
     fields:
+      data:
+        fields:
+          type: {}
       gid: {}
       group: {}
       hash:
@@ -38,9 +41,6 @@ fields:
       path: {}
       size: {}
       uid: {}
-      data:
-        fields:
-          type: {}
       value: {}
   operation:
     fields:

@@ -35,7 +35,6 @@ def generate_random_data(number):
             "event": generate_random_event(),
             "file": generate_random_file(),
             "operation": generate_random_operation(),
-            "registry": generate_random_registry(),
             "wazuh": generate_random_wazuh(),
         }
         data.append(event_data)
@@ -98,13 +97,6 @@ def generate_random_file():
 
 def generate_random_operation():
     return {"name": random.choice(["INSERTED", "MODIFIED", "DELETED"])}
-
-
-def generate_random_registry():
-    return {
-        "data": {"type": random.choice(["REG_SZ", "REG_DWORD"])},
-        "value": f"registry_value{random.randint(0, 1000)}",
-    }
 
 
 def inject_events(ip, port, index, username, password, data):

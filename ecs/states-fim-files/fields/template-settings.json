@@ -27,9 +27,7 @@
           "file.owner",
           "file.path",
           "file.size",
-          "file.uid",
-          "registry.data.type",
-          "registry.value"
+          "file.uid"
         ]
       }
     }

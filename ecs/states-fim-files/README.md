@@ -20,8 +20,6 @@
 | path           | string | Absolute file path or full registry key path.                             | file.path               |        |
 | size           | long   | Size of the file or registry value (in bytes).                            | file.size               |        |
 | uid            | string | User ID associated with the entity.                                       | file.uid                |        |
-| value_type     | string | Type of the registry value, e.g., "REG_SZ", "REG_DWORD".                  | registry.data.type      |        |
-| value_name     | string | Name of the registry value.                                               | registry.value          |        |
 | timestamp      | long   | Timestamp when the event was generated.                                   | timestamp               |        |
 | operation      | string | Type of operation performed (e.g., INSERTED, MODIFIED, DELETED).          | operation.name          | TRUE   |
 | cluster_name   | string | Wazuh cluster name                                                        | wazuh.cluster.name      | TRUE   |

@@ -1,5 +1,5 @@
 ---
-name: wazuh-states-fim
+name: wazuh-states-fim-registry
 fields:
   base:
     fields:

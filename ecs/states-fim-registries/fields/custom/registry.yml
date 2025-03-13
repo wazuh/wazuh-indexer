@@ -14,17 +14,17 @@
       level: custom
       description: >
         Name of the group that owns the entity
-    - name: hash.md5
+    - name: data.hash.md5
       type: keyword
       level: custom
       description: >
         MD5 hash of the file or registry value content
-    - name: hash.sha1
+    - name: data.hash.sha1
       type: keyword
       level: custom
       description: >
         SHA-1 hash of the file or registry value content
-    - name: hash.sha256
+    - name: data.hash.sha256
       type: keyword
       level: custom
       description: >

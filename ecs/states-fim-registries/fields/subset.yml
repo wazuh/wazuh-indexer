@@ -1,5 +1,5 @@
 ---
-name: wazuh-states-fim-registry
+name: wazuh-states-fim-registries
 fields:
   base:
     fields:
@@ -27,13 +27,13 @@ fields:
       data:
         fields:
           type: {}
+          hash:
+            fields:
+              md5: {}
+              sha1: {}
+              sha256: {}
       gid: {}
       group: {}
-      hash:
-        fields:
-          md5: {}
-          sha1: {}
-          sha256: {}
       hive: {}
       key: {}
       mtime: {}

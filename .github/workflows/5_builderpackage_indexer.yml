@@ -344,27 +344,3 @@ jobs:
           aws s3 cp "$src" "$dest"
           s3uri="${dest}${{ steps.package.outputs.name }}.sha512"
           echo "::notice::S3 sha512 URI: ${s3uri}"
-
-      - name: Run `baptizer.sh` (latest)
-        run: |
-          name=$(bash build-scripts/baptizer.sh \
-            -a ${{ matrix.architecture }} \
-            -d ${{ matrix.distribution }}  \
-            -r ${{ inputs.revision }} \
-            -l ${{ needs.build-wazuh-plugins.outputs.hash }} \
-            -e ${{ needs.build-reporting-plugin.outputs.hash }} \
-            ${{ inputs.is_stage && '-x' || '' }} \
-            -t
-          )
-          echo "name=$name" >> $GITHUB_OUTPUT
-        id: package_latest
-
-      - name: Upload package to S3 as latest
-        if: ${{ inputs.upload }}
-        run: |
-            mv "artifacts/dist/${{ steps.package.outputs.name }}" "artifacts/dist/${{ steps.package_latest.outputs.name }}"
-            src="artifacts/dist/${{ steps.package_latest.outputs.name }}"
-            dest="s3://packages-dev.internal.wazuh.com/development/wazuh/5.x/main/packages/"
-            aws s3 cp "$src" "$dest"
-            s3uri="${dest}${{ steps.package_latest.outputs.name }}"
-            echo "::notice::S3 URI: ${s3uri}"

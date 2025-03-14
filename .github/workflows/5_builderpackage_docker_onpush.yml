@@ -5,6 +5,8 @@ name: Build and push Docker image (on push)
 
 on:
   push:
+    paths-ignore:
+      - '**.md'
 
 jobs:
   call-docker-workflow:

@@ -9,7 +9,7 @@ jobs:
     if: github.repository == 'wazuh/wazuh-indexer'
     runs-on: ubuntu-24.04
     steps:
-      - uses: semcelik/commit-author-action@master
+      - uses: semcelik/commit-author-action@v1.0.0
         with:
             email_domain: 'wazuh.com'
             github_token: ${{ secrets.GITHUB_TOKEN }}

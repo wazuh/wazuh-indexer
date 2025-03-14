@@ -5,9 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased 5.0.x]
 ### Added
-
-### Changed
-
+- New quality check workflows [(#753)](https://github.com/wazuh/wazuh-indexer/pull/753)
 ### Dependencies
 - Update Apache HttpClient5 and HttpCore5 (CVE-2025-27820) ([#18152](https://github.com/opensearch-project/OpenSearch/pull/18152))
 

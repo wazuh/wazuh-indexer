@@ -12,3 +12,4 @@ jobs:
       contents: read
     steps:
       - uses: 1Password/check-signed-commits-action@v1
+      

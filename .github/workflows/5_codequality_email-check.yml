@@ -14,3 +14,4 @@ jobs:
             email_domain: 'wazuh.com'
             github_token: ${{ secrets.GITHUB_TOKEN }}
             error_on_fail: 'true'
+            

@@ -252,12 +252,14 @@ else
             echo " sudo /etc/init.d/%{name} start"
         fi
     fi
-    if ! [ -d %{config_dir}/certs ] && [ -f %{product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh ]; then
-        echo "### Installing %{name} demo certificates in %{config_dir}"
+    # Create the certs directory and if required, install demo certificates.
+    mkdir -p %{certs_dir}
+    if [ "$GENERATE_CERTS" = "true" ] && [ -f %{product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh ]; then
+        echo "### Installing %{name} demo certificates in %{certs_dir}"
         echo " If you are using a custom certificates path, ignore this message"
         echo " See demo certs creation log in %{log_dir}/install_demo_certificates.log"
         bash %{product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh > %{log_dir}/install_demo_certificates.log 2>&1
-        yes | /usr/share/%{name}/jdk/bin/keytool -trustcacerts -keystore /usr/share/%{name}/jdk/lib/security/cacerts -importcert -alias wazuh-root-ca -file %{config_dir}/certs/root-ca.pem > /dev/null 2>&1
+        yes | /usr/share/%{name}/jdk/bin/keytool -trustcacerts -keystore /usr/share/%{name}/jdk/lib/security/cacerts -importcert -alias wazuh-root-ca -file %{certs_dir}/root-ca.pem > /dev/null 2>&1
     fi
 fi
 exit 0

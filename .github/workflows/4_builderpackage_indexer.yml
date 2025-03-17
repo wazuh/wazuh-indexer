@@ -1,9 +1,10 @@
 run-name: Build ${{ inputs.distribution }} Wazuh Indexer on ${{ inputs.architecture }} | ${{ inputs.id }}
-name: Build packages (on demand)
+name: Build packages 4.x
 
 # This workflow runs when any of the following occur:
 # - Run manually
 # - Invoked from another workflow
+
 on:
   workflow_dispatch:
     inputs:
@@ -96,7 +97,7 @@ on:
 jobs:
   matrix:
     name: Set up matrix
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     outputs:
       matrix: ${{ steps.setup.outputs.matrix }}
     steps:
@@ -111,7 +112,7 @@ jobs:
 
   build:
     needs: [matrix]
-    runs-on: ${{ matrix.architecture == 'arm64' && 'wz-linux-arm64' || 'ubuntu-22.04' }}
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.matrix.outputs.matrix) }}
@@ -123,7 +124,7 @@ jobs:
           java-version: 21
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Provision
         if: ${{ matrix.distribution == 'deb' }}
@@ -173,6 +174,8 @@ jobs:
           image: redhat/ubi9:latest
           options: -v ${{ github.workspace }}/artifacts/dist:/artifacts/dist
           run: |
+            bash packaging_scripts/indexer-node-install.sh ${{ inputs.previous_version }}
+            systemctl stop wazuh-indexer
             yum localinstall "/artifacts/dist/${{ steps.package.outputs.name }}" -y
         
       - name: Test RPM package update stopping the indexer
@@ -218,6 +221,8 @@ jobs:
       - name: Test DEB package install
         if: ${{ matrix.distribution == 'deb' }}
         run: |
+          bash packaging_scripts/indexer-node-install.sh ${{ inputs.previous_version }}
+          systemctl stop wazuh-indexer
           sudo dpkg -i "artifacts/dist/${{ steps.package.outputs.name }}"
       
       - name: Test DEB package update stopping the indexer
@@ -237,6 +242,14 @@ jobs:
           sudo dpkg -i "artifacts/dist/${{ steps.package.outputs.name }}"
           sudo bash packaging_scripts/test_indexer_node.sh
 
+      - name: Test DEB package without stopping the indexer
+        if: ${{ matrix.distribution == 'deb' }}
+        run: |
+          bash packaging_scripts/indexer-node-install.sh ${{ inputs.previous_version }}
+          sudo dpkg -i "artifacts/dist/${{ steps.package.outputs.name }}"
+          bash packaging_scripts/test-indexer-node.sh
+
+      
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:

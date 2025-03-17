@@ -18,13 +18,11 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-version=$1
-
 # ====
 # Download the Wazuh files.
 # ====
-curl -sO https://packages.wazuh.com/$version/wazuh-install.sh
-curl -sO https://packages.wazuh.com/$version/config.yml
+curl -sO https://packages.wazuh.com/$1/wazuh-install.sh
+curl -sO https://packages.wazuh.com/$1/config.yml
 
 # ====
 # Configure config.yml file.

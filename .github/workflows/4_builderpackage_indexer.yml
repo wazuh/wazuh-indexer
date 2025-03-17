@@ -39,7 +39,7 @@ on:
       previous_version:
         description: "Previous version of the package."
         type: string
-        default: "4.10.0"
+        default: "4.11.0"
   workflow_call:
     inputs:
       revision:
@@ -72,7 +72,7 @@ on:
       previous_version:
           description: "Previous version of the package."
           type: string
-          default: "4.10.0"
+          default: "4.11.0"
     secrets:
       CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY:
         required: true
@@ -174,10 +174,10 @@ jobs:
           image: redhat/ubi9:latest
           options: -v ${{ github.workspace }}/artifacts/dist:/artifacts/dist
           run: |
-            bash packaging_scripts/indexer_node_install.sh ${{ inputs.previous_version }}
+            bash /packaging_scripts/indexer_node_install.sh ${{ inputs.previous_version }}
             systemctl stop wazuh-indexer
             yum localinstall "/artifacts/dist/${{ steps.package.outputs.name }}" -y
-            bash packaging_scripts/test_indexer_node.sh
+            bash /packaging_scripts/test_indexer_node.sh
 
       - name: Test RPM package without stopping the indexer
         if: ${{ matrix.distribution == 'rpm' }}
@@ -186,11 +186,9 @@ jobs:
           image: redhat/ubi9:latest
           options: -v ${{ github.workspace }}/artifacts/dist:/artifacts/dist
           run: |
-            bash packaging_scripts/indexer_node_installsh ${{ inputs.previous_version }}
+            bash /packaging_scripts/indexer_node_installsh ${{ inputs.previous_version }}
             yum localinstall "/artifacts/dist/${{ steps.package.outputs.name }}" -y
-            bash packaging_scripts/test_indexer_node.sh
-            
-
+            bash /packaging_scripts/test_indexer_node.sh
 
       - name: Test DEB package stopping the indexer
         if: ${{ matrix.distribution == 'deb' }}

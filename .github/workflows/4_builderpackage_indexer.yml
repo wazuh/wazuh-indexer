@@ -172,7 +172,9 @@ jobs:
         uses: addnab/docker-run-action@v3
         with:
           image: redhat/ubi9:latest
-          options: -v ${{ github.workspace }}/artifacts/dist:/artifacts/dist
+          options: 
+            -v ${{ github.workspace }}/artifacts/dist:/artifacts/dist
+            -v ${{ github.workspace }}/packaging_scripts:/packaging_scripts
           run: |
             bash /packaging_scripts/indexer_node_install.sh ${{ inputs.previous_version }}
             systemctl stop wazuh-indexer
@@ -184,7 +186,9 @@ jobs:
         uses: addnab/docker-run-action@v3
         with:
           image: redhat/ubi9:latest
-          options: -v ${{ github.workspace }}/artifacts/dist:/artifacts/dist
+          options: 
+            -v ${{ github.workspace }}/artifacts/dist:/artifacts/dist
+            -v ${{ github.workspace }}/packaging_scripts:/packaging_scripts
           run: |
             bash /packaging_scripts/indexer_node_installsh ${{ inputs.previous_version }}
             yum localinstall "/artifacts/dist/${{ steps.package.outputs.name }}" -y

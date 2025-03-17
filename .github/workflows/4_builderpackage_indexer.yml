@@ -184,7 +184,7 @@ jobs:
             -v ${{ github.workspace }}/artifacts/dist:/artifacts/dist
             -v ${{ github.workspace }}/packaging_scripts:/packaging_scripts
           run: |
-            bash /packaging_scripts/indexer_node_install.sh ${{ inputs.previous_version }}
+            sudo bash /packaging_scripts/indexer_node_install.sh ${{ inputs.previous_version }}
             systemctl stop wazuh-indexer
             yum localinstall "/artifacts/dist/${{ steps.package.outputs.name }}" -y
             bash /packaging_scripts/test_indexer_node.sh
@@ -198,7 +198,7 @@ jobs:
             -v ${{ github.workspace }}/artifacts/dist:/artifacts/dist
             -v ${{ github.workspace }}/packaging_scripts:/packaging_scripts
           run: |
-            bash /packaging_scripts/indexer_node_installsh ${{ inputs.previous_version }}
+            sudo bash /packaging_scripts/indexer_node_installsh ${{ inputs.previous_version }}
             yum localinstall "/artifacts/dist/${{ steps.package.outputs.name }}" -y
             bash /packaging_scripts/test_indexer_node.sh
           
@@ -223,7 +223,7 @@ jobs:
       - name: Test DEB package update stopping the indexer
         if: ${{ matrix.distribution == 'deb' }}
         run: |
-          apt-get remove --purge wazuh-indexer -y
+          sudo apt-get remove --purge wazuh-indexer -y
           bash packaging_scripts/indexer_node_install.sh ${{ inputs.previous_version }}
           systemctl stop wazuh-indexer
           sudo dpkg -i "artifacts/dist/${{ steps.package.outputs.name }}"
@@ -232,7 +232,7 @@ jobs:
       - name: Test DEB package update without stopping the indexer
         if: ${{ matrix.distribution == 'deb' }}
         run: |
-          apt-get remove --purge wazuh-indexer -y
+          sudo apt-get remove --purge wazuh-indexer -y
           bash packaging_scripts/indexer_node_install.sh ${{ inputs.previous_version }}
           sudo dpkg -i "artifacts/dist/${{ steps.package.outputs.name }}"
           bash packaging_scripts/test_indexer_node.sh

@@ -76,7 +76,7 @@ def generate_random_event():
 def generate_random_network():
     return {
         "broadcast": f"{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}",
-        "dhcp": f"dhcp{random.randint(0, 9999)}",
+        "dhcp": random.choice([True,False]),
         "metric": random.randint(1, 100),
         "netmask": f"{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}",
         "protocol": random.choice(["TCP", "UDP", "ICMP"]),

@@ -12,10 +12,10 @@
       description: >
         Broadcast address
     - name: dhcp
-      type: keyword
+      type: boolean
       level: custom
       description: >
-        DHCP status (enabled, disabled, unknown, BOOTP)
+        DHCP enabled
     - name: metric
       type: long
       level: custom

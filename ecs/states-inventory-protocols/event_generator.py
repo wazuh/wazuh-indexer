@@ -64,7 +64,7 @@ def generate_random_host(is_root_level_level=False):
 
 def generate_random_network():
     return {
-        "dhcp": f"dhcp{random.randint(0, 9999)}",
+        "dhcp": random.choice([True,False]),
         "gateway": f"{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}",
         "metric": random.randint(1, 100),
         "type": random.choice(["wired", "wireless"]),

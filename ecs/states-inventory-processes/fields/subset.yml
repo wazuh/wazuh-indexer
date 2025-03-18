@@ -26,8 +26,5 @@ fields:
       state: {}
       stime: {}
       utime: {}
-  operation:
-    fields:
-      name: {}
   wazuh:
     fields: "*"

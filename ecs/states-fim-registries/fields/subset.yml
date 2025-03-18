@@ -42,8 +42,5 @@ fields:
       size: {}
       uid: {}
       value: {}
-  operation:
-    fields:
-      name: {}
   wazuh:
     fields: "*"

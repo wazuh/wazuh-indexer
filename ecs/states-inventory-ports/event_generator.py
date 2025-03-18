@@ -39,7 +39,6 @@ def generate_random_data(number):
             "network": {"transport": random.choice(["TCP", "UDP", "ICMP"])},
             "process": generate_random_process(),
             "source": generate_random_source(),
-            "operation": generate_random_operation(),
             "wazuh": generate_random_wazuh(),
         }
         data.append(event_data)
@@ -104,10 +103,6 @@ def generate_random_source():
         "ip": f"{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}",
         "port": random.randint(0, 65535),
     }
-
-
-def generate_random_operation():
-    return {"name": random.choice(["INSERTED", "MODIFIED", "DELETED"])}
 
 
 def generate_random_wazuh():

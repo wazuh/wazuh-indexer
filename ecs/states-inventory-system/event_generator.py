@@ -32,7 +32,6 @@ def generate_random_data(number):
             "@timestamp": generate_random_date(),
             "agent": generate_random_agent(),
             "host": generate_random_host(True),
-            "operation": generate_random_operation(),
             "wazuh": generate_random_wazuh(),
         }
         data.append(event_data)
@@ -85,10 +84,6 @@ def generate_random_host(is_root_level=False):
             "architecture": random.choice(["x86_64", "arm64"]),
             "ip": f"{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}",
         }
-
-
-def generate_random_operation():
-    return {"name": random.choice(["INSERTED", "MODIFIED", "DELETED"])}
 
 
 def generate_random_wazuh():

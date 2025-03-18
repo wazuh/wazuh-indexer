@@ -28,8 +28,5 @@ fields:
             fields:
               id: {}
               name: {}
-  operation:
-    fields:
-      name: {}
   wazuh:
     fields: "*"

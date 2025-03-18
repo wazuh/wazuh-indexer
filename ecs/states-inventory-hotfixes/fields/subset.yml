@@ -19,8 +19,5 @@ fields:
       hotfix:
         fields:
           name: {}
-  operation:
-    fields:
-      name: {}
   wazuh:
     fields: "*"

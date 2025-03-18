@@ -34,8 +34,5 @@ fields:
           interface:
             fields:
               name: {}
-  operation:
-    fields:
-      name: {}
   wazuh:
     fields: "*"

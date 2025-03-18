@@ -32,7 +32,6 @@ def generate_random_data(number):
             "@timestamp": generate_random_date(),
             "agent": generate_random_agent(),
             "process": generate_random_process(),
-            "operation": generate_random_operation(),
             "wazuh": generate_random_wazuh(),
         }
         data.append(event_data)
@@ -90,10 +89,6 @@ def generate_random_unix_timestamp():
         seconds=random.randint(0, int((end_time - start_time).total_seconds()))
     )
     return int(random_time.timestamp())
-
-
-def generate_random_operation():
-    return {"name": random.choice(["INSERTED", "MODIFIED", "DELETED"])}
 
 
 def generate_random_wazuh():

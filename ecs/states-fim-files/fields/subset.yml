@@ -37,8 +37,5 @@ fields:
       path: {}
       size: {}
       uid: {}
-  operation:
-    fields:
-      name: {}
   wazuh:
     fields: "*"

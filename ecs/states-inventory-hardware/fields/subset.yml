@@ -29,8 +29,5 @@ fields:
   observer:
     fields:
       serial_number: {}
-  operation:
-    fields:
-      name: {}
   wazuh:
     fields: "*"

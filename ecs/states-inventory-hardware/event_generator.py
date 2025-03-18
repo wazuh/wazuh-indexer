@@ -33,7 +33,6 @@ def generate_random_data(number):
             "agent": generate_random_agent(),
             "host": generate_random_host(True),
             "observer": generate_random_observer(),
-            "operation": generate_random_operation(),
             "wazuh": generate_random_wazuh(),
         }
         data.append(event_data)
@@ -79,10 +78,6 @@ def generate_random_host(is_root_level=False):
 
 def generate_random_observer():
     return {"serial_number": f"serial{random.randint(0, 9999)}"}
-
-
-def generate_random_operation():
-    return {"name": random.choice(["INSERTED", "MODIFIED", "DELETED"])}
 
 
 def generate_random_wazuh():

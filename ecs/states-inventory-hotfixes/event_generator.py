@@ -32,7 +32,6 @@ def generate_random_data(number):
             "@timestamp": generate_random_date(),
             "agent": generate_random_agent(),
             "package": generate_random_package(),
-            "operation": generate_random_operation(),
             "wazuh": generate_random_wazuh(),
         }
         data.append(event_data)
@@ -65,10 +64,6 @@ def generate_random_host():
 
 def generate_random_package():
     return {"hotfix": {"name": f"hotfix{random.randint(0, 9999)}"}}
-
-
-def generate_random_operation():
-    return {"name": random.choice(["INSERTED", "MODIFIED", "DELETED"])}
 
 
 def generate_random_wazuh():

@@ -34,7 +34,6 @@ def generate_random_data(number):
             "data_stream": generate_random_data_stream(),
             "event": generate_random_event(),
             "file": generate_random_file(),
-            "operation": generate_random_operation(),
             "wazuh": generate_random_wazuh(),
         }
         data.append(event_data)
@@ -93,10 +92,6 @@ def generate_random_file():
         "size": random.randint(1000, 1000000),
         "uid": f"uid{random.randint(0, 1000)}",
     }
-
-
-def generate_random_operation():
-    return {"name": random.choice(["INSERTED", "MODIFIED", "DELETED"])}
 
 
 def inject_events(ip, port, index, username, password, data):

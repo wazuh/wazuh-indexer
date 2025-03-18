@@ -25,7 +25,7 @@ fields:
     fields:
       inode: {}
   host:
-    fields: 
+    fields:
       network:
         fields:
           egress:
@@ -48,8 +48,5 @@ fields:
     fields:
       ip: {}
       port: {}
-  operation:
-    fields:
-      name: {}
   wazuh:
     fields: "*"

@@ -32,7 +32,6 @@ def generate_random_data(number):
             "@timestamp": generate_random_date(),
             "agent": generate_random_agent(),
             "package": generate_random_package(),
-            "operation": generate_random_operation(),
             "wazuh": generate_random_wazuh(),
         }
         data.append(event_data)
@@ -73,10 +72,6 @@ def generate_random_package():
         "vendor": random.choice(["Microsoft", "Canonical", "Apple", "RedHat"]),
         "version": f"{random.randint(0, 9)}.{random.randint(0, 9)}.{random.randint(0, 9)}",
     }
-
-
-def generate_random_operation():
-    return {"name": random.choice(["INSERTED", "MODIFIED", "DELETED"])}
 
 
 def generate_random_wazuh():

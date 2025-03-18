@@ -33,7 +33,6 @@ def generate_random_data(number):
             "agent": generate_random_agent(),
             "data_stream": generate_random_data_stream(),
             "event": generate_random_event(),
-            "operation": generate_random_operation(),
             "registry": generate_random_registry(),
             "wazuh": generate_random_wazuh(),
         }
@@ -107,10 +106,6 @@ def generate_random_registry():
         "uid": f"uid{random.randint(0, 1000)}",
         "value": f"registry_value{random.randint(0, 1000)}",
     }
-
-
-def generate_random_operation():
-    return {"name": random.choice(["INSERTED", "MODIFIED", "DELETED"])}
 
 
 def inject_events(ip, port, index, username, password, data):

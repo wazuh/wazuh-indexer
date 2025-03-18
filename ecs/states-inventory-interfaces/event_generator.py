@@ -34,7 +34,6 @@ def generate_random_data(number):
             "host": generate_random_host(True),
             "network": generate_random_network(),
             "observer": generate_random_observer(),
-            "operation": generate_random_operation(),
             "wazuh": generate_random_wazuh(),
         }
         data.append(event_data)
@@ -99,10 +98,6 @@ def generate_random_interface(is_root_level=False):
 
 def generate_random_observer():
     return {"ingress": {"interface": generate_random_interface(False)}}
-
-
-def generate_random_operation():
-    return {"name": random.choice(["INSERTED", "MODIFIED", "DELETED"])}
 
 
 def generate_random_wazuh():

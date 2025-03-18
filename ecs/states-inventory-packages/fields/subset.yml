@@ -24,8 +24,5 @@ fields:
       path: {}
       vendor: {}
       version: {}
-  operation:
-    fields:
-      name: {}
   wazuh:
     fields: "*"

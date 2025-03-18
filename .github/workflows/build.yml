@@ -176,7 +176,7 @@ jobs:
             yum localinstall "/artifacts/dist/${{ steps.package.outputs.name }}" -y
         
       - name: Test RPM package update stopping the indexer
-        if: ${{ matrix.distribution == 'rpm' }} $$ ${{ inputs.previous_version  >= '4.12'}} $$ ${{ matrix.architecture  != 'arm64'}}
+        if: ${{ matrix.distribution == 'rpm' }} $$ (${{ inputs.architecture == 'x64'}} || ${{ inputs.previous_version  >= '4.12'}} $$ ${{ matrix.architecture  == 'arm64'}})
         uses: addnab/docker-run-action@v3
         with:
           image: redhat/ubi9:latest
@@ -190,7 +190,7 @@ jobs:
             bash /packaging_scripts/test_indexer_node.sh
     
       - name: Test RPM package update without stopping the indexer
-        if: ${{ matrix.distribution == 'rpm' }} $$ ${{ inputs.previous_version  >= '4.12'}} $$ ${{ matrix.architecture  != 'arm64'}}
+        if: ${{ matrix.distribution == 'rpm' }} $$ (${{ inputs.architecture == 'x64'}} || ${{ inputs.previous_version  >= '4.12'}} $$ ${{ matrix.architecture  == 'arm64'}})
         uses: addnab/docker-run-action@v3
         with:
           image: redhat/ubi9:latest
@@ -221,7 +221,7 @@ jobs:
           sudo dpkg -i "artifacts/dist/${{ steps.package.outputs.name }}"
       
       - name: Test DEB package update stopping the indexer
-        if: ${{ matrix.distribution == 'deb' }} $$ ${{ inputs.previous_version  >= '4.12'}} $$ ${{ matrix.architecture  != 'arm64'}}
+        if: ${{ matrix.distribution == 'deb' }} $$ (${{ inputs.architecture == 'x64'}} || ${{ inputs.previous_version  >= '4.12'}} $$ ${{ matrix.architecture  == 'arm64'}})
         run: |
           sudo apt-get remove --purge wazuh-indexer -y
           sudo bash packaging_scripts/indexer_node_install.sh ${{ inputs.previous_version }}
@@ -230,7 +230,7 @@ jobs:
           sudo bash packaging_scripts/test_indexer_node.sh
   
       - name: Test DEB package update without stopping the indexer
-        if: ${{ matrix.distribution == 'deb' }} $$ ${{ inputs.previous_version  >= '4.12'}} $$ ${{ matrix.architecture  != 'arm64'}}
+        if: ${{ matrix.distribution == 'deb' }} $$ (${{ inputs.architecture == 'x64'}} || ${{ inputs.previous_version  >= '4.12'}} $$ ${{ matrix.architecture  == 'arm64'}})
         run: |
           sudo apt-get remove --purge wazuh-indexer -y
           sudo bash packaging_scripts/indexer_node_install.sh ${{ inputs.previous_version }}

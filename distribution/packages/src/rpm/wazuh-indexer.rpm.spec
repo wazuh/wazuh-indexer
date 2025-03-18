@@ -252,8 +252,6 @@ else
             echo " sudo /etc/init.d/%{name} start"
         fi
     fi
-    # Create the certs directory and if required, install demo certificates.
-    mkdir -p %{certs_dir}
     if [ "$GENERATE_CERTS" = "true" ] && [ -f %{product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh ]; then
         echo "### Installing %{name} demo certificates in %{certs_dir}"
         echo " If you are using a custom certificates path, ignore this message"

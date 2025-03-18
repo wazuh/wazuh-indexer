@@ -39,19 +39,3 @@ EOL
 # ====
 bash wazuh-install.sh --generate-config-files
 bash wazuh-install.sh --wazuh-indexer node-1
-bash wazuh-install.sh --start-cluster
-
-# ====
-# Get the admin password.
-# ====
-password=$(tar -axf wazuh-install-files.tar wazuh-install-files/wazuh-passwords.txt -O | grep -P "\'admin\'" -A 1 | tail -n 1 | tr -d '[:space:]' | sed "s/.*'\(.*\)'.*/\1/")
-
-# ====
-# Checks if the response is correct.
-# ====
-response=$(curl -k -u admin:$password https://192.168.56.10:9200)
-if echo "$response" | grep -q '"name" : "node-1"'; then
-    exit 0
-else
-    exit 1
-fi

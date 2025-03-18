@@ -70,9 +70,8 @@ def generate_random_data_stream():
 
 def generate_random_event():
     return {
-        "action": random.choice(["added", "modified", "deleted"]),
         "category": random.choice(["registy_value", "registry_key", "file"]),
-        "type": "event",
+        "type": random.choice(["added", "modified", "deleted"])
     }
 
 

@@ -19,7 +19,6 @@ fields:
       type: {}
   event:
     fields:
-      action: {}
       category: {}
       type: {}
   file:

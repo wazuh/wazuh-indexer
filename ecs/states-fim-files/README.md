@@ -1,5 +1,5 @@
 | Field Name     | Type   | Description                                                               | Destination Field       | Custom |
-| -------------- | ------ | ------------------------------------------------------------------------- | ----------------------- | ------ |
+| -------------- | ------ | ------------------------------------------------------------------------- |-------------------------| ------ |
 | agent_id       | string | Unique identifier of the agent, e.g., "001".                              | agent.id                |        |
 | agent_ip       | string | IP address of the agent.                                                  | agent.host.ip           | TRUE   |
 | agent_name     | string | Name assigned to the agent.                                               | agent.name              |        |
@@ -7,7 +7,6 @@
 | arch           | string | Registry architecture type, e.g., "[x86]", "[x64]".                       | agent.host.architecture | TRUE   |
 | cluster_name   | string | Wazuh cluster name                                                        | wazuh.cluster.name      | TRUE   |
 | cluster_node   | string | Wazuh cluster node                                                        | wazuh.cluster.node      | TRUE   |
-| data_type      | string | Nature of the event, e.g., "event".                                       | event.type              |        |
 | gid            | string | Group ID associated with the entity.                                      | file.gid                |        |
 | group_name     | string | Name of the group that owns the entity.                                   | file.group              |        |
 | hash_md5       | string | MD5 hash of the file or registry value content.                           | file.hash.md5           |        |
@@ -21,7 +20,7 @@
 | schema_version | string | Wazuh schema version                                                      | wazuh.schema.version    | TRUE   |
 | size           | long   | Size of the file or registry value (in bytes).                            | file.size               |        |
 | timestamp      | long   | Timestamp when the event was generated.                                   | timestamp               |        |
-| type           | string | Type of change detected, e.g., "added", "modified", "deleted".            | event.action            |        |
+| type           | string | Type of change detected, e.g., "added", "modified", "deleted".            | event.type              |        |
 | type           | string | Type of monitored entity, e.g., "registry_value", "registry_key", "file". | event.category          |        |
 | uid            | string | User ID associated with the entity.                                       | file.uid                |        |
 | user_name      | string | Name of the owner of the entity (user).                                   | file.owner              |        |

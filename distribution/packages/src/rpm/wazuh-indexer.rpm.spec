@@ -83,6 +83,9 @@ mkdir -p %{buildroot}%{config_dir}/opensearch-observability
 mkdir -p %{buildroot}%{config_dir}/wazuh-indexer-reports-scheduler
 mkdir -p %{buildroot}%{product_dir}/performance-analyzer-rca
 
+# Create empty certs directory
+mkdir -p %{buildroot}%{certs_dir}
+
 # Pre-populate PA configs if not present
 if [ ! -f %{buildroot}%{data_dir}/rca_enabled.conf ]; then
     echo 'true' > %{buildroot}%{data_dir}/rca_enabled.conf
@@ -279,8 +282,6 @@ else
             echo " sudo /etc/init.d/%{name} start"
         fi
     fi
-    # Create the certs directory and if required, install demo certificates.
-    mkdir -p %{certs_dir}
     if [ "$GENERATE_CERTS" = "true" ] && [ -f %{product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh ]; then
         echo "### Installing %{name} demo certificates in %{certs_dir}"
         echo " If you are using a custom certificates path, ignore this message"
@@ -358,6 +359,9 @@ fi
 %attr(750, %{name}, %{name}) %{product_dir}/jdk/lib/jspawnhelper
 %attr(750, %{name}, %{name}) %{product_dir}/jdk/lib/modules
 %attr(750, %{name}, %{name}) %{product_dir}/performance-analyzer-rca/bin/*
+
+# Certificates files permissions
+%attr(500, %{name}, %{name}) %{certs_dir}
 
 %changelog
 * Mon Jun 23 2025 support <info@wazuh.com> - 5.0.0

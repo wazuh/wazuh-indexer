@@ -31,7 +31,7 @@ cat <<EOL > config.yml
 nodes:
   indexer:
     - name: node-1
-      ip: "127.0.0.1"
+      ip: "192.168.56.10"
 EOL
 
 # ====
@@ -49,7 +49,7 @@ password=$(tar -axf wazuh-install-files.tar wazuh-install-files/wazuh-passwords.
 # ====
 # Checks if the response is correct.
 # ====
-response=$(curl -k -u admin:$password https://127.0.0.1:9200)
+response=$(curl -k -u admin:$password https://192.168.56.10:9200)
 if echo "$response" | grep -q '"name" : "node-1"'; then
     exit 0
 else

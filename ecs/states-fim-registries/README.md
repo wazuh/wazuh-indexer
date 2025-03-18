@@ -7,7 +7,6 @@
 | arch           | string | Registry architecture type, e.g., "[x86]", "[x64]".              | agent.host.architecture   | TRUE   |
 | cluster_name   | string | Wazuh cluster name                                               | wazuh.cluster.name        | TRUE   |
 | cluster_node   | string | Wazuh cluster node                                               | wazuh.cluster.node        | TRUE   |
-| data_type      | string | Nature of the event, e.g., "event".                              | event.type                | FALSE  |
 | gid            | string | Group ID associated with the entity.                             | registry.gid              | TRUE   |
 | group_name     | string | Name of the group that owns the entity.                          | registry.group            | TRUE   |
 | hash_md5       | string | MD5 hash of the file or registry value content.                  | registry.data.hash.md5    | TRUE   |
@@ -22,7 +21,7 @@
 | schema_version | string | Wazuh schema version                                             | wazuh.schema.version      | TRUE   |
 | size           | long   | Size of the file or registry value (in bytes).                   | registry.size             | TRUE   |
 | timestamp      | long   | Timestamp when the event was generated.                          | timestamp                 | FALSE  |
-| type           | string | Type of change detected, e.g., "added", "modified".              | event.action              | FALSE  |
+| type           | string | Type of change detected, e.g., "added", "modified".              | event.type                | FALSE  |
 | type           | string | Type of monitored entity, e.g., "registry_key".                  | event.category            | FALSE  |
 | uid            | string | User ID associated with the entity.                              | registry.uid              | TRUE   |
 | user_name      | string | Name of the owner of the entity (user).                          | registry.owner            | TRUE   |

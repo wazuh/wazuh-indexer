@@ -14,7 +14,6 @@
           "agent.name",
           "agent.version",
           "data_stream.type",
-          "event.action",
           "event.category",
           "event.type",
           "file.gid",

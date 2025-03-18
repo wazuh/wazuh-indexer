@@ -37,5 +37,5 @@ EOL
 # ====
 # Install Wazuh indexer node.
 # ====
-bash wazuh-install.sh --generate-config-files
+bash wazuh-install.sh --generate-config-files --overwrite
 bash wazuh-install.sh --wazuh-indexer node-1

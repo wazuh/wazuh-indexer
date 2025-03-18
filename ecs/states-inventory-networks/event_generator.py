@@ -31,7 +31,6 @@ def generate_random_data(number):
         event_data = {
             "@timestamp": generate_random_date(),
             "agent": generate_random_agent(),
-            "event": generate_random_event(),
             "network": generate_random_network(),
             "observer": generate_random_observer(),
             "wazuh": generate_random_wazuh(),
@@ -66,10 +65,6 @@ def generate_random_host(is_root_level_level=False):
             "architecture": random.choice(["x86_64", "arm64"]),
             "ip": f"{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}",
         }
-
-
-def generate_random_event():
-    return {"id": f"{random.randint(1000, 10000000000)}"}
 
 
 def generate_random_network():

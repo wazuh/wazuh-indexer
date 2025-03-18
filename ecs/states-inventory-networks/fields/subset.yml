@@ -14,9 +14,6 @@ fields:
         fields:
           architecture: {}
           ip: {}
-  event:
-    fields:
-      id: {}
   network:
     fields:
       broadcast: {}

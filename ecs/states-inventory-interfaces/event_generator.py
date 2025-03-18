@@ -32,7 +32,6 @@ def generate_random_data(number):
             "@timestamp": generate_random_date(),
             "agent": generate_random_agent(),
             "host": generate_random_host(True),
-            "network": generate_random_network(),
             "observer": generate_random_observer(),
             "wazuh": generate_random_wazuh(),
         }
@@ -79,10 +78,6 @@ def generate_random_host(is_root_level_level=False):
             "architecture": random.choice(["x86_64", "arm64"]),
             "ip": f"{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}",
         }
-
-
-def generate_random_network():
-    return {"type": random.choice(["wired", "wireless"])}
 
 
 def generate_random_interface(is_root_level=False):

@@ -31,9 +31,6 @@ fields:
               drops: {}
               errors: {}
               packets: {}
-  network:
-    fields:
-      type: {}
   observer:
     fields:
       ingress:

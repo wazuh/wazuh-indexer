@@ -31,7 +31,6 @@ def generate_random_data(number):
         event_data = {
             "@timestamp": generate_random_date(),
             "agent": generate_random_agent(),
-            "host": generate_random_host(True),
             "event": generate_random_event(),
             "network": generate_random_network(),
             "observer": generate_random_observer(),
@@ -77,6 +76,7 @@ def generate_random_network():
     return {
         "broadcast": f"{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}",
         "dhcp": random.choice([True,False]),
+        "ip": f"{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}",
         "metric": random.randint(1, 100),
         "netmask": f"{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}",
         "protocol": random.choice(["TCP", "UDP", "ICMP"]),

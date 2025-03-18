@@ -16,6 +16,11 @@
       level: custom
       description: >
         DHCP enabled
+    - name: ip
+      type: ip
+      level: custom
+      description: >
+        IP address
     - name: metric
       type: long
       level: custom

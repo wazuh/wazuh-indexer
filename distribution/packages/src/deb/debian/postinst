@@ -29,6 +29,7 @@ chown -R wazuh-indexer:wazuh-indexer ${log_dir}
 chown -R wazuh-indexer:wazuh-indexer ${data_dir}
 chown -R wazuh-indexer:wazuh-indexer ${pid_dir}
 chown -R wazuh-indexer:wazuh-indexer ${tmp_dir}
+chown -R wazuh-indexer:wazuh-indexer ${certs_dir}
 
 export OPENSEARCH_PATH_CONF=${OPENSEARCH_PATH_CONF:-${config_dir}}
 # Apply Performance Analyzer settings, as per https://github.com/opensearch-project/opensearch-build/blob/2.18.0/scripts/pkg/build_templates/current/opensearch/deb/debian/postinst#L28-L37
@@ -106,7 +107,6 @@ else
         fi
     fi
     # Create the certs directory and if required, install demo certificates.
-    mkdir -p ${certs_dir}
     if [ "$GENERATE_CERTS" = "true" ] && [ -f "${product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh" ]; then
         echo "### Installing wazuh-indexer demo certificates in ${certs_dir}"
         echo " If you are using a custom certificates path, ignore this message"

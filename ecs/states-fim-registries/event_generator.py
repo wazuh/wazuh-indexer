@@ -80,7 +80,7 @@ def generate_random_data_stream():
 def generate_random_event():
     return {
         "category": random.choice(["registy_value", "registry_key", "file"]),
-        "type": randome.choice(["added","modified","deleted"])
+        "type": random.choice(["added","modified","deleted"])
     }
 
 

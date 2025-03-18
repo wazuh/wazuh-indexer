@@ -1,7 +1,7 @@
 ---
 - name: package
   fields:
-    - name: groups
+    - name: category
       description: >
         Package category or group
       type: keyword

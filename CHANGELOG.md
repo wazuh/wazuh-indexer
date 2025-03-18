@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Changed
 - Update opensearch.yml template and auto-generate creds directory [(#755)](https://github.com/wazuh/wazuh-indexer/pull/755)
+- Update certificates directory ownership and permissions [(#766)](https://github.com/wazuh/wazuh-indexer/pull/766)
 
 ### Deprecated
 

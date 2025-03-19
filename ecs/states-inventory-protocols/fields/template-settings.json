@@ -12,7 +12,7 @@
         "query.default_field": [
           "agent.id",
           "agent.host.ip",
-          "observer.ingress.interface.name",
+          "observer.ingress.interface.name"
         ]
       }
     }

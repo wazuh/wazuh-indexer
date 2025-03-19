@@ -79,7 +79,7 @@ def generate_random_network():
 
 
 def generate_random_interface():
-    return {"name": f"name{random.randint(0, 9999)}"}
+    return f"name{random.randint(0, 9999)}"
 
 
 def generate_random_wazuh():

@@ -1,5 +1,5 @@
 | Field Name     | Type   | Description                                                               | Destination Field       | Custom |
-| -------------- | ------ | ------------------------------------------------------------------------- |-------------------------| ------ |
+|----------------|--------|---------------------------------------------------------------------------|-------------------------|--------|
 | agent_id       | string | Unique identifier of the agent, e.g., "001".                              | agent.id                |        |
 | agent_ip       | string | IP address of the agent.                                                  | agent.host.ip           | TRUE   |
 | agent_name     | string | Name assigned to the agent.                                               | agent.name              |        |

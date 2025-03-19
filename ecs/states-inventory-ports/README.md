@@ -16,7 +16,6 @@
 | pid            | long   | Process ID using the port.                                       | process.pid                | FALSE  |
 | remote_ip      | string | Remote IP address.                                               | source.ip                  | FALSE  |
 | remote_port    | long   | Remote port number.                                              | source.port                | FALSE  |
-| operation      | string | Type of operation performed (e.g., INSERTED, MODIFIED, DELETED). | operation.name             | TRUE   |
 | cluster_name   | string | Wazuh cluster name                                               | wazuh.cluster.name         | TRUE   |
 | cluster_node   | string | Wazuh cluster node                                               | wazuh.cluster.node         | TRUE   |
 | schema_version | string | Wazuh schema version                                             | wazuh.schema.version       | TRUE   |

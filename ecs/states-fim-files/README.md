@@ -15,7 +15,6 @@
 | inode          | long   | Inode number (only applicable for file events).                           | file.inode              |        |
 | mode           | string | Monitoring mode, either "Scheduled" or "Realtime".                        | data_stream.type        |        |
 | mtime          | long   | Last modified timestamp of the entity.                                    | file.mtime              |        |
-| operation      | string | Type of operation performed (e.g., INSERTED, MODIFIED, DELETED).          | operation.name          | TRUE   |
 | path           | string | Absolute file path or full registry key path.                             | file.path               |        |
 | schema_version | string | Wazuh schema version                                                      | wazuh.schema.version    | TRUE   |
 | size           | long   | Size of the file or registry value (in bytes).                            | file.size               |        |

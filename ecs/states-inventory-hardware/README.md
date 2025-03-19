@@ -11,7 +11,6 @@
 | ram_total      | long   | Total RAM available in the system (MB).                          | host.memory.total     | TRUE   |
 | ram_free       | long   | Free RAM available in the system (MB).                           | host.memory.free      | TRUE   |
 | ram_usage      | long   | RAM usage in percentage.                                         | host.memory.used      | TRUE   |
-| operation      | string | Type of operation performed (e.g., INSERTED, MODIFIED, DELETED). | operation.name        | TRUE   |
 | cluster_name   | string | Wazuh cluster name                                               | wazuh.cluster.name    | TRUE   |
 | cluster_node   | string | Wazuh cluster node                                               | wazuh.cluster.node    | TRUE   |
 | schema_version | string | Wazuh schema version                                             | wazuh.schema.version  | TRUE   |

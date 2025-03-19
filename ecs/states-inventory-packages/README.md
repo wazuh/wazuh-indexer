@@ -12,7 +12,6 @@
 | location       | string | Path where the package is installed.                             | package.path         | FALSE  |
 | vendor         | string | Vendor or maintainer of the package.                             | package.vendor       | TRUE   |
 | version        | string | Package version.                                                 | package.version      | FALSE  |
-| operation      | string | Type of operation performed (e.g., INSERTED, MODIFIED, DELETED). | operation.name       | TRUE   |
 | cluster_name   | string | Wazuh cluster name                                               | wazuh.cluster.name   | TRUE   |
 | cluster_node   | string | Wazuh cluster node                                               | wazuh.cluster.node   | TRUE   |
 | schema_version | string | Wazuh schema version                                             | wazuh.schema.version | TRUE   |

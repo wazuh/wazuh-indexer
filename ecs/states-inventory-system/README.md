@@ -19,7 +19,6 @@
 | release            | string | Kernel release version.                                          | host.os.kernel.release       | TRUE   |
 | version            | string | Kernel version.                                                  | host.os.kernel.version       | TRUE   |
 | os_release         | string | Distribution-specific release information.                       | host.os.distribution.release | TRUE   |
-| operation          | string | Type of operation performed (e.g., INSERTED, MODIFIED, DELETED). | operation.name               | TRUE   |
 | cluster_name       | string | Wazuh cluster name                                               | wazuh.cluster.name           | TRUE   |
 | cluster_node       | string | Wazuh cluster node                                               | wazuh.cluster.node           | TRUE   |
 | schema_version     | string | Wazuh schema version                                             | wazuh.schema.version         | TRUE   |

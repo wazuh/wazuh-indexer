@@ -16,7 +16,6 @@
 | key            | string | Hive-relative path of keys                                       | registry.key              | FALSE  |
 | mode           | string | Monitoring mode, either "Scheduled" or "Realtime".               | data_stream.type          | FALSE  |
 | mtime          | long   | Last modified timestamp of the entity.                           | registry.mtime            | TRUE   |
-| operation      | string | Type of operation performed (e.g., INSERTED, MODIFIED, DELETED). | operation.name            | TRUE   |
 | path           | string | Absolute file path or full registry key path.                    | registry.path             | FALSE  |
 | schema_version | string | Wazuh schema version                                             | wazuh.schema.version      | TRUE   |
 | size           | long   | Size of the file or registry value (in bytes).                   | registry.size             | TRUE   |

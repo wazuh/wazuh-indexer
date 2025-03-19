@@ -10,7 +10,6 @@
 | dhcp           | bool   | Indicates if DHCP is used (yes/no).                              | network.dhcp                    | TRUE   |
 | metric         | string | Routing metric value.                                            | network.metric                  | TRUE   |
 | item_id        | string | Unique identifier for the protocol entry.                        | observer.ingress.interface.id   | FALSE  |
-| operation      | string | Type of operation performed (e.g., INSERTED, MODIFIED, DELETED). | operation.name                  | TRUE   |
 | cluster_name   | string | Wazuh cluster name                                               | wazuh.cluster.name              | TRUE   |
 | cluster_node   | string | Wazuh cluster node                                               | wazuh.cluster.node              | TRUE   |
 | schema_version | string | Wazuh schema version                                             | wazuh.schema.version            | TRUE   |

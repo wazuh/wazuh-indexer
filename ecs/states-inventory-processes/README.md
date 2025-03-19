@@ -12,7 +12,6 @@
 | state          | string | Current process state.                                           | process.state        | TRUE   |
 | stime          | long   | System mode CPU time used.                                       | process.stime        | TRUE   |
 | utime          | long   | User mode CPU time used.                                         | process.utime        | TRUE   |
-| operation      | string | Type of operation performed (e.g., INSERTED, MODIFIED, DELETED). | operation.name       | TRUE   |
 | cluster_name   | string | Wazuh cluster name                                               | wazuh.cluster.name   | TRUE   |
 | cluster_node   | string | Wazuh cluster node                                               | wazuh.cluster.node   | TRUE   |
 | schema_version | string | Wazuh schema version                                             | wazuh.schema.version | TRUE   |

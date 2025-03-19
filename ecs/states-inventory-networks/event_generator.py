@@ -32,8 +32,7 @@ def generate_random_data(number):
             "@timestamp": generate_random_date(),
             "agent": generate_random_agent(),
             "network": generate_random_network(),
-            "observer": generate_random_observer(),
-            "wazuh": generate_random_wazuh(),
+            "wazuh": generate_random_wazuh()
         }
         data.append(event_data)
     return data
@@ -73,6 +72,7 @@ def generate_random_network():
         "dhcp": random.choice([True,False]),
         "ip": f"{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}",
         "metric": random.randint(1, 100),
+        "name":  generate_random_interface(),
         "netmask": f"{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}",
         "protocol": random.choice(["TCP", "UDP", "ICMP"]),
     }
@@ -80,10 +80,6 @@ def generate_random_network():
 
 def generate_random_interface():
     return {"name": f"name{random.randint(0, 9999)}"}
-
-
-def generate_random_observer():
-    return {"ingress": {"interface": generate_random_interface()}}
 
 
 def generate_random_wazuh():

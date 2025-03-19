@@ -8,7 +8,7 @@
       "refresh_interval": "5s",
       "query.default_field": [
         "network.ip",
-        "observer.ingress.interface.name"
+        "network.name"
       ]
     }
   }

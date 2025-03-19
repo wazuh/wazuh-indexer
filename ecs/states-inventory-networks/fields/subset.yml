@@ -20,14 +20,8 @@ fields:
       dhcp: {}
       ip: {}
       metric: {}
+      name: {}
       netmask: {}
       protocol: {}
-  observer:
-    fields:
-      ingress:
-        fields:
-          interface:
-            fields:
-              name: {}
   wazuh:
     fields: "*"

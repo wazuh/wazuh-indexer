@@ -18,7 +18,6 @@
 | rx_errors      | long   | Number of reception errors.                | host.network.ingress.errors      | TRUE   |
 | tx_dropped     | long   | Number of dropped outgoing packets.        | host.network.egress.drops        | TRUE   |
 | rx_dropped     | long   | Number of dropped incoming packets.        | host.network.ingress.drops       | TRUE   |
-| item_id        | string | Unique identifier for the interface entry. | observer.ingress.interface.id    | FALSE  |
 | cluster_name   | string | Wazuh cluster name                         | wazuh.cluster.name               | TRUE   |
 | cluster_node   | string | Wazuh cluster node                         | wazuh.cluster.node               | TRUE   |
 | schema_version | string | Wazuh schema version                       | wazuh.schema.version             | TRUE   |

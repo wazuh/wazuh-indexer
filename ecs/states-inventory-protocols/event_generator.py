@@ -77,7 +77,6 @@ def generate_random_observer():
 
 def generate_random_interface():
     return {
-        "id": f"{random.randint(0, 9999)}",
         "name": f"name{random.randint(0, 9999)}",
     }
 

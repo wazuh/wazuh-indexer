@@ -10,7 +10,6 @@
           "agent.id",
           "agent.host.ip",
           "observer.ingress.interface.name",
-          "observer.ingress.interface.id"
       ]
     }
   }

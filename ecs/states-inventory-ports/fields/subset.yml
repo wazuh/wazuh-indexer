@@ -18,9 +18,6 @@ fields:
     fields:
       ip: {}
       port: {}
-  device:
-    fields:
-      id: {}
   file:
     fields:
       inode: {}

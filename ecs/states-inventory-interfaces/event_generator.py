@@ -83,7 +83,6 @@ def generate_random_host(is_root_level_level=False):
 def generate_random_interface(is_root_level=False):
     return {
         "alias": f"alias{random.randint(0, 9999)}",
-        "id": f"eth{random.randint(0, 99)}",
         "mtu": f"{random.randint(1000000, 99999999)}",
         "name": f"name{random.randint(0, 9999)}",
         "state": random.choice(["Active", "Inactive", "Unknown"]),

@@ -32,7 +32,6 @@ def generate_random_data(number):
             "@timestamp": generate_random_date(),
             "agent": generate_random_agent(),
             "destination": generate_random_destination(),
-            "device": generate_random_device(),
             "file": generate_random_file(),
             "host": generate_random_host(True),
             "interface": {"state": random.choice(["LISTEN", "ESTABLISHED"])},
@@ -81,10 +80,6 @@ def generate_random_destination():
         "ip": f"{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}",
         "port": random.randint(0, 65535),
     }
-
-
-def generate_random_device():
-    return {"id": f"device{random.randint(0, 9999)}"}
 
 
 def generate_random_file():

@@ -6,7 +6,6 @@
 | agent_version  | string | Agent version.                                | agent.version              | FALSE  |
 | local_ip       | string | Local IP address.                             | destination.ip             | FALSE  |
 | local_port     | long   | Local port number.                            | destination.port           | FALSE  |
-| item_id        | string | Unique identifier for the port entry.         | device.id                  | FALSE  |
 | inode          | long   | Inode associated with the connection.         | file.inode                 | FALSE  |
 | tx_queue       | long   | Transmit queue length.                        | host.network.egress.queue  | TRUE   |
 | rx_queue       | long   | Receive queue length.                         | host.network.ingress.queue | FALSE  |

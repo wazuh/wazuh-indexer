@@ -26,7 +26,6 @@ fields:
         fields:
           interface:
             fields:
-              id: {}
               name: {}
   wazuh:
     fields: "*"

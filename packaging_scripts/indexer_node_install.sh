@@ -21,7 +21,7 @@ fi
 # ====
 # Download the Wazuh files.
 # ====
-curl -sO https://packages.wazuh.com/$1/wazuh-install.sh
+curl -sO https://packages.wazuh.com/$1/wazuh-certs-tool.sh
 curl -sO https://packages.wazuh.com/$1/config.yml
 
 # ====
@@ -37,5 +37,24 @@ EOL
 # ====
 # Install Wazuh indexer node.
 # ====
-bash wazuh-install.sh --generate-config-files
-bash wazuh-install.sh --wazuh-indexer node-1
+bash ./wazuh-certs-tool.sh -A
+tar -cvf ./wazuh-certificates.tar -C ./wazuh-certificates/ .
+rm -rf ./wazuh-certificates
+
+# ====
+# Installation based on the package manager.
+# ====
+if command -v apt-get &> /dev/null; then
+   apt-get install debconf adduser procps
+   apt-get install gnupg apt-transport-https
+   curl -s https://packages.wazuh.com/key/GPG-KEY-WAZUH | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/wazuh.gpg --import && chmod 644 /usr/share/keyrings/wazuh.gpg
+   echo "deb [signed-by=/usr/share/keyrings/wazuh.gpg] https://packages.wazuh.com/4.x/apt/ stable main" | tee -a /etc/apt/sources.list.d/wazuh.list
+   apt-get update
+
+   apt-get -y install wazuh-indexer
+else
+    yum install coreutils
+    rpm --import https://packages.wazuh.com/key/GPG-KEY-WAZUH
+    echo -e '[wazuh]\ngpgcheck=1\ngpgkey=https://packages.wazuh.com/key/GPG-KEY-WAZUH\nenabled=1\nname=EL-$releasever - Wazuh\nbaseurl=https://packages.wazuh.com/4.x/yum/\nprotect=1' | tee /etc/yum.repos.d/wazuh.repo
+    yum -y install wazuh-indexer
+fi

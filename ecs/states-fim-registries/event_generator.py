@@ -97,7 +97,7 @@ def generate_random_registry():
         "gid": f"gid{random.randint(0, 1000)}",
         "group": f"group{random.randint(0, 1000)}",
         "hive": "HKLM",
-        "key": "SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\winword.exe",
+        "key": r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\winword.exe",
         "mtime": generate_random_unix_timestamp(),
         "owner": f"owner{random.randint(0, 1000)}",
         "path": "/path/to/file",

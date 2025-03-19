@@ -58,3 +58,10 @@ else
     echo -e '[wazuh]\ngpgcheck=1\ngpgkey=https://packages.wazuh.com/key/GPG-KEY-WAZUH\nenabled=1\nname=EL-$releasever - Wazuh\nbaseurl=https://packages.wazuh.com/4.x/yum/\nprotect=1' | tee /etc/yum.repos.d/wazuh.repo
     yum -y install wazuh-indexer
 fi
+
+# ====
+# Start the Wazuh indexer service.
+# ====
+sudo systemctl daemon-reload
+sudo systemctl enable wazuh-indexer
+sudo systemctl start wazuh-indexer

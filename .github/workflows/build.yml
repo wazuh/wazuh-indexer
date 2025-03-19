@@ -226,9 +226,6 @@ jobs:
           sudo apt-get remove --purge wazuh-indexer -y
           sudo rm -r /var/lib/wazuh-indexer/
           sudo bash packaging_scripts/indexer_node_install.sh ${{ inputs.previous_version }}
-          sudo systemctl daemon-reload
-          sudo systemctl enable wazuh-indexer
-          sudo systemctl start wazuh-indexer
           sudo systemctl stop wazuh-indexer
           sudo dpkg -i "artifacts/dist/${{ steps.package.outputs.name }}"
   
@@ -238,9 +235,6 @@ jobs:
           sudo apt-get remove --purge wazuh-indexer -y
           sudo rm -r /var/lib/wazuh-indexer/
           sudo bash packaging_scripts/indexer_node_install.sh ${{ inputs.previous_version }}
-          sudo systemctl daemon-reload
-          sudo systemctl enable wazuh-indexer
-          sudo systemctl start wazuh-indexer
           sudo dpkg -i "artifacts/dist/${{ steps.package.outputs.name }}"
 
       - name: Upload artifact
@@ -275,3 +269,8 @@ jobs:
           aws s3 cp "$src" "$dest"
           s3uri="${dest}${{ steps.package.outputs.name }}.sha512"
           echo "S3 sha512 URI: ${s3uri}"
+      
+      - name: Print log in failure
+        if: ${{ failure() }}
+        run: |
+          journalctl -xeu wazuh-indexer --no-pager

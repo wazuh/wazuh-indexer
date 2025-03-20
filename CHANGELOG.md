@@ -17,7 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Removed
 
 ### Fixed
-- Fixed interactive prompt by needrestart [(#770)](https://github.com/wazuh/wazuh-indexer/pull/770)
+- Fix interactive prompt by needrestart [(#770)](https://github.com/wazuh/wazuh-indexer/pull/770)
 
 ### Security
 

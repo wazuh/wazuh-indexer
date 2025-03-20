@@ -59,6 +59,20 @@ if command -v systemd-tmpfiles > /dev/null 2>&1 && systemctl > /dev/null 2>&1; t
     systemd-tmpfiles --create wazuh-indexer.conf > /dev/null 2>&1
 fi
 
+# Avoid needrestart restarts on libraries installs and upgrades
+NEEDRESTART_CONF_DIR="/etc/needrestart/conf.d"
+NEEDRESTART_CONF_FILE="${NEEDRESTART_CONF_DIR}/wazuh-indexer.conf"
+if [ -d "${NEEDRESTART_CONF_DIR}" ]
+then
+	if [ ! -f "${NEEDRESTART_CONF_FILE}" ]
+	then
+		echo "Creating needrestart config file"
+		echo '$nrconf{blacklist_rc} = [ qr(^wazuh-indexer) ];' > "${NEEDRESTART_CONF_FILE}"
+	fi
+fi
+
+
+
 # Check if the script is executed on upgrade
 if [ -n "$2" ]; then
     if [ -f $restart_service ]; then

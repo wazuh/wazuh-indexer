@@ -11,6 +11,20 @@
 
 set -e
 
+# Remove needrestart's configuration file
+# under all prerm actions
+NEEDRESTART_CONF_DIR="/etc/needrestart/conf.d"
+NEEDRESTART_CONF_FILE="${NEEDRESTART_CONF_DIR}/wazuh-indexer.conf"
+if [ -d "${NEEDRESTART_CONF_DIR}" ]
+then
+	if [ -f "${NEEDRESTART_CONF_FILE}" ]
+	then
+		echo "Deleting needrestart config file"
+    rm "${NEEDRESTART_CONF_FILE}"
+	fi
+fi
+
+
 case "$1" in
     upgrade|deconfigure)
     ;;

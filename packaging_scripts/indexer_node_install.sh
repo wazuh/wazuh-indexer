@@ -86,8 +86,7 @@ plugins.security.system_indices.enabled: true
 plugins.security.system_indices.indices: [".plugins-ml-model", ".plugins-ml-task", ".opendistro-alerting-config", ".opendistro-alerting-alert*", ".opendistro-anomaly-results*", ".opendistro-anomaly-detector*", ".opendistro-anomaly-checkpoints", ".opendistro-anomaly-detection-state", ".opendistro-reports-*", ".opensearch-notifications-*", ".opensearch-notebooks", ".opensearch-observability", ".opendistro-asynchronous-search-response*", ".replication-metadata-store"]
 
 ### Option to allow Filebeat-oss 7.10.2 to work ###
-compatibility.override_main_response_version
-: true
+compatibility.override_main_response_version: true
 EOF
 
     # Create the directory for certificates and set permissions

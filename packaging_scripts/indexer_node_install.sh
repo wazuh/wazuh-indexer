@@ -48,8 +48,8 @@ EOF
     apt-get update
     apt-get -y install wazuh-indexer="$1-1"
 
-    # Write to /etc/opensearch/opensearch.yml
-    cat << EOF > /etc/opensearch/opensearch.yml
+    # Write to /etc/wazuh-indexer/opensearch.yml
+    cat << EOF > /etc/wazuh-indexer/opensearch.yml
 network.host: "192.168.56.6"
 node.name: "node-1"
 cluster.initial_master_nodes:

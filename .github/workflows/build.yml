@@ -219,21 +219,27 @@ jobs:
         if: ${{ matrix.distribution == 'deb' }}
         run: |
           sudo dpkg -i "artifacts/dist/${{ steps.package.outputs.name }}"
+          sudo apt-get remove --purge wazuh-indexer -y 
+          sudo rm -r /var/lib/wazuh-indexer/
       
       - name: Test DEB package update stopping the indexer
         if: ${{ matrix.distribution == 'deb' && (matrix.architecture == 'x64' ||  inputs.previous_version  >= '4.12' && matrix.architecture  == 'arm64')}}
+        env: 
+          DEBIAN_FRONTEND=noninteractive
         run: |
-          sudo apt-get remove --purge wazuh-indexer -y
-          sudo rm -r /var/lib/wazuh-indexer/
+         
           sudo bash packaging_scripts/indexer_node_install.sh ${{ inputs.previous_version }}
           sudo systemctl stop wazuh-indexer
           sudo dpkg -i "artifacts/dist/${{ steps.package.outputs.name }}"
+          sudo apt-get remove --purge wazuh-indexer -y
+          sudo rm -r /var/lib/wazuh-indexer/
   
       - name: Test DEB package update without stopping the indexer
         if: ${{ matrix.distribution == 'deb' && (matrix.architecture == 'x64' ||  inputs.previous_version  >= '4.12' && matrix.architecture  == 'arm64')}}
+        env: 
+          DEBIAN_FRONTEND=noninteractive
         run: |
-          sudo apt-get remove --purge wazuh-indexer -y
-          sudo rm -r /var/lib/wazuh-indexer/
+          
           sudo bash packaging_scripts/indexer_node_install.sh ${{ inputs.previous_version }}
           sudo dpkg -i "artifacts/dist/${{ steps.package.outputs.name }}"
 

@@ -213,6 +213,8 @@ jobs:
           sudo apt-get remove --purge wazuh-indexer -y
           sudo rm -r /var/lib/wazuh-indexer/
           sudo bash packaging_scripts/indexer_node_install.sh ${{ inputs.previous_version }}
+          sudo systemctl daemon-reload
+          sudo systemctl start wazuh-indexer.service
           sudo dpkg -i "artifacts/dist/${{ steps.package.outputs.name }}"
       
       - name: Test DEB package uninstallation

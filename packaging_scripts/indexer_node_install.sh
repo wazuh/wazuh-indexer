@@ -19,13 +19,16 @@ if [ -z "$1" ]; then
 fi
 
 if command -v apt-get &> /dev/null; then
-    # Process for systems using apt
-    VERSION=${1%.*}  # Remove the last segment of the version for the required format
+
+    VERSION=${1%.*}
 
     curl -sO https://packages.wazuh.com/$VERSION/wazuh-certs-tool.sh
     curl -sO https://packages.wazuh.com/$VERSION/config.yml
 
+    # =====
     # Write to config.yml
+    # =====
+   
     cat << EOF > config.yml
 nodes:
   indexer:
@@ -49,7 +52,9 @@ EOF
     apt-get update
     apt-get -y install wazuh-indexer="$1-1"
 
+    # ======
     # Write to /etc/wazuh-indexer/opensearch.yml
+    # ======
     cat << EOF > /etc/wazuh-indexer/opensearch.yml
 network.host: "192.168.56.6"
 node.name: "node-1"
@@ -88,8 +93,9 @@ plugins.security.system_indices.indices: [".plugins-ml-model", ".plugins-ml-task
 ### Option to allow Filebeat-oss 7.10.2 to work ###
 compatibility.override_main_response_version: true
 EOF
-
+    # =====
     # Create the directory for certificates and set permissions
+    # =====
     mkdir -p /etc/wazuh-indexer/certs
     tar -xf ./wazuh-certificates.tar -C /etc/wazuh-indexer/certs/ ./node-1.pem ./node-1-key.pem ./admin.pem ./admin-key.pem ./root-ca.pem
     mv -n /etc/wazuh-indexer/certs/node-1.pem /etc/wazuh-indexer/certs/indexer.pem
@@ -98,11 +104,15 @@ EOF
     chmod 400 /etc/wazuh-indexer/certs/*
     chown -R wazuh-indexer:wazuh-indexer /etc/wazuh-indexer/certs
 
-    # Reload systemd daemon and enable the service
+    # =====
+    # Reload systemd daemon and start the service
+    # =====
     systemctl daemon-reload
     systemctl start wazuh-indexer
     
+    # =====
     # Initialize indexer security
+    # =====
     /usr/share/wazuh-indexer/bin/indexer-security-init.sh
 
 else

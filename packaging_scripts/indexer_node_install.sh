@@ -40,6 +40,7 @@ nodes:
 EOF
 
     bash ./wazuh-certs-tool.sh -A
+    tar -cvf ./wazuh-certificates.tar -C ./wazuh-certificates/ .
 
     apt-get install -y debconf adduser procps
     apt-get install -y gnupg apt-transport-https

@@ -38,7 +38,7 @@ on:
       previous_version:
           description: "Previous version of the package."
           type: string
-          default: "4.11"
+          default: "4.11.1"
   workflow_call:
     inputs:
       revision:
@@ -71,7 +71,7 @@ on:
       previous_version:
           description: "Previous version of the package."
           type: string
-          default: "4.11"
+          default: "4.11.1"
     secrets:
       CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY:
         required: true

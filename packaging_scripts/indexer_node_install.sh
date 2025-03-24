@@ -101,7 +101,6 @@ EOF
 
     # Reload systemd daemon and enable the service
     systemctl daemon-reload
-    systemctl enable wazuh-indexer
     systemctl start wazuh-indexer
     
     # Initialize indexer security

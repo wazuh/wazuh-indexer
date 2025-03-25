@@ -107,17 +107,13 @@ EOF
     # =====
     # Reload systemd daemon and start the service
     # =====
-    echo "CONTROL POINT 1"
     systemctl daemon-reload
-    echo "CONTROL POINT 2"
     systemctl start wazuh-indexer
-    echo "CONTROL POINT 3"
     
     # =====
     # Initialize indexer security
     # =====
     /usr/share/wazuh-indexer/bin/indexer-security-init.sh
-    echo "CONTROL POINT 4"
 else
     yum install coreutils
 

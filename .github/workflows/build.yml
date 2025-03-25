@@ -194,7 +194,7 @@ jobs:
             git clone https://github.com/wazuh/wazuh-docker.git -b v${{ inputs.previous_version }}
             cd wazuh-docker/single-node/
             docker compose -f generate-indexer-certs.yml run --rm generator
-            docker-compose up -d
+            docker compose up -d
 
             docker cp /artifacts/dist/${{ steps.package.outputs.name }} single-node-wazuh.indexer-1:/home
             docker exec -it -u root single-node-wazuh.indexer-1 /bin/bash

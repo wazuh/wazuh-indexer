@@ -189,9 +189,6 @@ jobs:
             yum localinstall "/artifacts/dist/${{ steps.package.outputs.name }}" -y
     
       - name: Test RPM package update without stopping the indexer
-        if: ${{ matrix.distribution == 'rpm' && (matrix.architecture == 'x64' ||  inputs.previous_version  >= '4.12' && matrix.architecture  == 'arm64')}}
-        options: 
-            -v ${{ github.workspace }}/artifacts/dist:/artifacts/dist
         run: |
             git clone https://github.com/wazuh/wazuh-docker.git -b v${{ inputs.previous_version }}
             cd wazuh-docker/single-node/

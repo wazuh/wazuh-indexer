@@ -197,10 +197,7 @@ jobs:
             docker compose up -d
 
             docker cp ../../artifacts/dist/${{ steps.package.outputs.name }} single-node-wazuh.indexer-1:/home
-            docker exec -it -u root single-node-wazuh.indexer-1 /bin/bash
-            cd /home
-
-            rpm -ivh ./${{ steps.package.outputs.name }}
+            docker exec -u root single-node-wazuh.indexer-1 /bin/bash -c "cd /home && rpm -ivh ./${{ steps.package.outputs.name }}"
           
       - name: Test RPM package uninstallation
         if: ${{ matrix.distribution == 'rpm' }}

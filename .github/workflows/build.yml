@@ -186,7 +186,6 @@ jobs:
           run: |
             yum install -y sudo
             bash /packaging_scripts/indexer_node_install.sh ${{ inputs.previous_version }}
-            systemctl stop wazuh-indexer
             yum localinstall "/artifacts/dist/${{ steps.package.outputs.name }}" -y
     
       - name: Test RPM package update without stopping the indexer

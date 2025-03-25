@@ -118,8 +118,11 @@ EOF
     # =====
     /usr/share/wazuh-indexer/bin/indexer-security-init.sh
     echo "CONTROL POINT 4"
-
 else
-    echo "Error: Unsupported package manager. Please ensure you are using an APT or RPM based system."
-    exit 1
+    yum install coreutils
+
+    rpm --import https://packages.wazuh.com/key/GPG-KEY-WAZUH
+    echo -e '[wazuh]\ngpgcheck=1\ngpgkey=https://packages.wazuh.com/key/GPG-KEY-WAZUH\nenabled=1\nname=EL-$releasever - Wazuh\nbaseurl=https://packages.wazuh.com/4.x/yum/\nprotect=1' | tee /etc/yum.repos.d/wazuh.repo
+
+    yum -y install wazuh-indexer-$1-1
 fi

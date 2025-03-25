@@ -33,13 +33,13 @@ if command -v apt-get &> /dev/null; then
 nodes:
   indexer:
     - name: node-1
-      ip: "10.0.0.1"
+      ip: "127.0.0.1"
   server:
     - name: wazuh-1
-      ip: "10.0.0.1"
+      ip: "127.0.0.1"
   dashboard:
     - name: dashboard
-      ip: "10.0.0.1"
+      ip: "127.0.0.1"
 EOF
 
     bash ./wazuh-certs-tool.sh -A
@@ -56,13 +56,13 @@ EOF
     # Write to /etc/wazuh-indexer/opensearch.yml
     # ======
     cat << EOF > /etc/wazuh-indexer/opensearch.yml
-network.host: "10.0.0.1"
+network.host: "127.0.0.1"
 node.name: "node-1"
 cluster.initial_master_nodes:
   - "node-1"
 cluster.name: "wazuh-cluster"
 discovery.seed_hosts:
-  - "10.0.0.1"
+  - "127.0.0.1"
 node.max_local_storage_nodes: "3"
 path.data: /var/lib/wazuh-indexer
 path.logs: /var/log/wazuh-indexer

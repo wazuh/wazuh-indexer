@@ -196,7 +196,7 @@ jobs:
             docker compose -f generate-indexer-certs.yml run --rm generator
             docker compose up -d
 
-            docker cp ${{ steps.package.outputs.name }} single-node-wazuh.indexer-1:/home
+            docker cp ../../artifacts/dist/${{ steps.package.outputs.name }} single-node-wazuh.indexer-1:/home
             docker exec -it -u root single-node-wazuh.indexer-1 /bin/bash
             cd /home
 

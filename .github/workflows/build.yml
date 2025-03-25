@@ -189,17 +189,18 @@ jobs:
             yum localinstall "/artifacts/dist/${{ steps.package.outputs.name }}" -y
     
       - name: Test RPM package update without stopping the indexer
+        if: ${{ matrix.distribution == 'rpm' && (matrix.architecture == 'x64' ||  inputs.previous_version  >= '4.12' && matrix.architecture  == 'arm64')}}
         run: |
             git clone https://github.com/wazuh/wazuh-docker.git -b v${{ inputs.previous_version }}
             cd wazuh-docker/single-node/
             docker compose -f generate-indexer-certs.yml run --rm generator
             docker compose up -d
 
-            docker cp /artifacts/dist/${{ steps.package.outputs.name }} single-node-wazuh.indexer-1:/home
+            docker cp ${{ steps.package.outputs.name }} single-node-wazuh.indexer-1:/home
             docker exec -it -u root single-node-wazuh.indexer-1 /bin/bash
             cd /home
 
-            rpm -ivh ./artifacts/dist/${{ steps.package.outputs.name }}
+            rpm -ivh ./${{ steps.package.outputs.name }}
           
       - name: Test RPM package uninstallation
         if: ${{ matrix.distribution == 'rpm' }}

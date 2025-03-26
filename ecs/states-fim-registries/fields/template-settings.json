@@ -13,21 +13,26 @@
           "agent.id",
           "agent.name",
           "agent.version",
+          "event.action",
           "event.category",
           "registry.arch",
+          "registry.data.hash.md5",
+          "registry.data.hash.sha1",
+          "registry.data.hash.sha256",
+          "registry.data.type",
           "registry.gid",
           "registry.group",
-          "registry.hash.md5",
-          "registry.hash.sha1",
-          "registry.hash.sha256",
-          "registry.inode",
+          "registry.hive",
+          "registry.key",
           "registry.mtime",
           "registry.owner",
           "registry.path",
           "registry.size",
           "registry.uid",
-          "registry.data.type",
-          "registry.value"
+          "registry.value",
+          "wazuh.cluster.name",
+          "wazuh.cluster.node",
+          "wazuh.schema.version"
         ]
       }
     }

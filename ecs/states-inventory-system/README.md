@@ -22,4 +22,4 @@
 | cluster_name       | string | Wazuh cluster name                                                                | wazuh.cluster.name           | TRUE   |
 | cluster_node       | string | Wazuh cluster node                                                                | wazuh.cluster.node           | TRUE   |
 | schema_version     | string | Wazuh schema version                                                              | wazuh.schema.version         | TRUE   |
-|                    | string | Which commercial OS family (one of: linux, macos, unix, windows, ios or android). | host.os.type                 |        |
+|                    | string | Which commercial OS family (one of: linux, macos, unix, windows, ios or android). | host.os.type                 | FALSE  |

@@ -36,9 +36,9 @@ on:
         type: string
         required: false
       previous_version:
-          description: "Previous version of the package."
-          type: string
-          default: "4.11.1"
+        description: "Previous version of the package."
+        type: string
+        default: "4.11.1"
   workflow_call:
     inputs:
       revision:
@@ -69,9 +69,9 @@ on:
         type: string
         required: false
       previous_version:
-          description: "Previous version of the package."
-          type: string
-          default: "4.11.1"
+        description: "Previous version of the package."
+        type: string
+        default: "4.11.1"
     secrets:
       CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY:
         required: true
@@ -176,28 +176,31 @@ jobs:
             yum localinstall "/artifacts/dist/${{ steps.package.outputs.name }}" -y
         
       - name: Test RPM package update stopping the indexer
-        if: ${{ matrix.distribution == 'rpm' && (matrix.architecture == 'x64' ||  inputs.previous_version  >= '4.12' && matrix.architecture  == 'arm64')}}
+        if: ${{ matrix.distribution == 'rpm' && (matrix.architecture == 'x64' ||  (inputs.previous_version  >= '4.12' && matrix.architecture  == 'arm64'))}}
         uses: addnab/docker-run-action@v3
         with:
-          image: redhat/ubi9:latest
+          image: wazuh/wazuh-indexer:${{ inputs.previous_version }}
           options: 
             -v ${{ github.workspace }}/artifacts/dist:/artifacts/dist
             -v ${{ github.workspace }}/packaging_scripts:/packaging_scripts
+            --privileged --user root
           run: |
-            yum install -y sudo
             bash /packaging_scripts/indexer_node_install.sh ${{ inputs.previous_version }}
+            systemctl stop wazuh-indexer
             yum localinstall "/artifacts/dist/${{ steps.package.outputs.name }}" -y
     
       - name: Test RPM package update without stopping the indexer
-        if: ${{ matrix.distribution == 'rpm' && (matrix.architecture == 'x64' ||  inputs.previous_version  >= '4.12' && matrix.architecture  == 'arm64')}}
-        run: |
-            git clone https://github.com/wazuh/wazuh-docker.git -b v${{ inputs.previous_version }}
-            cd wazuh-docker/single-node/
-            docker compose -f generate-indexer-certs.yml run --rm generator
-            docker compose up -d
-
-            docker cp ../../artifacts/dist/${{ steps.package.outputs.name }} single-node-wazuh.indexer-1:/home
-            docker exec -u root single-node-wazuh.indexer-1 /bin/bash -c "cd /home && rpm -ivh ./${{ steps.package.outputs.name }}"
+        if: ${{ matrix.distribution == 'rpm' && (matrix.architecture == 'x64' ||  (inputs.previous_version  >= '4.12' && matrix.architecture  == 'arm64'))}}
+        uses: addnab/docker-run-action@v3
+        with:
+          image: wazuh/wazuh-indexer:${{inputs.previous_version}}
+          options: 
+            -v ${{ github.workspace }}/artifacts/dist:/artifacts/dist
+            -v ${{ github.workspace }}/packaging_scripts:/packaging_scripts
+            --privileged --user root
+          run: |
+            bash /packaging_scripts/indexer_node_install.sh ${{ inputs.previous_version }}
+            yum localinstall "/artifacts/dist/${{ steps.package.outputs.name }}" -y
           
       - name: Test RPM package uninstallation
         if: ${{ matrix.distribution == 'rpm' }}
@@ -208,9 +211,6 @@ jobs:
           run: |
             yum localinstall "/artifacts/dist/${{ steps.package.outputs.name }}" -y
             yum remove wazuh-indexer -y
-            rm -rf /var/lib/wazuh-indexer/
-            rm -rf /usr/share/wazuh-indexer/
-            rm -rf /etc/wazuh-indexer/
                         
       - name: Test DEB package installation
         if: ${{ matrix.distribution == 'deb' }}
@@ -220,7 +220,7 @@ jobs:
           sudo rm -r /var/lib/wazuh-indexer/
       
       - name: Test DEB package update stopping the indexer
-        if: ${{ matrix.distribution == 'deb' && (matrix.architecture == 'x64' ||  inputs.previous_version  >= '4.12' && matrix.architecture  == 'arm64')}}
+        if: ${{ matrix.distribution == 'deb' && (matrix.architecture == 'x64' || (inputs.previous_version  >= '4.12' && matrix.architecture  == 'arm64'))}}
         run: |
           sudo bash packaging_scripts/indexer_node_install.sh ${{ inputs.previous_version }}
           sudo systemctl stop wazuh-indexer
@@ -230,7 +230,7 @@ jobs:
           sudo rm -r /var/lib/wazuh-indexer/
   
       - name: Test DEB package update without stopping the indexer
-        if: ${{ matrix.distribution == 'deb' && (matrix.architecture == 'x64' ||  inputs.previous_version  >= '4.12' && matrix.architecture  == 'arm64')}}
+        if: ${{ matrix.distribution == 'deb' && (matrix.architecture == 'x64' || (inputs.previous_version  >= '4.12' && matrix.architecture  == 'arm64'))}}
         run: |
           
           sudo bash packaging_scripts/indexer_node_install.sh ${{ inputs.previous_version }}

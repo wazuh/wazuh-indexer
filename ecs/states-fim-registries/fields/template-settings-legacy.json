@@ -14,7 +14,7 @@
         "agent.version",
         "event.action",
         "event.category",
-        "registry.arch",
+        "registry.architecture",
         "registry.data.hash.md5",
         "registry.data.hash.sha1",
         "registry.data.hash.sha256",

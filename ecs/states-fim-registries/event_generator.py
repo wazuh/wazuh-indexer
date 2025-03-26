@@ -84,7 +84,7 @@ def generate_random_event():
 
 def generate_random_registry():
     return {
-        "arch": random.choice(["x86","amd64"]),
+        "architecture": random.choice(["x86","amd64"]),
         "data": {
             "hash": {
                 "md5": f"{random.randint(0, 9999)}",

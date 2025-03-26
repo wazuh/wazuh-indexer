@@ -4,7 +4,7 @@
   description: >
     Fields related to Windows Registry operations.
   fields:
-    - name: arch
+    - name: architecture
       type: keyword
       level: custom
       description: >

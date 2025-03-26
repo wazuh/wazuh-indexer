@@ -20,7 +20,7 @@ fields:
       category: {}
   registry:
     fields:
-      arch: {}
+      architecture: {}
       data:
         fields:
           type: {}

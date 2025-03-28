@@ -13,30 +13,22 @@ if [ -z "$1" ]; then
     exit 1
 fi
 # ======
-# Install dependencies
-# ======
-apt update
-
-apt install -y python3
-apt install -y python3-pip
-
-# ======
 # Configure the enviroment
 # ======
 
-git clone https://github.com/wazuh/wazuh-automation.git
+sudo git clone https://github.com/wazuh/wazuh-automation.git
 cd wazuh-automation
-git checkout $(./product_version.sh)
+sudo git checkout $(./product_version.sh)
 
-pip3 install -r deployability/deps/requirements.txt
+sudi pip3 install -r deployability/deps/requirements.txt
 
 # =====
 # Deployments based on architecture
 # =====
 if $1 == "x64" then
-    python3 modules/allocation/main.py --action create --provider vagrant --size medium --composite-name linux-redhat-9-amd64 --instance-name "redhat_9_amd_medium_vagrant" --inventory-output "/tmp/inventory.yaml" --track-output "/tmp/track.yaml"
+    sudo python3 modules/allocation/main.py --action create --provider vagrant --size medium --composite-name linux-redhat-9-amd64 --instance-name "redhat_9_amd_medium_vagrant" --inventory-output "/tmp/inventory.yaml" --track-output "/tmp/track.yaml"
 elif $1 == "arm64" then
-    python3 modules/allocation/main.py --action create --provider aws --size medium --composite-name linux-redhat-9-arm64 --inventory-output "/tmp/inventory.yaml" --track-output "/tmp/track.yaml" --label-termination-date "1d"  --label-team indexer --instance-name "redhat_9_amd_medium_aws"
+    sudo python3 modules/allocation/main.py --action create --provider aws --size medium --composite-name linux-redhat-9-arm64 --inventory-output "/tmp/inventory.yaml" --track-output "/tmp/track.yaml" --label-termination-date "1d"  --label-team indexer --instance-name "redhat_9_amd_medium_aws"
 else
  echo "Error in the architecture"
  exit 1

@@ -25,7 +25,7 @@ cd deployability
 # =====
 # Deployments based on architecture
 # =====
-if $1 == "x64" then
+if $1 == "x64"; then
     sudo python3 modules/allocation/main.py --action create --provider vagrant --size medium --composite-name linux-redhat-9-amd64 --instance-name "redhat_9_amd_medium_vagrant" --inventory-output "/tmp/inventory.yaml" --track-output "/tmp/track.yaml"
 else 
     sudo python3 modules/allocation/main.py --action create --provider aws --size medium --composite-name linux-redhat-9-arm64 --inventory-output "/tmp/inventory.yaml" --track-output "/tmp/track.yaml" --label-termination-date "1d"  --label-team indexer --instance-name "redhat_9_amd_medium_aws"

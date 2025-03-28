@@ -27,9 +27,6 @@ sudi pip3 install -r deployability/deps/requirements.txt
 # =====
 if $1 == "x64" then
     sudo python3 modules/allocation/main.py --action create --provider vagrant --size medium --composite-name linux-redhat-9-amd64 --instance-name "redhat_9_amd_medium_vagrant" --inventory-output "/tmp/inventory.yaml" --track-output "/tmp/track.yaml"
-elif $1 == "arm64" then
+else 
     sudo python3 modules/allocation/main.py --action create --provider aws --size medium --composite-name linux-redhat-9-arm64 --inventory-output "/tmp/inventory.yaml" --track-output "/tmp/track.yaml" --label-termination-date "1d"  --label-team indexer --instance-name "redhat_9_amd_medium_aws"
-else
- echo "Error in the architecture"
- exit 1
 fi

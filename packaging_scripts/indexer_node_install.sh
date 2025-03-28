@@ -18,18 +18,18 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-if command -v apt-get &> /dev/null; then
 
-    VERSION=${1%.*}
 
-    curl -sO https://packages.wazuh.com/$VERSION/wazuh-certs-tool.sh
-    curl -sO https://packages.wazuh.com/$VERSION/config.yml
+VERSION=${1%.*}
 
-    # =====
-    # Write to config.yml
-    # =====
-   
-    cat << EOF > config.yml
+curl -sO https://packages.wazuh.com/$VERSION/wazuh-certs-tool.sh
+curl -sO https://packages.wazuh.com/$VERSION/config.yml
+
+# =====
+# Write to config.yml
+# =====
+
+cat << EOF > config.yml
 nodes:
   indexer:
     - name: node-1
@@ -42,6 +42,7 @@ nodes:
       ip: "127.0.0.1"
 EOF
 
+if command -v apt-get &> /dev/null; then
     bash ./wazuh-certs-tool.sh -A
     tar -cvf ./wazuh-certificates.tar -C ./wazuh-certificates/ .
 
@@ -50,12 +51,21 @@ EOF
     curl -s https://packages.wazuh.com/key/GPG-KEY-WAZUH | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/wazuh.gpg --import && chmod 644 /usr/share/keyrings/wazuh.gpg
     echo "deb [signed-by=/usr/share/keyrings/wazuh.gpg] https://packages.wazuh.com/4.x/apt/ stable main" | tee -a /etc/apt/sources.list.d/wazuh.list
     apt-get update
-    apt-get -y install wazuh-indexer="$1-1"
+    apt-get -y install wazuh-indexer=$1-1
+else 
+  yum install coreutils
 
-    # ======
-    # Write to /etc/wazuh-indexer/opensearch.yml
-    # ======
-    cat << EOF > /etc/wazuh-indexer/opensearch.yml
+  rpm --import https://packages.wazuh.com/key/GPG-KEY-WAZUH
+  echo -e '[wazuh]\ngpgcheck=1\ngpgkey=https://packages.wazuh.com/key/GPG-KEY-WAZUH\nenabled=1\nname=EL-$releasever - Wazuh\nbaseurl=https://packages.wazuh.com/4.x/yum/\nprotect=1' | tee /etc/yum.repos.d/wazuh.repo
+
+  yum -y install wazuh-indexer-$1-1
+
+fi
+
+# ======
+# Write to /etc/wazuh-indexer/opensearch.yml
+# ======
+cat << EOF > /etc/wazuh-indexer/opensearch.yml
 network.host: "127.0.0.1"
 node.name: "node-1"
 cluster.initial_master_nodes:
@@ -93,32 +103,25 @@ plugins.security.system_indices.indices: [".plugins-ml-model", ".plugins-ml-task
 ### Option to allow Filebeat-oss 7.10.2 to work ###
 compatibility.override_main_response_version: true
 EOF
-    # =====
-    # Create the directory for certificates and set permissions
-    # =====
-    mkdir -p /etc/wazuh-indexer/certs
-    tar -xf ./wazuh-certificates.tar -C /etc/wazuh-indexer/certs/ ./node-1.pem ./node-1-key.pem ./admin.pem ./admin-key.pem ./root-ca.pem
-    mv -n /etc/wazuh-indexer/certs/node-1.pem /etc/wazuh-indexer/certs/indexer.pem
-    mv -n /etc/wazuh-indexer/certs/node-1-key.pem /etc/wazuh-indexer/certs/indexer-key.pem
-    chmod 500 /etc/wazuh-indexer/certs
-    chmod 400 /etc/wazuh-indexer/certs/*
-    chown -R wazuh-indexer:wazuh-indexer /etc/wazuh-indexer/certs
 
-    # =====
-    # Reload systemd daemon and start the service
-    # =====
-    systemctl daemon-reload
-    systemctl start wazuh-indexer
-    
-    # =====
-    # Initialize indexer security
-    # =====
-    /usr/share/wazuh-indexer/bin/indexer-security-init.sh
-else
-    yum install coreutils
+# =====
+# Create the directory for certificates and set permissions
+# =====
+mkdir -p /etc/wazuh-indexer/certs
+tar -xf ./wazuh-certificates.tar -C /etc/wazuh-indexer/certs/ ./node-1.pem ./node-1-key.pem ./admin.pem ./admin-key.pem ./root-ca.pem
+mv -n /etc/wazuh-indexer/certs/node-1.pem /etc/wazuh-indexer/certs/indexer.pem
+mv -n /etc/wazuh-indexer/certs/node-1-key.pem /etc/wazuh-indexer/certs/indexer-key.pem
+chmod 500 /etc/wazuh-indexer/certs
+chmod 400 /etc/wazuh-indexer/certs/*
+chown -R wazuh-indexer:wazuh-indexer /etc/wazuh-indexer/certs
 
-    rpm --import https://packages.wazuh.com/key/GPG-KEY-WAZUH
-    echo -e '[wazuh]\ngpgcheck=1\ngpgkey=https://packages.wazuh.com/key/GPG-KEY-WAZUH\nenabled=1\nname=EL-$releasever - Wazuh\nbaseurl=https://packages.wazuh.com/4.x/yum/\nprotect=1' | tee /etc/yum.repos.d/wazuh.repo
+# =====
+# Reload systemd daemon and start the service
+# =====
+systemctl daemon-reload
+systemctl start wazuh-indexer
 
-    yum -y install wazuh-indexer-$1-1
-fi
+# =====
+# Initialize indexer security
+# =====
+/usr/share/wazuh-indexer/bin/indexer-security-init.sh

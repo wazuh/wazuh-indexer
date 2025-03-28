@@ -207,7 +207,14 @@ jobs:
           bash /indexer_node_install.sh ${{ inputs.previous_version }}
           yum localinstall "${{ steps.package.outputs.name }}" -y
           yum remove wazuh-indexer -y
-                        
+
+      - name: Destroy Allocator Machine
+        if: ${{ matrix.distribution == 'rpm' }}
+        run: |
+          cd wazuh-automation/deployability
+          python3 modules/allocation/main.py --action delete --track-output "/tmp/track.yaml"
+
+
       - name: Test DEB package installation
         if: ${{ matrix.distribution == 'deb' }}
         run: |

@@ -21,7 +21,7 @@ cd wazuh-automation
 sudo git checkout $(./product_version.sh)
 
 sudi pip3 install -r deployability/deps/requirements.txt
-
+cd deployability
 # =====
 # Deployments based on architecture
 # =====

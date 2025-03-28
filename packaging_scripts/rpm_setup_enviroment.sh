@@ -15,11 +15,10 @@ fi
 # ======
 # Install dependencies
 # ======
-yum update
+apt update
 
-yum install python3
-yum install python3-pip
-yum install python3-pip
+apt install -y python3
+apt install -y python3-pip
 
 # ======
 # Configure the enviroment
@@ -35,9 +34,9 @@ pip3 install -r deployability/deps/requirements.txt
 # Deployments based on architecture
 # =====
 if $1 == "x64" then
-    python3 modules/allocation/main.py --action create --provider vagrant --size medium --composite-name linux-redhat-9-amd64 --instance-name "redhat_9_amd_medium_vagrant" --inventory-output "/tmp/dtt1-poc/agent-linux-redhat-9-amd64/inventory.yaml" --track-output "/tmp/dtt1-poc/agent-linux-redhat-9-amd64/track.yaml"
+    python3 modules/allocation/main.py --action create --provider vagrant --size medium --composite-name linux-redhat-9-amd64 --instance-name "redhat_9_amd_medium_vagrant" --inventory-output "/tmp/inventory.yaml" --track-output "/tmp/track.yaml"
 elif $1 == "arm64" then
-    python3 modules/allocation/main.py --action create --provider aws --size medium --composite-name linux-redhat-9-arm64 --inventory-output "/tmp/dtt1-poc/agent-linux-redhat-9-arm64/inventory.yaml" --track-output "/tmp/dtt1-poc/agent-linux-redhat-9-arm64/track.yaml" --label-termination-date "1d"  --label-team indexer --instance-name "redhat_9_amd_medium_aws"
+    python3 modules/allocation/main.py --action create --provider aws --size medium --composite-name linux-redhat-9-arm64 --inventory-output "/tmp/inventory.yaml" --track-output "/tmp/track.yaml" --label-termination-date "1d"  --label-team indexer --instance-name "redhat_9_amd_medium_aws"
 else
  echo "Error in the architecture"
  exit 1

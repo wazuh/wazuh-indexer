@@ -1,4 +1,4 @@
-#!bin/bash
+#!/bin/bash
 
 # This script is used to connect to the Vagrant machine or to the AWS instance.
 #

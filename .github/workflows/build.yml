@@ -79,6 +79,9 @@ on:
       CI_INTERNAL_DEVELOPMENT_BUCKET_USER_SECRET_KEY:
         required: true
         description: "AWS user secret key"
+      AWS_IAM_OVA_ROLE:
+        required: true
+        description: "AWS IAM role"
 
 # ==========================
 # Bibliography
@@ -165,6 +168,23 @@ jobs:
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }} \
             -r ${{ inputs.revision }}
+      
+      - name: Configure AWS credentials
+        if: ${{ matrix.distribution == 'rpm' }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_IAM_OVA_ROLE }}
+      
+      - name: Clone Wazuh Automation repository
+        if: ${{ matrix.distribution == 'rpm' }}
+        uses: actions/checkout@v4
+        with:
+          repository: 'wazuh/wazuh-automation'
+      
+      - name: List files
+        if: ${{ matrix.distribution == 'rpm' }}
+        run: |
+          ls -a ${{ github.workspace }}
 
       - name: Setup RPM environment
         if: ${{ matrix.distribution == 'rpm' }}

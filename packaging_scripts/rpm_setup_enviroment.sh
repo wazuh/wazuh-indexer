@@ -15,12 +15,6 @@ fi
 # ======
 # Configure the enviroment
 # ======
-
-git clone https://github.com/wazuh/wazuh-automation.git
-bash product_version.sh
-cd wazuh-automation
-git checkout $Version
-
 sudo pip3 install -r deployability/deps/requirements.txt
 cd deployability
 # =====

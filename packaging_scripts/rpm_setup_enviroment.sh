@@ -15,6 +15,7 @@ fi
 # ======
 # Configure the enviroment
 # ======
+cd wazuh-automation
 sudo pip3 install -r deployability/deps/requirements.txt
 cd deployability
 # =====

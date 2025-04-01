@@ -182,11 +182,10 @@ jobs:
       
       - name: Clone Wazuh Automation repository
         if: ${{ matrix.distribution == 'rpm' }}
-        uses: actions/checkout@v4
-        with:
-            repository: wazuh/wazuh-automation
-            token: ${{ secrets.GITHUB_TOKEN }}
-            ref: main
+        env:
+          username: "wazuh-devel-xdrsiem-indexer"
+        run: |
+          git clone https://${{ env.username }}:${{ secrets.INDEXER_BOT_TOKEN }}@github.com/wazuh/wazuh-automation.git
       
       - name: List files
         if: ${{ matrix.distribution == 'rpm' }}

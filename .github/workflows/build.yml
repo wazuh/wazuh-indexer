@@ -82,7 +82,10 @@ on:
       AWS_IAM_OVA_ROLE:
         required: true
         description: "AWS IAM role"
-
+  
+permissions:
+      id-token: write 
+      contents: read
 # ==========================
 # Bibliography
 # ==========================

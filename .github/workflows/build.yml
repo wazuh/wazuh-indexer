@@ -178,7 +178,7 @@ jobs:
         with:
           role-to-assume: ${{ secrets.AWS_IAM_OVA_ROLE }}
           role-session-name: "OVA-Builder"
-          aws-region: us-east-1
+          aws-region: ${{ secrets.CI_AWS_REGION }}
       
       - name: Clone Wazuh Automation repository
         if: ${{ matrix.distribution == 'rpm' }}

@@ -22,7 +22,11 @@ cd deployability
 # Deployments based on architecture
 # =====
 if [ "$1" = "x64" ]; then
-    sudo apt-get install -y vagrant virtualbox
+    wget -O - https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+    sudo apt update && sudo apt install vagrant
+
+    sudo apt install virtualbox
     sudo python3 modules/allocation/main.py --action create --provider vagrant --size medium --composite-name linux-redhat-9-amd64 --instance-name "redhat_9_amd_medium_vagrant" --inventory-output "/tmp/inventory.yaml" --track-output "/tmp/track.yaml"
 elif [ "$1" = "arm64" ]; then
     ls -lsah ~/.aws

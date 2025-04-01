@@ -173,7 +173,7 @@ jobs:
             -r ${{ inputs.revision }}
       
       - name: Configure AWS credentials
-        if: ${{ matrix.distribution == 'rpm' }}
+        if: ${{ matrix.distribution == 'rpm' && matrix.architecture == 'arm64' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_IAM_OVA_ROLE }}
@@ -182,10 +182,10 @@ jobs:
       
       - name: Clone Wazuh Automation repository
         if: ${{ matrix.distribution == 'rpm' }}
-        uses: actions/checkout@v4
-        with:
-          repository: 'wazuh/wazuh-automation'
-          token: ${{ github.token }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: | 
+          git clone https://github.com/wazuh/wazuh-automation.git
       
       - name: List files
         if: ${{ matrix.distribution == 'rpm' }}

@@ -5,7 +5,7 @@
 * 
 
 ### Dependencies
-*  
+* Remove unused GitHub Workflows [[#762]](https://github.com/wazuh/wazuh-indexer/pull/762)
 
 ### Changed
 * 

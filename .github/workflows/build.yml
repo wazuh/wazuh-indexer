@@ -196,6 +196,7 @@ jobs:
         if: ${{ matrix.distribution == 'rpm' }}
         run: |
           sudo bash packaging_scripts/rpm_setup_enviroment.sh ${{ matrix.architecture }}
+          sudo bash packaging_scripts/connect.sh
         
       - name: Start AWS machine
         if: ${{ matrix.distribution == 'rpm' && matrix.architecture == 'arm64' }}

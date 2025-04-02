@@ -208,7 +208,7 @@ jobs:
         if: ${{ matrix.distribution == 'rpm' }}
         run: |
           ls
-          find --name "*.yaml"
+          find -name "*.yaml"
           ./packaging_scripts/file_transfer.sh "artifacts/dist/${{ steps.package.outputs.name }}"
           ./packaging_scripts/connect.sh ${{ matrix.architecture }}
 

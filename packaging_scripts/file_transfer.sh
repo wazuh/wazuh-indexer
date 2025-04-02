@@ -13,7 +13,7 @@ if [ -z "$1" ]; then
 fi
 
 
-destination="/inventory.yaml"
+destination="/tmp/inventory.yaml"
 
 # =====
 # Extract the parameters

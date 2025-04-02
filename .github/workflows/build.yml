@@ -187,10 +187,6 @@ jobs:
         run: |
           git clone https://${{ env.username }}:${{ secrets.INDEXER_BOT_TOKEN }}@github.com/wazuh/wazuh-automation.git
       
-      - name: List files
-        if: ${{ matrix.distribution == 'rpm' }}
-        run: |
-          ls -a ${{ github.workspace }}
 
       - name: Setup RPM environment
         if: ${{ matrix.distribution == 'rpm' }}
@@ -202,12 +198,11 @@ jobs:
         if: ${{ matrix.distribution == 'rpm' && matrix.architecture == 'arm64' }}
         run: |
           cd wazuh-automation/deployability
-          python3 modules/allocation/main.py --action create --inventory-output "/inventory.yaml"  --track-output "/track.yaml" --arch "${{ matrix.architecture }}" --distribution "${{ matrix.distribution }}" --ami "ami-0b8f2a1c4d7e5f6a9" --region "${{ secrets.CI_AWS_REGION }}" --instance-type "t2.micro" --key-name "wazuh-ova-builder" --security-group "sg-0c1b8e4f3d4e5f6a9"
+          python3 modules/allocation/main.py --action create --inventory-output "/tmp/inventory.yaml"  --track-output "/tmp/track.yaml" --arch "${{ matrix.architecture }}" --distribution "${{ matrix.distribution }}" --ami "ami-0b8f2a1c4d7e5f6a9" --region "${{ secrets.CI_AWS_REGION }}" --instance-type "t2.micro" --key-name "wazuh-ova-builder" --security-group "sg-0c1b8e4f3d4e5f6a9"
 
       - name: Test RPM package installation
         if: ${{ matrix.distribution == 'rpm' }}
         run: |
-          ls
           find -name "*.yaml"
           ./packaging_scripts/file_transfer.sh "artifacts/dist/${{ steps.package.outputs.name }}"
           ./packaging_scripts/connect.sh ${{ matrix.architecture }}

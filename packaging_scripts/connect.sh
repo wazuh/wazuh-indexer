@@ -4,7 +4,7 @@
 #
 # Usage: connect.sh
 
-file="/inventory.yaml"
+file="/tmp/inventory.yaml"
 
 # =======
 # Extract the parameters

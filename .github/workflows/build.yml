@@ -209,8 +209,8 @@ jobs:
       - name: Test RPM package installation
         if: ${{ matrix.distribution == 'rpm' }}
         run: |
-          ./packaging_scripts/file_transfer.sh "artifacts/dist/${{ steps.package.outputs.name }}"
-          ./packaging_scripts/connect.sh ${{ matrix.architecture }}
+          sudo ./packaging_scripts/file_transfer.sh "artifacts/dist/${{ steps.package.outputs.name }}"
+          sudo ./packaging_scripts/connect.sh ${{ matrix.architecture }}
 
           yum localinstall "artifacts/dist/${{ steps.package.outputs.name }}" -y
         

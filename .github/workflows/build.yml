@@ -204,8 +204,8 @@ jobs:
         if: ${{ matrix.distribution == 'rpm' }}
         run: |
           sudo ./packaging_scripts/file_transfer.sh "artifacts/dist/${{ steps.package.outputs.name }}"
+          sudo ./packaging_scripts/connect.sh ${{ matrix.architecture }}
           
-          vagrant ssh
           yum localinstall "artifacts/dist/${{ steps.package.outputs.name }}" -y
         
       - name: Test RPM package uninstallation

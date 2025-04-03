@@ -17,4 +17,5 @@ private_key=$(grep 'ansible_ssh_private_key_file:' "$file" | awk '{print $2}')
 # =======
 # Connect to the machine
 # =======
-ssh -i $private_key -p $port -tt ${user}@${host}
+vagrant ssh $host -- -p $port -i $private_key
+# ssh -i $private_key -p $port -tt ${user}@${host}

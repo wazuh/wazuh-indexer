@@ -240,7 +240,7 @@ jobs:
         if: ${{ matrix.distribution == 'rpm' }}
         run: |
           cd wazuh-automation/deployability
-          python3 modules/allocation/main.py --action delete --track-output "/track.yaml"
+          python3 modules/allocation/main.py --action delete --track-output "/tmp/track.yaml"
 
 
       - name: Test DEB package installation

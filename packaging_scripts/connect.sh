@@ -17,6 +17,4 @@ private_key=$(grep 'ansible_ssh_private_key_file:' "$file" | awk '{print $2}')
 # =======
 # Connect to the machine
 # =======
-
-ssh-keyscan -H $host >> ~/.ssh/known_hosts
-ssh -i $private_key -p $port ${user}@${host}
+yes | ssh -i $private_key -p $port ${user}@${host}

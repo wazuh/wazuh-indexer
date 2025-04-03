@@ -204,7 +204,7 @@ jobs:
         if: ${{ matrix.distribution == 'rpm'  }}
         run: |
           cd /tmp/
-          find -name "*.yaml"
+          sudo pwd inventory.yaml
 
       - name: Test RPM package installation
         if: ${{ matrix.distribution == 'rpm' }}

@@ -26,4 +26,4 @@ private_key=$(grep 'ansible_ssh_private_key_file:' "$destination" | awk '{print 
 # ======
 # Copy the file to the machine
 # ======
-scp -i $private_key -P $port -o StrictHostKeyChecking=no $1 ${user}@${host}:~
+scp -T -i $private_key -P $port -o StrictHostKeyChecking=no $1 ${user}@${host}:~

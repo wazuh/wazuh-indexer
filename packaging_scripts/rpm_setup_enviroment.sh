@@ -29,10 +29,6 @@ if [ "$1" = "x64" ]; then
     sudo apt install virtualbox
     sudo python3 modules/allocation/main.py --action create --provider vagrant --size medium --composite-name linux-redhat-9-amd64 --instance-name "redhat_9_amd_medium_vagrant" --inventory-output "/tmp/inventory.yaml" --track-output "/tmp/track.yaml"
 
-    file="/tmp/inventory.yaml"
-    host=$(grep 'ansible_host:' "$file" | awk '{print $2}')
-    ssh-keyscan -H $host >> ~/.ssh/known_hosts
-
 elif [ "$1" != "arm64" ]; then
     echo "Error: Invalid architecture argument. Use 'x64' or 'arm64'."
     exit 1

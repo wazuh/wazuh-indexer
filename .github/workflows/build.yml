@@ -196,9 +196,6 @@ jobs:
           ansible_port=$(grep 'ansible_port:' /tmp/inventory.yaml | sed 's/.*: *//') && echo "ansible_port=$ansible_port" >> $GITHUB_ENV && echo "::add-mask::$ansible_port"
           ansible_user=$(grep 'ansible_user:' /tmp/inventory.yaml | sed 's/.*: *//') && echo "ansible_user=$ansible_user" >> $GITHUB_ENV && echo "::add-mask::$ansible_user"
           ansible_ssh_private_key_file=$(grep 'ansible_ssh_private_key_file:' /tmp/inventory.yaml | sed 's/.*: *//') && echo "ansible_ssh_private_key_file=$ansible_ssh_private_key_file" >> $GITHUB_ENV && echo "::add-mask::$ansible_ssh_private_key_file"
-          
-          mkdir -p ~/.ssh
-          ssh-keyscan -H ${{env.ansible_host}} -p ${{env.ansible_port}} >> ~/.ssh/known_hosts
       - name: Start AWS machine
         if: ${{ matrix.distribution == 'rpm' && matrix.architecture == 'arm64' }}
         run: |
@@ -208,8 +205,8 @@ jobs:
       - name: Test RPM package installation
         if: ${{ matrix.distribution == 'rpm' }}
         run: |
-          scp -i ${{ env.ansible_ssh_private_key_file }} -P ${{ env.ansible_port }} "artifacts/dist/${{ steps.package.outputs.name }}" ${{ env.ansible_user }}@${{ env.ansible_host }}:~
-          ssh -i ${{ env.ansible_ssh_private_key_file }} -p ${{ env.ansible_port }} ${{ env.ansible_user }}@${{ env.ansible_host }} ' yum localinstall "artifacts/dist/${{ steps.package.outputs.name }}" -y'
+          scp -o StrictHostKeyChecking=no -i ${{ env.ansible_ssh_private_key_file }} -P ${{ env.ansible_port }} "artifacts/dist/${{ steps.package.outputs.name }}" ${{ env.ansible_user }}@${{ env.ansible_host }}:~
+          ssh -o StrictHostKeyChecking=no -i ${{ env.ansible_ssh_private_key_file }} -p ${{ env.ansible_port }} ${{ env.ansible_user }}@${{ env.ansible_host }} ' yum localinstall "artifacts/dist/${{ steps.package.outputs.name }}" -y'
         
       - name: Test RPM package uninstallation
         if: ${{ matrix.distribution == 'rpm' }}

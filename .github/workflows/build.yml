@@ -196,7 +196,8 @@ jobs:
           ansible_port=$(grep 'ansible_port:' /tmp/inventory.yaml | sed 's/.*: *//') && echo "ansible_port=$ansible_port" >> $GITHUB_ENV && echo "::add-mask::$ansible_port"
           ansible_user=$(grep 'ansible_user:' /tmp/inventory.yaml | sed 's/.*: *//') && echo "ansible_user=$ansible_user" >> $GITHUB_ENV && echo "::add-mask::$ansible_user"
           ansible_ssh_private_key_file=$(grep 'ansible_ssh_private_key_file:' /tmp/inventory.yaml | sed 's/.*: *//') && echo "ansible_ssh_private_key_file=$ansible_ssh_private_key_file" >> $GITHUB_ENV && echo "::add-mask::$ansible_ssh_private_key_file"
-        
+          
+          ssh-keygen -f "/home/ubuntu/.ssh/known_hosts" -R "[${{ env.ansible_host }}]:${{ env.ansible_port }}"
       - name: Start AWS machine
         if: ${{ matrix.distribution == 'rpm' && matrix.architecture == 'arm64' }}
         run: |

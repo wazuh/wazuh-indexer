@@ -209,9 +209,7 @@ jobs:
           private_key=$(grep 'ansible_ssh_private_key_file:' /tmp/inventory.yaml | awk '{print $2}')
 
           scp -i $private_key -P $port ${{ steps.package.outputs.name }} $user@$host:~
-          ssh -i $private_key -p $port $user@$host
-          
-          yum localinstall "artifacts/dist/${{ steps.package.outputs.name }}" -y
+          ssh -i $private_key -p $port $user@$host ' yum localinstall "artifacts/dist/${{ steps.package.outputs.name }}" -y'
         
       - name: Test RPM package uninstallation
         if: ${{ matrix.distribution == 'rpm' }}

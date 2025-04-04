@@ -12,10 +12,8 @@ file="/tmp/inventory.yaml"
 host=$(grep 'ansible_host:' "$file" | awk '{print $2}')
 port=$(grep 'ansible_port:' "$file" | awk '{print $2}')
 user=$(grep 'ansible_user:' "$file" | awk '{print $2}')
-common_args=$(grep 'ansible_ssh_common_args:' "$file" | awk '{print $2}')
 private_key=$(grep 'ansible_ssh_private_key_file:' "$file" | awk '{print $2}')
-
 # =======
 # Connect to the machine
 # =======
-ssh -i $private_key -p $port $common_args $user@$host
+ssh -i $private_key -p $port $user@$host

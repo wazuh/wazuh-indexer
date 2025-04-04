@@ -21,9 +21,10 @@ destination="/tmp/inventory.yaml"
 host=$(grep 'ansible_host:' "$destination" | awk '{print $2}' )
 port=$(grep 'ansible_port:' "$destination" | awk '{print $2}' )
 user=$(grep 'ansible_user:' "$destination" | awk '{print $2}' )
+common_args=$(grep 'ansible_ssh_common_args:' "$file" | awk '{print $2}')
 private_key=$(grep 'ansible_ssh_private_key_file:' "$destination" | awk '{print $2}' )
 
 # ======
 # Copy the file to the machine
 # ======
-scp -i $private_key -P $port -o StrictHostKeyChecking=no $1 ${user}@${host}:~
+scp -i $private_key -P $port $common_args $1 ${user}@${host}:~

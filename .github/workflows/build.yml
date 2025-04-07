@@ -197,7 +197,6 @@ jobs:
           ansible_user=$(grep 'ansible_user:' /tmp/inventory.yaml | sed 's/.*: *//') && echo "ansible_user=$ansible_user" >> $GITHUB_ENV 
           ansible_ssh_private_key_file=$(grep 'ansible_ssh_private_key_file:' /tmp/inventory.yaml | sed 's/.*: *//') && echo "ansible_ssh_private_key_file=$ansible_ssh_private_key_file" >> $GITHUB_ENV
           ansible_ssh_common_args=$(grep 'ansible_ssh_common_args:' /tmp/allocatorvm/inventory.yml | sed 's/.*: *//') && echo "ansible_ssh_common_args=$ansible_ssh_common_args" >> $GITHUB_ENV
-        shell: bash
 
       - name: Start AWS machine
         if: ${{ matrix.distribution == 'rpm' && matrix.architecture == 'arm64' }}
@@ -210,7 +209,6 @@ jobs:
         run: |
           echo "SSH_COMMAND=ssh -i ${{ env.ansible_ssh_private_key_file }} -p ${{ env.ansible_port }} ${{ env.ansible_ssh_common_args }} ${{ env.ansible_user }}@${{ env.ansible_host }}" >> $GITHUB_ENV
           echo "SCP_COMMAND=scp -i ${{ env.ansible_ssh_private_key_file }} -P ${{ env.ansible_port }} ${{ env.ansible_ssh_common_args }}" >> $GITHUB_ENV
-        shell: bash
       
       - name: Test RPM package installation
         if: ${{ matrix.distribution == 'rpm' }}
@@ -218,7 +216,6 @@ jobs:
           ${{ env.SSH_COMMAND }} 'echo "hello"'
           ${{ env.SCP_COMMAND }} artifacts/dist/${{ steps.package.outputs.name }} ${{ env.ansible_user }}@${{ env.ansible_host }}:/home/${{ env.ansible_user }}/
           ${{ env.SSH_COMMAND }} "sudo yum localinstall -y /home/${{ env.ansible_user }}/${{ steps.package.outputs.name }}"
-        shell: bash
         
       - name: Test RPM package uninstallation
         if: ${{ matrix.distribution == 'rpm' }}

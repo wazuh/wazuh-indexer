@@ -209,6 +209,8 @@ jobs:
           sudo su
           chmod 700 /root/.ssh
           chmod 600 /root/.ssh/authorized_keys
+          echo "PasswordAuthentication yes" | sudo tee -a /etc/ssh/sshd_config > /dev/null
+          systemctl restart sshd
           scp -o StrictHostKeyChecking=no -i ${{ env.ansible_ssh_private_key_file }} -P ${{ env.ansible_port }} "artifacts/dist/${{ steps.package.outputs.name }}" ${{ env.ansible_user }}@${{ env.ansible_host }}:~
           ssh -o StrictHostKeyChecking=no -i ${{ env.ansible_ssh_private_key_file }} -p ${{ env.ansible_port }} ${{ env.ansible_user }}@${{ env.ansible_host }} ' yum localinstall "artifacts/dist/${{ steps.package.outputs.name }}" -y'
         

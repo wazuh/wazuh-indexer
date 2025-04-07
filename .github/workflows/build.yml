@@ -202,14 +202,17 @@ jobs:
         run: |
           cd wazuh-automation/deployability
           python3 modules/allocation/main.py --action create --inventory-output "/tmp/inventory.yaml"  --track-output "/tmp/track.yaml" --arch "${{ matrix.architecture }}" --distribution "${{ matrix.distribution }}" --ami "ami-0b8f2a1c4d7e5f6a9" --region "${{ secrets.CI_AWS_REGION }}" --instance-type "t2.micro" --key-name "wazuh-ova-builder" --security-group "sg-0c1b8e4f3d4e5f6a9"
-
+      - name: Set up SSH and SCP command
+        if: ${{ matrix.distribution == 'rpm' }}
+        run: |
+          echo "SSH_COMMAND=ssh -i ${{ env.ansible_ssh_private_key_file }} -p ${{ env.ansible_port }} ${{ env.ansible_ssh_common_args }} ${{ env.ansible_user }}@${{ env.ansible_host }}" >> $GITHUB_ENV
+          echo "SCP_COMMAND=scp -i ${{ env.ansible_ssh_private_key_file }} -P ${{ env.ansible_port }} ${{ env.ansible_ssh_common_args }}" >> $GITHUB_ENV
       - name: Test RPM package installation
         if: ${{ matrix.distribution == 'rpm' }}
         run: |
-          ssh -i ${{ env.ansible_ssh_private_key_file }} -p ${{ env.ansible_port }} ${{ env.ansible_ssh_common_args }} ${{ env.ansible_user }}@${{ env.ansible_host }} 'echo "hello"'
-          scp -i ${{ env.ansible_ssh_private_key_file }} -P ${{ env.ansible_port }} "artifacts/dist/${{ steps.package.outputs.name }}" ${{ env.ansible_ssh_common_args }} ${{ env.ansible_user }}@${{ env.ansible_host }}:~
-          ssh -i ${{ env.ansible_ssh_private_key_file }} -p ${{ env.ansible_port }} ${{ env.ansible_ssh_common_args }} ${{ env.ansible_user }}@${{ env.ansible_host }} ' yum localinstall "artifacts/dist/${{ steps.package.outputs.name }}" -y'
-        
+          ${{ env.SSH_COMMAND }} 'echo "hello"'
+          ${{ env.SCP_COMMAND }} artifacts/dist/${{ steps.package.outputs.name }} ${{ env.ansible_user }}@${{ env.ansible_host }}:/home/${{ env.ansible_user }}/
+          ${{ env.SSH_COMMAND }} "sudo yum localinstall -y /home/${{ env.ansible_user }}/${{ steps.package.outputs.name }}"
       - name: Test RPM package uninstallation
         if: ${{ matrix.distribution == 'rpm' }}
         run: |

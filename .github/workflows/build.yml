@@ -193,6 +193,7 @@ jobs:
       - name: Setup RPM environment
         if: ${{ matrix.distribution == 'rpm' }}
         run: |
+          aws configure set default.region us-east-1
           cd wazuh-automation/deployability
           if [ ${{ matrix.architecture }} = "x64" ]; then
               sudo python3 modules/allocation/main.py --action create --provider aws --size large --composite-name linux-centos-9-amd64 --instance-name "centos_9_amd_medium_vagrant" --inventory-output "/tmp/inventory.yaml" --track-output "/tmp/track.yaml" --label-team indexer --label-termination-date 1d --working-dir /tmp/indexer

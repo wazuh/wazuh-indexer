@@ -304,8 +304,8 @@ jobs:
           s3uri="${dest}${{ steps.package.outputs.name }}.sha512"
           echo "S3 sha512 URI: ${s3uri}"
       
-      - name: Print log in failure
-        if: ${{ failure() }}
+      - name: On failure delete Allocator Machine
+        if: ${{ matrix.distribution == 'rpm' && failure() }} 
         run: |
           cd wazuh-automation/deployability
           python3 modules/allocation/main.py --action delete --track-output /tmp/track.yaml

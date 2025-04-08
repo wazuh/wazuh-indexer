@@ -193,12 +193,6 @@ jobs:
         if: ${{ matrix.distribution == 'rpm' }}
         run: |
           aws configure set default.region us-east-1
-          cd wazuh-automation/deployability
-          if [ ${{ matrix.architecture }} = "x64" ]; then
-              sudo python3 modules/allocation/main.py --action create --provider aws --size large --composite-name linux-centos-9-amd64 --instance-name "centos_9_amd_medium_vagrant" --inventory-output "/tmp/inventory.yaml" --track-output "/tmp/track.yaml" --label-team indexer --label-termination-date 1d --working-dir /tmp/indexer
-          elif [ ${{ matrix.architecture }} = "arm64" ]; then
-            python3 deployability/modules/allocation/main.py --action create --provider aws --size large --composite-name  linux-centos-8-arm64 --instance-name "centos_8_arm_medium_vagrant" --inventory-output "/tmp/inventory.yaml" --track-output "/tmp/track.yaml" --label-team indexer --label-termination-date 1d --working-dir /tmp/indexer
-          fi
           sudo bash packaging_scripts/rpm_setup_enviroment.sh ${{ matrix.architecture }}
           ansible_host=$(grep 'ansible_host:' /tmp/inventory.yaml | sed 's/.*: *//') && echo "ansible_host=$ansible_host" >> $GITHUB_ENV 
           ansible_port=$(grep 'ansible_port:' /tmp/inventory.yaml | sed 's/.*: *//') && echo "ansible_port=$ansible_port" >> $GITHUB_ENV 

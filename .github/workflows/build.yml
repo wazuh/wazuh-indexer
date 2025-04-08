@@ -310,4 +310,4 @@ jobs:
         if: ${{ failure() }}
         run: |
           cd wazuh-automation/deployability
-          python3 deployability/modules/allocation/main.py --action delete --track-output /tmp/track.yaml
+          python3 modules/allocation/main.py --action delete --track-output /tmp/track.yaml

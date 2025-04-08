@@ -22,7 +22,7 @@ cd deployability
 # Deployments based on architecture
 # =====
 if [ "$1" = "x64" ]; then
-    sudo python3 modules/allocation/main.py --action create --provider aws --size large --composite-name linux-centos-9-amd64 --instance-name "centos_9_amd_medium_vagrant" --inventory-output "/tmp/inventory.yaml" --track-output "/tmp/track.yaml" --label-team indexer --label-termination-date 1d --working-dir /tmp/indexer
+    python3 modules/allocation/main.py --action create --provider aws --size large --composite-name linux-centos-9-amd64 --instance-name "centos_9_amd_medium_vagrant" --inventory-output "/tmp/inventory.yaml" --track-output "/tmp/track.yaml" --label-team indexer --label-termination-date 1d --working-dir /tmp/indexer
 elif [ "$1" = "arm64" ]; then
    python3 deployability/modules/allocation/main.py --action create --provider aws --size large --composite-name  nulix-centos-8-arm64 --instance-name "centos_8_arm_medium_vagrant" --inventory-output "/tmp/inventory.yaml" --track-output "/tmp/track.yaml" --label-team indexer --label-termination-date 1d --working-dir /tmp/indexer
 else

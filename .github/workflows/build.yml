@@ -179,7 +179,7 @@ jobs:
           role-to-assume: ${{ secrets.AWS_IAM_OVA_ROLE }}
           role-session-name: "OVA-Builder"
           aws-region: ${{ secrets.CI_AWS_REGION }}
-      
+
       - name: Clone Wazuh Automation repository
         if: ${{ matrix.distribution == 'rpm' }}
         env:
@@ -198,12 +198,6 @@ jobs:
           ansible_ssh_private_key_file=$(grep 'ansible_ssh_private_key_file:' /tmp/inventory.yaml | sed 's/.*: *//') && echo "ansible_ssh_private_key_file=$ansible_ssh_private_key_file" >> $GITHUB_ENV
           ansible_ssh_common_args=$(grep 'ansible_ssh_common_args:' /tmp/allocatorvm/inventory.yml | sed 's/.*: *//') && echo "ansible_ssh_common_args=$ansible_ssh_common_args" >> $GITHUB_ENV
 
-      - name: Start AWS machine
-        if: ${{ matrix.distribution == 'rpm' && matrix.architecture == 'arm64' }}
-        run: |
-          cd wazuh-automation/deployability
-          python3 modules/allocation/main.py --action create --inventory-output "/tmp/inventory.yaml"  --track-output "/tmp/track.yaml" --arch "${{ matrix.architecture }}" --distribution "${{ matrix.distribution }}" --ami "ami-0b8f2a1c4d7e5f6a9" --region "${{ secrets.CI_AWS_REGION }}" --instance-type "t2.micro" --key-name "wazuh-ova-builder" --security-group "sg-0c1b8e4f3d4e5f6a9"
-        
       - name: Set up SSH and SCP command
         if: ${{ matrix.distribution == 'rpm' }}
         run: |
@@ -313,4 +307,4 @@ jobs:
       - name: Print log in failure
         if: ${{ failure() }}
         run: |
-          journalctl -xeu wazuh-indexer --no-pager
+           python3 deployability/modules/allocation/main.py --action delete --track-output /tmp/track.yaml

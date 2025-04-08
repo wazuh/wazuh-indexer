@@ -22,14 +22,10 @@ cd deployability
 # Deployments based on architecture
 # =====
 if [ "$1" = "x64" ]; then
-    wget -O - https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-    sudo apt update && sudo apt install vagrant
-
-    sudo apt install virtualbox
-    sudo python3 modules/allocation/main.py --action create --provider vagrant --size medium --composite-name linux-centos-9-amd64 --instance-name "centos_9_amd_medium_vagrant" --inventory-output "/tmp/inventory.yaml" --track-output "/tmp/track.yaml"
-
-elif [ "$1" != "arm64" ]; then
+    sudo python3 modules/allocation/main.py --action create --provider aws --size large --composite-name linux-centos-9-amd64 --instance-name "centos_9_amd_medium_vagrant" --inventory-output "/tmp/inventory.yaml" --track-output "/tmp/track.yaml" --label-team indexer --label-termination-date 1d --working-dir /tmp/indexer
+elif [ "$1" = "arm64" ]; then
+   python3 deployability/modules/allocation/main.py --action create --provider aws --size large --composite-name  nulix-centos-8-arm64 --instance-name "centos_8_arm_medium_vagrant" --inventory-output "/tmp/inventory.yaml" --track-output "/tmp/track.yaml" --label-team indexer --label-termination-date 1d --working-dir /tmp/indexer
+else
     echo "Error: Invalid architecture argument. Use 'x64' or 'arm64'."
     exit 1
 fi

@@ -15,16 +15,14 @@ fi
 # ======
 # Configure the enviroment
 # ======
-cd wazuh-automation
-sudo pip3 install -r deployability/deps/requirements.txt
-cd deployability
+sudo pip3 install -r wazuh-automation/deployability/deps/requirements.txt
 # =====
 # Deployments based on architecture
 # =====
 if [ "$1" = "x64" ]; then
-    python3 modules/allocation/main.py --action create --provider aws --size large --composite-name linux-centos-9-amd64 --instance-name "centos_9_amd_medium_vagrant" --inventory-output "/tmp/inventory.yaml" --track-output "/tmp/track.yaml" --label-team indexer --label-termination-date 1d --working-dir /tmp/indexer
+    python3 wazuh-automation/deployability/modules/allocation/main.py --action create --provider aws --size large --composite-name linux-centos-9-amd64 --instance-name "centos_9_amd_medium_vagrant" --inventory-output "/tmp/inventory.yaml" --track-output "/tmp/track.yaml" --label-team indexer --label-termination-date 1d --working-dir /tmp/indexer
 elif [ "$1" = "arm64" ]; then
-   python3 modules/allocation/main.py --action create --provider aws --size large --composite-name  linux-centos-8-arm64 --instance-name "centos_8_arm_medium_vagrant" --inventory-output "/tmp/inventory.yaml" --track-output "/tmp/track.yaml" --label-team indexer --label-termination-date 1d --working-dir /tmp/indexer
+   python3 wazuh-automation/deployability/modules/allocation/main.py --action create --provider aws --size large --composite-name  linux-centos-8-arm64 --instance-name "centos_8_arm_medium_vagrant" --inventory-output "/tmp/inventory.yaml" --track-output "/tmp/track.yaml" --label-team indexer --label-termination-date 1d --working-dir /tmp/indexer
 else
     echo "Error: Invalid architecture argument. Use 'x64' or 'arm64'."
     exit 1

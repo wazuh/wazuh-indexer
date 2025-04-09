@@ -120,6 +120,7 @@ chown -R wazuh-indexer:wazuh-indexer /etc/wazuh-indexer/certs
 # Reload systemd daemon and start the service
 # =====
 systemctl daemon-reload
+systemctl enable wazuh-indexer
 systemctl start wazuh-indexer
 
 # =====

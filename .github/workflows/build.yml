@@ -204,8 +204,8 @@ jobs:
       - name: Set up SSH and SCP command
         if: ${{ matrix.distribution == 'rpm' }}
         run: |
-          echo "SSH_COMMAND=ssh -i ${{ env.ansible_ssh_private_key_file }} -p ${{ env.ansible_port }} ${{ env.ansible_ssh_common_args }} ${{ env.ansible_user }}@${{ env.ansible_host }}" >> $GITHUB_ENV
-          echo "SCP_COMMAND=scp -i ${{ env.ansible_ssh_private_key_file }} -P ${{ env.ansible_port }} ${{ env.ansible_ssh_common_args }}" >> $GITHUB_ENV
+          echo "SSH_COMMAND=ssh -o StrictHostKeyChecking=no -i ${{ env.ansible_ssh_private_key_file }} -p ${{ env.ansible_port }} ${{ env.ansible_user }}@${{ env.ansible_host }}" >> $GITHUB_ENV
+          echo "SCP_COMMAND=scp -o StrictHostKeyChecking=no -i ${{ env.ansible_ssh_private_key_file }} -P ${{ env.ansible_port }} " >> $GITHUB_ENV
       
       - name: Test RPM package installation
         if: ${{ matrix.distribution == 'rpm' }}

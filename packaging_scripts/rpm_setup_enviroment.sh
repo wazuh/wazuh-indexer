@@ -12,10 +12,6 @@ if [ -z "$1" ]; then
     echo "Error: Architecture argument is required."
     exit 1
 fi
-# ======
-# Configure the enviroment
-# ======
-pip3 install -r wazuh-automation/deployability/deps/requirements.txt
 # =====
 # Deployments based on architecture
 # =====

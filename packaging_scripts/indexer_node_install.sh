@@ -45,7 +45,6 @@ EOF
 
 bash ./wazuh-certs-tool.sh -A
 tar -cvf ./wazuh-certificates.tar -C ./wazuh-certificates/ .
-rm -rf ./wazuh-certificates
 
 if command -v apt-get &> /dev/null; then
     apt-get install -y debconf adduser procps

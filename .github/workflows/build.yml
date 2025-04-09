@@ -172,13 +172,6 @@ jobs:
             -d ${{ matrix.distribution }} \
             -r ${{ inputs.revision }}
       
-      - name: Configure AWS credentials
-        if: ${{ matrix.distribution == 'rpm' }}
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_IAM_OVA_ROLE }}
-          role-session-name: "OVA-Builder"
-          aws-region: "us-east-1"
 
       - name: Clone Wazuh Automation repository and install dependencies
         if: ${{ matrix.distribution == 'rpm' }}
@@ -189,7 +182,14 @@ jobs:
           cd wazuh-automation
           sudo pip3 install -r deployability/deps/requirements.txt
       
-      
+      - name: Configure AWS credentials
+        if: ${{ matrix.distribution == 'rpm' }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_IAM_OVA_ROLE }}
+          role-session-name: "OVA-Builder"
+          aws-region: "us-east-1"
+
       - name: Setup RPM environment
         if: ${{ matrix.distribution == 'rpm' }}
         run: |
@@ -209,6 +209,7 @@ jobs:
       - name: Test RPM package installation
         if: ${{ matrix.distribution == 'rpm' }}
         run: |
+          aws configure set region us-east-1
           ${{ env.SSH_COMMAND }} 'echo "hello"'
           ${{ env.SCP_COMMAND }} artifacts/dist/${{ steps.package.outputs.name }} ${{ env.ansible_user }}@${{ env.ansible_host }}:/home/${{ env.ansible_user }}/
           ${{ env.SSH_COMMAND }} 'sudo yum localinstall -y /home/${{ env.ansible_user }}/${{ steps.package.outputs.name }}'

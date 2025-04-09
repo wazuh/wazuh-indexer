@@ -182,17 +182,11 @@ jobs:
           cd wazuh-automation
           sudo pip3 install -r deployability/deps/requirements.txt
       
-      - name: Configure AWS credentials
-        if: ${{ matrix.distribution == 'rpm' }}
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_IAM_OVA_ROLE }}
-          role-session-name: "OVA-Builder"
-          aws-region: "us-east-1"
 
       - name: Setup RPM environment
         if: ${{ matrix.distribution == 'rpm' }}
         run: |
+          aws sts assume-role --role-arn "${{secrets.AWS_IAM_OVA_ROLE}}" --role-session-name "OVA-Builder" --region "us-east-1" | jq -r '.Credentials | {AccessKeyId: .AccessKeyId, SecretAccessKey: .SecretAccessKey, SessionToken: .SessionToken}' | while read -r access_key secret_key session_token; do export AWS_ACCESS_KEY_ID="$access_key" AWS_SECRET_ACCESS_KEY="$secret_key" AWS_SESSION_TOKEN="$session_token"; done
           sudo bash packaging_scripts/rpm_setup_enviroment.sh ${{ matrix.architecture }}
           ansible_host=$(grep 'ansible_host:' /tmp/inventory.yaml | sed 's/.*: *//') && echo "ansible_host=$ansible_host" >> $GITHUB_ENV 
           ansible_port=$(grep 'ansible_port:' /tmp/inventory.yaml | sed 's/.*: *//') && echo "ansible_port=$ansible_port" >> $GITHUB_ENV 

@@ -225,7 +225,7 @@ jobs:
           ${{ env.SCP_COMMAND }} artifacts/dist/${{ steps.package.outputs.name }} ${{ env.ansible_user }}@${{ env.ansible_host }}:/home/${{ env.ansible_user }}/
           ${{ env.SCP_COMMAND }} packaging_scripts/indexer_node_install.sh ${{ env.ansible_user }}@${{ env.ansible_host }}:/home/${{ env.ansible_user }}/
           ${{ env.SSH_COMMAND }} << EOF
-          bash /home/${{ env.ansible_user }}/indexer_node_install.sh ${{ inputs.previous_version }}
+          sudo bash /home/${{ env.ansible_user }}/indexer_node_install.sh ${{ inputs.previous_version }}
           systemctl stop wazuh-indexer
           sudo yum localinstall "/home/${{ env.ansible_user }}/${{ steps.package.outputs.name }}" -y
           sudo yum remove wazuh-indexer -y
@@ -237,7 +237,7 @@ jobs:
           ${{ env.SCP_COMMAND }} artifacts/dist/${{ steps.package.outputs.name }} ${{ env.ansible_user }}@${{ env.ansible_host }}:/home/${{ env.ansible_user }}/
           ${{ env.SCP_COMMAND }} packaging_scripts/indexer_node_install.sh ${{ env.ansible_user }}@${{ env.ansible_host }}:/home/${{ env.ansible_user }}/
           ${{ env.SSH_COMMAND }} << EOF
-          bash /home/${{ env.ansible_user }}/indexer_node_install.sh ${{ inputs.previous_version }}
+          sudo bash /home/${{ env.ansible_user }}/indexer_node_install.sh ${{ inputs.previous_version }}
           sudo yum localinstall "/home/${{ env.ansible_user }}/${{ steps.package.outputs.name }}" -y
           EOF
 

@@ -194,7 +194,7 @@ jobs:
       - name: Setup RPM environment
         if: ${{ matrix.distribution == 'rpm' }}
         run: |
-          sudo bash packaging_scripts/rpm_setup_enviroment.sh ${{ matrix.architecture }}
+          bash packaging_scripts/rpm_setup_enviroment.sh ${{ matrix.architecture }}
           ansible_host=$(grep 'ansible_host:' /tmp/inventory.yaml | sed 's/.*: *//') && echo "ansible_host=$ansible_host" >> $GITHUB_ENV 
           ansible_port=$(grep 'ansible_port:' /tmp/inventory.yaml | sed 's/.*: *//') && echo "ansible_port=$ansible_port" >> $GITHUB_ENV 
           ansible_user=$(grep 'ansible_user:' /tmp/inventory.yaml | sed 's/.*: *//') && echo "ansible_user=$ansible_user" >> $GITHUB_ENV 

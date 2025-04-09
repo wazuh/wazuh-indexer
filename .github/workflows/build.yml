@@ -210,9 +210,9 @@ jobs:
       - name: Test RPM package installation
         if: ${{ matrix.distribution == 'rpm' }}
         run: |
-          ${{ env.SSH_COMMAND }} 'echo "hello"'
-          ${{ env.SCP_COMMAND }} artifacts/dist/${{ steps.package.outputs.name }} ${{ env.ansible_user }}@${{ env.ansible_host }}:/home/${{ env.ansible_user }}/
-          ${{ env.SSH_COMMAND }} 'sudo yum localinstall -y /home/${{ env.ansible_user }}/${{ steps.package.outputs.name }}'
+          sudo ${{ env.SSH_COMMAND }} 'echo "hello"'
+          sudo ${{ env.SCP_COMMAND }} artifacts/dist/${{ steps.package.outputs.name }} ${{ env.ansible_user }}@${{ env.ansible_host }}:/home/${{ env.ansible_user }}/
+          sudo ${{ env.SSH_COMMAND }} 'sudo yum localinstall -y /home/${{ env.ansible_user }}/${{ steps.package.outputs.name }}'
         
       - name: Test RPM package uninstallation
         if: ${{ matrix.distribution == 'rpm' }}

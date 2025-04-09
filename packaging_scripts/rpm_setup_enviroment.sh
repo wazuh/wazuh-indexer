@@ -15,7 +15,7 @@ fi
 # ======
 # Configure the enviroment
 # ======
-sudo pip3 install -r wazuh-automation/deployability/deps/requirements.txt
+#sudo pip3 install -r wazuh-automation/deployability/deps/requirements.txt
 # =====
 # Deployments based on architecture
 # =====

@@ -186,15 +186,14 @@ jobs:
         if: ${{ matrix.distribution == 'rpm' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
+          aws-region: "us-east-1"
           role-to-assume: ${{ secrets.AWS_IAM_OVA_ROLE }}
           role-session-name: "OVA-Builder"
-          aws-region: "us-east-1"
+         
 
       - name: Setup RPM environment
         if: ${{ matrix.distribution == 'rpm' }}
         run: |
-          aws configure set region us-east-1
-          
           sudo bash packaging_scripts/rpm_setup_enviroment.sh ${{ matrix.architecture }}
           ansible_host=$(grep 'ansible_host:' /tmp/inventory.yaml | sed 's/.*: *//') && echo "ansible_host=$ansible_host" >> $GITHUB_ENV 
           ansible_port=$(grep 'ansible_port:' /tmp/inventory.yaml | sed 's/.*: *//') && echo "ansible_port=$ansible_port" >> $GITHUB_ENV 

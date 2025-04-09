@@ -209,7 +209,6 @@ jobs:
       - name: Test RPM package installation
         if: ${{ matrix.distribution == 'rpm' }}
         run: |
-          aws configure set region us-east-1
           ${{ env.SSH_COMMAND }} 'echo "hello"'
           ${{ env.SCP_COMMAND }} artifacts/dist/${{ steps.package.outputs.name }} ${{ env.ansible_user }}@${{ env.ansible_host }}:/home/${{ env.ansible_user }}/
           ${{ env.SSH_COMMAND }} 'sudo yum localinstall -y /home/${{ env.ansible_user }}/${{ steps.package.outputs.name }}'

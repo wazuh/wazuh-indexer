@@ -42,10 +42,12 @@ nodes:
       ip: "127.0.0.1"
 EOF
 
-if command -v apt-get &> /dev/null; then
-    bash ./wazuh-certs-tool.sh -A
-    tar -cvf ./wazuh-certificates.tar -C ./wazuh-certificates/ .
 
+bash ./wazuh-certs-tool.sh -A
+tar -cvf ./wazuh-certificates.tar -C ./wazuh-certificates/ .
+rm -rf ./wazuh-certificates
+
+if command -v apt-get &> /dev/null; then
     apt-get install -y debconf adduser procps
     apt-get install -y gnupg apt-transport-https
     curl -s https://packages.wazuh.com/key/GPG-KEY-WAZUH | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/wazuh.gpg --import && chmod 644 /usr/share/keyrings/wazuh.gpg

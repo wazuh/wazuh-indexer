@@ -210,19 +210,13 @@ jobs:
       - name: Test RPM package installation
         if: ${{ matrix.distribution == 'rpm' }}
         run: |
-          ${{ env.SSH_COMMAND }} 'echo "hello"'
           ${{ env.SCP_COMMAND }} artifacts/dist/${{ steps.package.outputs.name }} ${{ env.ansible_user }}@${{ env.ansible_host }}:/home/${{ env.ansible_user }}/
           ${{ env.SSH_COMMAND }} 'sudo yum localinstall -y /home/${{ env.ansible_user }}/${{ steps.package.outputs.name }}'
         
       - name: Test RPM package uninstallation
         if: ${{ matrix.distribution == 'rpm' }}
         run: |
-          ${{ env.SSH_COMMAND }} << EOF
-          sudo yum remove wazuh-indexer -y
-          sudo rm -rf /var/lib/wazuh-indexer/
-          sudo rm -rf /usr/share/wazuh-indexer/
-          sudo rm -rf /etc/wazuh-indexer/
-          EOF
+          ${{ env.SSH_COMMAND }} 'sudo yum remove wazuh-indexer -y'
           
       - name: Test RPM package update stopping the indexer
         if: ${{ matrix.distribution == 'rpm' && (matrix.architecture == 'x64' ||  (inputs.previous_version  >= '4.12' && matrix.architecture  == 'arm64'))}}
@@ -238,12 +232,7 @@ jobs:
       - name: Test RPM package update without stopping the indexer
         if: ${{ matrix.distribution == 'rpm' && (matrix.architecture == 'x64' ||  (inputs.previous_version  >= '4.12' && matrix.architecture  == 'arm64'))}}
         run: |
-          ${{ env.SSH_COMMAND }} << EOF
-          sudo yum remove wazuh-indexer -y
-          sudo rm -rf /var/lib/wazuh-indexer/
-          sudo rm -rf /usr/share/wazuh-indexer/
-          sudo rm -rf /etc/wazuh-indexer/
-          EOF
+          ${{ env.SSH_COMMAND }} 'sudo yum remove wazuh-indexer -y'
           ${{ env.SCP_COMMAND }} artifacts/dist/${{ steps.package.outputs.name }} ${{ env.ansible_user }}@${{ env.ansible_host }}:/home/${{ env.ansible_user }}/
           ${{ env.SCP_COMMAND }} packaging_scripts/indexer_node_install.sh ${{ env.ansible_user }}@${{ env.ansible_host }}:/home/${{ env.ansible_user }}/
           ${{ env.SSH_COMMAND }} << EOF
@@ -257,13 +246,11 @@ jobs:
           cd wazuh-automation/deployability
           python3 modules/allocation/main.py --action delete --track-output "/tmp/track.yaml"
 
-
       - name: Test DEB package installation
         if: ${{ matrix.distribution == 'deb' }}
         run: |
           sudo dpkg -i "artifacts/dist/${{ steps.package.outputs.name }}"
           sudo apt-get remove --purge wazuh-indexer -y 
-          sudo rm -r /var/lib/wazuh-indexer/
       
       - name: Test DEB package update stopping the indexer
         if: ${{ matrix.distribution == 'deb' && (matrix.architecture == 'x64' || (inputs.previous_version  >= '4.12' && matrix.architecture  == 'arm64'))}}
@@ -273,7 +260,6 @@ jobs:
           sudo dpkg -i "artifacts/dist/${{ steps.package.outputs.name }}"
           
           sudo apt-get remove --purge wazuh-indexer -y
-          sudo rm -r /var/lib/wazuh-indexer/
   
       - name: Test DEB package update without stopping the indexer
         if: ${{ matrix.distribution == 'deb' && (matrix.architecture == 'x64' || (inputs.previous_version  >= '4.12' && matrix.architecture  == 'arm64'))}}

@@ -1,7 +1,7 @@
 name: Build packages 4.x (on push)
 
 # This workflow runs when any of the following occur:
-# - when a pull request is created or updated that targets a branch starting with "4."
+# - when a pull request is created or updated that targets a branch starting with "4.13.*"
 
 on:
   pull_request:

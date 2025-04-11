@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased 4.13.x]
 ### Added
+- 
 
 ### Changed
 - Refactor `if-else` chains to use `Java 17 pattern matching switch expressions`(([#18965](https://github.com/opensearch-project/OpenSearch/pull/18965))
@@ -112,14 +113,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Bump Apache Lucene from 10.3.0 to 10.3.1 ([#19540](https://github.com/opensearch-project/OpenSearch/pull/19540))
 
 ### Changed
+- 
 
 ### Deprecated
 
 ### Removed
-- Removed unused GitHub Workflows [(#762)](https://github.com/wazuh/wazuh-indexer/pull/762)
+- 
 
 ### Fixed
+- 
 
 ### Security
+- 
 
-[Unreleased 4.12.x]: https://github.com/wazuh/wazuh-indexer/compare/4.12.0...4.13.0
+[Unreleased 4.12.x]: https://github.com/wazuh/wazuh-indexer/compare/4.12.1...4.13.0

@@ -228,14 +228,16 @@ if [ -f %{tmp_dir}/wazuh-indexer.restart ]; then
     if command -v systemctl > /dev/null; then
         echo "Restarting wazuh-indexer service..."
         systemctl restart wazuh-indexer.service > /dev/null 2>&1
+        echo "Test 1"
         exit 0
     fi
 fi
-
+echo "Test 2"
 if command -v systemctl >/dev/null && systemctl is-active %{name}.service >/dev/null; then
     echo "Stop existing %{name}.service"
     systemctl --no-reload stop %{name}.service
 fi
+echo "Test 3"
 if command -v systemctl >/dev/null && systemctl is-active %{name}-performance-analyzer.service >/dev/null; then
     echo "Stop existing %{name}-performance-analyzer.service"
     systemctl --no-reload stop %{name}-performance-analyzer.service

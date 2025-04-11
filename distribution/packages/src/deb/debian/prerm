@@ -19,10 +19,7 @@ case "$1" in
         # Stop existing service
         if command -v systemctl >/dev/null && systemctl is-active wazuh-indexer.service >/dev/null; then
             echo "Stop existing wazuh-indexer.service"
-            if ! systemctl --no-reload stop wazuh-indexer.service; then
-                echo "Error while stopping the wazuh indexer service" >&2
-                exit 1
-    fi
+            systemctl --no-reload stop wazuh-indexer.service
         fi
         if command -v systemctl >/dev/null && systemctl is-active wazuh-indexer-performance-analyzer.service >/dev/null; then
             echo "Stop existing wazuh-indexer-performance-analyzer.service"

@@ -5,19 +5,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased 4.13.x]
 ### Added
+- 
 
 ### Dependencies
 - Updated Netty to 4.1.135.Final ([#21491](https://github.com/opensearch-project/OpenSearch/pull/21491), [#21968](https://github.com/opensearch-project/OpenSearch/pull/21968))
 
 ### Changed
+- 
 
 ### Deprecated
 
 ### Removed
-- Removed unused GitHub Workflows [(#762)](https://github.com/wazuh/wazuh-indexer/pull/762)
+- 
 
 ### Fixed
+- 
 
 ### Security
+- 
 
-[Unreleased 4.12.x]: https://github.com/wazuh/wazuh-indexer/compare/4.12.0...4.13.0
+[Unreleased 4.12.x]: https://github.com/wazuh/wazuh-indexer/compare/4.12.1...4.13.0

@@ -199,33 +199,36 @@ jobs:
           ansible_port=$(grep 'ansible_port:' /tmp/inventory.yaml | sed 's/.*: *//') && echo "ansible_port=$ansible_port" >> $GITHUB_OUTPUT 
           ansible_user=$(grep 'ansible_user:' /tmp/inventory.yaml | sed 's/.*: *//') && echo "ansible_user=$ansible_user" >> $GITHUB_OUTPUT 
           ansible_ssh_private_key_file=$(grep 'ansible_ssh_private_key_file:' /tmp/inventory.yaml | sed 's/.*: *//') && echo "ansible_ssh_private_key_file=$ansible_ssh_private_key_file" >> $GITHUB_OUTPUT
+          echo "SSH_COMMAND=ssh -o StrictHostKeyChecking=no -i $ansible_ssh_private_key_file -p $ansible_port $ansible_user@$ansible_host" >> $GITHUB_OUTPUT
+          echo "SCP_COMMAND=scp -o StrictHostKeyChecking=no -i $ansible_ssh_private_key_file -P $ansible_port " >> $GITHUB_OUTPUT
         id: setup_rpm_env
-
-      - name: Set up SSH and SCP command
-        if: ${{ matrix.distribution == 'rpm' }}
-        run: |
-          echo "SSH_COMMAND=ssh -o StrictHostKeyChecking=no -i ${{ steps.setup_rpm_env.outputs.ansible_ssh_private_key_file }} -p ${{ steps.setup_rpm_env.outputs.ansible_port }} ${{ steps.setup_rpm_env.outputs.ansible_user }}@${{ steps.setup_rpm_env.outputs.ansible_host }}" >> $GITHUB_OUTPUT
-          echo "SCP_COMMAND=scp -o StrictHostKeyChecking=no -i ${{ steps.setup_rpm_env.outputs.ansible_ssh_private_key_file }} -P ${{ steps.setup_rpm_env.outputs.ansible_port }} " >> $GITHUB_OUTPUT
-        id: setup_rpm_commands
 
       - name: Test RPM package installation
         if: ${{ matrix.distribution == 'rpm' }}
         run: |
-          ${{  steps.setup_rpm_commands.outputs.SSH_COMMAND }} 'echo "hello"'
-          ${{ steps.setup_rpm_commands.outputs.SCP_COMMAND }} artifacts/dist/${{ steps.package.outputs.name }} ${{ steps.setup_rpm_env.outputs.ansible_user }}@${{ steps.setup_rpm_env.outputs.ansible_host }}:/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/
-          ${{ steps.setup_rpm_commands.outputs.SSH_COMMAND }} 'sudo yum localinstall -y /home/${{ steps.setup_rpm_env.outputs.ansible_user }}/${{ steps.package.outputs.name }}'
+          # This step sends the package to the Allocator machine and installs it
+
+          # echo "hello" is needed to create the SSH connection
+          ${{  steps.setup_rpm_env.outputs.SSH_COMMAND }} 'echo "hello"' 
+          ${{ steps.setup_rpm_env.outputs.SCP_COMMAND }} artifacts/dist/${{ steps.package.outputs.name }} ${{ steps.setup_rpm_env.outputs.ansible_user }}@${{ steps.setup_rpm_env.outputs.ansible_host }}:/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/
+          ${{ steps.setup_rpm_env.outputs.SSH_COMMAND }} 'sudo yum localinstall -y /home/${{ steps.setup_rpm_env.outputs.ansible_user }}/${{ steps.package.outputs.name }}'
         
       - name: Test RPM package uninstallation
         if: ${{ matrix.distribution == 'rpm' }}
         run: |
-          ${{ steps.setup_rpm_commands.outputs.SSH_COMMAND }} 'sudo yum remove wazuh-indexer -y'
+          # This step uninstalls the package from the Allocator machine
+
+          ${{ steps.setup_rpm_env.outputs.SSH_COMMAND }} 'sudo yum remove wazuh-indexer -y'
           
       - name: Test RPM package update stopping the indexer
         if: ${{ matrix.distribution == 'rpm' && (matrix.architecture == 'x64' ||  (inputs.previous_version  >= '4.12' && matrix.architecture  == 'arm64'))}}
         run: |
-          ${{ steps.setup_rpm_commands.outputs.SCP_COMMAND }} artifacts/dist/${{ steps.package.outputs.name }} ${{ steps.setup_rpm_env.outputs.ansible_user }}@${{ steps.setup_rpm_env.outputs.ansible_host }}:/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/
-          ${{ steps.setup_rpm_commands.outputs.SCP_COMMAND }} packaging_scripts/indexer_node_install.sh ${{ steps.setup_rpm_env.outputs.ansible_user }}@${{ steps.setup_rpm_env.outputs.ansible_host }}:/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/
-          ${{ steps.setup_rpm_commands.outputs.SSH_COMMAND }} << EOF
+          # This step sends the package to the Allocator machine and the script to install a previous version
+          # Then installs the previous version, stops the indexer and installs the new version
+
+          ${{ steps.setup_rpm_env.outputs.SCP_COMMAND }} artifacts/dist/${{ steps.package.outputs.name }} ${{ steps.setup_rpm_env.outputs.ansible_user }}@${{ steps.setup_rpm_env.outputs.ansible_host }}:/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/
+          ${{ steps.setup_rpm_env.outputs.SCP_COMMAND }} packaging_scripts/indexer_node_install.sh ${{ steps.setup_rpm_env.outputs.ansible_user }}@${{ steps.setup_rpm_env.outputs.ansible_host }}:/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/
+          ${{ steps.setup_rpm_env.outputs.SSH_COMMAND }} << EOF
           sudo bash /home/${{ steps.setup_rpm_env.outputs.ansible_user }}/indexer_node_install.sh ${{ inputs.previous_version }}
           sudo systemctl stop wazuh-indexer
           sudo yum localinstall "/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/${{ steps.package.outputs.name }}" -y
@@ -234,10 +237,13 @@ jobs:
       - name: Test RPM package update without stopping the indexer
         if: ${{ matrix.distribution == 'rpm' && (matrix.architecture == 'x64' ||  (inputs.previous_version  >= '4.12' && matrix.architecture  == 'arm64'))}}
         run: |
-          ${{ steps.setup_rpm_commands.outputs.SSH_COMMAND }} 'sudo yum remove wazuh-indexer -y'
-          ${{ steps.setup_rpm_commands.outputs.SCP_COMMAND }} artifacts/dist/${{ steps.package.outputs.name }} ${{ steps.setup_rpm_env.outputs.ansible_user }}@${{ steps.setup_rpm_env.outputs.ansible_host }}:/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/
-          ${{ steps.setup_rpm_commands.outputs.SCP_COMMAND }} packaging_scripts/indexer_node_install.sh ${{ steps.setup_rpm_env.outputs.ansible_user }}@${{ steps.setup_rpm_env.outputs.ansible_host }}:/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/
-          ${{ steps.setup_rpm_commands.outputs.SSH_COMMAND }} << EOF
+          # This step sends the package to the Allocator machine and the script to install a previous version
+          # Then installs the previous version and installs the new version without stopping the indexer
+
+          ${{ steps.setup_rpm_env.outputs.SSH_COMMAND }} 'sudo yum remove wazuh-indexer -y'
+          ${{ steps.setup_rpm_env.outputs.SCP_COMMAND }} artifacts/dist/${{ steps.package.outputs.name }} ${{ steps.setup_rpm_env.outputs.ansible_user }}@${{ steps.setup_rpm_env.outputs.ansible_host }}:/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/
+          ${{ steps.setup_rpm_env.outputs.SCP_COMMAND }} packaging_scripts/indexer_node_install.sh ${{ steps.setup_rpm_env.outputs.ansible_user }}@${{ steps.setup_rpm_env.outputs.ansible_host }}:/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/
+          ${{ steps.setup_rpm_env.outputs.SSH_COMMAND }} << EOF
           sudo bash /home/${{ steps.setup_rpm_env.outputs.ansible_user }}/indexer_node_install.sh ${{ inputs.previous_version }}
           sudo yum localinstall "/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/${{ steps.package.outputs.name }}" -y
           EOF
@@ -308,3 +314,4 @@ jobs:
         run: |
           cd wazuh-automation/deployability
           python3 modules/allocation/main.py --action delete --track-output /tmp/track.yaml
+          

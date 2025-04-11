@@ -205,7 +205,7 @@ jobs:
         if: ${{ matrix.distribution == 'rpm' }}
         run: |
           echo "SSH_COMMAND=ssh -o StrictHostKeyChecking=no -i ${{ steps.setup_rpm_env.outputs.ansible_ssh_private_key_file }} -P ${{ steps.setup_rpm_env.outputs.ansible_port }} ${{ steps.setup_rpm_env.outputs.ansible_user }}@${{ steps.setup_rpm_env.outputs.ansible_host }}" >> $GITHUB_OUTPUT
-          echo "SCP_COMMAND=scp -o StrictHostKeyChecking=no -i ${{ steps.setup_rpm_env.outputs.ansible_ssh_private_key_file }} -P ${{ steps.setup_rpm_env.outputs.ansible_port }} " >> $GITHUB_OUTPUT
+          echo "SCP_COMMAND=scp -o StrictHostKeyChecking=no -i ${{ steps.setup_rpm_env.outputs.ansible_ssh_private_key_file }} -p ${{ steps.setup_rpm_env.outputs.ansible_port }} " >> $GITHUB_OUTPUT
         id: setup_rpm_commands
 
       - name: Test RPM package installation

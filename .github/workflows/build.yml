@@ -204,27 +204,29 @@ jobs:
       - name: Set up SSH and SCP command
         if: ${{ matrix.distribution == 'rpm' }}
         run: |
-          echo "SSH_COMMAND=ssh -o StrictHostKeyChecking=no -i ${{ steps.setup_rpm_env.outputs.ansible_ssh_private_key_file }} -p ${{ steps.setup_rpm_env.outputs.ansible_port }} ${{ steps.setup_rpm_env.outputs.ansible_user }}@${{ steps.setup_rpm_env.outputs.ansible_host }}" >> $GITHUB_ENV
-          echo "SCP_COMMAND=scp -o StrictHostKeyChecking=no -i ${{ steps.setup_rpm_env.outputs.ansible_ssh_private_key_file }} -P ${{ steps.setup_rpm_env.outputs.ansible_port }} " >> $GITHUB_ENV
+        
+          echo "SSH_COMMAND=ssh -o StrictHostKeyChecking=no -i ${{ steps.setup_rpm_env.outputs.ansible_ssh_private_key_file }} -p ${{ steps.setup_rpm_env.outputs.ansible_port }} ${{ steps.setup_rpm_env.outputs.ansible_user }}@${{ steps.setup_rpm_env.outputs.ansible_host }}" >> $GITHUB_OUTPUT
+          echo "SCP_COMMAND=scp -o StrictHostKeyChecking=no -i ${{ steps.setup_rpm_env.outputs.ansible_ssh_private_key_file }} -P ${{ steps.setup_rpm_env.outputs.ansible_port }} " >> $GITHUB_OUTPUT
         id: setup_rpm_commands
 
       - name: Test RPM package installation
         if: ${{ matrix.distribution == 'rpm' }}
         run: |
-          ${{ env.SCP_COMMAND }} artifacts/dist/${{ steps.package.outputs.name }} ${{ steps.setup_rpm_env.outputs.ansible_user }}@${{ steps.setup_rpm_env.outputs.ansible_host }}:/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/
-          ${{ env.SSH_COMMAND }} 'sudo yum localinstall -y /home/${{ steps.setup_rpm_env.outputs.ansible_user }}/${{ steps.package.outputs.name }}'
+          ${{  steps.setup_rpm_commands.outputs.SSH_COMMAND }} 'echo "hello"'
+          ${{ steps.setup_rpm_commands.outputs.SCP_COMMAND }} artifacts/dist/${{ steps.package.outputs.name }} ${{ steps.setup_rpm_env.outputs.ansible_user }}@${{ steps.setup_rpm_env.outputs.ansible_host }}:/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/
+          ${{ steps.setup_rpm_commands.outputs.SSH_COMMAND }} 'sudo yum localinstall -y /home/${{ steps.setup_rpm_env.outputs.ansible_user }}/${{ steps.package.outputs.name }}'
         
       - name: Test RPM package uninstallation
         if: ${{ matrix.distribution == 'rpm' }}
         run: |
-          ${{ env.SSH_COMMAND }} 'sudo yum remove wazuh-indexer -y'
+          ${{ steps.setup_rpm_commands.outputs.SSH_COMMAND }} 'sudo yum remove wazuh-indexer -y'
           
       - name: Test RPM package update stopping the indexer
         if: ${{ matrix.distribution == 'rpm' && (matrix.architecture == 'x64' ||  (inputs.previous_version  >= '4.12' && matrix.architecture  == 'arm64'))}}
         run: |
-          ${{ env.SCP_COMMAND }} artifacts/dist/${{ steps.package.outputs.name }} ${{ steps.setup_rpm_env.outputs.ansible_user }}@${{ steps.setup_rpm_env.outputs.ansible_host }}:/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/
-          ${{ env.SCP_COMMAND }} packaging_scripts/indexer_node_install.sh ${{ steps.setup_rpm_env.outputs.ansible_user }}@${{ steps.setup_rpm_env.outputs.ansible_host }}:/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/
-          ${{ env.SSH_COMMAND }} << EOF
+          ${{ steps.setup_rpm_commands.outputs.SCP_COMMAND }} artifacts/dist/${{ steps.package.outputs.name }} ${{ steps.setup_rpm_env.outputs.ansible_user }}@${{ steps.setup_rpm_env.outputs.ansible_host }}:/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/
+          ${{ steps.setup_rpm_commands.outputs.SCP_COMMAND }} packaging_scripts/indexer_node_install.sh ${{ steps.setup_rpm_env.outputs.ansible_user }}@${{ steps.setup_rpm_env.outputs.ansible_host }}:/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/
+          ${{ steps.setup_rpm_commands.outputs.SSH_COMMAND }} << EOF
           sudo bash /home/${{ steps.setup_rpm_env.outputs.ansible_user }}/indexer_node_install.sh ${{ inputs.previous_version }}
           sudo systemctl stop wazuh-indexer
           sudo yum localinstall "/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/${{ steps.package.outputs.name }}" -y

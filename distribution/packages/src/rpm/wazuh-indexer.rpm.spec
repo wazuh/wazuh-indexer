@@ -221,7 +221,7 @@ fi
 exit 0
 
 %preun
-set -e
+set -ex
 
 if [ -f %{tmp_dir}/wazuh-indexer.restart ]; then
     rm -f %{tmp_dir}/wazuh-indexer.restart

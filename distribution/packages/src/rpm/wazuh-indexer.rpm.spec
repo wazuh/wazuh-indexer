@@ -170,6 +170,9 @@ if command -v systemctl >/dev/null && systemctl is-active %{name}-performance-an
     echo "Stop existing %{name}-performance-analyzer.service"
     systemctl --no-reload stop %{name}-performance-analyzer.service
 fi
+
+rm -rf %{product_dir}/lib/*
+
 # Create user and group if they do not already exist.
 getent group %{name} > /dev/null 2>&1 || groupadd -r %{name}
 getent passwd %{name} > /dev/null 2>&1 || \

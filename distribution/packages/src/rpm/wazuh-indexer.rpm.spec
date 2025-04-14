@@ -28,6 +28,7 @@
 %define log_dir %{_localstatedir}/log/%{name}
 %define pid_dir %{_localstatedir}/run/%{name}
 %define tmp_dir %{data_dir}/tmp
+%define state_file %{config_dir}/.was_active
 %{!?_version: %define _version 0.0.0 }
 %{!?_architecture: %define _architecture x86_64 }
 
@@ -158,20 +159,36 @@ chmod -Rf a+rX,u+w,g-w,o-w %{buildroot}/*
 exit 0
 
 %pre
-set -e
+# Remove -x once solution is approved
+set -ex 
+
 # Stop existing service
-if command -v systemctl >/dev/null && systemctl is-active %{name}.service >/dev/null; then
-    echo "Stop existing %{name}.service"
-    systemctl --no-reload stop %{name}.service
-    mkdir -p %{tmp_dir}
-    touch %{tmp_dir}/wazuh-indexer.restart
+# if command -v systemctl >/dev/null && systemctl is-active %{name}.service >/dev/null; then
+#     echo "Stop existing %{name}.service"
+#     systemctl --no-reload stop %{name}.service
+#     mkdir -p %{tmp_dir}
+#     touch %{tmp_dir}/wazuh-indexer.restart
+# fi
+# Only during upgrade
+if [ "$1" -gt 1 ]; then
+    echo "Running upgrade pre-script"
+
+    # Mark if service is running
+    if command -v systemctl >/dev/null && systemctl is-active --quiet %{name}.service; then
+        echo "Service is active, marking it for restart"
+        touch %{state_file}
+
+        echo "Stopping service before upgrade"
+        systemctl stop %{name}.service
+    else
+        echo "Service is inactive; nothing to mark"
+    fi
 fi
+
 if command -v systemctl >/dev/null && systemctl is-active %{name}-performance-analyzer.service >/dev/null; then
     echo "Stop existing %{name}-performance-analyzer.service"
     systemctl --no-reload stop %{name}-performance-analyzer.service
 fi
-
-rm -rf %{product_dir}/lib/*
 
 # Create user and group if they do not already exist.
 getent group %{name} > /dev/null 2>&1 || groupadd -r %{name}
@@ -181,12 +198,15 @@ getent passwd %{name} > /dev/null 2>&1 || \
 exit 0
 
 %post
-set -e
+# Remove -x once solution is approved
+set -ex
+
+# Fix ownership and permissions
 chown -R %{name}:%{name} %{config_dir}
 chown -R %{name}:%{name} %{log_dir}
+# chmod a+rw /tmp
 
 # Apply PerformanceAnalyzer Settings
-chmod a+rw /tmp
 if ! grep -q '## OpenSearch Performance Analyzer' %{config_dir}/jvm.options; then
    # Add Performance Analyzer settings in %{config_dir}/jvm.options
    CLK_TCK=`/usr/bin/getconf CLK_TCK`
@@ -197,28 +217,26 @@ if ! grep -q '## OpenSearch Performance Analyzer' %{config_dir}/jvm.options; the
    echo "-Djava.security.policy=file://%{config_dir}/opensearch-performance-analyzer/opensearch_security.policy" >> %{config_dir}/jvm.options
    echo "--add-opens=jdk.attach/sun.tools.attach=ALL-UNNAMED" >> %{config_dir}/jvm.options
 fi
-# Reload systemctl daemon
-if command -v systemctl > /dev/null; then
-    systemctl daemon-reload
-fi
-# Reload other configs
-if command -v systemctl > /dev/null; then
-    systemctl restart systemd-sysctl.service || true
-fi
 
-if command -v systemd-tmpfiles > /dev/null; then
-    systemd-tmpfiles --create %{name}.conf
-fi
+# System setup
+command -v systemctl && systemctl daemon-reload
+command -v systemctl && systemctl restart systemd-sysctl.service
+command -v systemd-tmpfiles && systemd-tmpfiles --create %{name}.conf
 
-if [ ! -f %{tmp_dir}/wazuh-indexer.restart ]; then
-  # Messages
-  echo "###"
-  echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using systemd"
-  echo " sudo systemctl daemon-reload"
-  echo " sudo systemctl enable wazuh-indexer.service"
-  echo "### You can start wazuh-indexer service by executing"
-  echo " sudo systemctl start wazuh-indexer.service"
-  echo "###"
+# Restart if previously active
+if [ -f %{state_file} ]; then
+    echo "Restarting %{name}.service because it was active before upgrade"
+    rm -f %{state_file}
+    systemctl restart %{name}.service
+else
+    echo "###"
+    echo "### NOT starting %{name}.service (was not active before upgrade)"
+    echo "### Please execute the following statements to configure the %{name} service to start automatically using systemd"
+    echo " sudo systemctl daemon-reload"
+    echo " sudo systemctl enable %{name}.service"
+    echo "### You can start the %{name} service by executing"
+    echo " sudo systemctl start %{name}.service"
+    echo "###"
 fi
 
 # Remove legacy VERSION file on upgrade
@@ -229,16 +247,8 @@ fi
 exit 0
 
 %preun
+# Remove -x once solution is approved
 set -ex
-
-if [ -f %{tmp_dir}/wazuh-indexer.restart ]; then
-    rm -f %{tmp_dir}/wazuh-indexer.restart
-    if command -v systemctl > /dev/null; then
-        echo "Restarting wazuh-indexer service..."
-        systemctl restart wazuh-indexer.service > /dev/null 2>&1
-        exit 0
-    fi
-fi
 
 if command -v systemctl >/dev/null && systemctl is-active %{name}.service >/dev/null; then
     echo "Stop existing %{name}.service"

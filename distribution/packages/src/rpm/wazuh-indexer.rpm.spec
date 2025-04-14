@@ -218,6 +218,11 @@ if [ ! -f %{tmp_dir}/wazuh-indexer.restart ]; then
   echo "###"
 fi
 
+# Remove legacy VERSION file on upgrade
+if [ -f %{product_dir}/VERSION ]; then
+    rm -f %{product_dir}/VERSION
+fi
+
 exit 0
 
 %preun

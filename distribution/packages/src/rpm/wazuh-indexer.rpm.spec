@@ -225,14 +225,11 @@ if [ -f %{state_file} ]; then
     rm -f %{state_file}
     systemctl restart %{name}.service
 else
-    echo "###"
-    echo "### NOT starting %{name}.service (was not active before upgrade)"
-    echo "### Please execute the following statements to configure the %{name} service to start automatically using systemd"
+    echo "### NOT starting on installation, please execute the following statements to configure %{name} service to start automatically using systemd"
     echo " sudo systemctl daemon-reload"
     echo " sudo systemctl enable %{name}.service"
     echo "### You can start the %{name} service by executing"
     echo " sudo systemctl start %{name}.service"
-    echo "###"
 fi
 
 # Remove legacy VERSION file on upgrade

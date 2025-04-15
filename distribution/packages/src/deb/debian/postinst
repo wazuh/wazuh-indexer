@@ -7,27 +7,28 @@
 # this file be licensed under the Apache-2.0 license or a
 # compatible open source license.
 
-# deb wazuh-indexer postinst script
+# deb ${name} postinst script
 
 set -e
 
 echo "Running Wazuh Indexer Post-Installation Script"
 
-product_dir=/usr/share/wazuh-indexer
-config_dir=/etc/wazuh-indexer
-data_dir=/var/lib/wazuh-indexer
-log_dir=/var/log/wazuh-indexer
-pid_dir=/run/wazuh-indexer
+name="wazuh-indexer"
+product_dir=/usr/share/${name}
+config_dir=/etc/${name}
+data_dir=/var/lib/${name}
+log_dir=/var/log/${name}
+pid_dir=/run/${name}
 tmp_dir=${data_dir}/tmp
-restart_service=${tmp_dir}/wazuh-indexer.restart
+state_file=${config_dir}/.was_active
 
 # Set owner
-chown -R wazuh-indexer:wazuh-indexer ${product_dir}
-chown -R wazuh-indexer:wazuh-indexer ${config_dir}
-chown -R wazuh-indexer:wazuh-indexer ${log_dir}
-chown -R wazuh-indexer:wazuh-indexer ${data_dir}
-chown -R wazuh-indexer:wazuh-indexer ${pid_dir}
-chown -R wazuh-indexer:wazuh-indexer ${tmp_dir}
+chown -R ${name}:${name} ${product_dir}
+chown -R ${name}:${name} ${config_dir}
+chown -R ${name}:${name} ${log_dir}
+chown -R ${name}:${name} ${data_dir}
+chown -R ${name}:${name} ${pid_dir}
+chown -R ${name}:${name} ${tmp_dir}
 
 # Reload systemctl daemon
 if command -v systemctl > /dev/null; then
@@ -40,14 +41,15 @@ if command -v systemctl > /dev/null; then
 fi
 
 if command -v systemd-tmpfiles > /dev/null; then
-    systemd-tmpfiles --create wazuh-indexer.conf
+    systemd-tmpfiles --create ${name}.conf
 fi
 
-if [ -f $restart_service ]; then
-    rm -f $restart_service
-    echo "Restarting wazuh-indexer service..."
+# Preserve service state flag across upgrade
+if [ -f ${state_file} ]; then
+    rm -f ${state_file}
+    echo "Restarting ${name} service..."
     if command -v systemctl > /dev/null; then
-        systemctl restart wazuh-indexer.service > /dev/null 2>&1
+        systemctl restart ${name}.service > /dev/null 2>&1
     fi
     exit 0
 fi
@@ -58,10 +60,10 @@ if [ -f "${product_dir}"/VERSION ]; then
 fi
 
 # Messages
-echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using systemd"
+echo "### NOT starting on installation, please execute the following statements to configure ${name} service to start automatically using systemd"
 echo " sudo systemctl daemon-reload"
-echo " sudo systemctl enable wazuh-indexer.service"
-echo "### You can start wazuh-indexer service by executing"
-echo " sudo systemctl start wazuh-indexer.service"
+echo " sudo systemctl enable ${name}.service"
+echo "### You can start ${name} service by executing"
+echo " sudo systemctl start ${name}.service"
 
 exit 0

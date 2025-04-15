@@ -214,16 +214,18 @@ exit 0
 
 %posttrans
 
-# System setup
-command -v systemctl && systemctl daemon-reload
-command -v systemctl && systemctl restart systemd-sysctl.service
-command -v systemd-tmpfiles && systemd-tmpfiles --create %{name}.conf
+set -ex
+
+# Reload systemd
+command -v systemctl > /dev/null && systemctl daemon-reload
+command -v systemctl > /dev/null && systemctl restart systemd-sysctl.service
+command -v systemd-tmpfiles > /dev/null && systemd-tmpfiles --create %{name}.conf
 
 # Restart if previously active
 if [ -f %{state_file} ]; then
     echo "Restarting %{name}.service because it was active before upgrade"
     rm -f %{state_file}
-    systemctl restart %{name}.service
+    command -v systemctl > /dev/null && systemctl restart %{name}.service
 else
     echo "### NOT starting on installation, please execute the following statements to configure %{name} service to start automatically using systemd"
     echo " sudo systemctl daemon-reload"

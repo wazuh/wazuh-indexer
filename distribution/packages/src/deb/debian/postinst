@@ -30,40 +30,27 @@ chown -R ${name}:${name} ${data_dir}
 chown -R ${name}:${name} ${pid_dir}
 chown -R ${name}:${name} ${tmp_dir}
 
-# Reload systemctl daemon
-if command -v systemctl > /dev/null; then
-    systemctl daemon-reload
-fi
-
-# Reload other configs
-if command -v systemctl > /dev/null; then
-    systemctl restart systemd-sysctl.service || true
-fi
-
-if command -v systemd-tmpfiles > /dev/null; then
-    systemd-tmpfiles --create ${name}.conf
-fi
+# Reload systemd
+command -v systemctl >/dev/null && systemctl daemon-reload
+command -v systemctl >/dev/null && systemctl restart systemd-sysctl.service
+command -v systemd-tmpfiles >/dev/null && systemd-tmpfiles --create ${name}.conf
 
 # Preserve service state flag across upgrade
 if [ -f ${state_file} ]; then
+    echo "Restarting ${name}.service because it was active before upgrade"
     rm -f ${state_file}
-    echo "Restarting ${name} service..."
-    if command -v systemctl > /dev/null; then
-        systemctl restart ${name}.service > /dev/null 2>&1
-    fi
-    exit 0
+    command -v systemctl >/dev/null && systemctl restart ${name}.service
+else
+    echo "### NOT starting on installation, please execute the following statements to configure ${name} service to start automatically using systemd"
+    echo " sudo systemctl daemon-reload"
+    echo " sudo systemctl enable ${name}.service"
+    echo "### You can start ${name} service by executing"
+    echo " sudo systemctl start ${name}.service"
 fi
 
 # Remove legacy VERSION file on upgrade
 if [ -f "${product_dir}"/VERSION ]; then
     rm -f "${product_dir}"/VERSION
 fi
-
-# Messages
-echo "### NOT starting on installation, please execute the following statements to configure ${name} service to start automatically using systemd"
-echo " sudo systemctl daemon-reload"
-echo " sudo systemctl enable ${name}.service"
-echo "### You can start ${name} service by executing"
-echo " sudo systemctl start ${name}.service"
 
 exit 0

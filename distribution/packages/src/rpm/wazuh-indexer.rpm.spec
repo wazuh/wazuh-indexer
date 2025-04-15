@@ -162,13 +162,6 @@ exit 0
 # Remove -x once solution is approved
 set -ex 
 
-# Stop existing service
-# if command -v systemctl >/dev/null && systemctl is-active %{name}.service >/dev/null; then
-#     echo "Stop existing %{name}.service"
-#     systemctl --no-reload stop %{name}.service
-#     mkdir -p %{tmp_dir}
-#     touch %{tmp_dir}/wazuh-indexer.restart
-# fi
 # Only during upgrade
 if [ "$1" -gt 1 ]; then
     echo "Running upgrade pre-script"
@@ -204,7 +197,6 @@ set -ex
 # Fix ownership and permissions
 chown -R %{name}:%{name} %{config_dir}
 chown -R %{name}:%{name} %{log_dir}
-# chmod a+rw /tmp
 
 # Apply PerformanceAnalyzer Settings
 if ! grep -q '## OpenSearch Performance Analyzer' %{config_dir}/jvm.options; then
@@ -217,6 +209,10 @@ if ! grep -q '## OpenSearch Performance Analyzer' %{config_dir}/jvm.options; the
    echo "-Djava.security.policy=file://%{config_dir}/opensearch-performance-analyzer/opensearch_security.policy" >> %{config_dir}/jvm.options
    echo "--add-opens=jdk.attach/sun.tools.attach=ALL-UNNAMED" >> %{config_dir}/jvm.options
 fi
+
+exit 0
+
+%posttrans
 
 # System setup
 command -v systemctl && systemctl daemon-reload
@@ -301,6 +297,9 @@ exit 0
 %attr(750, %{name}, %{name}) %{product_dir}/jdk/lib/jspawnhelper
 %attr(750, %{name}, %{name}) %{product_dir}/jdk/lib/modules
 %attr(750, %{name}, %{name}) %{product_dir}/performance-analyzer-rca/bin/*
+
+# Preserve service state flag across upgrade
+%ghost %attr(440, %{name}, %{name}) %{config_dir}/.was_active
 
 %changelog
 * Wed Apr 30 2025 support <info@wazuh.com> - 4.12.0

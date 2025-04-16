@@ -56,7 +56,6 @@ if ! [[ $PREVIOUS_VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
     exit 1
 fi
 
-
 # Define file paths
 VERSION_FILE="VERSION.json"
 DISTRIBUTION_FILE="distribution/packages/src/rpm/wazuh-indexer.rpm.spec"
@@ -67,7 +66,8 @@ RELEASE_NOTES_FILE="release-notes/wazuh.release-notes-${VERSION}.md"
 BACKUP_DIR="/tmp/wazuh-backups"
 
 # Templates for CHANGELOG and Release Notes
-CHANGELOG_TEMPLATE_CONTENT=$(cat <<'EOF'
+CHANGELOG_TEMPLATE_CONTENT=$(
+    cat <<'EOF'
 # CHANGELOG
 All notable changes to this project are documented in this file.
 
@@ -99,7 +99,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 EOF
 )
 
-RELEASE_NOTES_TEMPLATE_CONTENT=$(cat <<'EOF'
+RELEASE_NOTES_TEMPLATE_CONTENT=$(
+    cat <<'EOF'
 <DATE> Version <VERSION> Release Notes
 
 ## [<VERSION>]
@@ -126,29 +127,27 @@ RELEASE_NOTES_TEMPLATE_CONTENT=$(cat <<'EOF'
 EOF
 )
 
-backup_file() {
+function backup_file() {
     local file="$1"
     local filename
     filename=$(basename "$file")
-    
     if [ -f "$file" ]; then
         mkdir -p "$BACKUP_DIR"
         cp "$file" "$BACKUP_DIR/${filename}.bak"
-        echo "Backed up '$file' to '$BACKUP_DIR/${filename}.bak'."
     else
         echo "Warning: '$file' does not exist; skipping backup."
     fi
 }
 
-
-# Backup necessary files
-backup_file "$VERSION_FILE"
-backup_file "$DISTRIBUTION_FILE"
-backup_file "$CHANGELOG_FILE"
-backup_file "$RELEASE_NOTES_FILE"
+function backup_files() {
+    backup_file "$VERSION_FILE"
+    backup_file "$DISTRIBUTION_FILE"
+    backup_file "$CHANGELOG_FILE"
+    backup_file "$RELEASE_NOTES_FILE"
+    echo "Backup of files completed. Backups are stored in $BACKUP_DIR."
+}
 
 function update_version_json() {
-    echo "Updating ${VERSION_FILE} with version: $VERSION and stage: $STAGE."
     if [ ! -f "$VERSION_FILE" ]; then
         echo "Error: ${VERSION_FILE} does not exist. Exiting."
         exit 1
@@ -161,13 +160,10 @@ function update_version_json() {
         echo "Error: Failed to update ${VERSION_FILE}. Exiting."
         exit 1
     fi
-    # jq --arg version "$VERSION" --arg stage "$STAGE" '.version = $version | .stage = $stage' "$VERSION_FILE" >"${VERSION_FILE}.tmp"
-    # mv "${VERSION_FILE}.tmp" "$VERSION_FILE"
     echo "Updated ${VERSION_FILE} with version: $VERSION and stage: $STAGE."
 }
 
 function update_rpm_spec() {
-    echo "Updating ${DISTRIBUTION_FILE} with changelog entry for version: $VERSION."
     if [ ! -f "$DISTRIBUTION_FILE" ]; then
         echo "Error: ${DISTRIBUTION_FILE} does not exist. Exiting."
         exit 1
@@ -191,13 +187,16 @@ function update_rpm_spec() {
                 inserted=1
             }
         }
-    ' "$DISTRIBUTION_FILE" > "${DISTRIBUTION_FILE}.tmp"
+    ' "$DISTRIBUTION_FILE" >"${DISTRIBUTION_FILE}.tmp"
     mv "${DISTRIBUTION_FILE}.tmp" "$DISTRIBUTION_FILE"
     echo "Updated ${DISTRIBUTION_FILE} with changelog entry for version: $VERSION."
 }
 
 function update_changelog() {
-
+    if [ ! -f "$CHANGELOG_FILE" ]; then
+        echo "Error: ${CHANGELOG_FILE} does not exist. Exiting."
+        exit 1
+    fi
     CHANGELOG_CONTENT=$(echo "$CHANGELOG_TEMPLATE_CONTENT" |
         sed "s|<VERSION>|${VERSION}|g" |
         sed "s|<PREVIOUS_VERSION>|${PREVIOUS_VERSION}|g")
@@ -206,17 +205,20 @@ function update_changelog() {
 }
 
 function update_release_notes() {
+    if [ ! -f "$RELEASE_NOTES_FILE" ]; then
+        echo "Error: ${RELEASE_NOTES_FILE} does not exist. Exiting."
+        exit 1
+    fi
     TODAY=$(date +%Y-%m-%d)
     RELEASE_NOTES_CONTENT=$(echo "$RELEASE_NOTES_TEMPLATE_CONTENT" |
         sed "s|<VERSION>|${VERSION}|g" |
         sed "s|<DATE>|${TODAY}|g")
     echo "$RELEASE_NOTES_CONTENT" >"$RELEASE_NOTES_FILE"
     echo "Created/Updated ${RELEASE_NOTES_FILE} with version: $VERSION."
-
-    echo "All updates completed successfully."
 }
 
 echo "Starting the update process for version: $VERSION and stage: $STAGE."
+backup_files
 update_version_json
 update_rpm_spec
 update_changelog

@@ -52,7 +52,24 @@ mkdir -p "$BACKUP_DIR"
 cp "$VERSION_FILE" "$BACKUP_DIR/VERSION.json.bak"
 echo "[$(date +"%Y-%m-%d %H:%M:%S")] Backed up VERSION.json to $BACKUP_DIR/VERSION.json.bak"
 
-# Update VERSION.json
+function navigate_to_project_root() {
+    local repo_root_marker
+    local script_path
+    repo_root_marker=".github"
+    script_path=$(dirname "$(realpath "$0")")
+
+    while [[ "$script_path" != "/" ]] && [[ ! -d "$script_path/$repo_root_marker" ]]; do
+        script_path=$(dirname "$script_path")
+    done
+
+    if [[ "$script_path" == "/" ]]; then
+        echo "Error: Unable to find the repository root."
+        exit 1
+    fi
+
+    cd "$script_path"
+}
+
 function update_version_json() {
     TMP_FILE=$(mktemp)
     if [ ! -f "$VERSION_FILE" ]; then
@@ -72,6 +89,7 @@ function update_version_json() {
     echo "[$(date +"%Y-%m-%d %H:%M:%S")] Updated ${VERSION_FILE} with version=$VERSION and stage=$STAGE"
 }
 
+navigate_to_project_root
 update_version_json
 
 echo "[$(date +"%Y-%m-%d %H:%M:%S")] Version bump completed successfully."

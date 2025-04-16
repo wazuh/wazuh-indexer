@@ -131,6 +131,24 @@ function validate_inputs() {
     fi
 }
 
+function navigate_to_project_root() {
+    local repo_root_marker
+    local script_path
+    repo_root_marker=".github"
+    script_path=$(dirname "$(realpath "$0")")
+
+    while [[ "$script_path" != "/" ]] && [[ ! -d "$script_path/$repo_root_marker" ]]; do
+        script_path=$(dirname "$script_path")
+    done
+
+    if [[ "$script_path" == "/" ]]; then
+        echo "Error: Unable to find the repository root."
+        exit 1
+    fi
+
+    cd "$script_path"
+}
+
 function backup_file() {
     local file="$1"
     local filename
@@ -195,6 +213,7 @@ function update_release_notes() {
     echo "[$(date +"%Y-%m-%d %H:%M:%S")] Created/Updated $RELEASE_NOTES_FILE with version=$VERSION"
 }
 
+navigate_to_project_root
 validate_inputs
 backup_files
 update_version_json

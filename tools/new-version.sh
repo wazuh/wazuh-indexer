@@ -164,17 +164,16 @@ function backup_file() {
     if [ -f "$file" ]; then
         mkdir -p "$BACKUP_DIR"
         cp "$file" "$BACKUP_DIR/${filename}.bak"
-        echo "[$(date +"%Y-%m-%d %H:%M:%S")] Backed up $file to $BACKUP_DIR/${filename}.bak"
     else
         echo "[$(date +"%Y-%m-%d %H:%M:%S")] Warning: $file does not exist; skipping backup."
     fi
 }
 
 function backup_files() {
+    echo "[$(date +"%Y-%m-%d %H:%M:%S")] Starting backup of files..."
     backup_file "$VERSION_FILE"
     backup_file "$DISTRIBUTION_FILE"
     backup_file "$CHANGELOG_FILE"
-    backup_file "$RELEASE_NOTES_FILE"
     echo "[$(date +"%Y-%m-%d %H:%M:%S")] Backup of files completed."
 }
 
@@ -218,7 +217,7 @@ function update_release_notes() {
     today=$(date +%Y-%m-%d)
     content=$(echo "$RELEASE_NOTES_TEMPLATE_CONTENT" | sed "s|<VERSION>|$VERSION|g" | sed "s|<DATE>|$today|g")
     echo "$content" >"$RELEASE_NOTES_FILE"
-    echo "[$(date +"%Y-%m-%d %H:%M:%S")] Created/Updated $RELEASE_NOTES_FILE with version=$VERSION"
+    echo "[$(date +"%Y-%m-%d %H:%M:%S")] Created $RELEASE_NOTES_FILE with version=$VERSION"
 }
 
 navigate_to_project_root

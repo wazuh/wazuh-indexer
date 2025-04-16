@@ -35,26 +35,6 @@ fi
 VERSION=$1
 STAGE=$2
 PREVIOUS_VERSION=$3
-# Convert to lowercase for consistent matching
-NORMALIZED_STAGE=$(echo "$STAGE" | tr '[:upper:]' '[:lower:]')
-
-# Validate version format
-if ! [[ $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    echo "Error: Invalid version format. Expected format is X.Y.Z (e.g., 1.2.3)." >&2
-    exit 1
-fi
-
-# Validate stage format (e.g., alpha, alpha1, beta2, rc3, stable)
-if ! [[ $NORMALIZED_STAGE =~ ^(alpha[0-9]*|beta[0-9]*|rc[0-9]*|stable)$ ]]; then
-    echo "Error: Invalid stage. Expected values like: alpha, beta2, rc, stable, etc." >&2
-    exit 1
-fi
-
-# Validate previous version format (if extracted)
-if ! [[ $PREVIOUS_VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    echo "Error: Invalid previous version format. Expected format is X.Y.Z (e.g., 1.2.3)." >&2
-    exit 1
-fi
 
 # Define file paths
 VERSION_FILE="VERSION.json"
@@ -127,6 +107,29 @@ RELEASE_NOTES_TEMPLATE_CONTENT=$(
 EOF
 )
 
+function validate_inputs() {
+    # Convert to lowercase for consistent matching
+    NORMALIZED_STAGE=$(echo "$STAGE" | tr '[:upper:]' '[:lower:]')
+
+    # Validate version format
+    if ! [[ $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        echo "Error: Invalid version format. Expected format is X.Y.Z (e.g., 1.2.3)." >&2
+        exit 1
+    fi
+
+    # Validate stage format (e.g., alpha, alpha1, beta2, rc3, stable)
+    if ! [[ $NORMALIZED_STAGE =~ ^(alpha[0-9]*|beta[0-9]*|rc[0-9]*|stable)$ ]]; then
+        echo "Error: Invalid stage. Expected values like: alpha, beta2, rc, stable, etc." >&2
+        exit 1
+    fi
+
+    # Validate previous version format (if extracted)
+    if ! [[ $PREVIOUS_VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        echo "Error: Invalid previous version format. Expected format is X.Y.Z (e.g., 1.2.3)." >&2
+        exit 1
+    fi
+}
+
 function backup_file() {
     local file="$1"
     local filename
@@ -157,7 +160,7 @@ function update_version_json() {
         echo "Error: ${VERSION_FILE} is not a valid JSON file. Exiting."
         exit 1
     fi
-    if ! jq ".version = \"$VERSION\" | .stage = \"$STAGE\"" "$VERSION_FILE" > "$TMP_FILE"; then
+    if ! jq ".version = \"$VERSION\" | .stage = \"$STAGE\"" "$VERSION_FILE" >"$TMP_FILE"; then
         echo "Error: Failed to update ${VERSION_FILE}. Exiting."
         rm -f "$TMP_FILE"
         exit 1
@@ -220,6 +223,7 @@ function update_release_notes() {
     echo "Created/Updated ${RELEASE_NOTES_FILE} with version: $VERSION."
 }
 
+validate_inputs
 echo "Starting the update process for version: $VERSION and stage: $STAGE."
 backup_files
 update_version_json

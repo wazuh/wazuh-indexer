@@ -159,8 +159,7 @@ chmod -Rf a+rX,u+w,g-w,o-w %{buildroot}/*
 exit 0
 
 %pre
-# Remove -x once solution is approved
-set -ex 
+set -e
 
 # Only during upgrade
 if [ "$1" -gt 1 ]; then
@@ -191,8 +190,7 @@ getent passwd %{name} > /dev/null 2>&1 || \
 exit 0
 
 %post
-# Remove -x once solution is approved
-set -ex
+set -e
 
 # Fix ownership and permissions
 chown -R %{name}:%{name} %{config_dir}
@@ -213,8 +211,7 @@ fi
 exit 0
 
 %posttrans
-
-set -ex
+set -e
 
 # Reload systemd
 command -v systemctl > /dev/null && systemctl daemon-reload
@@ -242,8 +239,7 @@ fi
 exit 0
 
 %preun
-# Remove -x once solution is approved
-set -ex
+set -e
 
 if command -v systemctl >/dev/null && systemctl is-active %{name}.service >/dev/null; then
     echo "Stop existing %{name}.service"

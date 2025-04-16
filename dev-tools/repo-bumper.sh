@@ -148,6 +148,7 @@ function backup_files() {
 }
 
 function update_version_json() {
+    TMP_FILE=$(mktemp)
     if [ ! -f "$VERSION_FILE" ]; then
         echo "Error: ${VERSION_FILE} does not exist. Exiting."
         exit 1
@@ -156,10 +157,12 @@ function update_version_json() {
         echo "Error: ${VERSION_FILE} is not a valid JSON file. Exiting."
         exit 1
     fi
-    if ! jq -e ".version = \"$VERSION\" | .stage = \"$STAGE\"" "$VERSION_FILE" &>/dev/null; then
+    if ! jq ".version = \"$VERSION\" | .stage = \"$STAGE\"" "$VERSION_FILE" > "$TMP_FILE"; then
         echo "Error: Failed to update ${VERSION_FILE}. Exiting."
+        rm -f "$TMP_FILE"
         exit 1
     fi
+    mv "$TMP_FILE" "$VERSION_FILE"
     echo "Updated ${VERSION_FILE} with version: $VERSION and stage: $STAGE."
 }
 

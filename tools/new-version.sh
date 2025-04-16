@@ -44,6 +44,14 @@ CHANGELOG_FILE="CHANGELOG.md"
 RELEASE_NOTES_FILE="release-notes/wazuh.release-notes-${VERSION}.md"
 BACKUP_DIR="/tmp/wazuh-backups"
 
+# List of files to update
+FILES_TO_UPDATE=(
+    "$VERSION_FILE"
+    "$DISTRIBUTION_FILE"
+    "$CHANGELOG_FILE"
+    "$RELEASE_NOTES_FILE"
+)
+
 # Initialize logging
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S-%3N")
@@ -220,4 +228,9 @@ update_version_json
 update_rpm_spec
 update_changelog
 update_release_notes
+
 echo "[$(date +"%Y-%m-%d %H:%M:%S")] All updates completed successfully."
+echo "[$(date +"%Y-%m-%d %H:%M:%S")] Affected files:"
+for file in "${FILES_TO_UPDATE[@]}"; do
+    echo "[$(date +"%Y-%m-%d %H:%M:%S")] - $file"
+done

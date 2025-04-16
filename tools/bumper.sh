@@ -93,3 +93,4 @@ navigate_to_project_root
 update_version_json
 
 echo "[$(date +"%Y-%m-%d %H:%M:%S")] Version bump completed successfully."
+echo "[$(date +"%Y-%m-%d %H:%M:%S")] Affected file: $VERSION_FILE"

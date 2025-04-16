@@ -38,7 +38,6 @@ STAGE=$2
 PREVIOUS_VERSION=$3
 
 # Set file paths
-VERSION_FILE="VERSION.json"
 DISTRIBUTION_FILE="distribution/packages/src/rpm/wazuh-indexer.rpm.spec"
 CHANGELOG_FILE="CHANGELOG.md"
 RELEASE_NOTES_FILE="release-notes/wazuh.release-notes-${VERSION}.md"
@@ -46,7 +45,6 @@ BACKUP_DIR="/tmp/wazuh-backups"
 
 # List of files to update
 FILES_TO_UPDATE=(
-    "$VERSION_FILE"
     "$DISTRIBUTION_FILE"
     "$CHANGELOG_FILE"
     "$RELEASE_NOTES_FILE"
@@ -171,17 +169,9 @@ function backup_file() {
 
 function backup_files() {
     echo "[$(date +"%Y-%m-%d %H:%M:%S")] Starting backup of files..."
-    backup_file "$VERSION_FILE"
     backup_file "$DISTRIBUTION_FILE"
     backup_file "$CHANGELOG_FILE"
     echo "[$(date +"%Y-%m-%d %H:%M:%S")] Backup of files completed."
-}
-
-function update_version_json() {
-    TMP_FILE=$(mktemp)
-    jq ".version = \"$VERSION\" | .stage = \"$STAGE\"" "$VERSION_FILE" >"$TMP_FILE"
-    mv "$TMP_FILE" "$VERSION_FILE"
-    echo "[$(date +"%Y-%m-%d %H:%M:%S")] Updated $VERSION_FILE with version=$VERSION and stage=$STAGE"
 }
 
 function update_rpm_spec() {
@@ -223,7 +213,6 @@ function update_release_notes() {
 navigate_to_project_root
 validate_inputs
 backup_files
-update_version_json
 update_rpm_spec
 update_changelog
 update_release_notes

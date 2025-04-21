@@ -1,42 +1,138 @@
 #!/bin/bash
+set -euo pipefail
 
-# Check for required parameters
-if [ "$#" -ne 2 ]; then
+# ====
+# Print usage instructions
+# ====
+function usage() {
     echo "Usage: $0 <version> <stage>"
-    echo "  version:        The new version to set in VERSION.json"
-    echo "  stage:          The new stage to set in VERSION.json"
+    echo "  version:  The new version to set in VERSION.json"
+    echo "  stage:    The new stage to set in VERSION.json (alpha, beta, rc, stable)"
     exit 1
-fi
+}
 
+# ====
+# Initialize logging
+# Globals:
+#   LOG_FILE
+# ====
+function init_logging() {
+    local script_dir
+    script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    local timestamp
+    timestamp=$(date +"%Y-%m-%d_%H-%M-%S-%3N")
+    LOG_FILE="$script_dir/repository_bumper_${timestamp}.log"
+    exec > >(tee -a "$LOG_FILE") 2>&1
+    log "Logging initialized. Log file: $LOG_FILE"
+}
+
+# ====
+# Log messages with timestamp
+# Arguments:
+#   $1 - Message to log
+# ====
+function log() {
+    echo "[$(date +"%Y-%m-%d %H:%M:%S")] $1"
+}
+
+# ====
+# Navigate to the root of the repository
+# Searches for a folder named `.github` as a marker
+# Exits if root is not found
+# ====
+function navigate_to_project_root() {
+    local repo_root_marker=".github"
+    local script_path
+    script_path=$(dirname "$(realpath "$0")")
+
+    while [[ "$script_path" != "/" ]] && [[ ! -d "$script_path/$repo_root_marker" ]]; do
+        script_path=$(dirname "$script_path")
+    done
+
+    if [[ "$script_path" == "/" ]]; then
+        log "Error: Unable to find the repository root."
+        exit 1
+    fi
+
+    cd "$script_path"
+    log "Moved to repository root: $script_path"
+}
+
+# ====
+# Validate input parameters
+# Arguments:
+#   $1 - version
+#   $2 - stage
+# ====
+function validate_inputs() {
+    local version="$1"
+    local stage="$2"
+
+    if ! [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        log "Error: Invalid version format '$version'."
+        exit 1
+    fi
+
+    local normalized_stage
+    normalized_stage=$(echo "$stage" | tr '[:upper:]' '[:lower:]')
+    if ! [[ $normalized_stage =~ ^(alpha[0-9]*|beta[0-9]*|rc[0-9]*|stable)$ ]]; then
+        log "Error: Invalid stage format '$stage'."
+        exit 1
+    fi
+}
+
+# ====
 # Check if jq is installed
-if ! command -v jq &>/dev/null; then
-    echo "Error: jq is not installed. Please install jq to use this script."
-    exit 1
-fi
+# ====
+function check_jq_installed() {
+    if ! command -v jq &>/dev/null; then
+        log "Error: 'jq' is not installed. Please install it to use this script."
+        exit 1
+    fi
+}
 
-VERSION="$1"
-STAGE="$2"
-FILE="VERSION.json"
+# ====
+# Update the VERSION.json file with the new version and stage
+# Arguments:
+#   $1 - version
+#   $2 - stage
+# ====
+function update_version_file() {
+    local version="$1"
+    local stage="$2"
+    local file="VERSION.json"
 
-# Logging
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S-%3N")
-LOG_FILE="$SCRIPT_DIR/repository_bumper_${TIMESTAMP}.log"
-exec > >(tee -a "$LOG_FILE") 2>&1
+    if [[ ! -f "$file" ]]; then
+        log "Error: $file not found in the current directory: $(pwd)"
+        exit 1
+    fi
 
-# Parameters validations
-if ! [[ $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    echo "[$(date +"%Y-%m-%d %H:%M:%S")] Error: Invalid version format." >&2
-    exit 1
-fi
-normalized_stage=$(echo "$STAGE" | tr '[:upper:]' '[:lower:]')
-if ! [[ $normalized_stage =~ ^(alpha[0-9]*|beta[0-9]*|rc[0-9]*|stable)$ ]]; then
-    echo "[$(date +"%Y-%m-%d %H:%M:%S")] Error: Invalid stage format." >&2
-    exit 1
-fi
+    jq --arg v "$version" --arg s "$stage" \
+        '.version = $v | .stage = $s' "$file" > "${file}.tmp" && mv "${file}.tmp" "$file"
 
-# Update the file using jq
-jq --arg v "$VERSION" --arg s "$STAGE" \
-    '.version = $v | .stage = $s' "$FILE" >"${FILE}.tmp" && mv "${FILE}.tmp" "$FILE"
+    log "Updated $file with version=$version and stage=$stage"
+}
 
-echo "[$(date +"%Y-%m-%d %H:%M:%S")] Updated $FILE with version=$VERSION and stage=$STAGE"
+# ====
+# Main logic
+# ====
+function main() {
+    if [ "$#" -ne 2 ]; then
+        usage
+    fi
+
+    local version="$1"
+    local stage="$2"
+
+    init_logging
+    log "Starting update for VERSION.json with version=$version, stage=$stage"
+
+    navigate_to_project_root
+    check_jq_installed
+    validate_inputs "$version" "$stage"
+    update_version_file "$version" "$stage"
+
+    log "Update complete."
+}
+
+main "$@"

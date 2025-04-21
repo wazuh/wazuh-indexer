@@ -13,23 +13,20 @@ set -e
 
 echo "Running Wazuh Indexer Post-Installation Script"
 
-product_dir=/usr/share/wazuh-indexer
-config_dir=/etc/wazuh-indexer
-certs_dir=${config_dir}/certs
-data_dir=/var/lib/wazuh-indexer
-log_dir=/var/log/wazuh-indexer
-pid_dir=/run/wazuh-indexer
-tmp_dir=${data_dir}/tmp
-restart_service=${tmp_dir}/wazuh-indexer.restart
+name="wazuh-indexer"
+product_dir=/usr/share/${name}
+config_dir=/etc/${name}
+data_dir=/var/lib/${name}
+log_dir=/var/log/${name}
+pid_dir=/run/${name}
+state_file=${config_dir}/.was_active
 
 # Set owner
-chown -R wazuh-indexer:wazuh-indexer ${product_dir}
-chown -R wazuh-indexer:wazuh-indexer ${config_dir}
-chown -R wazuh-indexer:wazuh-indexer ${log_dir}
-chown -R wazuh-indexer:wazuh-indexer ${data_dir}
-chown -R wazuh-indexer:wazuh-indexer ${pid_dir}
-chown -R wazuh-indexer:wazuh-indexer ${tmp_dir}
-chown -R wazuh-indexer:wazuh-indexer ${certs_dir}
+chown -R ${name}:${name} ${product_dir}
+chown -R ${name}:${name} ${config_dir}
+chown -R ${name}:${name} ${log_dir}
+chown -R ${name}:${name} ${data_dir}
+chown -R ${name}:${name} ${pid_dir}
 
 export OPENSEARCH_PATH_CONF=${OPENSEARCH_PATH_CONF:-${config_dir}}
 # Apply Performance Analyzer settings, as per https://github.com/opensearch-project/opensearch-build/blob/2.18.0/scripts/pkg/build_templates/current/opensearch/deb/debian/postinst#L28-L37

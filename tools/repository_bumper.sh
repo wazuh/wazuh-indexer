@@ -5,8 +5,8 @@ set -euo pipefail
 # Print usage instructions
 # ====
 function usage() {
-    echo "Usage: $0 <version> <stage>"
-    echo "  version:  The new version to set in VERSION.json"
+    echo "Usage: $0 <version> <stage> <date>"
+    echo "  version:  The new version to set in VERSION.json (e.g., 4.5.0)"
     echo "  stage:    The new stage to set in VERSION.json (alpha, beta, rc, stable)"
     echo "  date:     The date to set in the changelog (e.g., 'Mon Jan 02 2025')"
     exit 1
@@ -177,7 +177,7 @@ function update_rpm_changelog() {
 # Main logic
 # ====
 function main() {
-    if [ "$#" -ne 2 ]; then
+    if [ "$#" -ne 3 ]; then
         usage
     fi
 

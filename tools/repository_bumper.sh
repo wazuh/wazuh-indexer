@@ -163,7 +163,6 @@ function update_rpm_changelog() {
             if (!inserted && /^%changelog/) {
                 print line1
                 print line2
-                print ""
                 inserted=1
             }
         }

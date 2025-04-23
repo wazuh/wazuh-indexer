@@ -14,7 +14,7 @@
 # The changelog entry will be added to the %changelog section of the RPM spec file,
 # and will be formatted as follows:
 #   * [DATE] support <info@wazuh.com> - [VERSION]
-#   * More info: https://documentation.wazuh.com/current/release-notes/release-[VERSION].html
+#   - More info: https://documentation.wazuh.com/current/release-notes/release-[VERSION].html
 
 set -euo pipefail
 

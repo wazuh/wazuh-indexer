@@ -1,4 +1,21 @@
 #!/bin/bash
+
+# =========================
+# Version Initializer Script
+# =========================
+# This script initializes the changelog and release notes for a new version.
+# It should be used alongside the repository_bumper.sh script in order to
+# ensure that all the necessary files are updated correctly.
+#
+# The script takes three arguments:
+# 1. The new version to set (e.g., 4.5.0)
+# 2. The previous version to compare against (e.g., 4.4.0)
+# 3. The date to set in the release notes (e.g., '2025-01-01')
+#
+# It will create or update the CHANGELOG.md and release-notes files with the
+# new version information. Both files will be formatted according to the
+# [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) standard.
+
 set -euo pipefail
 
 # ====
@@ -8,7 +25,7 @@ function usage() {
     echo "Usage: $0 <version> <previous_version> <date>"
     echo "  version:            The new version to set (e.g., 4.5.0)"
     echo "  previous_version:   The previous version to compare against (e.g., 4.4.0)"
-    echo "  date:               The date to set in the changelog (e.g., '2025-01-01')"
+    echo "  date:               The date to set in the release notes (e.g., '2025-01-01')"
     exit 1
 }
 

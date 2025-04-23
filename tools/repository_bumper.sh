@@ -1,4 +1,21 @@
 #!/bin/bash
+
+# =========================
+# Repository Bumper Script
+# =========================
+# This script updates the VERSION.json file and the changelog section of the
+# RPM spec file for a new version release.
+#
+# It takes three arguments:
+# 1. The new version to set (e.g., 4.5.0)
+# 2. The new stage to set (alpha, beta, rc, stable)
+# 3. The date to set in the changelog (e.g., 'Mon Jan 02 2025')
+#
+# The changelog entry will be added to the %changelog section of the RPM spec file,
+# and will be formatted as follows:
+#   * [DATE] support <info@wazuh.com> - [VERSION]
+#   * More info: https://documentation.wazuh.com/current/release-notes/release-[VERSION].html
+
 set -euo pipefail
 
 # ====

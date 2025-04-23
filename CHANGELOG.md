@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased 4.13.x]
 ### Added
-- Implement version bumper script [(#802)](https://github.com/wazuh/wazuh-indexer/pull/802/files)
+- Implement version bumper script [(#802)](https://github.com/wazuh/wazuh-indexer/pull/802) [(#803)](https://github.com/wazuh/wazuh-indexer/pull/803)
 
 ### Dependencies
 - Bump `netty` from 4.1.118.Final to 4.1.121.Final ([#18192](https://github.com/opensearch-project/OpenSearch/pull/18192))

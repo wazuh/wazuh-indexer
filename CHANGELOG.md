@@ -5,8 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased 4.13.x]
 ### Added
-- Implement version bumper script [(#802)](https://github.com/wazuh/wazuh-indexer/pull/802)
-- Update repository bumper script to modify package changelog [(#803)](https://github.com/wazuh/wazuh-indexer/pull/803)
+- Implement version bumper script [(#802)](https://github.com/wazuh/wazuh-indexer/pull/802) [(#803)](https://github.com/wazuh/wazuh-indexer/pull/803)
 
 ### Dependencies
 

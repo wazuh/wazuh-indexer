@@ -86,7 +86,7 @@ function navigate_to_project_root() {
 function validate_inputs() {
     local version="$1"
     local stage="$2"
-    local date_str="$3"
+    local date="$3"
 
     if ! [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
         log "Error: Invalid version format '$version'."
@@ -100,8 +100,8 @@ function validate_inputs() {
         exit 1
     fi
 
-    if ! [[ $date_str =~ ^[A-Za-z]{3}\ [A-Za-z]{3}\ [0-9]{1,2}\ [0-9]{4}$ ]]; then
-        log "Error: Invalid date format '$date_str'."
+    if ! [[ $date =~ ^[A-Za-z]{3}\ [A-Za-z]{3}\ [0-9]{1,2}\ [0-9]{4}$ ]]; then
+        log "Error: Invalid date format '$date'."
         exit 1
     fi
 }
@@ -146,13 +146,13 @@ function update_version_file() {
 # ====
 function update_rpm_changelog() {
     local version="$1"
-    local date_str="$2"
+    local date="$2"
     local spec_file="distribution/packages/src/rpm/wazuh-indexer.rpm.spec"
-    local changelog_entry="* $date_str support <info@wazuh.com> - $version"
+    local changelog_entry="* $date support <info@wazuh.com> - $version"
 
     if grep -q "^- More info: .*release-$version\.html" "$spec_file"; then
         # Update existing changelog date
-        awk -v version="$version" -v new_date="$date_str" '
+        awk -v version="$version" -v new_date="$date" '
             BEGIN { updated = 0 }
             {
                 if ($0 ~ "^- More info: .*release-"version"\\.html") {
@@ -170,7 +170,7 @@ function update_rpm_changelog() {
             }
         ' "$spec_file" >"${spec_file}.tmp" && mv "${spec_file}.tmp" "$spec_file"
 
-        log "Updated existing changelog entry for version=$version with date=$date_str"
+        log "Updated existing changelog entry for version=$version with date=$date"
     else
         log "Inserting changelog entry for version=$version"
         awk -v line1="$changelog_entry" -v line2="- More info: https://documentation.wazuh.com/current/release-notes/release-$version.html" '
@@ -185,7 +185,7 @@ function update_rpm_changelog() {
         }
         ' "$spec_file" >"${spec_file}.tmp" && mv "${spec_file}.tmp" "$spec_file"
 
-        log "Inserted new changelog entry for version=$version with date=$date_str"
+        log "Inserted new changelog entry for version=$version with date=$date"
     fi
 }
 
@@ -199,16 +199,16 @@ function main() {
 
     local version="$1"
     local stage="$2"
-    local date_str="$3"
+    local date="$3"
 
     init_logging
     log "Starting update for VERSION.json with version=$version, stage=$stage"
 
     navigate_to_project_root
     check_jq_installed
-    validate_inputs "$version" "$stage" "$date_str"
+    validate_inputs "$version" "$stage" "$date"
     update_version_file "$version" "$stage"
-    update_rpm_changelog "$version" "$date_str"
+    update_rpm_changelog "$version" "$date"
 
     log "Update complete."
 }

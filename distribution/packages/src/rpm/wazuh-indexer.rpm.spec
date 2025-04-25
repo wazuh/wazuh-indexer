@@ -169,18 +169,17 @@ set -e
 
 # Stop the services to upgrade the package
 if [ $1 = 2 ]; then
-    mkdir -p %{tmp_dir}
     # Stop wazuh-indexer service
     if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1 && systemctl is-active %{name}.service > /dev/null 2>&1; then
-        echo "Stop existing %{name}.service"
         systemctl --no-reload stop %{name}.service > /dev/null 2>&1
+        echo "%{name}.service is currently active; scheduling restart after the upgrade."
         touch %{state_file}
     elif command -v service > /dev/null 2>&1 && service %{name} status > /dev/null 2>&1; then
-        echo "Stop existing %{name} service"
+        echo "%{name}.service is currently active; scheduling restart after the upgrade."
         service %{name} stop > /dev/null 2>&1
         touch %{state_file}
     elif command -v /etc/init.d/%{name} > /dev/null 2>&1 && /etc/init.d/%{name} status > /dev/null 2>&1; then
-        echo "Stop existing %{name} service"
+        echo "%{name}.service is currently active; scheduling restart after the upgrade."
         /etc/init.d/%{name} stop > /dev/null 2>&1
         touch %{state_file}
     fi
@@ -243,7 +242,7 @@ fi
 
 if [ $1 = 2 ]; then
     if [ -f %{state_file} ]; then
-        echo "Restarting %{name} service after upgrade"
+        echo "Restoring %{name}.service to its previous active state."
         rm -f %{state_file}
         if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
             systemctl restart %{name}.service > /dev/null 2>&1
@@ -253,7 +252,7 @@ if [ $1 = 2 ]; then
             /etc/init.d/%{name} restart > /dev/null 2>&1
         fi
     else
-        echo "### NOT restarting %{name} service after upgrade"
+        echo "### Service will remain stopped after the upgrade (previous state preserved)."
         echo "### You can start the %{name} service by executing"
         if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
             echo " sudo systemctl start %{name}.service"

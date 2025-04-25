@@ -63,7 +63,7 @@ fi
 # Check if the script is executed on upgrade
 if [ -n "$2" ]; then
     if [ -f $state_file ]; then
-        echo "Restarting ${name} service after upgrade"
+        echo "Restoring ${name}.service to its previous active state."
         rm -f $state_file
         if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
             systemctl restart ${name}.service > /dev/null 2>&1
@@ -73,7 +73,7 @@ if [ -n "$2" ]; then
             /etc/init.d/${name} restart > /dev/null 2>&1
         fi
     else
-        echo "### NOT restarting ${name} service after upgrade"
+        echo "### Service will remain stopped after the upgrade (previous state preserved)."
         echo "### You can start ${name} service by executing"
         if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
             echo " sudo systemctl start ${name}.service"

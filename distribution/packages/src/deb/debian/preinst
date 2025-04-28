@@ -20,20 +20,8 @@ pid_dir=/run/${name}
 tmp_dir=${data_dir}/tmp
 state_file=${config_dir}/.was_active
 
-# Cleanup temp directory
-if [ -d ${tmp_dir} ]; then
-    rm -r ${tmp_dir}
-fi
 # Create needed directories
 mkdir -p ${tmp_dir}
-
-# Set owner
- chown -R ${name}:${name} ${product_dir}
- chown -R ${name}:${name} ${config_dir}
- chown -R ${name}:${name} ${log_dir}
- chown -R ${name}:${name} ${data_dir}
- chown -R ${name}:${name} ${pid_dir}
- chown -R ${name}:${name} ${tmp_dir}
 
 echo "Running Wazuh Indexer Pre-Installation Script"
 
@@ -54,7 +42,6 @@ case "$1" in
             echo "${name}.service is currently active; scheduling restart after the upgrade."
             touch ${state_file}
         fi
-
         echo "Stop existing ${name}-performance-analyzer.service"
         if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1 && systemctl is-active ${name}-performance-analyzer.service > /dev/null 2>&1; then
             systemctl --no-reload stop ${name}-performance-analyzer.service > /dev/null 2>&1

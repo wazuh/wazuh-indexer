@@ -222,11 +222,6 @@ if ! grep -q '## OpenSearch Performance Analyzer' "$OPENSEARCH_PATH_CONF/jvm.opt
     } >> "$OPENSEARCH_PATH_CONF/jvm.options"
 fi
 
-exit 0
-
-%posttrans
-set -e
-
 # Reload systemctl daemon
 if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
     systemctl daemon-reload > /dev/null 2>&1

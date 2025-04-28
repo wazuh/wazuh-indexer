@@ -29,7 +29,6 @@
 %define data_dir %{_sharedstatedir}/%{name}
 %define log_dir %{_localstatedir}/log/%{name}
 %define pid_dir %{_localstatedir}/run/%{name}
-%define tmp_dir %{data_dir}/tmp
 %define state_file %{config_dir}/.was_active
 %{!?_version: %define _version 0.0.0 }
 %{!?_architecture: %define _architecture x86_64 }
@@ -69,7 +68,6 @@ cd %{_topdir} && pwd
 # Create necessary directories
 mkdir -p %{buildroot}%{pid_dir}
 mkdir -p %{buildroot}%{product_dir}/plugins
-mkdir -p %{buildroot}%{tmp_dir}
 
 # Install directories/files
 cp -a etc usr var %{buildroot}
@@ -152,7 +150,7 @@ if [ %observability_plugin -eq 1 ]; then
 fi
 
 if [ %reportsscheduler_plugin -eq 1 ]; then
-    set -- "$@" "%{config_dir}/%{name}%-reports-scheduler/reports-scheduler.yml"
+    set -- "$@" "%{config_dir}/%{name}-reports-scheduler/reports-scheduler.yml"
 fi
 
 for i in "$@"

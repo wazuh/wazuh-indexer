@@ -20,7 +20,6 @@ certs_dir=${config_dir}/certs
 data_dir=/var/lib/${name}
 log_dir=/var/log/${name}
 pid_dir=/run/${name}
-tmp_dir=${data_dir}/tmp
 state_file=${config_dir}/${name}.was_active
 
 # Set owner
@@ -29,7 +28,6 @@ chown -R ${name}:${name} ${config_dir}
 chown -R ${name}:${name} ${log_dir}
 chown -R ${name}:${name} ${data_dir}
 chown -R ${name}:${name} ${pid_dir}
-chown -R ${name}:${name} ${tmp_dir}
 chown -R ${name}:${name} ${certs_dir}
 
 export OPENSEARCH_PATH_CONF=${OPENSEARCH_PATH_CONF:-${config_dir}}

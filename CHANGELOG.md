@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Deprecated
 
 ### Removed
-
+- Apply the fix to Remove custom temporary folder for Java in 5.0.0 [(#806)](https://github.com/wazuh/wazuh-indexer/pull/806)
 ### Fixed
 
 ### Security

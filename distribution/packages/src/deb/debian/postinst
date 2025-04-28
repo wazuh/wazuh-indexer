@@ -62,7 +62,7 @@ fi
 
 # Check if the script is executed on upgrade
 if [ -n "$2" ]; then
-    if [ -f $state_file ]; then
+    if [ -f ${state_file} ]; then
         echo "Restoring ${name}.service to its previous active state."
         rm -f $state_file
         if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then

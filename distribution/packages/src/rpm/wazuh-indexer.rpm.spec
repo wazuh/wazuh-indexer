@@ -29,8 +29,7 @@
 %define data_dir %{_sharedstatedir}/%{name}
 %define log_dir %{_localstatedir}/log/%{name}
 %define pid_dir %{_localstatedir}/run/%{name}
-%define tmp_dir %{data_dir}/tmp
-%define restart_service %{tmp_dir}/%{name}.restart
+%define state_file %{config_dir}/.was_active
 %{!?_version: %define _version 0.0.0 }
 %{!?_architecture: %define _architecture x86_64 }
 
@@ -59,8 +58,8 @@ For more information, see: https://www.wazuh.com/
 
 %build
 
-%define observability_plugin %( if [ -f %{_topdir}/etc/wazuh-indexer/opensearch-observability/observability.yml ]; then echo "1" ; else echo "0"; fi )
-%define reportsscheduler_plugin %( if [ -f %{_topdir}/etc/wazuh-indexer/wazuh-indexer-reports-scheduler/reports-scheduler.yml ]; then echo "1" ; else echo "0"; fi )
+%define observability_plugin %( if [ -f %{_topdir}/etc/%{name}/opensearch-observability/observability.yml ]; then echo "1" ; else echo "0"; fi )
+%define reportsscheduler_plugin %( if [ -f %{_topdir}/etc/%{name}/%{name}-reports-scheduler/reports-scheduler.yml ]; then echo "1" ; else echo "0"; fi )
 
 %install
 set -e
@@ -69,7 +68,6 @@ cd %{_topdir} && pwd
 # Create necessary directories
 mkdir -p %{buildroot}%{pid_dir}
 mkdir -p %{buildroot}%{product_dir}/plugins
-mkdir -p %{buildroot}%{tmp_dir}
 
 # Install directories/files
 cp -a etc usr var %{buildroot}
@@ -80,7 +78,7 @@ fi
 
 # Pre-populate the folders to ensure rpm build success even without all plugins
 mkdir -p %{buildroot}%{config_dir}/opensearch-observability
-mkdir -p %{buildroot}%{config_dir}/wazuh-indexer-reports-scheduler
+mkdir -p %{buildroot}%{config_dir}/%{name}-reports-scheduler
 mkdir -p %{buildroot}%{product_dir}/performance-analyzer-rca
 
 # Create empty certs directory
@@ -152,7 +150,7 @@ if [ %observability_plugin -eq 1 ]; then
 fi
 
 if [ %reportsscheduler_plugin -eq 1 ]; then
-    set -- "$@" "%{config_dir}/wazuh-indexer-reports-scheduler/reports-scheduler.yml"
+    set -- "$@" "%{config_dir}/%{name}-reports-scheduler/reports-scheduler.yml"
 fi
 
 for i in "$@"
@@ -169,20 +167,19 @@ set -e
 
 # Stop the services to upgrade the package
 if [ $1 = 2 ]; then
-    mkdir -p %{tmp_dir}
     # Stop wazuh-indexer service
     if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1 && systemctl is-active %{name}.service > /dev/null 2>&1; then
-        echo "Stop existing %{name}.service"
         systemctl --no-reload stop %{name}.service > /dev/null 2>&1
-        touch %{restart_service}
+        echo "%{name}.service is currently active; scheduling restart after the upgrade."
+        touch %{state_file}
     elif command -v service > /dev/null 2>&1 && service %{name} status > /dev/null 2>&1; then
-        echo "Stop existing %{name} service"
+        echo "%{name}.service is currently active; scheduling restart after the upgrade."
         service %{name} stop > /dev/null 2>&1
-        touch %{restart_service}
+        touch %{state_file}
     elif command -v /etc/init.d/%{name} > /dev/null 2>&1 && /etc/init.d/%{name} status > /dev/null 2>&1; then
-        echo "Stop existing %{name} service"
+        echo "%{name}.service is currently active; scheduling restart after the upgrade."
         /etc/init.d/%{name} stop > /dev/null 2>&1
-        touch %{restart_service}
+        touch %{state_file}
     fi
     # Stop wazuh-indexer-performance-analyzer service
     if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1 && systemctl is-active %{name}-performance-analyzer.service > /dev/null 2>&1; then
@@ -237,9 +234,9 @@ if command -v systemd-tmpfiles > /dev/null 2>&1 && systemctl > /dev/null 2>&1; t
 fi
 
 if [ $1 = 2 ]; then
-    if [ -f %{restart_service} ]; then
-        echo "Restarting %{name} service after upgrade"
-        rm -f %{restart_service}
+    if [ -f %{state_file} ]; then
+        echo "Restoring %{name}.service to its previous active state."
+        rm -f %{state_file}
         if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
             systemctl restart %{name}.service > /dev/null 2>&1
         elif command -v service > /dev/null 2>&1; then
@@ -248,8 +245,8 @@ if [ $1 = 2 ]; then
             /etc/init.d/%{name} restart > /dev/null 2>&1
         fi
     else
-        echo "### NOT restarting %{name} service after upgrade"
-        echo "### You can start %{name} service by executing"
+        echo "### Service will remain stopped after the upgrade (previous state preserved)."
+        echo "### You can start the %{name} service by executing"
         if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
             echo " sudo systemctl start %{name}.service"
         elif command -v service > /dev/null 2>&1; then
@@ -264,7 +261,7 @@ else
         echo "### NOT starting on installation, please execute the following statements to configure %{name} service to start automatically using systemd"
         echo " sudo systemctl daemon-reload"
         echo " sudo systemctl enable %{name}.service"
-        echo "### You can start %{name} service by executing"
+        echo "### You can start the %{name} service by executing"
         echo " sudo systemctl start %{name}.service"
     else
         if command -v chkconfig > /dev/null 2>&1; then
@@ -275,10 +272,10 @@ else
             echo " sudo update-rc.d %{name} defaults 95 10"
         fi
         if command -v service > /dev/null 2>&1; then
-            echo "### You can start %{name} service by executing"
+            echo "### You can start the %{name} service by executing"
             echo " sudo service %{name} start"
         elif command -v /etc/init.d/%{name} > /dev/null 2>&1; then
-            echo "### You can start %{name} service by executing"
+            echo "### You can start the %{name} service by executing"
             echo " sudo /etc/init.d/%{name} start"
         fi
     fi
@@ -319,8 +316,9 @@ if [ $1 = 0 ]; then
         echo "Stop existing %{name}-performance-analyzer service"
         /etc/init.d/%{name}-performance-analyzer stop > /dev/null 2>&1
     fi
-    exit 0
 fi
+
+exit 0
 
 %files -f %{_topdir}/filelist.txt
 %defattr(640, %{name}, %{name}, 750)
@@ -348,7 +346,7 @@ fi
 %endif
 
 %if %reportsscheduler_plugin
-%config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/wazuh-indexer-reports-scheduler/reports-scheduler.yml
+%config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/%{name}-reports-scheduler/reports-scheduler.yml
 %endif
 
 # Files that need other permissions
@@ -359,6 +357,9 @@ fi
 %attr(750, %{name}, %{name}) %{product_dir}/jdk/lib/jspawnhelper
 %attr(750, %{name}, %{name}) %{product_dir}/jdk/lib/modules
 %attr(750, %{name}, %{name}) %{product_dir}/performance-analyzer-rca/bin/*
+
+# Preserve service state flag across upgrade
+%ghost %attr(440, %{name}, %{name}) %{config_dir}/.was_active
 
 # Certificates files permissions
 %attr(500, %{name}, %{name}) %{certs_dir}

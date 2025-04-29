@@ -11,40 +11,37 @@
 
 set -e
 
-# Reference to temp directory
-tmp_dir=/var/lib/wazuh-indexer/tmp
-restart_service=${tmp_dir}/wazuh-indexer.restart
+name="wazuh-indexer"
+config_dir=/etc/${name}
+state_file=${config_dir}/${name}.was_active
 
-# Create needed directories
-if [ -d ${tmp_dir} ]; then
-    rm -r ${tmp_dir}
-fi
-mkdir -p ${tmp_dir}
 
 echo "Running Wazuh Indexer Pre-Installation Script"
 
 case "$1" in
     upgrade)
         # Stop existing wazuh-indexer.service
-        echo "Stop existing wazuh-indexer.service"
-        if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1 && systemctl is-active wazuh-indexer.service > /dev/null 2>&1; then
-            systemctl --no-reload stop wazuh-indexer.service > /dev/null 2>&1
-            touch $restart_service
-        elif command -v service > /dev/null 2>&1 && service wazuh-indexer status > /dev/null 2>&1; then
-            service wazuh-indexer stop > /dev/null 2>&1
-            touch $restart_service
-        elif command -v /etc/init.d/wazuh-indexer > /dev/null 2>&1 && /etc/init.d/wazuh-indexer status > /dev/null 2>&1; then
-            /etc/init.d/wazuh-indexer stop > /dev/null 2>&1
-            touch $restart_service
+        echo "Verifying ${name}.service is stopped to proceed with the upgrade..."
+        if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1 && systemctl is-active ${name}.service > /dev/null 2>&1; then
+            systemctl --no-reload stop ${name}.service > /dev/null 2>&1
+            echo "${name}.service is currently active; scheduling restart after the upgrade."
+            touch ${state_file}
+        elif command -v service > /dev/null 2>&1 && service ${name} status > /dev/null 2>&1; then
+            service ${name} stop > /dev/null 2>&1
+            echo "${name}.service is currently active; scheduling restart after the upgrade."
+            touch ${state_file}
+        elif command -v /etc/init.d/${name} > /dev/null 2>&1 && /etc/init.d/${name} status > /dev/null 2>&1; then
+            /etc/init.d/${name} stop > /dev/null 2>&1
+            echo "${name}.service is currently active; scheduling restart after the upgrade."
+            touch ${state_file}
         fi
-
-        echo "Stop existing wazuh-indexer-performance-analyzer.service"
-        if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1 && systemctl is-active wazuh-indexer-performance-analyzer.service > /dev/null 2>&1; then
-            systemctl --no-reload stop wazuh-indexer-performance-analyzer.service > /dev/null 2>&1
-        elif command -v service > /dev/null 2>&1 && service wazuh-indexer-performance-analyzer status > /dev/null 2>&1; then
-            service wazuh-indexer-performance-analyzer stop > /dev/null 2>&1
-        elif command -v /etc/init.d/wazuh-indexer-performance-analyzer > /dev/null 2>&1 && /etc/init.d/wazuh-indexer-performance-analyzer status > /dev/null 2>&1; then
-            /etc/init.d/wazuh-indexer-performance-analyzer stop > /dev/null 2>&1
+        echo "Stop existing ${name}-performance-analyzer.service"
+        if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1 && systemctl is-active ${name}-performance-analyzer.service > /dev/null 2>&1; then
+            systemctl --no-reload stop ${name}-performance-analyzer.service > /dev/null 2>&1
+        elif command -v service > /dev/null 2>&1 && service ${name}-performance-analyzer status > /dev/null 2>&1; then
+            service ${name}-performance-analyzer stop > /dev/null 2>&1
+        elif command -v /etc/init.d/${name}-performance-analyzer > /dev/null 2>&1 && /etc/init.d/${name}-performance-analyzer status > /dev/null 2>&1; then
+            /etc/init.d/${name}-performance-analyzer stop > /dev/null 2>&1
         fi
         ;;
     *)
@@ -52,8 +49,8 @@ case "$1" in
 esac
 
 # Create user and group if they do not already exist.
-getent group wazuh-indexer > /dev/null 2>&1 || groupadd -r wazuh-indexer
-getent passwd wazuh-indexer > /dev/null 2>&1 || \
-    useradd -r -g wazuh-indexer -M -s /sbin/nologin \
-        -c "wazuh-indexer user/group" wazuh-indexer
+getent group ${name} > /dev/null 2>&1 || groupadd -r ${name}
+getent passwd ${name} > /dev/null 2>&1 || \
+    useradd -r -g ${name} -M -s /sbin/nologin \
+        -c "${name} user/group" ${name}
 exit 0

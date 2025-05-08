@@ -50,11 +50,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Fix `_field_caps` returning empty results and corrupted field names for `disable_objects: true` mappings ([#20800](https://github.com/opensearch-project/OpenSearch/pull/20800))
 
 ### Dependencies
+- 
 
 ### Changed
 - 
 
 ### Deprecated
+- 
 
 ### Removed
 - 
@@ -65,4 +67,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Security
 - 
 
-[Unreleased 4.12.x]: https://github.com/wazuh/wazuh-indexer/compare/4.12.1...4.13.0
+[Unreleased 4.12.x]: https://github.com/wazuh/wazuh-indexer/compare/4.12.2...4.13.0

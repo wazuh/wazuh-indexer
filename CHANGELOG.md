@@ -8,14 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Implement version bumper script [(#802)](https://github.com/wazuh/wazuh-indexer/pull/802) [(#803)](https://github.com/wazuh/wazuh-indexer/pull/803)
 
 ### Dependencies
-- Bump `netty` from 4.1.118.Final to 4.1.121.Final ([#18192](https://github.com/opensearch-project/OpenSearch/pull/18192))
-- Bump Apache Lucene to 9.12.2 ([#18574](https://github.com/opensearch-project/OpenSearch/pull/18574))
-- Bump `commons-beanutils:commons-beanutils` from 1.9.4 to 1.11.0 ([#18401](https://github.com/opensearch-project/OpenSearch/issues/18401))
+- 
 
 ### Changed
 - 
 
 ### Deprecated
+- 
 
 ### Removed
 - 
@@ -26,4 +25,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Security
 - 
 
-[Unreleased 4.12.x]: https://github.com/wazuh/wazuh-indexer/compare/4.12.1...4.13.0
+[Unreleased 4.12.x]: https://github.com/wazuh/wazuh-indexer/compare/4.12.2...4.13.0

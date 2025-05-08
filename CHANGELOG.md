@@ -8,11 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - 
 
 ### Dependencies
+- 
 
 ### Changed
 - 
 
 ### Deprecated
+- 
 
 ### Removed
 - Remove custom temporary folder for Java [(#782)](https://github.com/wazuh/wazuh-indexer/pull/782)
@@ -21,6 +23,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - 
 
 ### Security
--
+- 
 
 [Unreleased 4.12.x]: https://github.com/wazuh/wazuh-indexer/compare/4.12.0...4.12.1

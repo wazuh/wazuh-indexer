@@ -1,5 +1,5 @@
 {
-  "index_patterns": ["wazuh-states-inventory-processes*"],
+  "index_patterns": ["wazuh-states-processes*"],
   "priority": 1,
   "template": {
     "settings": {

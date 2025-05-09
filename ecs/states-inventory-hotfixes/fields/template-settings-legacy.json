@@ -1,5 +1,5 @@
 {
-  "index_patterns": ["wazuh-states-inventory-hotfixes*"],
+  "index_patterns": ["wazuh-states-hotfixes*"],
   "order": 1,
   "settings": {
     "index": {

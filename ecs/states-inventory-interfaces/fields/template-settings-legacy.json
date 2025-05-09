@@ -1,5 +1,5 @@
 {
-  "index_patterns": ["wazuh-states-inventory-interfaces*"],
+  "index_patterns": ["wazuh-states-interfaces*"],
   "order": 1,
   "settings": {
     "index": {

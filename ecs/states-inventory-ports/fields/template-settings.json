@@ -1,6 +1,6 @@
 {
   "index_patterns": [
-    "wazuh-states-inventory-ports*"
+    "wazuh-states-ports*"
   ],
   "priority": 1,
   "template": {

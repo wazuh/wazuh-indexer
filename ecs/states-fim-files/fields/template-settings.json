@@ -1,5 +1,5 @@
 {
-  "index_patterns": ["wazuh-states-fim-files*"],
+  "index_patterns": ["wazuh-states-files*"],
   "priority": 1,
   "template": {
     "settings": {

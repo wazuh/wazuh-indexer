@@ -365,13 +365,27 @@ exit 0
 %attr(500, %{name}, %{name}) %{certs_dir}
 
 %changelog
-* Mon Jun 23 2025 support <info@wazuh.com> - 5.0.0
-- More info: https://documentation.wazuh.com/current/release-notes/release-5.0.0-0.html
-* Thu Feb 20 2025 support <info@wazuh.com> - 4.10.2
-- More info: https://documentation.wazuh.com/current/release-notes/release-4-10-2.html
-* Tue Jan 28 2025 support <info@wazuh.com> - 4.10.1
+* Wed Jul 02 2025 support <info@wazuh.com> - 6.0.0
+- More info: https://documentation.wazuh.com/current/release-notes/release-6-0-0.html
+* Wed Jul 02 2025 support <info@wazuh.com> - 5.0.0
+- More info: https://documentation.wazuh.com/current/release-notes/release-5-0-0.html
+* Wed Jul 02 2025 support <info@wazuh.com> - 4.13.0
+- More info: https://documentation.wazuh.com/current/release-notes/release-4-13-0.html
+* Wed May 14 2025 support <info@wazuh.com> - 4.12.2
+- More info: https://documentation.wazuh.com/current/release-notes/release-4-12-2.html
+* Wed May 14 2025 support <info@wazuh.com> - 4.12.1
+- More info: https://documentation.wazuh.com/current/release-notes/release-4-12-1.html
+* Wed May 07 2025 support <info@wazuh.com> - 4.12.0
+- More info: https://documentation.wazuh.com/current/release-notes/release-4-12-0.html
+* Tue Apr 01 2025 support <info@wazuh.com> - 4.11.2
+- More info: https://documentation.wazuh.com/current/release-notes/release-4-11-2.html
+* Wed Mar 12 2025 support <info@wazuh.com> - 4.11.1
+- More info: https://documentation.wazuh.com/current/release-notes/release-4-11-1.html
+* Wed Feb 21 2025 support <info@wazuh.com> - 4.11.0
+- More info: https://documentation.wazuh.com/current/release-notes/release-4-11-0.html
+* Thu Jan 16 2025 support <info@wazuh.com> - 4.10.1
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-10-1.html
-* Thu Nov 28 2024 support <info@wazuh.com> - 4.10.0
+* Wed Jan 08 2025 support <info@wazuh.com> - 4.10.0
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-10-0.html
 * Mon Nov 04 2024 support <info@wazuh.com> - 4.9.2
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-9-2.html

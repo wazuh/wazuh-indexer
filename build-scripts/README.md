@@ -59,7 +59,7 @@ bash builder.sh -d deb -a x64 -R 1 -s true
 
 The resulting package will be stored at `wazuh-indexer/artifacts/dist`.
 
-> The `STAGE` option defines the naming of the package. When set to `false`, the package will be unequivocally named with the commits' SHA of the `wazuh-indexer`, `wazuh-indexer-plugins` and `wazuh-indexer-reporting` repositories, in that order. For example: `wazuh-indexer_5.0.0-0_x86_64_aff30960363-846f143-494d125.rpm`.
+> The `STAGE` option defines the naming of the package. When set to `false`, the package will be unequivocally named with the commits' SHA of the `wazuh-indexer`, `wazuh-indexer-plugins` and `wazuh-indexer-reporting` repositories, in that order. For example: `wazuh-indexer_6.0.0-0_x86_64_aff30960363-846f143-494d125.rpm`.
 
 ## Building wazuh-indexer Docker images
 
@@ -68,13 +68,13 @@ The [docker](./docker) folder contains the code to build Docker images. Below th
 The Docker image is built from a wazuh-indexer tarball (tar.gz), which must be present in the same folder as the Dockerfile in `wazuh-indexer/build-scripts/docker`.
 
 ```bash
-docker build --build-arg="VERSION=5.0.0" --build-arg="INDEXER_TAR_NAME=wazuh-indexer_5.0.0-0_linux-x64.tar.gz" --tag=wazuh-indexer:5.0.0-0 --progress=plain --no-cache .
+docker build --build-arg="VERSION=6.0.0" --build-arg="INDEXER_TAR_NAME=wazuh-indexer_6.0.0-0_linux-x64.tar.gz" --tag=wazuh-indexer:6.0.0-0 --progress=plain --no-cache .
 ```
 
 Then, start a container with:
 
 ```bash
-docker run -p 9200:9200 -it --rm wazuh-indexer:5.0.0-0
+docker run -p 9200:9200 -it --rm wazuh-indexer:6.0.0-0
 ```
 
 The `build-and-push-docker-image.sh` script automates the process to build and push Wazuh Indexer Docker images to our repository in quay.io. The script takes serveral parameters. Use the `-h` option to display them.

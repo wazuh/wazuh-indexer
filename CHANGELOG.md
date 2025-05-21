@@ -19,7 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Removed
 
 ### Fixed
-- Fix workflows bucket [(#845)](https://github.com/wazuh/wazuh-indexer/pull/845)
+- Fix package upload to bucket subfolder 6.x [(#845)](https://github.com/wazuh/wazuh-indexer/pull/845)
 
 ### Security
 

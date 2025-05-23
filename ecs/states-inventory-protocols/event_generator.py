@@ -32,7 +32,7 @@ def generate_random_data(number):
             "@timestamp": generate_random_date(),
             "agent": generate_random_agent(),
             "network": generate_random_network(),
-            "observer": generate_random_observer(),
+            "interface": generate_random_interface(),
             "wazuh": generate_random_wazuh(),
         }
         data.append(event_data)
@@ -69,10 +69,6 @@ def generate_random_network():
         "metric": random.randint(1, 100),
         "type": random.choice(["wired", "wireless"]),
     }
-
-
-def generate_random_observer():
-    return {"ingress": {"interface": generate_random_interface()}}
 
 
 def generate_random_interface():

@@ -29,7 +29,6 @@ def generate_random_data(number):
     data = []
     for _ in range(number):
         event_data = {
-            "@timestamp": generate_random_date(),
             "agent": generate_random_agent(),
             "interface": generate_random_interface(),
             "network": generate_random_network(),

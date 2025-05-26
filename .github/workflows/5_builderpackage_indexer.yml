@@ -53,6 +53,10 @@ on:
         description: "ID used to identify the workflow uniquely."
         type: string
         required: false
+      wazuh_plugins_ref:
+        description: "Branch, commit or tag for the wazuh-indexer-plugins repository."
+        type: string
+        default: "main"
   workflow_call:
     inputs:
       revision:
@@ -77,6 +81,9 @@ on:
       id:
         type: string
         required: false
+      wazuh_plugins_ref:
+        type: string
+        default: "main"
     secrets:
       CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY:
         required: true
@@ -134,6 +141,7 @@ jobs:
           echo "previous_version=$PREVIOUS" >> $GITHUB_OUTPUT
 
   build-wazuh-plugins:
+    if: ${{ inputs.wazuh_plugins_ref != '' }}
     strategy:
       fail-fast: false
       matrix:
@@ -144,6 +152,11 @@ jobs:
     outputs:
       hash: ${{ steps.save-hash.outputs.hash }}
     steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: wazuh/wazuh-indexer-plugins
+          ref: ${{ inputs.wazuh_plugins_ref }}
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -175,7 +188,7 @@ jobs:
           if-no-files-found: error
 
   build:
-    needs: [setup]
+    needs: [setup, build-wazuh-plugins]
     runs-on: ${{ matrix.architecture == 'arm64' && 'wz-linux-arm64' || 'ubuntu-24.04' }}
     strategy:
       fail-fast: false
@@ -185,9 +198,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-       # Download plugins
+      # Download plugins
       - name: Download plugins
         uses: actions/download-artifact@v4
+        if: ${{ inputs.wazuh_plugins_ref != '' }}
         with:
           path: ./artifacts/plugins
           merge-multiple: true
@@ -397,4 +411,3 @@ jobs:
         run: |
           cd wazuh-automation/deployability
           python3 modules/allocation/main.py --action delete --track-output /tmp/track.yaml
-          

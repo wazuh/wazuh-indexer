@@ -53,10 +53,6 @@ on:
         description: "ID used to identify the workflow uniquely."
         type: string
         required: false
-      wazuh_plugins_ref:
-        description: "Branch, commit or tag for the wazuh-indexer-plugins repository."
-        type: string
-        default: "main"
   workflow_call:
     inputs:
       revision:
@@ -81,9 +77,6 @@ on:
       id:
         type: string
         required: false
-      wazuh_plugins_ref:
-        type: string
-        default: "main"
     secrets:
       CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY:
         required: true
@@ -91,6 +84,9 @@ on:
       CI_INTERNAL_DEVELOPMENT_BUCKET_USER_SECRET_KEY:
         required: true
         description: "AWS user secret key"
+      AWS_IAM_OVA_ROLE:
+        required: true
+        description: "AWS IAM role"
     outputs:
       name:
         description: Name of the package built.
@@ -110,14 +106,14 @@ on:
 #   | https://docs.github.com/en/actions/learn-github-actions/expressions#example
 
 jobs:
-  matrix:
-    name: Set up matrix
+  setup:
+    name: Set up variables
     runs-on: ubuntu-24.04
     outputs:
-      matrix: ${{ steps.setup.outputs.matrix }}
+      matrix: ${{ steps.matrix.outputs.matrix }}
       previous_version: ${{ steps.previous_release.outputs.previous_version }}
     steps:
-      - id: setup
+      - id: martix
         run: |
           matrix=$(jq -cn \
               --argjson distribution '${{ inputs.distribution }}' \
@@ -125,69 +121,76 @@ jobs:
               '{distribution: $distribution, architecture: $architecture}'
           )
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
+      - uses: actions/checkout@v4
+      - id: previous_release
+        name: Get latest Wazuh release from GitHub
+        run: |
+          CURRENT="$(bash packaging_scripts/product_version.sh)"
+          PREVIOUS=$(curl -s https://api.github.com/repos/wazuh/wazuh/releases | jq -r '.[].tag_name' | grep -vE 'alpha|beta|rc' | sed 's/^v//' | grep -E '^4\.[0-9]+\.[0-9]+$' | \
+          grep -v "^${CURRENT}$" | sort -V | awk -v current="$CURRENT" '$0 < current' | tail -n1)
+
+          echo "Current version: $CURRENT"
+          echo "Latest release detected: $PREVIOUS"
+          echo "previous_version=$PREVIOUS" >> $GITHUB_OUTPUT
 
   build-wazuh-plugins:
-    if: ${{ inputs.wazuh_plugins_ref != '' }}
-    strategy:
-      fail-fast: false
       matrix:
         plugins: ["setup"]
-    runs-on: ubuntu-24.04
-    env:
-      plugin_name: wazuh-indexer-${{ matrix.plugins }}
-    outputs:
-      hash: ${{ steps.save-hash.outputs.hash }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          repository: wazuh/wazuh-indexer-plugins
-          ref: ${{ inputs.wazuh_plugins_ref }}
+      runs-on: ubuntu-24.04
+      env:
+        plugin_name: wazuh-indexer-${{ matrix.plugins }}
+      outputs:
+        hash: ${{ steps.save-hash.outputs.hash }}
+      steps:
+        - uses: actions/checkout@v4
+          with:
+            repository: wazuh/wazuh-indexer-plugins
+            ref: ${{ inputs.wazuh_plugins_ref }}
 
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 21
+        - uses: actions/setup-java@v4
+          with:
+            distribution: temurin
+            java-version: 21
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        - name: Setup Gradle
+          uses: gradle/actions/setup-gradle@v4
 
-      - name: Get version
-        id: version
-        run: echo "version=$(jq .version -r VERSION.json)" >> "$GITHUB_OUTPUT"
+        - name: Get version
+          id: version
+          run: echo "version=$(jq .version -r VERSION.json)" >> "$GITHUB_OUTPUT"
 
-      - name: Build with Gradle
-        working-directory: ./plugins/${{ matrix.plugins }}
-        run: ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }}
+        - name: Build with Gradle
+          working-directory: ./plugins/${{ matrix.plugins }}
+          run: ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }}
 
-      - run: ls -lR build/distributions
-        working-directory: ./plugins/${{ matrix.plugins }}
+        - run: ls -lR build/distributions
+          working-directory: ./plugins/${{ matrix.plugins }}
 
-      - name: Save commit hash
-        id: save-hash
-        run: echo "hash=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+        - name: Save commit hash
+          id: save-hash
+          run: echo "hash=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
-          path: "./plugins/${{ matrix.plugins }}/build/distributions/${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip"
-          if-no-files-found: error
+        - name: Upload artifact
+          uses: actions/upload-artifact@v4
+          with:
+            name: ${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
+            path: "./plugins/${{ matrix.plugins }}/build/distributions/${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip"
+            if-no-files-found: error
 
   build:
-    needs: [matrix, build-wazuh-plugins]
+    needs: [setup]
     runs-on: ${{ matrix.architecture == 'arm64' && 'wz-linux-arm64' || 'ubuntu-24.04' }}
     strategy:
       fail-fast: false
-      matrix: ${{ fromJson(needs.matrix.outputs.matrix) }}
+      matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
     outputs:
       name: ${{ steps.package.outputs.name }}
     steps:
       - uses: actions/checkout@v4
 
-      # Download plugins
+       # Download plugins
       - name: Download plugins
         uses: actions/download-artifact@v4
-        if: ${{ inputs.wazuh_plugins_ref != '' }}
         with:
           path: ./artifacts/plugins
           merge-multiple: true

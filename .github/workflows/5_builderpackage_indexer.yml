@@ -113,7 +113,7 @@ jobs:
       matrix: ${{ steps.matrix.outputs.matrix }}
       previous_version: ${{ steps.previous_release.outputs.previous_version }}
     steps:
-      - id: martix
+      - id: matrix
         run: |
           matrix=$(jq -cn \
               --argjson distribution '${{ inputs.distribution }}' \
@@ -394,7 +394,7 @@ jobs:
           aws s3 cp "$src" "$dest"
           s3uri="${dest}${{ steps.package.outputs.name }}.sha512"
           echo "::notice::S3 sha512 URI: ${s3uri}"
-          
+
       - name: On failure delete Allocator Machine
         if: ${{ matrix.distribution == 'rpm' && failure() }}
         run: |

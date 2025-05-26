@@ -110,7 +110,7 @@ For Debian packages, the `assemble.sh` script will perform the following operati
    ```
    artifacts/
    |-- dist
-   |   |-- wazuh-indexer-min_6.0.0_amd64.deb
+   |   |-- wazuh-indexer-min_<version>_amd64.deb
    `-- tmp
        `-- deb
            |-- Makefile
@@ -119,7 +119,7 @@ For Debian packages, the `assemble.sh` script will perform the following operati
            |-- etc
            |-- usr
            |-- var
-           `-- wazuh-indexer-min_6.0.0_amd64.deb
+           `-- wazuh-indexer-min_<version>_amd64.deb
    ```
 
    Notes:
@@ -144,8 +144,8 @@ For Debian packages, the `assemble.sh` script will perform the following operati
    artifacts/
    |-- artifact_name.txt
    |-- dist
-   |   |-- wazuh-indexer-min_6.0.0_amd64.deb
-   |   `-- wazuh-indexer_6.0.0_amd64.deb
+   |   |-- wazuh-indexer-min_<version>_amd64.deb
+   |   `-- wazuh-indexer_<version>_amd64.deb
    `-- tmp
        `-- deb
            |-- Makefile
@@ -154,7 +154,7 @@ For Debian packages, the `assemble.sh` script will perform the following operati
            |-- etc
            |-- usr
            |-- var
-           |-- wazuh-indexer-min_6.0.0_amd64.deb
+           |-- wazuh-indexer-min_<version>_amd64.deb
            `-- debian/
                | -- control
                | -- copyright

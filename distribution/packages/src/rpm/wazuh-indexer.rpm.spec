@@ -125,7 +125,7 @@ set -- "$@" "%{product_dir}/bin/.*"
 set -- "$@" "%{product_dir}/jdk/bin/.*"
 set -- "$@" "%{product_dir}/jdk/lib/jspawnhelper"
 set -- "$@" "%{product_dir}/jdk/lib/modules"
-set -- "$@" "%{product_dir}/performance-analyzer-rca/bin/.*"
+# set -- "$@" "%{product_dir}/performance-analyzer-rca/bin/.*"
 set -- "$@" "%{product_dir}/NOTICE.txt"
 set -- "$@" "%{product_dir}/README.md"
 set -- "$@" "%{product_dir}/LICENSE.txt"
@@ -195,16 +195,16 @@ chown -R %{name}:%{name} %{config_dir}
 chown -R %{name}:%{name} %{log_dir}
 
 # Apply PerformanceAnalyzer Settings
-if ! grep -q '## OpenSearch Performance Analyzer' %{config_dir}/jvm.options; then
-   # Add Performance Analyzer settings in %{config_dir}/jvm.options
-   CLK_TCK=`/usr/bin/getconf CLK_TCK`
-   echo >> %{config_dir}/jvm.options
-   echo '## OpenSearch Performance Analyzer' >> %{config_dir}/jvm.options
-   echo "-Dclk.tck=$CLK_TCK" >> %{config_dir}/jvm.options
-   echo "-Djdk.attach.allowAttachSelf=true" >> %{config_dir}/jvm.options
-   echo "-Djava.security.policy=file://%{config_dir}/opensearch-performance-analyzer/opensearch_security.policy" >> %{config_dir}/jvm.options
-   echo "--add-opens=jdk.attach/sun.tools.attach=ALL-UNNAMED" >> %{config_dir}/jvm.options
-fi
+# if ! grep -q '## OpenSearch Performance Analyzer' %{config_dir}/jvm.options; then
+#    # Add Performance Analyzer settings in %{config_dir}/jvm.options
+#    CLK_TCK=`/usr/bin/getconf CLK_TCK`
+#    echo >> %{config_dir}/jvm.options
+#    echo '## OpenSearch Performance Analyzer' >> %{config_dir}/jvm.options
+#    echo "-Dclk.tck=$CLK_TCK" >> %{config_dir}/jvm.options
+#    echo "-Djdk.attach.allowAttachSelf=true" >> %{config_dir}/jvm.options
+#    echo "-Djava.security.policy=file://%{config_dir}/opensearch-performance-analyzer/opensearch_security.policy" >> %{config_dir}/jvm.options
+#    echo "--add-opens=jdk.attach/sun.tools.attach=ALL-UNNAMED" >> %{config_dir}/jvm.options
+# fi
 
 exit 0
 
@@ -289,7 +289,7 @@ exit 0
 %attr(750, %{name}, %{name}) %{product_dir}/jdk/bin/*
 %attr(750, %{name}, %{name}) %{product_dir}/jdk/lib/jspawnhelper
 %attr(750, %{name}, %{name}) %{product_dir}/jdk/lib/modules
-%attr(750, %{name}, %{name}) %{product_dir}/performance-analyzer-rca/bin/*
+# %attr(750, %{name}, %{name}) %{product_dir}/performance-analyzer-rca/bin/*
 
 # Preserve service state flag across upgrade
 %ghost %attr(440, %{name}, %{name}) %{config_dir}/.was_active

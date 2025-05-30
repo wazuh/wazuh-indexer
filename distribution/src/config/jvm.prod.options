@@ -89,5 +89,5 @@
 ## OpenSearch Performance Analyzer
 -Dclk.tck=100
 -Djdk.attach.allowAttachSelf=true
--Djava.security.policy=file:///etc/wazuh-indexer/opensearch-performance-analyzer/opensearch_security.policy
+# -Djava.security.policy=file:///etc/wazuh-indexer/opensearch-performance-analyzer/opensearch_security.policy
 --add-opens=jdk.attach/sun.tools.attach=ALL-UNNAMED

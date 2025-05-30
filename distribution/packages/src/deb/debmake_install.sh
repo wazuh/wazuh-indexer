@@ -84,7 +84,7 @@ binary_files+=("${buildroot}${product_dir}"/bin/*)
 binary_files+=("${buildroot}${product_dir}"/jdk/bin/*)
 binary_files+=("${buildroot}${product_dir}"/jdk/lib/jspawnhelper)
 binary_files+=("${buildroot}${product_dir}"/jdk/lib/modules)
-binary_files+=("${buildroot}${product_dir}"/performance-analyzer-rca/bin/*)
+# binary_files+=("${buildroot}${product_dir}"/performance-analyzer-rca/bin/*)
 
 for i in "${binary_files[@]}"; do
 	chmod -c 750 "$i"

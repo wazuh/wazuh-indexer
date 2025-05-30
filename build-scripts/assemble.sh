@@ -302,7 +302,7 @@ function assemble_tar() {
 
     # Install plugins
     install_plugins "${PRODUCT_VERSION}"
-    fix_log_rotation "${PATH_CONF}"
+    #fix_log_rotation "${PATH_CONF}"
     add_demo_certs_installer
     # Swap configuration files
     add_configuration_files
@@ -341,8 +341,8 @@ function assemble_rpm() {
 
     # Install plugins
     install_plugins "${PRODUCT_VERSION}"
-    fix_log_rotation ${PATH_CONF}
-    enable_performance_analyzer_rca ${src_path}
+    #fix_log_rotation ${PATH_CONF}
+    # enable_performance_analyzer_rca ${src_path}
     add_demo_certs_installer
     # Swap configuration files
     add_configuration_files
@@ -395,8 +395,8 @@ function assemble_deb() {
 
     # Install plugins
     install_plugins "${PRODUCT_VERSION}"
-    fix_log_rotation ${PATH_CONF}
-    enable_performance_analyzer_rca ${src_path}
+    #fix_log_rotation ${PATH_CONF}
+    # enable_performance_analyzer_rca ${src_path}
     add_demo_certs_installer
     # Swap configuration files
     add_configuration_files

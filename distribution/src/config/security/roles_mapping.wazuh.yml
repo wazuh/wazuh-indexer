@@ -7,3 +7,59 @@ manage_wazuh_index:
   users:
   - "kibanaserver"
   and_backend_roles: []
+
+# -----
+
+server-stateful-read-write:
+  reserved: false
+  hidden: false
+  backend_roles:
+    - "server-stateful-read-write"
+  users: [ ]
+  hosts: [ ]
+  and_backend_roles: [ ]
+
+server-stateless-write-only:
+  reserved: false
+  hidden: false
+  backend_roles:
+    - "server-stateless-write-only"
+  users: [ ]
+  hosts: [ ]
+  and_backend_roles: [ ]
+
+dashboard-stateful-read-only:
+  reserved: false
+  hidden: false
+  backend_roles:
+    - "dashboard-stateful-read-only"
+  users: [ ]
+  hosts: [ ]
+  and_backend_roles: [ ]
+
+dashboard-stateless-read-only:
+  reserved: false
+  hidden: false
+  backend_roles:
+    - "dashboard-stateless-read-only"
+  users: [ ]
+  hosts: [ ]
+  and_backend_roles: [ ]
+
+dashboard-stateless-read-write:
+  reserved: false
+  hidden: false
+  backend_roles:
+    - "dashboard-stateless-read-write"
+  users: [ ]
+  hosts: [ ]
+  and_backend_roles: [ ]
+
+dashboard-stateless-management:
+  reserved: false
+  hidden: false
+  backend_roles:
+    - "dashboard-stateless-management"
+  users: [ ]
+  hosts: [ ]
+  and_backend_roles: [ ]

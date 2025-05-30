@@ -1,0 +1,9 @@
+---
+- name: user
+  title: User
+  type: group
+  group: 2
+  description: >
+    Wazuh user custom fields.
+  fields:
+    # TODO: Add fields as needed.

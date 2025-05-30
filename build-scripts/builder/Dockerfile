@@ -61,7 +61,7 @@ RUN addgroup --gid 1000 wazuh-indexer && \
 
 # Create repositories path
 RUN mkdir -p /repositories/wazuh-indexer-plugins && \
-    chown wazuh-indexer:wazuh-indexer /repositories/wazuh-indexer-plugins && \
+    chown wazuh-indexer:wazuh-indexer /repositories/wazuh-indexer-plugins
 
 # Copy your build scripts into the container as root
 COPY build-scripts/builder/entrypoint.sh /

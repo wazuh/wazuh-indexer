@@ -1,6 +1,6 @@
 {
   "index_patterns": [
-    "wazuh-users*"
+    "wazuh-internal-users*"
   ],
   "priority": 1,
   "template": {

@@ -1,18 +1,14 @@
-wazuhserver:
-  # The hash is the hash of the password "wazuhserver"
-  hash: "$2b$12$F2AcDHixU0NJelALgC4LU.7Ac5OsxgXPh5kALHiuBu2ftstDBHoQ."
-  reserved: false
-  backend_roles:
-    - "server-stateful-read-write"
-    - "server-stateless-write-only"
-  description: "Server user with read/write access to stateful and write-only access to stateless indexes"
-wazuhdashboard:
-  # The hash is the hash of the password "wazuhdashboard"
-  hash: "$2b$12$HYNejpgq0WUQ3a4hFvbGOOtvgE0H/pH7OqMhlHHRM0Ziu4V3EF/8y"
-  reserved: false
-  backend_roles:
-    - "dashboard-stateful-read-only"
-    - "dashboard-stateless-read-only"
-    - "dashboard-stateless-read-write"
-    - "dashboard-stateless-management"
-  description: "Dashboard user with read access to stateful and stateless indexes, and write access to stateless management indexes"
+# This file contains the internal users configuration for Wazuh.
+wazuh-server:
+  # The hash is the hash of the password "wazuh-server"
+  hash: "$2y$12$4pwjkynhYg09QJtJ5zxAcuqUSOV8JBziFDca6u9cV/H9oglVCGZEW"
+  reserved: true
+  backend_roles: []
+  description: "Wazuh Server user with read/write access to stateful and write-only access to stateless indexes."
+
+wazuh-dashboard:
+  # The hash is the hash of the password "wazuh-dashboard"
+  hash: "$2y$12$Mn2XvokTfwo2NWL2AK83yOkio1qmJyZrAp0iEWqs3lz0L8ruhu9LK"
+  reserved: true
+  backend_roles: []
+  description: "Wazuh Dashboard user with read access to stateful and stateless indexes, write access to metrics indexes and management for sample data indexes."

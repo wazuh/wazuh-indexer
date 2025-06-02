@@ -17,10 +17,9 @@ manage_wazuh_index:
   tenant_permissions: []
   static: false
 
-# -----
+# Wazuh roles for security configuration
 
-
-server-stateful-read-write:
+stateful-read:
   cluster_permissions: []
   index_permissions:
     - index_patterns:
@@ -30,11 +29,50 @@ server-stateful-read-write:
       masked_fields: []
       allowed_actions:
         - "read"
+  tenant_permissions: []
+  static: true
+
+stateful-write:
+  cluster_permissions: []
+  index_permissions:
+    - index_patterns:
+        - "wazuh-states-*"
+      dls: ""
+      fls: []
+      masked_fields: []
+      allowed_actions:
         - "index"
   tenant_permissions: []
   static: true
 
-server-stateless-write-only:
+stateful-delete:
+  cluster_permissions: []
+  index_permissions:
+    - index_patterns:
+        - "wazuh-states-*"
+      dls: ""
+      fls: []
+      masked_fields: []
+      allowed_actions:
+        - "delete"
+  tenant_permissions: []
+  static: true
+
+stateless-read:
+  cluster_permissions: []
+  index_permissions:
+    - index_patterns:
+        - "wazuh-alerts*"
+        - "wazuh-archives*"
+      dls: ""
+      fls: []
+      masked_fields: []
+      allowed_actions:
+        - "read"
+  tenant_permissions: []
+  static: true
+
+stateless-write:
   cluster_permissions: []
   index_permissions:
     - index_patterns:
@@ -48,34 +86,7 @@ server-stateless-write-only:
   tenant_permissions: []
   static: true
 
-dashboard-stateful-read-only:
-  cluster_permissions: []
-  index_permissions:
-    - index_patterns:
-        - "wazuh-states-*"
-      dls: ""
-      fls: []
-      masked_fields: []
-      allowed_actions:
-        - "read"
-  tenant_permissions: []
-  static: true
-
-dashboard-stateless-read-only:
-  cluster_permissions: []
-  index_permissions:
-    - index_patterns:
-        - "wazuh-alerts*"
-        - "wazuh-archives*"
-      dls: ""
-      fls: []
-      masked_fields: []
-      allowed_actions:
-        - "read"
-  tenant_permissions: []
-  static: true
-
-dashboard-stateless-read-write:
+metrics-read:
   cluster_permissions: []
   index_permissions:
     - index_patterns:
@@ -86,11 +97,24 @@ dashboard-stateless-read-write:
       masked_fields: []
       allowed_actions:
         - "read"
+  tenant_permissions: []
+  static: true
+
+metrics-write:
+  cluster_permissions: []
+  index_permissions:
+    - index_patterns:
+        - "wazuh-monitoring*"
+        - "wazuh-statistics*"
+      dls: ""
+      fls: []
+      masked_fields: []
+      allowed_actions:
         - "index"
   tenant_permissions: []
   static: true
 
-dashboard-stateless-management:
+sample-data-management:
   cluster_permissions: []
   index_permissions:
     - index_patterns:
@@ -99,9 +123,7 @@ dashboard-stateless-management:
       fls: []
       masked_fields: []
       allowed_actions:
-        - "read"
-        - "delete"
+        - "data_access"
         - "manage"
-        - "index"
   tenant_permissions: []
   static: true

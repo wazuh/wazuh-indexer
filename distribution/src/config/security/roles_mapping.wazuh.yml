@@ -8,58 +8,77 @@ manage_wazuh_index:
   - "kibanaserver"
   and_backend_roles: []
 
-# -----
+# Wazuh roles mappings for security configuration
 
-server-stateful-read-write:
-  reserved: false
+stateful-read:
+  reserved: true
   hidden: false
-  backend_roles:
-    - "server-stateful-read-write"
-  users: [ ]
+  backend_roles: [ ]
   hosts: [ ]
+  users:
+    - "wazuh-server"
+    - "wazuh-dashboard"
   and_backend_roles: [ ]
 
-server-stateless-write-only:
-  reserved: false
+stateful-write:
+  reserved: true
   hidden: false
-  backend_roles:
-    - "server-stateless-write-only"
-  users: [ ]
+  backend_roles: [ ]
   hosts: [ ]
+  users:
+    - "wazuh-server"
   and_backend_roles: [ ]
 
-dashboard-stateful-read-only:
-  reserved: false
+stateful-delete:
+  reserved: true
   hidden: false
-  backend_roles:
-    - "dashboard-stateful-read-only"
-  users: [ ]
+  backend_roles: [ ]
   hosts: [ ]
+  users:
+    - "wazuh-server"
   and_backend_roles: [ ]
 
-dashboard-stateless-read-only:
-  reserved: false
+stateless-write:
+  reserved: true
   hidden: false
-  backend_roles:
-    - "dashboard-stateless-read-only"
-  users: [ ]
+  backend_roles: [ ]
   hosts: [ ]
+  users:
+    - "wazuh-server"
   and_backend_roles: [ ]
 
-dashboard-stateless-read-write:
-  reserved: false
+stateless-read:
+  reserved: true
   hidden: false
-  backend_roles:
-    - "dashboard-stateless-read-write"
-  users: [ ]
+  backend_roles: [ ]
   hosts: [ ]
+  users:
+    - "wazuh-dashboard"
   and_backend_roles: [ ]
 
-dashboard-stateless-management:
-  reserved: false
+metrics-read:
+  reserved: true
   hidden: false
-  backend_roles:
-    - "dashboard-stateless-management"
-  users: [ ]
+  backend_roles: [ ]
   hosts: [ ]
+  users:
+    - "wazuh-dashboard"
+  and_backend_roles: [ ]
+
+metrics-write:
+  reserved: true
+  hidden: false
+  backend_roles: [ ]
+  hosts: [ ]
+  users:
+    - "wazuh-dashboard"
+  and_backend_roles: [ ]
+
+sample-data-management:
+  reserved: true
+  hidden: false
+  backend_roles: [ ]
+  hosts: [ ]
+  users:
+    - "wazuh-dashboard"
   and_backend_roles: [ ]

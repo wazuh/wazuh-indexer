@@ -23,10 +23,6 @@ case "$1" in
             echo "Stop existing ${name}.service"
             systemctl --no-reload stop ${name}.service
         fi
-        if command -v systemctl >/dev/null && systemctl is-active ${name}-performance-analyzer.service >/dev/null; then
-            echo "Stop existing ${name}-performance-analyzer.service"
-            systemctl --no-reload stop ${name}-performance-analyzer.service
-        fi
     ;;
     failed-upgrade)
     ;;

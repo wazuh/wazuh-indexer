@@ -23,10 +23,6 @@ if command -v systemctl >/dev/null && systemctl is-active ${name}.service >/dev/
     systemctl --no-reload stop ${name}.service
     touch ${state_file}
 fi
-if command -v systemctl >/dev/null && systemctl is-active ${name}-performance-analyzer.service >/dev/null; then
-    echo "Stop existing ${name}-performance-analyzer.service"
-    systemctl --no-reload stop ${name}-performance-analyzer.service
-fi
 
 # Create user and group if they do not already exist.
 getent group ${name} > /dev/null 2>&1 || groupadd -r ${name}

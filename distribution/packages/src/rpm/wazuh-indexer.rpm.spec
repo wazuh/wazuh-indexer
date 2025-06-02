@@ -77,7 +77,6 @@ fi
 # Pre-populate the folders to ensure rpm build success even without all plugins
 mkdir -p %{buildroot}%{config_dir}/opensearch-observability
 mkdir -p %{buildroot}%{config_dir}/opensearch-reports-scheduler
-mkdir -p %{buildroot}%{product_dir}/performance-analyzer-rca
 
 # Pre-populate PA configs if not present
 if [ ! -f %{buildroot}%{data_dir}/rca_enabled.conf ]; then
@@ -125,17 +124,14 @@ set -- "$@" "%{product_dir}/bin/.*"
 set -- "$@" "%{product_dir}/jdk/bin/.*"
 set -- "$@" "%{product_dir}/jdk/lib/jspawnhelper"
 set -- "$@" "%{product_dir}/jdk/lib/modules"
-set -- "$@" "%{product_dir}/performance-analyzer-rca/bin/.*"
 set -- "$@" "%{product_dir}/NOTICE.txt"
 set -- "$@" "%{product_dir}/README.md"
 set -- "$@" "%{product_dir}/LICENSE.txt"
 set -- "$@" "%{_prefix}/lib/systemd/system/%{name}.service"
-set -- "$@" "%{_prefix}/lib/systemd/system/%{name}-performance-analyzer.service"
 set -- "$@" "%{_sysconfdir}/init.d/%{name}"
 set -- "$@" "%{_sysconfdir}/sysconfig/%{name}"
 set -- "$@" "%{_prefix}/lib/sysctl.d/%{name}.conf"
 set -- "$@" "%{_prefix}/lib/tmpfiles.d/%{name}.conf"
-set -- "$@" "%%dir %{product_dir}/bin/opensearch-performance-analyzer"
 
 # Check if we are including the observability and reports scheduler
 # plugins
@@ -175,10 +171,6 @@ if [ "$1" -gt 1 ]; then
     fi
 fi
 
-if command -v systemctl >/dev/null && systemctl is-active %{name}-performance-analyzer.service >/dev/null; then
-    echo "Stop existing %{name}-performance-analyzer.service"
-    systemctl --no-reload stop %{name}-performance-analyzer.service
-fi
 
 # Create user and group if they do not already exist.
 getent group %{name} > /dev/null 2>&1 || groupadd -r %{name}
@@ -193,18 +185,6 @@ set -e
 # Fix ownership and permissions
 chown -R %{name}:%{name} %{config_dir}
 chown -R %{name}:%{name} %{log_dir}
-
-# Apply PerformanceAnalyzer Settings
-if ! grep -q '## OpenSearch Performance Analyzer' %{config_dir}/jvm.options; then
-   # Add Performance Analyzer settings in %{config_dir}/jvm.options
-   CLK_TCK=`/usr/bin/getconf CLK_TCK`
-   echo >> %{config_dir}/jvm.options
-   echo '## OpenSearch Performance Analyzer' >> %{config_dir}/jvm.options
-   echo "-Dclk.tck=$CLK_TCK" >> %{config_dir}/jvm.options
-   echo "-Djdk.attach.allowAttachSelf=true" >> %{config_dir}/jvm.options
-   echo "-Djava.security.policy=file://%{config_dir}/opensearch-performance-analyzer/opensearch_security.policy" >> %{config_dir}/jvm.options
-   echo "--add-opens=jdk.attach/sun.tools.attach=ALL-UNNAMED" >> %{config_dir}/jvm.options
-fi
 
 exit 0
 
@@ -243,10 +223,6 @@ if command -v systemctl >/dev/null && systemctl is-active %{name}.service >/dev/
     echo "Stop existing %{name}.service"
     systemctl --no-reload stop %{name}.service
 fi
-if command -v systemctl >/dev/null && systemctl is-active %{name}-performance-analyzer.service >/dev/null; then
-    echo "Stop existing %{name}-performance-analyzer.service"
-    systemctl --no-reload stop %{name}-performance-analyzer.service
-fi
 
 exit 0
 
@@ -259,7 +235,6 @@ exit 0
 
 # Service files
 %attr(0644, root, root) %{_prefix}/lib/systemd/system/%{name}.service
-%attr(0644, root, root) %{_prefix}/lib/systemd/system/%{name}-performance-analyzer.service
 %attr(0750, root, root) %{_sysconfdir}/init.d/%{name}
 %attr(0644, root, root) %config(noreplace) %{_prefix}/lib/sysctl.d/%{name}.conf
 %attr(0644, root, root) %config(noreplace) %{_prefix}/lib/tmpfiles.d/%{name}.conf
@@ -289,7 +264,6 @@ exit 0
 %attr(750, %{name}, %{name}) %{product_dir}/jdk/bin/*
 %attr(750, %{name}, %{name}) %{product_dir}/jdk/lib/jspawnhelper
 %attr(750, %{name}, %{name}) %{product_dir}/jdk/lib/modules
-%attr(750, %{name}, %{name}) %{product_dir}/performance-analyzer-rca/bin/*
 
 # Preserve service state flag across upgrade
 %ghost %attr(440, %{name}, %{name}) %{config_dir}/.was_active

@@ -1,0 +1,28 @@
+---
+- name: user
+  title: User
+  type: group
+  group: 2
+  description: >
+    Wazuh user custom fields.
+  fields:
+    - name: uid_signed
+      type: long
+      level: custom
+      description: >
+        Signed user ID.
+    - name: uuid
+      type: keyword
+      level: custom
+      description: >
+        UUID of the user.
+    - name: is_hidden
+      type: boolean
+      level: custom
+      description: >
+        Whether the user is hidden.
+    - name: is_remote
+      type: boolean
+      level: custom
+      description: >
+        Whether the user is remote.

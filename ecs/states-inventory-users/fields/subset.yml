@@ -10,12 +10,11 @@ fields:
       id: {}
       name: {}
       full_name: {}
-      directory: {}
+      home: {}
       shell: {}
       type: {}
       created: {}
-      roles: {}
-      last_login: {}
+      groups: {}
       uid_signed: {}
       uuid: {}
       is_hidden: {}

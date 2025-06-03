@@ -3,6 +3,10 @@
   title: Authentication Failures
   type: group
   group: 2
+  reusable:
+    top_level: false
+    expected:
+      - { at: user, as: auth_failures }
   description: >
     Wazuh failed login tracking information.
   fields:

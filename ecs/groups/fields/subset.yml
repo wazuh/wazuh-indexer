@@ -1,9 +1,0 @@
----
-name: wazuh-groups
-fields:
-  base:
-    fields:
-      tags: []
-      "@timestamp": {}
-  user:
-    fields: "*"

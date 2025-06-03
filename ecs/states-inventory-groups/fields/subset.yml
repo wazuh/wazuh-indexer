@@ -5,5 +5,13 @@ fields:
     fields:
       tags: []
       "@timestamp": {}
-  user:
-    fields: "*"
+  group:
+    fields:
+      id: {}
+      name: {}
+      description: {}
+      id_signed: {}
+      uuid: {}
+      is_hidden: {}
+      namespace_pid: {}
+      users: {}

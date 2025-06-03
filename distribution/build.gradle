@@ -364,7 +364,7 @@ configure(subprojects.findAll { ['archives', 'packages'].contains(it.name) }) {
           exclude '**/*-javadoc.jar'
           exclude '**/*-sources.jar'
           // strip the version since jvm.options is using agent without version
-          rename("opensearch-agent-${project.version}.jar", "opensearch-agent.jar")
+          rename("opensearch-agent-${project.opensearch}.jar", "opensearch-agent.jar")
         }
       }
     }

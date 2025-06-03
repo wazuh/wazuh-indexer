@@ -1,0 +1,10 @@
+ECS_Version,Indexed,Field_Set,Field,Type,Level,Normalization,Example,Description
+8.11.0,true,base,tags,keyword,core,array,"[""production"", ""env2""]",List of keywords used to tag each event.
+8.11.0,true,group,group.description,keyword,custom,,,Description of the group.
+8.11.0,true,group,group.id,keyword,extended,,,Unique identifier for the group on the system/platform.
+8.11.0,true,group,group.id_signed,long,custom,,,Signed group ID.
+8.11.0,true,group,group.is_hidden,boolean,custom,,,Whether the group is hidden.
+8.11.0,true,group,group.name,keyword,extended,,,Name of the group.
+8.11.0,true,group,group.namespace_pid,long,custom,,,Namespace PID of the group.
+8.11.0,true,group,group.users,keyword,custom,,,Users that belong to the group.
+8.11.0,true,group,group.uuid,keyword,custom,,,UUID of the group.

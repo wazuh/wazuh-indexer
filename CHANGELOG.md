@@ -7,16 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 - Add new users, roles and mappings [(#886)](https://github.com/wazuh/wazuh-indexer/pull/886)
 - Add custom GitHub Action to validate commiter's emails by domain [(#896)](https://github.com/wazuh/wazuh-indexer/pull/896)
-
-### Changed
-- Make telemetry `Tags` immutable ([#20788](https://github.com/opensearch-project/OpenSearch/pull/20788))
-- Move Randomness from server to libs/common ([#20570](https://github.com/opensearch-project/OpenSearch/pull/20570))
-- Use env variable (OPENSEARCH_FIPS_MODE) to enable opensearch to run in FIPS enforced mode instead of checking for existence of bcFIPS jars ([#20625](https://github.com/opensearch-project/OpenSearch/pull/20625))
-- Update streaming flag to use search request context ([#20530](https://github.com/opensearch-project/OpenSearch/pull/20530))
-- Move pull-based ingestion classes from experimental to publicAPI ([#20704](https://github.com/opensearch-project/OpenSearch/pull/20704))
-- Lazy init stored field reader in SourceLookup ([#20827](https://github.com/opensearch-project/OpenSearch/pull/20827))
-* Improved error message when trying to open an index originally created with Elasticsearch on OpenSearch ([#20512](https://github.com/opensearch-project/OpenSearch/pull/20512))
-- Updated MMapDirectory to use ReadAdviseByContext rather than default readadvise of Lucene([#21031](https://github.com/opensearch-project/OpenSearch/pull/21031))
+- Migrate to OpenSearch 3.0.0 [(#903)](https://github.com/wazuh/wazuh-indexer/pull/903)
 
 ### Fixed
 - Relax index template pattern overlap check to use minimum-string heuristic, allowing distinguishable multi-wildcard patterns at the same priority ([#20702](https://github.com/opensearch-project/OpenSearch/pull/20702))

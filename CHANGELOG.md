@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Replace and remove deprecated settings [(#894)](https://github.com/wazuh/wazuh-indexer/pull/894)
 - Backport packaging improvements [(#906)](https://github.com/wazuh/wazuh-indexer/pull/906)
 - Apply Lintian overrides [(#908)](https://github.com/wazuh/wazuh-indexer/pull/908)
+- Apply fix to wazuh-indexer.service [(#912)](https://github.com/wazuh/wazuh-indexer/pull/912)
 
 ### Deprecated
 -

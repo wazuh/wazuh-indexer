@@ -77,7 +77,6 @@ fi
 
 binary_files=()
 binary_files+=("${buildroot}${product_dir}"/bin/*)
-binary_files+=("${buildroot}${product_dir}"/bin/opensearch-performance-analyzer/*)
 binary_files+=("${buildroot}${product_dir}"/jdk/bin/*)
 binary_files+=("${buildroot}${product_dir}"/jdk/lib/jspawnhelper)
 binary_files+=("${buildroot}${product_dir}"/jdk/lib/modules)

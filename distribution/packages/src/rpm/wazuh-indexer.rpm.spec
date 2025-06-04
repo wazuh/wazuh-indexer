@@ -78,14 +78,6 @@ fi
 mkdir -p %{buildroot}%{config_dir}/opensearch-observability
 mkdir -p %{buildroot}%{config_dir}/opensearch-reports-scheduler
 
-# Pre-populate PA configs if not present
-if [ ! -f %{buildroot}%{data_dir}/rca_enabled.conf ]; then
-    echo 'true' > %{buildroot}%{data_dir}/rca_enabled.conf
-fi
-if [ ! -f %{buildroot}%{data_dir}/performance_analyzer_enabled.conf ]; then
-    echo 'true' > %{buildroot}%{data_dir}/performance_analyzer_enabled.conf
-fi
-
 # Build a filelist to be included in the %files section
 echo '%defattr(640, %{name}, %{name}, 750)' > filelist.txt
 find %{buildroot} -type d >> filelist.txt

@@ -22,8 +22,6 @@ name="wazuh-indexer"
 
 product_dir="/usr/share/${name}"
 config_dir="/etc/${name}"
-# data_dir="/var/lib/${name}"
-# log_dir="/var/log/${name}"
 pid_dir="/run/${name}"
 service_dir="/usr/lib/systemd/system"
 
@@ -79,6 +77,7 @@ fi
 
 binary_files=()
 binary_files+=("${buildroot}${product_dir}"/bin/*)
+binary_files+=("${buildroot}${product_dir}"/bin/opensearch-performance-analyzer/*)
 binary_files+=("${buildroot}${product_dir}"/jdk/bin/*)
 binary_files+=("${buildroot}${product_dir}"/jdk/lib/jspawnhelper)
 binary_files+=("${buildroot}${product_dir}"/jdk/lib/modules)

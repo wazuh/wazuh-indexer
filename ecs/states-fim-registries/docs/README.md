@@ -1,3 +1,18 @@
+## `wazuh-states-fim-registries` index data model
+
+### Fields summary
+
+The fields are based on https://github.com/wazuh/wazuh/issues/27898
+
+Based on ECS:
+
+- [File Fields](https://www.elastic.co/guide/en/ecs/current/ecs-file.html).
+
+The detail of the fields can be found in csv file [States FIM registries Fields](fields.csv).
+
+### Transition table
+
+
 | Field Name     | Type   | Description                                         | Destination Field         | Custom |
 | -------------- | ------ | :-------------------------------------------------- | ------------------------- | ------ |
 | agent_id       | string | Unique identifier of the agent, e.g., "001".        | agent.id                  | FALSE  |
@@ -21,7 +36,3 @@
 | size           | long   | Size of the file or registry value (in bytes).      | registry.size             | TRUE   |
 | timestamp      | long   | Timestamp when the event was generated.             | timestamp                 | FALSE  |
 | type           | string | Type of monitored entity, e.g., "registry_key".     | event.category            | FALSE  |
-| uid            | string | User ID associated with the entity.                 | registry.uid              | TRUE   |
-| user_name      | string | Name of the owner of the entity (user).             | registry.owner            | TRUE   |
-| value_name     | string | Name of the registry value.                         | registry.value            | FALSE  |
-| value_type     | string | Type of the registry value, e.g., "REG_SZ".         | registry.data.type        | FALSE  |

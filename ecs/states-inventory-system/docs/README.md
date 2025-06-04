@@ -1,3 +1,17 @@
+## `wazuh-states-inventory-system` index data model
+
+### Fields summary
+
+The fields are based on https://github.com/wazuh/wazuh/issues/27898
+
+Based on ECS:
+
+- [File Fields](https://www.elastic.co/guide/en/ecs/current/ecs-file.html).
+
+The detail of the fields can be found in csv file [States inventory system Fields](fields.csv).
+
+### Transition table
+
 | Field Name         | Type   | Description                                                                       | Destination Field            | Custom |
 | ------------------ | ------ | --------------------------------------------------------------------------------- | ---------------------------- | ------ |
 | agent_id           | string | Unique ID of the agent.                                                           | agent.id                     | FALSE  |
@@ -21,5 +35,3 @@
 | os_release         | string | Distribution-specific release information.                                        | host.os.distribution.release | TRUE   |
 | cluster_name       | string | Wazuh cluster name                                                                | wazuh.cluster.name           | TRUE   |
 | cluster_node       | string | Wazuh cluster node                                                                | wazuh.cluster.node           | TRUE   |
-| schema_version     | string | Wazuh schema version                                                              | wazuh.schema.version         | TRUE   |
-|                    | string | Which commercial OS family (one of: linux, macos, unix, windows, ios or android). | host.os.type                 | FALSE  |

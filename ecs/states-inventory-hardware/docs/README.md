@@ -6,7 +6,8 @@ The fields are based on https://github.com/wazuh/wazuh/issues/27898
 
 Based on ECS:
 
-- [File Fields](https://www.elastic.co/guide/en/ecs/current/ecs-file.html).
+- [Agent Fields](https://www.elastic.co/guide/en/ecs/current/ecs-agent.html).
+- [Host Fields](https://www.elastic.co/guide/en/ecs/current/ecs-host.html).
 
 The detail of the fields can be found in csv file [States inventory hardware Fields](fields.csv).
 

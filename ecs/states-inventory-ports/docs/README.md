@@ -6,7 +6,13 @@ The fields are based on https://github.com/wazuh/wazuh/issues/27898
 
 Based on ECS:
 
+- [Agent Fields](https://www.elastic.co/guide/en/ecs/current/ecs-agent.html).
+- [Destination Fields](https://www.elastic.co/guide/en/ecs/current/ecs-destination.html).
+- [Source Fields](https://www.elastic.co/guide/en/ecs/current/ecs-source.html).
 - [File Fields](https://www.elastic.co/guide/en/ecs/current/ecs-file.html).
+- [Interface Fields](https://www.elastic.co/guide/en/ecs/current/ecs-interface.html).
+- [Network Fields](https://www.elastic.co/guide/en/ecs/current/ecs-network.html).
+- [Process Fields](https://www.elastic.co/guide/en/ecs/current/ecs-process.html).
 
 The detail of the fields can be found in csv file [States inventory ports Fields](fields.csv).
 

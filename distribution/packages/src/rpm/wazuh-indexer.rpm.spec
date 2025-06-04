@@ -78,19 +78,7 @@ fi
 
 # Pre-populate the folders to ensure rpm build success even without all plugins
 mkdir -p %{buildroot}%{config_dir}/opensearch-observability
-mkdir -p %{buildroot}%{config_dir}/%{name}-reports-scheduler
-mkdir -p %{buildroot}%{product_dir}/performance-analyzer-rca
-
-# Create empty certs directory
-mkdir -p %{buildroot}%{certs_dir}
-
-# Pre-populate PA configs if not present
-if [ ! -f %{buildroot}%{data_dir}/rca_enabled.conf ]; then
-    echo 'true' > %{buildroot}%{data_dir}/rca_enabled.conf
-fi
-if [ ! -f %{buildroot}%{data_dir}/performance_analyzer_enabled.conf ]; then
-    echo 'true' > %{buildroot}%{data_dir}/performance_analyzer_enabled.conf
-fi
+mkdir -p %{buildroot}%{config_dir}/opensearch-reports-scheduler
 
 # Build a filelist to be included in the %files section
 echo '%defattr(640, %{name}, %{name}, 750)' > filelist.txt
@@ -131,17 +119,14 @@ set -- "$@" "%{product_dir}/bin/.*"
 set -- "$@" "%{product_dir}/jdk/bin/.*"
 set -- "$@" "%{product_dir}/jdk/lib/jspawnhelper"
 set -- "$@" "%{product_dir}/jdk/lib/modules"
-set -- "$@" "%{product_dir}/performance-analyzer-rca/bin/.*"
 set -- "$@" "%{product_dir}/NOTICE.txt"
 set -- "$@" "%{product_dir}/README.md"
 set -- "$@" "%{product_dir}/LICENSE.txt"
 set -- "$@" "%{_prefix}/lib/systemd/system/%{name}.service"
-set -- "$@" "%{_prefix}/lib/systemd/system/%{name}-performance-analyzer.service"
 set -- "$@" "%{_sysconfdir}/init.d/%{name}"
 set -- "$@" "%{_sysconfdir}/sysconfig/%{name}"
 set -- "$@" "%{_prefix}/lib/sysctl.d/%{name}.conf"
 set -- "$@" "%{_prefix}/lib/tmpfiles.d/%{name}.conf"
-set -- "$@" "%%dir %{product_dir}/bin/opensearch-performance-analyzer"
 
 # Check if we are including the observability and reports scheduler
 # plugins
@@ -183,18 +168,8 @@ if [ $1 = 2 ]; then
         /etc/init.d/%{name} stop > /dev/null 2>&1
         touch %{state_file}
     fi
-    # Stop wazuh-indexer-performance-analyzer service
-    if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1 && systemctl is-active %{name}-performance-analyzer.service > /dev/null 2>&1; then
-        echo "Stop existing %{name}-performance-analyzer.service"
-        systemctl --no-reload stop %{name}-performance-analyzer.service > /dev/null 2>&1
-    elif command -v service > /dev/null 2>&1 && service %{name}-performance-analyzer status > /dev/null 2>&1; then
-        echo "Stop existing %{name}-performance-analyzer service"
-        service %{name}-performance-analyzer stop > /dev/null 2>&1
-    elif command -v /etc/init.d/%{name}-performance-analyzer > /dev/null 2>&1 && /etc/init.d/%{name}-performance-analyzer status > /dev/null 2>&1; then
-        echo "Stop existing %{name}-performance-analyzer service"
-        /etc/init.d/%{name}-performance-analyzer stop > /dev/null 2>&1
-    fi
 fi
+
 
 # Create user and group if they do not already exist.
 getent group %{name} > /dev/null 2>&1 || groupadd -r %{name}
@@ -300,17 +275,6 @@ if [ $1 = 0 ]; then
         echo "Stop existing %{name} service"
         /etc/init.d/%{name} stop > /dev/null 2>&1
     fi
-    # Stop wazuh-indexer-performance-analyzer service
-    if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1 && systemctl is-active %{name}-performance-analyzer.service > /dev/null 2>&1; then
-        echo "Stop existing %{name}-performance-analyzer.service"
-        systemctl --no-reload stop %{name}-performance-analyzer.service > /dev/null 2>&1
-    elif command -v service > /dev/null 2>&1 && service %{name}-performance-analyzer status > /dev/null 2>&1; then
-        echo "Stop existing %{name}-performance-analyzer service"
-        service %{name}-performance-analyzer stop > /dev/null 2>&1
-    elif command -v /etc/init.d/%{name}-performance-analyzer > /dev/null 2>&1 && /etc/init.d/%{name}-performance-analyzer status > /dev/null 2>&1; then
-        echo "Stop existing %{name}-performance-analyzer service"
-        /etc/init.d/%{name}-performance-analyzer stop > /dev/null 2>&1
-    fi
 fi
 
 exit 0
@@ -324,7 +288,6 @@ exit 0
 
 # Service files
 %attr(0644, root, root) %{_prefix}/lib/systemd/system/%{name}.service
-%attr(0644, root, root) %{_prefix}/lib/systemd/system/%{name}-performance-analyzer.service
 %attr(0750, root, root) %{_sysconfdir}/init.d/%{name}
 %attr(0644, root, root) %config(noreplace) %{_prefix}/lib/sysctl.d/%{name}.conf
 %attr(0644, root, root) %config(noreplace) %{_prefix}/lib/tmpfiles.d/%{name}.conf
@@ -351,7 +314,6 @@ exit 0
 %attr(750, %{name}, %{name}) %{product_dir}/jdk/bin/*
 %attr(750, %{name}, %{name}) %{product_dir}/jdk/lib/jspawnhelper
 %attr(750, %{name}, %{name}) %{product_dir}/jdk/lib/modules
-%attr(750, %{name}, %{name}) %{product_dir}/performance-analyzer-rca/bin/*
 
 # Preserve service state flag across upgrade
 %ghost %attr(440, %{name}, %{name}) %{config_dir}/.was_active

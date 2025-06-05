@@ -14,11 +14,11 @@ on:
         default: ''
         required: false
         type: string
-      tag:
-        description: 'Change branches references to tag-like references (e.g. v4.12.0-alpha7)'
-        default: false
+      date:
+        description: 'Version release date (e.g. Mon Jan 02 2025)'
+        default: ''
         required: false
-        type: boolean
+        type: string
       issue-link:
         description: 'Issue link in format https://github.com/wazuh/<REPO>/issues/<ISSUE-NUMBER>'
         required: true
@@ -81,26 +81,25 @@ jobs:
         env:
           VERSION: ${{ inputs.version }}
           STAGE: ${{ inputs.stage }}
-          TAG: ${{ inputs.tag }}
+          DATE: ${{ inputs.date }}
         run: |
-          script_params=""
           version=${{ env.VERSION }}
           stage=${{ env.STAGE }}
-          tag=${{ env.TAG }}
+          date=${{ env.DATE }}
 
-          # Both version and stage provided
-          if [[ -n "$version" && -n "$stage" && "$tag" != "true" ]]; then
-            script_params="--version ${version} --stage ${stage}"
-          elif [[ -z "$version" && -n "$stage" && "$tag" == "true" ]]; then
-            script_params="--stage ${stage} --tag"
-          elif [[ -z "$version" && -z "$stage" && "$tag" == "true" ]]; then
-            script_params="--tag"
+          # Check if version, stage, and date are provided
+          if [[ -n "$version" && -n "$stage" && -n "$date" ]]; then
+            issue_number=$(echo "${{ inputs.issue-link }}" | awk -F'/' '{print $NF}')
+            BRANCH_NAME="enhancement/wqa${issue_number}-bump-${{ github.ref_name }}"
+
+            echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+            echo "version=${version}" >> $GITHUB_OUTPUT
+            echo "stage=${stage}" >> $GITHUB_OUTPUT
+            echo "date=${date}" >> $GITHUB_OUTPUT
+          else
+            echo "Error: Version, stage, and date must be provided. Got version=${version} stage=${stage} date=${date}"
+            exit 1
           fi
-
-          issue_number=$(echo "${{ inputs.issue-link }}" | awk -F'/' '{print $NF}')
-          BRANCH_NAME="enhancement/wqa${issue_number}-bump-${{ github.ref_name }}"
-          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
-          echo "script_params=${script_params}" >> $GITHUB_OUTPUT
 
       - name: Create and switch to bump branch
         run: |
@@ -109,7 +108,7 @@ jobs:
       - name: Make version bump changes
         run: |
           echo "Running bump script"
-          bash ${{ env.BUMP_SCRIPT_PATH }} ${{ steps.vars.outputs.script_params }}
+          bash ${{ env.BUMP_SCRIPT_PATH }} ${{ steps.vars.outputs.version }} ${{ steps.vars.outputs.stage }} "${{ steps.vars.outputs.date }}"
 
       - name: Commit and push changes
         run: |

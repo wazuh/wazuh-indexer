@@ -194,6 +194,7 @@ function update_rpm_changelog() {
 # ====
 function main() {
     if [ "$#" -ne 3 ]; then
+        log "Error: Invalid number of arguments. Expected 3, got $#."
         usage
     fi
 

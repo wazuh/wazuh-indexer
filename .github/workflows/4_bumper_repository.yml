@@ -2,7 +2,6 @@ name: Repository bumper
 run-name: Bump ${{ github.ref_name }} (${{ inputs.id }})
 
 on:
-  push:
   workflow_dispatch:
     inputs:
       version:
@@ -89,11 +88,11 @@ jobs:
           date=${{ env.DATE }}
 
           # Check if version, stage, and date are provided
-          if [[ -n "$version" && -n "$stage" && -n "$date" ]]; then
+          if [[ -n "${version}" && -n "${stage}" && -n "${date}" ]]; then
             issue_number=$(echo "${{ inputs.issue-link }}" | awk -F'/' '{print $NF}')
             BRANCH_NAME="enhancement/wqa${issue_number}-bump-${{ github.ref_name }}"
 
-            echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+            echo "branch_name=${BRANCH_NAME}" >> $GITHUB_OUTPUT
             echo "version=${version}" >> $GITHUB_OUTPUT
             echo "stage=${stage}" >> $GITHUB_OUTPUT
             echo "date=${date}" >> $GITHUB_OUTPUT

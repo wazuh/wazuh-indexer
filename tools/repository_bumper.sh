@@ -101,7 +101,7 @@ function validate_inputs() {
     fi
 
     if ! [[ $date =~ ^[A-Za-z]{3}\ [A-Za-z]{3}\ [0-9]{1,2}\ [0-9]{4}$ ]]; then
-        log "Error: Invalid date format '$date'."
+        log "Error: Invalid date format $date."
         exit 1
     fi
 }

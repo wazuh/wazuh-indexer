@@ -108,7 +108,7 @@ jobs:
       - name: Make version bump changes
         run: |
           echo "Running bump script"
-          bash ${{ env.BUMP_SCRIPT_PATH }} ${{ steps.vars.outputs.version }} ${{ steps.vars.outputs.stage }} "${{ steps.vars.outputs.date }}"
+          bash ${{ env.BUMP_SCRIPT_PATH }} ${{ steps.vars.outputs.version }} ${{ steps.vars.outputs.stage }} ${{ steps.vars.outputs.date }}
 
       - name: Commit and push changes
         run: |

@@ -378,3 +378,4 @@ exit 0
 * Thu May 05 2022 support <info@wazuh.com> - 4.3.0
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-3-0.html
 - Initial package
+

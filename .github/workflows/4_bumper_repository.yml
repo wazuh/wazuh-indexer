@@ -12,6 +12,10 @@ on:
         description: 'Version stage (e.g. alpha0)'
         required: false
         type: string
+      tag:
+        description: 'Change branches references to tag-like references (e.g. v4.13.0-alpha7)'
+        required: false
+        type: boolean
       issue-link:
         description: 'Issue link in format https://github.com/wazuh/<REPO>/issues/<ISSUE-NUMBER>'
         required: true
@@ -24,7 +28,7 @@ on:
 jobs:
   bump:
     name: Repository bumper
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
       pull-requests: write
@@ -34,8 +38,8 @@ jobs:
       CI_COMMIT_EMAIL: 22834044+wazuhci@users.noreply.github.com
       CI_GPG_PRIVATE_KEY: ${{ secrets.CI_WAZUHCI_GPG_PRIVATE }}
       GH_TOKEN: ${{ secrets.CI_WAZUHCI_BUMPER_TOKEN }}
-      BUMP_SCRIPT_PATH: tools/github/github-branch-maintenance/repository_bumper.sh
-      BUMP_LOG_PATH: tools/github/github-branch-maintenance
+      BUMP_SCRIPT_PATH: tools/repository_bumper.sh
+      BUMP_LOG_PATH: tools/
 
     steps:
       - name: Dump event payload
@@ -61,6 +65,10 @@ jobs:
           export GPG_TTY=$(tty)
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # Using workflow-specific GITHUB_TOKEN because currently CI_WAZUHCI_BUMPER_TOKEN
+          # doesn't have all the necessary permissions
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Determine branch name
         id: vars
@@ -68,12 +76,15 @@ jobs:
           declare script_params
           declare version="${{ github.event.inputs.version }}"
           declare stage="${{ github.event.inputs.stage }}"
-          declare bump_dest="${{ version }}-${{ stage }}"
+          declare tag="${{ github.event.inputs.tag }}"
+          declare bump_dest="${version}-${stage}"
           # Both version and stage provided
-          if [[ -n $version && -n $stage ]]; then
+          if [[ -n $version && -n $stage && "$tag" != "true" ]]; then
             script_params="--version ${version} --stage ${stage}"
-          elif [[ -z $version && -n $stage ]]; then
-            script_params="--stage ${stage}"
+          elif [[ -z $version && -n $stage && "$tag" == "true" ]]; then
+            script_params="--stage ${stage} --tag"
+          elif [[ -z $version && -z $stage && "$tag" == "true" ]]; then
+            script_params="--tag"
           fi
           issue_number=$(echo "${{ github.event.inputs.issue-link }}" | awk -F'/' '{print $NF}')
           BRANCH_NAME="enhancement/wqa${issue_number}-bump-${{ github.ref_name }}-to-${bump_dest}"

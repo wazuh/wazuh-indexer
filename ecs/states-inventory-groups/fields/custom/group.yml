@@ -7,7 +7,7 @@
     Wazuh user's group custom fields.
   fields:
     - name: description
-      type: keyword
+      type: match_only_text
       level: custom
       description: >
         Description of the group.
@@ -27,12 +27,17 @@
       description: >
         Whether the group is hidden.
     - name: namespace_pid
-      type: long
+      type: integer
       level: custom
       description: >
         Namespace PID of the group.
     - name: users
-      type: keyword
+      type: keyword[]
       level: custom
       description: >
         Users that belong to the group.
+    - name: id
+      type: unsigned_long
+      level: custom
+      description: >
+        Group ID.

@@ -85,7 +85,7 @@ jobs:
         run: |
           version=${{ env.VERSION }}
           stage=${{ env.STAGE }}
-          date=${{ env.DATE }}
+          date="${{ env.DATE }}"
 
           # Check if version, stage, and date are provided
           if [[ -n "${version}" && -n "${stage}" && -n "${date}" ]]; then
@@ -95,7 +95,7 @@ jobs:
             echo "branch_name=${BRANCH_NAME}" >> $GITHUB_OUTPUT
             echo "version=${version}" >> $GITHUB_OUTPUT
             echo "stage=${stage}" >> $GITHUB_OUTPUT
-            echo "date=${date}" >> $GITHUB_OUTPUT
+            echo "date='${date}'" >> $GITHUB_OUTPUT
           else
             echo "Error: Version, stage, and date must be provided. Got version=${version} stage=${stage} date=${date}"
             exit 1

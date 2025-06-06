@@ -172,6 +172,7 @@ function add_configuration_files() {
     # Add our settings to the configuration files
     cat "$PATH_CONF/security/roles.wazuh.yml" >>"$PATH_CONF/opensearch-security/roles.yml"
     cat "$PATH_CONF/security/roles_mapping.wazuh.yml" >>"$PATH_CONF/opensearch-security/roles_mapping.yml"
+    cat "$PATH_CONF/security/internal_users.wazuh.yml" >>"$PATH_CONF/opensearch-security/internal_users.yml"
 
     cp "$PATH_CONF/opensearch.prod.yml" "$PATH_CONF/opensearch.yml"
 
@@ -344,7 +345,6 @@ function assemble_rpm() {
     # Extract min-package. Creates usr/, etc/ and var/ in the current directory
     echo "Extract ${ARTIFACT_BUILD_NAME} archive"
     rpm2cpio "${ARTIFACT_BUILD_NAME}" | cpio -imdv
-    
     generate_installer_version_file "${src_path}"
 
     # Install plugins
@@ -398,7 +398,6 @@ function assemble_deb() {
     echo "Extract ${ARTIFACT_BUILD_NAME} archive"
     ar xf "${ARTIFACT_BUILD_NAME}" data.tar.gz
     tar zvxf data.tar.gz
-    
     generate_installer_version_file "${src_path}"
 
     # Install plugins

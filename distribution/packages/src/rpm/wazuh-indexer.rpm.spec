@@ -167,17 +167,19 @@ set -e
 
 # Stop the services to upgrade the package
 if [ $1 = 2 ]; then
-    # Stop wazuh-indexer service
+    echo "Running upgrade pre-script"
+
+    # Stop wazuh-indexer service and mark if service is running
     if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1 && systemctl is-active %{name}.service > /dev/null 2>&1; then
+        echo "Stop existing %{name}.service"
         systemctl --no-reload stop %{name}.service > /dev/null 2>&1
-        echo "%{name}.service is currently active; scheduling restart after the upgrade."
         touch %{state_file}
     elif command -v service > /dev/null 2>&1 && service %{name} status > /dev/null 2>&1; then
-        echo "%{name}.service is currently active; scheduling restart after the upgrade."
+        echo "Stop existing %{name} service"
         service %{name} stop > /dev/null 2>&1
         touch %{state_file}
     elif command -v /etc/init.d/%{name} > /dev/null 2>&1 && /etc/init.d/%{name} status > /dev/null 2>&1; then
-        echo "%{name}.service is currently active; scheduling restart after the upgrade."
+        echo "Stop existing %{name} service"
         /etc/init.d/%{name} stop > /dev/null 2>&1
         touch %{state_file}
     fi
@@ -203,22 +205,15 @@ exit 0
 
 %post
 set -e
+
+# Fix ownership and permissions
 chown -R %{name}:%{name} %{config_dir}
 chown -R %{name}:%{name} %{log_dir}
 
-export OPENSEARCH_PATH_CONF=${OPENSEARCH_PATH_CONF:-%{config_dir}}
-# Apply Performance Analyzer settings, as per https://github.com/opensearch-project/opensearch-build/blob/2.18.0/scripts/pkg/build_templates/current/opensearch/deb/debian/postinst#L28-L37
-if ! grep -q '## OpenSearch Performance Analyzer' "$OPENSEARCH_PATH_CONF/jvm.options"; then
-    CLK_TCK=$(/usr/bin/getconf CLK_TCK)
-    {
-        echo
-        echo "## OpenSearch Performance Analyzer"
-        echo "-Dclk.tck=$CLK_TCK"
-        echo "-Djdk.attach.allowAttachSelf=true"
-        echo "-Djava.security.policy=file://$OPENSEARCH_PATH_CONF/opensearch-performance-analyzer/opensearch_security.policy"
-        echo "--add-opens=jdk.attach/sun.tools.attach=ALL-UNNAMED"
-    } >> "$OPENSEARCH_PATH_CONF/jvm.options"
-fi
+exit 0
+
+%posttrans
+set -e
 
 # Reload systemctl daemon
 if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
@@ -235,7 +230,7 @@ fi
 
 if [ $1 = 2 ]; then
     if [ -f %{state_file} ]; then
-        echo "Restoring %{name}.service to its previous active state."
+        echo "Restarting %{name}.service because it was active before upgrade"
         rm -f %{state_file}
         if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
             systemctl restart %{name}.service > /dev/null 2>&1
@@ -245,8 +240,8 @@ if [ $1 = 2 ]; then
             /etc/init.d/%{name} restart > /dev/null 2>&1
         fi
     else
-        echo "### Service will remain stopped after the upgrade (previous state preserved)."
-        echo "### You can start the %{name} service by executing"
+        echo "### NOT restarting %{name} service after upgrade"
+        echo "### You can start %{name} service by executing"
         if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
             echo " sudo systemctl start %{name}.service"
         elif command -v service > /dev/null 2>&1; then
@@ -261,7 +256,7 @@ else
         echo "### NOT starting on installation, please execute the following statements to configure %{name} service to start automatically using systemd"
         echo " sudo systemctl daemon-reload"
         echo " sudo systemctl enable %{name}.service"
-        echo "### You can start the %{name} service by executing"
+        echo "### You can start %{name} service by executing"
         echo " sudo systemctl start %{name}.service"
     else
         if command -v chkconfig > /dev/null 2>&1; then
@@ -272,19 +267,19 @@ else
             echo " sudo update-rc.d %{name} defaults 95 10"
         fi
         if command -v service > /dev/null 2>&1; then
-            echo "### You can start the %{name} service by executing"
+            echo "### You can start %{name} service by executing"
             echo " sudo service %{name} start"
         elif command -v /etc/init.d/%{name} > /dev/null 2>&1; then
-            echo "### You can start the %{name} service by executing"
+            echo "### You can start %{name} service by executing"
             echo " sudo /etc/init.d/%{name} start"
         fi
     fi
-    if [ "$GENERATE_CERTS" = "true" ] && [ -f %{product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh ]; then
-        echo "### Installing %{name} demo certificates in %{certs_dir}"
+    if ! [ -d %{config_dir}/certs ] && [ -f %{product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh ]; then
+        echo "### Installing %{name} demo certificates in %{config_dir}"
         echo " If you are using a custom certificates path, ignore this message"
         echo " See demo certs creation log in %{log_dir}/install_demo_certificates.log"
         bash %{product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh > %{log_dir}/install_demo_certificates.log 2>&1
-        yes | /usr/share/%{name}/jdk/bin/keytool -trustcacerts -keystore /usr/share/%{name}/jdk/lib/security/cacerts -importcert -alias wazuh-root-ca -file %{certs_dir}/root-ca.pem > /dev/null 2>&1
+        yes | /usr/share/%{name}/jdk/bin/keytool -trustcacerts -keystore /usr/share/%{name}/jdk/lib/security/cacerts -importcert -alias wazuh-root-ca -file %{config_dir}/certs/root-ca.pem > /dev/null 2>&1
     fi
 fi
 exit 0
@@ -365,16 +360,16 @@ exit 0
 %attr(500, %{name}, %{name}) %{certs_dir}
 
 %changelog
-* Wed Jul 02 2025 support <info@wazuh.com> - 6.0.0
+* Thu Dec 18 2025 support <info@wazuh.com> - 6.0.0
 - More info: https://documentation.wazuh.com/current/release-notes/release-6-0-0.html
-* Wed Jul 02 2025 support <info@wazuh.com> - 5.0.0
+* Thu Dec 18 2025 support <info@wazuh.com> - 5.0.0
 - More info: https://documentation.wazuh.com/current/release-notes/release-5-0-0.html
-* Wed Jul 02 2025 support <info@wazuh.com> - 4.13.0
+* Thu Sep 25 2025 support <info@wazuh.com> - 4.14.0
+- More info: https://documentation.wazuh.com/current/release-notes/release-4-14-0.html
+* Wed Jul 16 2025 support <info@wazuh.com> - 4.13.0
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-13-0.html
-* Wed May 14 2025 support <info@wazuh.com> - 4.12.2
-- More info: https://documentation.wazuh.com/current/release-notes/release-4-12-2.html
-* Wed May 14 2025 support <info@wazuh.com> - 4.12.1
-- More info: https://documentation.wazuh.com/current/release-notes/release-4-12-1.html
+* Wed May 21 2025 support <info@wazuh.com> - 4.10.2
+- More info: https://documentation.wazuh.com/current/release-notes/release-4-10-2.html
 * Wed May 07 2025 support <info@wazuh.com> - 4.12.0
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-12-0.html
 * Tue Apr 01 2025 support <info@wazuh.com> - 4.11.2

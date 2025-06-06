@@ -24,12 +24,7 @@ on:
       wazuh_plugins_ref:
         description: "Branch, commit or tag for the wazuh-indexer-plugins repository."
         type: string
-        default: "6.0.0"
-        required: false
-      reporting_plugin_ref:
-        description: "Branch, commit or tag for the wazuh-indexer-reporting repository."
-        type: string
-        default: "6.0.0"
+        default: "main"
         required: false
   workflow_call:
     inputs:
@@ -49,12 +44,7 @@ on:
       wazuh_plugins_ref:
         description: "Branch, commit or tag for the wazuh-indexer-plugins repository."
         type: string
-        default: "6.0.0"
-        required: false
-      reporting_plugin_ref:
-        description: "Branch, commit or tag for the wazuh-indexer-reporting repository."
-        type: string
-        default: "6.0.0"
+        default: "main"
         required: false
     secrets:
       QUAY_USERNAME:
@@ -79,7 +69,7 @@ on:
 
 jobs:
   call-build-workflow:
-    uses: ./.github/workflows/6_builderpackage_indexer.yml
+    uses: ./.github/workflows/5_builderpackage_indexer.yml
     with:
       revision: ${{ inputs.revision }}
       is_stage: ${{ inputs.is_stage }}
@@ -87,7 +77,6 @@ jobs:
       architecture: '[ "x64" ]'
       id: ${{ inputs.id }}
       wazuh_plugins_ref: ${{ inputs.wazuh_plugins_ref }}
-      reporting_plugin_ref: ${{ inputs.reporting_plugin_ref }}
     secrets: inherit
 
   build-and-push-docker-image:

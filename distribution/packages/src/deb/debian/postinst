@@ -16,11 +16,10 @@ echo "Running Wazuh Indexer Post-Installation Script"
 name="wazuh-indexer"
 product_dir=/usr/share/${name}
 config_dir=/etc/${name}
-certs_dir=${config_dir}/certs
 data_dir=/var/lib/${name}
 log_dir=/var/log/${name}
 pid_dir=/run/${name}
-state_file=${config_dir}/${name}.was_active
+state_file=${config_dir}/.was_active
 
 # Set owner
 chown -R ${name}:${name} ${product_dir}
@@ -28,21 +27,6 @@ chown -R ${name}:${name} ${config_dir}
 chown -R ${name}:${name} ${log_dir}
 chown -R ${name}:${name} ${data_dir}
 chown -R ${name}:${name} ${pid_dir}
-chown -R ${name}:${name} ${certs_dir}
-
-export OPENSEARCH_PATH_CONF=${OPENSEARCH_PATH_CONF:-${config_dir}}
-# Apply Performance Analyzer settings, as per https://github.com/opensearch-project/opensearch-build/blob/2.18.0/scripts/pkg/build_templates/current/opensearch/deb/debian/postinst#L28-L37
-if ! grep -q '## OpenSearch Performance Analyzer' "$OPENSEARCH_PATH_CONF/jvm.options"; then
-    CLK_TCK=$(/usr/bin/getconf CLK_TCK)
-    {
-        echo
-        echo "## OpenSearch Performance Analyzer"
-        echo "-Dclk.tck=$CLK_TCK"
-        echo "-Djdk.attach.allowAttachSelf=true"
-        echo "-Djava.security.policy=file://$OPENSEARCH_PATH_CONF/opensearch-performance-analyzer/opensearch_security.policy"
-        echo "--add-opens=jdk.attach/sun.tools.attach=ALL-UNNAMED"
-    } >>"$OPENSEARCH_PATH_CONF/jvm.options"
-fi
 
 # Reload systemctl daemon
 if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
@@ -60,9 +44,9 @@ fi
 
 # Check if the script is executed on upgrade
 if [ -n "$2" ]; then
-    if [ -f ${state_file} ]; then
-        echo "Restoring ${name}.service to its previous active state."
-        rm -f $state_file
+    if [ -f ${state_file}  ]; then
+        echo "Restarting ${name}.service because it was active before upgrade"
+        rm -f ${state_file}
         if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
             systemctl restart ${name}.service > /dev/null 2>&1
         elif command -v service > /dev/null 2>&1; then
@@ -71,7 +55,7 @@ if [ -n "$2" ]; then
             /etc/init.d/${name} restart > /dev/null 2>&1
         fi
     else
-        echo "### Service will remain stopped after the upgrade (previous state preserved)."
+        echo "### NOT restarting ${name} service after upgrade"
         echo "### You can start ${name} service by executing"
         if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
             echo " sudo systemctl start ${name}.service"
@@ -105,13 +89,12 @@ else
             echo " sudo /etc/init.d/${name} start"
         fi
     fi
-    # Create the certs directory and if required, install demo certificates.
-    if [ "$GENERATE_CERTS" = "true" ] && [ -f "${product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh" ]; then
-        echo "### Installing ${name} demo certificates in ${certs_dir}"
+    if ! [ -d "${config_dir}/certs" ] && [ -f "${product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh" ]; then
+        echo "### Installing ${name} demo certificates in ${config_dir}"
         echo " If you are using a custom certificates path, ignore this message"
         echo " See demo certs creation log in ${log_dir}/install_demo_certificates.log"
         bash "${product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh" >"${log_dir}/install_demo_certificates.log" 2>&1
-        yes | ${product_dir}/jdk/bin/keytool -trustcacerts -keystore ${product_dir}/jdk/lib/security/cacerts -importcert -alias wazuh-root-ca -file ${certs_dir}/root-ca.pem > /dev/null 2>&1
+        yes | ${product_dir}/jdk/bin/keytool -trustcacerts -keystore ${product_dir}/jdk/lib/security/cacerts -importcert -alias wazuh-root-ca -file ${config_dir}/certs/root-ca.pem > /dev/null 2>&1
     fi
 fi
 

@@ -41,12 +41,6 @@ CopySpec archiveFiles(CopySpec modulesFiles, String distributionType, String pla
   def version = new String(execProcess.getInputStream().readAllBytes(), "UTF-8").trim()
   execProcess.waitFor()
   return copySpec {
-    def commandLine = ['/bin/bash', 'product_version.sh']
-    def execProcess = new ProcessBuilder(commandLine)
-        .directory(new File('./build-scripts'))
-        .start()
-    def version = new String(execProcess.getInputStream().readAllBytes(), "UTF-8").trim()
-    execProcess.waitFor()
     into("wazuh-indexer-${version}") {
       into('lib') {
         with libFiles()

@@ -6,6 +6,31 @@
   description: >
     Wazuh user custom fields.
   fields:
+    - name: home
+      type: keyword
+      level: custom
+      description: >
+        Home directory of the user.
+    - name: shell
+      type: keyword
+      level: custom
+      description: >
+        Shell used by the user.
+    - name: type
+      type: keyword
+      level: custom
+      description: >
+        Type of user (e.g., "system", "regular").
+    - name: created
+      type: date
+      level: custom
+      description: >
+        Datetime when the user was created.
+    - name: groups
+      type: keyword
+      level: custom
+      description: >
+          Groups the user belongs to.
     - name: uid_signed
       type: long
       level: custom
@@ -26,33 +51,13 @@
       level: custom
       description: >
         Whether the user is remote.
-    - name: full_name
+    - name: roles
       type: keyword
       level: custom
       description: >
-        Full name of the user.
-    - name: home
-      type: keyword
+        Roles assigned to the user.
+    - last_login:
+      type: date
       level: custom
       description: >
-        Home directory of the user.
-    - name: shell
-      type: keyword
-      level: custom
-      description: >
-        Shell used by the user.
-    - name: type
-      type: keyword
-      level: custom
-      description: >
-        Type of user (e.g., "system", "regular").
-    - name: created
-      type: keyword
-      level: custom
-      description: >
-        Datetime when the user was created.
-    - name: groups
-      type: keyword
-      level: custom
-      description: >
-          Groups the user belongs to.
+        Date of the last login.

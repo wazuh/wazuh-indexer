@@ -11,7 +11,7 @@
     Wazuh-specific custom group fields.
   fields:
     - name: id
-      type: keyword
+      type: unsigned_long
       level: custom
       description: >
         Group ID.

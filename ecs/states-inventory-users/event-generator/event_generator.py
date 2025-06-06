@@ -28,50 +28,51 @@ def generate_random_user():
   timestamp = now.strftime(DATE_FORMAT)
 
   return {
-    "host": {
-      "hostname": random.choice(["host1", "host2", "host3"]),
-      "id": ''.join(random.choices(string.ascii_lowercase + string.digits, k=12))
-    },
-    "login": {
-      "status": random.choice([True, False]),
-      "tty": random.choice(["tty1", "tty2", "pts/0", "pts/1"]),
-      "type": random.choice(["ssh", "console", "remote"])
-    },
-    "process": {
-      "pid": random.randint(1000, 5000)
-    },
     "user": {
-      "auth_failures": {
-        "count": random.randint(0, 10),
-        "timestamp": round(now.timestamp(), 3)
-      },
-      "created": now.strftime(DATE_FORMAT),
+      "id": random.randint(1000, 9999),
+      "name": ''.join(random.choices(string.ascii_lowercase, k=6)),
       "full_name": random.choice(["John Doe", "Alice Smith", "Bob Johnson"]),
+      "home": f"/home/{random.choice(['john', 'alice', 'bob'])}",
+      "shell": random.choice(["/bin/bash", "/bin/zsh", "/bin/false"]),
+      "type": random.choice(["normal", "system"]),
+      "created": timestamp,
       "group": {
-        "id": str(random.randint(1000, 9999)),
+        "id": random.randint(1000, 9999),
         "id_signed": random.randint(-9999, -1000)
       },
       "groups": random.choice(["admin", "users", "devops", "qa"]),
-      "home": f"/home/{random.choice(['john', 'alice', 'bob'])}",
-      "id": str(random.randint(1000, 9999)),
+      "uid_signed": random.randint(1000, 6000),
+      "uuid": ''.join(random.choices("ABCDEF0123456789", k=32)),
       "is_hidden": random.choice([True, False]),
       "is_remote": random.choice([True, False]),
-      "name": ''.join(random.choices(string.ascii_lowercase, k=6)),
       "password": {
-        "expiration_date": int(now.timestamp()) + random.randint(3600, 3600 * 24 * 90),
+        "expiration_date": timestamp + datetime.timedelta(seconds=random.randint(3600, 3600 * 24 * 90)),
         "hash_algorithm": random.choice(["sha512", "bcrypt", "md5"]),
         "inactive_days": random.randint(0, 30),
         "last_change": int(now.timestamp()) - random.randint(0, 3600 * 24 * 90),
-        "last_set_time": round(now.timestamp(), 3),
+        "last_set_time": timestamp + datetime.timedelta(seconds=random.randint(3600, 3600 * 24 * 90)),
         "max_days_between_changes": random.randint(30, 180),
         "min_days_between_changes": random.randint(0, 7),
         "status": random.choice(["valid", "expired", "disabled"]),
         "warning_days_before_expiration": random.randint(1, 14)
       },
-      "shell": random.choice(["/bin/bash", "/bin/zsh", "/bin/false"]),
-      "type": random.choice(["normal", "system"]),
-      "uid_signed": random.randint(1000, 6000),
-      "uuid": ''.join(random.choices("ABCDEF0123456789", k=32))
+      "auth_failures": {
+        "count": random.randint(0, 10),
+        "timestamp": timestamp + datetime.timedelta(seconds=random.randint(3600, 3600 * 24 * 90))
+      },
+      "roles": random.choice(["admin", "user", "guest", "developer"]),
+      "last_login": timestamp + datetime.timedelta(seconds=random.randint(3600, 3600 * 24 * 90))
+    },
+    "host": {
+      "ip": ".".join(str(random.randint(0, 255)) for _ in range(4))
+    },
+    "process": {
+      "pid": random.randint(1000, 5000)
+    },
+    "login": {
+      "status": random.choice([True, False]),
+      "tty": random.choice(["tty1", "tty2", "pts/0", "pts/1"]),
+      "type": random.choice(["ssh", "console", "remote"])
     }
   }
 

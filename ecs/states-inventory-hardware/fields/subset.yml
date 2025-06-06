@@ -21,6 +21,7 @@ fields:
           total: {}
           free: {}
           used: {}
+          used_percentage: {}
       cpu:
         fields:
           name: {}

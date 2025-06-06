@@ -290,7 +290,7 @@ jobs:
           run: |
             bash /build-scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }}
             systemctl stop wazuh-indexer
-            yum localinstall "/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/${{ steps.package.outputs.name }}" -y
+            yum localinstall "/artifacts/dist/${{ steps.package.outputs.name }}" -y
 
       - name: Test RPM package update without stopping the indexer
         if: ${{ matrix.distribution == 'rpm' && needs.setup.outputs.previous_version >= '5.0' }}
@@ -302,7 +302,7 @@ jobs:
             -v ${{ github.workspace }}/build-scripts/:/build-scripts/
           run: |
             bash /build-scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }}
-            yum localinstall "/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/${{ steps.package.outputs.name }}" -y
+            yum localinstall "/artifacts/dist/${{ steps.package.outputs.name }}" -y
 
       - name: Test DEB package installation
         if: ${{ matrix.distribution == 'deb' }}

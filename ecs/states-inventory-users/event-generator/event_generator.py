@@ -46,11 +46,11 @@ def generate_random_user():
       "is_hidden": random.choice([True, False]),
       "is_remote": random.choice([True, False]),
       "password": {
-        "expiration_date": timestamp + datetime.timedelta(seconds=random.randint(3600, 3600 * 24 * 90)),
+        "expiration_date": (now + datetime.timedelta(seconds=random.randint(3600, 3600 * 24 * 90))).strftime(DATE_FORMAT),
         "hash_algorithm": random.choice(["sha512", "bcrypt", "md5"]),
         "inactive_days": random.randint(0, 30),
         "last_change": int(now.timestamp()) - random.randint(0, 3600 * 24 * 90),
-        "last_set_time": timestamp + datetime.timedelta(seconds=random.randint(3600, 3600 * 24 * 90)),
+        "last_set_time": (now + datetime.timedelta(seconds=random.randint(3600, 3600 * 24 * 90))).strftime(DATE_FORMAT),
         "max_days_between_changes": random.randint(30, 180),
         "min_days_between_changes": random.randint(0, 7),
         "status": random.choice(["valid", "expired", "disabled"]),
@@ -58,10 +58,10 @@ def generate_random_user():
       },
       "auth_failures": {
         "count": random.randint(0, 10),
-        "timestamp": timestamp + datetime.timedelta(seconds=random.randint(3600, 3600 * 24 * 90))
+        "timestamp": (now + datetime.timedelta(seconds=random.randint(3600, 3600 * 24 * 90))).strftime(DATE_FORMAT),
       },
       "roles": random.choice(["admin", "user", "guest", "developer"]),
-      "last_login": timestamp + datetime.timedelta(seconds=random.randint(3600, 3600 * 24 * 90))
+      "last_login": (now + datetime.timedelta(seconds=random.randint(3600, 3600 * 24 * 90))).strftime(DATE_FORMAT),
     },
     "host": {
       "ip": ".".join(str(random.randint(0, 255)) for _ in range(4))

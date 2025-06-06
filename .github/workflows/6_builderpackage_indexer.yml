@@ -56,11 +56,11 @@ on:
       wazuh_plugins_ref:
         description: "Branch, commit or tag for the wazuh-indexer-plugins repository."
         type: string
-        default: "main"
+        default: "6.0.0"
       reporting_plugin_ref:
         description: "Branch, commit or tag for the wazuh-indexer-reporting repository."
         type: string
-        default: "main"
+        default: "6.0.0"
   workflow_call:
     inputs:
       revision:
@@ -87,10 +87,10 @@ on:
         required: false
       wazuh_plugins_ref:
         type: string
-        default: "main"
+        default: "6.0.0"
       reporting_plugin_ref:
         type: string
-        default: "main"
+        default: "6.0.0"
     secrets:
       CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY:
         required: true

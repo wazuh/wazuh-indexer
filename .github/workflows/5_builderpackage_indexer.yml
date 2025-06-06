@@ -281,8 +281,7 @@ jobs:
             yum remove wazuh-indexer -y
 
       - name: Test RPM package update stopping the indexer
-        if: ${{ matrix.distribution == 'rpm' && (matrix.architecture == 'x64' || (needs.setup.outputs.previous_version >= '4.12' && matrix.architecture == 'arm64'))}}
-        uses: addnab/docker-run-action@v3
+        if: ${{ matrix.distribution == 'rpm' && needs.setup.outputs.previous_version >= '5.0' }}
         with:
           image: redhat/ubi9:latest
           options: 
@@ -294,7 +293,7 @@ jobs:
             yum localinstall "/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/${{ steps.package.outputs.name }}" -y
 
       - name: Test RPM package update without stopping the indexer
-        if: ${{ matrix.distribution == 'rpm' && (matrix.architecture == 'x64' || (needs.setup.outputs.previous_version >= '4.12' && matrix.architecture == 'arm64'))}}
+        if: ${{ matrix.distribution == 'rpm' && needs.setup.outputs.previous_version >= '5.0' }}
         uses: addnab/docker-run-action@v3
         with:
           image: redhat/ubi9:latest

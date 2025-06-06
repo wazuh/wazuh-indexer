@@ -50,3 +50,8 @@
         Serial number of the motherboard
       type: keyword
       level: custom
+    - name: memory.used_percentage
+      description: >
+        Percentage of used memory 0-1
+      type: half_float
+      level: custom

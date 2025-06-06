@@ -65,6 +65,7 @@ def generate_random_host(is_root_level=False):
                 "free": random.randint(1000, 100000),
                 "total": random.randint(1000, 100000),
                 "used": random.randint(0, 100),
+                "used_percent": random.random(),
             },
             "serial_number": f"{random.randint(0, 9999)}",
         }

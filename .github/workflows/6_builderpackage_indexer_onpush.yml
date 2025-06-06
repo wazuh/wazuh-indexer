@@ -10,7 +10,7 @@ on:
 
 jobs:
   call-build-workflow:
-    uses: ./.github/workflows/5_builderpackage_indexer.yml
+    uses: ./.github/workflows/6_builderpackage_indexer.yml
     secrets: inherit
     with:
       id: ${{ github.ref }}

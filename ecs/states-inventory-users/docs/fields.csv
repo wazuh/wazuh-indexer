@@ -1,0 +1,35 @@
+ECS_Version,Indexed,Field_Set,Field,Type,Level,Normalization,Example,Description
+8.11.0,true,base,tags,keyword,core,array,"[""production"", ""env2""]",List of keywords used to tag each event.
+8.11.0,true,host,host.hostname,keyword,core,,,Hostname of the host.
+8.11.0,true,host,host.id,keyword,core,,,Unique host id.
+8.11.0,true,login,login.status,boolean,custom,,,Whether the login was successful or the user is currently logged in.
+8.11.0,true,login,login.tty,keyword,custom,,,"Terminal associated with the login session (e.g., pts/1)."
+8.11.0,true,login,login.type,keyword,custom,,,"Type of login session. Example values: ""user"", ""system"", ""remote""."
+8.11.0,true,process,process.pid,long,core,,4242,Process id.
+8.11.0,true,user,user.auth_failures.count,long,custom,,,Number of failed authentication attempts.
+8.11.0,true,user,user.auth_failures.timestamp,double,custom,,,Timestamp of the last authentication failure.
+8.11.0,true,user,user.created,keyword,custom,,,Datetime when the user was created.
+8.11.0,true,user,user.full_name,keyword,custom,,Albert Einstein,Full name of the user.
+8.11.0,true,user,user.full_name.text,keyword,custom,,Albert Einstein,Full name of the user.
+8.11.0,true,user,user.group.id,keyword,custom,,,Group ID.
+8.11.0,true,user,user.group.id_signed,long,custom,,,Signed group ID.
+8.11.0,true,user,user.groups,keyword,custom,,,Groups the user belongs to.
+8.11.0,true,user,user.home,keyword,custom,,,Home directory of the user.
+8.11.0,true,user,user.id,keyword,core,,S-1-5-21-202424912787-2692429404-2351956786-1000,Unique identifier of the user.
+8.11.0,true,user,user.is_hidden,boolean,custom,,,Whether the user is hidden.
+8.11.0,true,user,user.is_remote,boolean,custom,,,Whether the user is remote.
+8.11.0,true,user,user.name,keyword,core,,a.einstein,Short name or login of the user.
+8.11.0,true,user,user.name.text,keyword,core,,a.einstein,Short name or login of the user.
+8.11.0,true,user,user.password.expiration_date,long,custom,,,Password expiration date (epoch).
+8.11.0,true,user,user.password.hash_algorithm,keyword,custom,,,Algorithm used to hash the password.
+8.11.0,true,user,user.password.inactive_days,integer,custom,,,Number of days of inactivity before disabling the password.
+8.11.0,true,user,user.password.last_change,long,custom,,,Days since epoch when password was last changed.
+8.11.0,true,user,user.password.last_set_time,double,custom,,,Time the password was last set (epoch).
+8.11.0,true,user,user.password.max_days_between_changes,integer,custom,,,Maximum days between password changes.
+8.11.0,true,user,user.password.min_days_between_changes,integer,custom,,,Minimum days between password changes.
+8.11.0,true,user,user.password.status,keyword,custom,,,"Password status (e.g., active)."
+8.11.0,true,user,user.password.warning_days_before_expiration,integer,custom,,,Days before expiration to warn user.
+8.11.0,true,user,user.shell,keyword,custom,,,Shell used by the user.
+8.11.0,true,user,user.type,keyword,custom,,,"Type of user (e.g., ""system"", ""regular"")."
+8.11.0,true,user,user.uid_signed,long,custom,,,Signed user ID.
+8.11.0,true,user,user.uuid,keyword,custom,,,UUID of the user.

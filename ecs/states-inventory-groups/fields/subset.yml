@@ -1,0 +1,17 @@
+---
+name: wazuh-groups
+fields:
+  base:
+    fields:
+      tags: []
+      "@timestamp": {}
+  group:
+    fields:
+      id: {}
+      name: {}
+      description: {}
+      id_signed: {}
+      uuid: {}
+      is_hidden: {}
+      namespace_pid: {}
+      users: {}

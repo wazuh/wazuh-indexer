@@ -24,12 +24,12 @@ on:
       wazuh_plugins_ref:
         description: "Branch, commit or tag for the wazuh-indexer-plugins repository."
         type: string
-        default: "main"
+        default: "6.0.0"
         required: false
       reporting_plugin_ref:
         description: "Branch, commit or tag for the wazuh-indexer-reporting repository."
         type: string
-        default: "main"
+        default: "6.0.0"
         required: false
   workflow_call:
     inputs:
@@ -49,12 +49,12 @@ on:
       wazuh_plugins_ref:
         description: "Branch, commit or tag for the wazuh-indexer-plugins repository."
         type: string
-        default: "main"
+        default: "6.0.0"
         required: false
       reporting_plugin_ref:
         description: "Branch, commit or tag for the wazuh-indexer-reporting repository."
         type: string
-        default: "main"
+        default: "6.0.0"
         required: false
     secrets:
       QUAY_USERNAME:

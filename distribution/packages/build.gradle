@@ -102,6 +102,7 @@ addProcessFilesTask('deb', false)
 addProcessFilesTask('rpm', true)
 addProcessFilesTask('rpm', false)
 
+
 // Common configuration that is package dependent. This can't go in ospackage
 // since we have different templated files that need to be consumed, but the structure
 // is the same
@@ -334,7 +335,7 @@ ospackage {
     Reference documentation can be found at
     https://documentation.wazuh.com/current/getting-started/components/wazuh-indexer.html
   '''.stripIndent().trim()
-  url = 'https://documentation.wazuh.com/current/getting-started/components/wazuh-indexer.html'
+  url = 'https://github.com/wazuh/wazuh-indexer'
 
   // signing setup
   if (project.hasProperty('signing.password') && BuildParams.isSnapshotBuild() == false) {
@@ -373,6 +374,12 @@ Closure commonDebConfig(boolean jdk, String architecture) {
     requires 'libc6'
     requires 'adduser'
 
+    into('/usr/share/lintian/overrides') {
+      from('src/deb/lintian/wazuh-indexer')
+      filePermissions {
+        unix 0644
+      }
+    }
   }
 }
 
@@ -404,12 +411,12 @@ Closure commonRpmConfig(boolean jdk, String architecture) {
     obsoletes packageName, '7.0.0', Flags.LESS
 
     prefix '/usr'
-    packager = 'OpenSearch'
+    packager = 'Wazuh'
     archiveVersion = project.version.replace('-', '_')
     release = '1'
     os = 'LINUX'
-    distribution = 'OpenSearch'
-    vendor = 'OpenSearch'
+    distribution = 'Wazuh'
+    vendor = 'Wazuh'
     // TODO ospackage doesn't support icon but we used to have one
 
     // without this the rpm will have parent dirs of any files we copy in, eg /etc/wazuh-indexer

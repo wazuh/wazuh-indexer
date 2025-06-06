@@ -1,19 +1,116 @@
-
-# Wazuh monitoring and statistics index permissions
-manage_wazuh_index:
-  reserved: true
-  hidden: false
+# Wazuh stateful indexes read permissions
+stateful-read:
   cluster_permissions: []
   index_permissions:
-  - index_patterns:
-    - "wazuh-*"
-    dls: ""
-    fls: []
-    masked_fields: []
-    allowed_actions:
-    - "read"
-    - "delete"
-    - "manage"
-    - "index"
+    - index_patterns:
+        - "wazuh-states-*"
+      dls: ""
+      fls: []
+      masked_fields: []
+      allowed_actions:
+        - "read"
   tenant_permissions: []
-  static: false
+  static: true
+
+# Wazuh stateful indexes write permissions
+stateful-write:
+  cluster_permissions: []
+  index_permissions:
+    - index_patterns:
+        - "wazuh-states-*"
+      dls: ""
+      fls: []
+      masked_fields: []
+      allowed_actions:
+        - "index"
+  tenant_permissions: []
+  static: true
+
+# Wazuh stateful indexes delete permissions
+stateful-delete:
+  cluster_permissions: []
+  index_permissions:
+    - index_patterns:
+        - "wazuh-states-*"
+      dls: ""
+      fls: []
+      masked_fields: []
+      allowed_actions:
+        - "delete"
+  tenant_permissions: []
+  static: true
+
+# Wazuh stateless indexes read permissions
+stateless-read:
+  cluster_permissions: []
+  index_permissions:
+    - index_patterns:
+        - "wazuh-alerts*"
+        - "wazuh-archives*"
+      dls: ""
+      fls: []
+      masked_fields: []
+      allowed_actions:
+        - "read"
+  tenant_permissions: []
+  static: true
+
+# Wazuh stateless indexes write permissions
+stateless-write:
+  cluster_permissions: []
+  index_permissions:
+    - index_patterns:
+        - "wazuh-alerts*"
+        - "wazuh-archives*"
+      dls: ""
+      fls: []
+      masked_fields: []
+      allowed_actions:
+        - "index"
+  tenant_permissions: []
+  static: true
+
+# Wazuh metrics indexes read permissions
+metrics-read:
+  cluster_permissions: []
+  index_permissions:
+    - index_patterns:
+        - "wazuh-monitoring*"
+        - "wazuh-statistics*"
+      dls: ""
+      fls: []
+      masked_fields: []
+      allowed_actions:
+        - "read"
+  tenant_permissions: []
+  static: true
+
+# Wazuh metrics indexes write permissions
+metrics-write:
+  cluster_permissions: []
+  index_permissions:
+    - index_patterns:
+        - "wazuh-monitoring*"
+        - "wazuh-statistics*"
+      dls: ""
+      fls: []
+      masked_fields: []
+      allowed_actions:
+        - "index"
+  tenant_permissions: []
+  static: true
+
+# Wazuh sample data indexes management permissions
+sample-data-management:
+  cluster_permissions: []
+  index_permissions:
+    - index_patterns:
+        - "*-sample-*"
+      dls: ""
+      fls: []
+      masked_fields: []
+      allowed_actions:
+        - "data_access"
+        - "manage"
+  tenant_permissions: []
+  static: true

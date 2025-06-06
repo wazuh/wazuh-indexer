@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Copyright OpenSearch Contributors
+# Copyright Wazuh Indexer Contributors
 # SPDX-License-Identifier: Apache-2.0
 #
-# The OpenSearch Contributors require contributions made to
+# The Wazuh Indexer Contributors require contributions made to
 # this file be licensed under the Apache-2.0 license or a
 # compatible open source license.
 
@@ -13,28 +13,25 @@ set -e
 
 name="wazuh-indexer"
 config_dir=/etc/${name}
-state_file=${config_dir}/${name}.was_active
-
+state_file=${config_dir}/.was_active
 
 echo "Running Wazuh Indexer Pre-Installation Script"
 
 case "$1" in
     upgrade)
-        # Stop existing wazuh-indexer.service
-        echo "Verifying ${name}.service is stopped to proceed with the upgrade..."
+        # Stop existing ${name}.service
+        echo "Stop existing ${name}.service"
         if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1 && systemctl is-active ${name}.service > /dev/null 2>&1; then
             systemctl --no-reload stop ${name}.service > /dev/null 2>&1
-            echo "${name}.service is currently active; scheduling restart after the upgrade."
             touch ${state_file}
         elif command -v service > /dev/null 2>&1 && service ${name} status > /dev/null 2>&1; then
             service ${name} stop > /dev/null 2>&1
-            echo "${name}.service is currently active; scheduling restart after the upgrade."
             touch ${state_file}
         elif command -v /etc/init.d/${name} > /dev/null 2>&1 && /etc/init.d/${name} status > /dev/null 2>&1; then
             /etc/init.d/${name} stop > /dev/null 2>&1
-            echo "${name}.service is currently active; scheduling restart after the upgrade."
             touch ${state_file}
         fi
+
         echo "Stop existing ${name}-performance-analyzer.service"
         if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1 && systemctl is-active ${name}-performance-analyzer.service > /dev/null 2>&1; then
             systemctl --no-reload stop ${name}-performance-analyzer.service > /dev/null 2>&1

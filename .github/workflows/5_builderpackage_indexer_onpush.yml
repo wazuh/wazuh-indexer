@@ -10,9 +10,8 @@ on:
 
 jobs:
   call-build-workflow:
-    uses: ./.github/workflows/6_builderpackage_indexer.yml
+    uses: ./.github/workflows/5_builderpackage_indexer.yml
     secrets: inherit
     with:
       id: ${{ github.ref }}
-      wazuh_plugins_ref: "6.0.0"
-      reporting_plugin_ref: "6.0.0"
+      wazuh_plugins_ref: ${{ github.event.repository.default_branch }}

@@ -14,15 +14,15 @@ fields:
       shell: {}
       type: {}
       created: {}
+      group:
+        fields:
+          id: {}
+          id_signed: {}
       groups: {}
       uid_signed: {}
       uuid: {}
       is_hidden: {}
       is_remote: {}
-      group:
-        fields:
-          id: {}
-          id_signed: {}
       password:
         fields:
           status: {}
@@ -38,15 +38,16 @@ fields:
         fields:
           count: {}
           timestamp: {}
+      roles: {}
+      last_login: {}
+  host:
+    fields:
+      ip: {}
+  process:
+    fields:
+      pid: {}
   login:
     fields:
       status: {}
       type: {}
       tty: {}
-  host:
-    fields:
-      id: {}
-      hostname: {}
-  process:
-    fields:
-      pid: {}

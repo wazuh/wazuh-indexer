@@ -11,14 +11,15 @@ IS_STAGE=${IS_STAGE:-false}
 DISTRIBUTION=${DISTRIBUTION:-rpm}
 ARCHITECTURE=${ARCHITECTURE:-x64}
 
+PLUGINS_REPO_DIR="/repositories/wazuh-indexer-plugins"
+REPORTING_REPO_DIR="/repositories/wazuh-indexer-reporting"  
+
 # Function to clone repositories
 clone_repositories() {
     echo "----------------------------------------"
     echo "Cloning Repositories"
     echo "----------------------------------------"
 
-    PLUGINS_REPO_DIR="/repositories/wazuh-indexer-plugins"
-    REPORTING_REPO_DIR="/repositories/wazuh-indexer-reporting"
 
     if [ -d "$PLUGINS_REPO_DIR/.git" ]; then
         git -C "$PLUGINS_REPO_DIR" checkout "$INDEXER_PLUGINS_BRANCH"
@@ -40,13 +41,13 @@ build_plugins() {
     echo "----------------------------------------"
     local version="$1"
     local revision="$2"
-    cd /repositories/wazuh-indexer-plugins/plugins/setup
+    cd ${PLUGINS_REPO_DIR}/plugins/setup
     echo "Building setup plugin..."
     ./gradlew build -Dversion="$version" -Drevision="$revision" --no-daemon
-    cd /repositories/wazuh-indexer-plugins/plugins/command-manager
+    cd ${PLUGINS_REPO_DIR}/plugins/command-manager
     echo "Building command-manager plugin..."
     ./gradlew build -Dversion="$version" -Drevision="$revision" --no-daemon
-    cd /repositories/wazuh-indexer-plugins/plugins/content-manager
+    cd ${PLUGINS_REPO_DIR}/plugins/content-manager
     echo "Building content-manager plugin..."
     ./gradlew build -Dversion="$version" -Drevision="$revision" --no-daemon
 }
@@ -58,7 +59,7 @@ build_reporting() {
     echo "----------------------------------------"
     local version="$1"
     local revision="$2"
-    cd /repositories/wazuh-indexer-reporting
+    cd ${REPORTING_REPO_DIR}
     echo "Building reporting..."
     ./gradlew build -Dversion="$version" -Drevision="$revision" --no-daemon
 }
@@ -72,13 +73,13 @@ copy_builds() {
     local revision="$2"
     mkdir -p ~/artifacts/plugins
     echo "Copying setup plugin..."
-    cp /repositories/wazuh-indexer-plugins/plugins/setup/build/distributions/wazuh-indexer-setup-"$version"."$revision".zip ~/artifacts/plugins
+    cp ${PLUGINS_REPO_DIR}/plugins/setup/build/distributions/wazuh-indexer-setup-"$version"."$revision".zip ~/artifacts/plugins
     echo "Copying command-manager plugin..."
-    cp /repositories/wazuh-indexer-plugins/plugins/command-manager/build/distributions/wazuh-indexer-command-manager-"$version"."$revision".zip ~/artifacts/plugins
+    cp ${PLUGINS_REPO_DIR}/plugins/command-manager/build/distributions/wazuh-indexer-command-manager-"$version"."$revision".zip ~/artifacts/plugins
     echo "Copying content-manager plugin..."
-    cp /repositories/wazuh-indexer-plugins/plugins/content-manager/build/distributions/wazuh-indexer-content-manager-"$version"."$revision".zip ~/artifacts/plugins
+    cp ${PLUGINS_REPO_DIR}/plugins/content-manager/build/distributions/wazuh-indexer-content-manager-"$version"."$revision".zip ~/artifacts/plugins
     echo "Copying reporting..."
-    cp /repositories/wazuh-indexer-reporting/build/distributions/wazuh-indexer-reports-scheduler-"$version"."$revision".zip ~/artifacts/plugins
+    cp ${REPORTING_REPO_DIR}/build/distributions/wazuh-indexer-reports-scheduler-"$version"."$revision".zip ~/artifacts/plugins
 }
 
 # Function for packaging process
@@ -96,8 +97,8 @@ package_artifacts() {
     local package_min_name
     local package_name
 
-    plugins_hash=$(cd /repositories/wazuh-indexer-plugins && git rev-parse --short HEAD)
-    reporting_hash=$(cd /repositories/wazuh-indexer-reporting && git rev-parse --short HEAD)
+    plugins_hash=$(cd ${PLUGINS_REPO_DIR} && git rev-parse --short HEAD)
+    reporting_hash=$(cd ${REPORTING_REPO_DIR} && git rev-parse --short HEAD)
 
     cd ~
 

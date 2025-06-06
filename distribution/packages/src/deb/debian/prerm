@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Copyright OpenSearch Contributors
+# Copyright Wazuh Indexer Contributors
 # SPDX-License-Identifier: Apache-2.0
 #
-# The OpenSearch Contributors require contributions made to
+# The Wazuh Indexer Contributors require contributions made to
 # this file be licensed under the Apache-2.0 license or a
 # compatible open source license.
 
@@ -18,18 +18,18 @@ case "$1" in
     ;;
     remove)
         echo "Running Wazuh Indexer Pre-Removal Script"
-        # Stop existing wazuh-indexer.service
+        # Stop existing service
         if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1 && systemctl is-active ${name}.service > /dev/null 2>&1; then
-            echo "Stop existing ${name}}.service"
+            echo "Stop existing ${name}.service"
             systemctl --no-reload stop ${name}.service > /dev/null 2>&1
         elif command -v service > /dev/null 2>&1 && service ${name} status > /dev/null 2>&1; then
             service ${name} stop > /dev/null 2>&1
         elif command -v /etc/init.d/${name} > /dev/null 2>&1 && /etc/init.d/${name} status > /dev/null 2>&1; then
             /etc/init.d/${name} stop > /dev/null 2>&1
         fi
-        # Stop existing wazuh-indexer-performance-analyzer.service
+        # Stop existing ${name}-performance-analyzer.service
         if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1 && systemctl is-active ${name}-performance-analyzer.service > /dev/null 2>&1; then
-            echo "Stop existing ${name}}-performance-analyzer.service"
+            echo "Stop existing ${name}-performance-analyzer.service"
             systemctl --no-reload stop ${name}-performance-analyzer.service > /dev/null 2>&1
         elif command -v service > /dev/null 2>&1 && service ${name}-performance-analyzer status > /dev/null 2>&1; then
             service ${name}-performance-analyzer stop > /dev/null 2>&1

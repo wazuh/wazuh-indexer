@@ -1,0 +1,24 @@
+---
+- name: interface
+  title: Interface
+  type: group
+  group: 2
+  description: >
+    Network interface related data.
+  fields:
+    - name: mtu
+      type: long
+      level: custom
+      description: >
+        Maximum transmission unit size.
+    - name: state
+      type: keyword
+      level: custom
+      description: >
+        State of the network interface.
+    - name: type
+      type: keyword
+      level: custom
+      description: >
+        Interface type.
+

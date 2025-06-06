@@ -34,12 +34,6 @@ apply plugin: 'opensearch.internal-distribution-archive-setup'
 
 
 CopySpec archiveFiles(CopySpec modulesFiles, String distributionType, String platform, String architecture, JavaPackageType java) {
-  def commandLine = ['/bin/bash', 'product_version.sh']
-  def execProcess = new ProcessBuilder(commandLine)
-      .directory(new File('./build-scripts'))
-      .start()
-  def version = new String(execProcess.getInputStream().readAllBytes(), "UTF-8").trim()
-  execProcess.waitFor()
   return copySpec {
     into("wazuh-indexer-${version}") {
       into('lib') {

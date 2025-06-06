@@ -282,6 +282,7 @@ jobs:
 
       - name: Test RPM package update stopping the indexer
         if: ${{ matrix.distribution == 'rpm' && needs.setup.outputs.previous_version >= '5.0' }}
+        uses: addnab/docker-run-action@v3
         with:
           image: redhat/ubi9:latest
           options: 

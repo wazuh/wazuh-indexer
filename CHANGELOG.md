@@ -6,12 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased 4.13.x]
 ### Added
 - Implement version bumper script [(#802)](https://github.com/wazuh/wazuh-indexer/pull/802) [(#803)](https://github.com/wazuh/wazuh-indexer/pull/803)
+- Add index templates for FIM and Inventory [(#744)](https://github.com/wazuh/wazuh-indexer/pull/744)
 
 ### Dependencies
 - 
 
 ### Changed
 - Update setup-gradle version [(#831)](https://github.com/wazuh/wazuh-indexer/pull/831)
+- Reorganize ecs folder [(#899)](https://github.com/wazuh/wazuh-indexer/pull/899)
 
 ### Deprecated
 - 

@@ -31,6 +31,8 @@
       level: custom
       description: >
           Groups the user belongs to.
+      normalize:
+        - array
     - name: uid_signed
       type: long
       level: custom
@@ -56,7 +58,9 @@
       level: custom
       description: >
         Roles assigned to the user.
-    - last_login:
+      normalize:
+        - array
+    - name: last_login
       type: date
       level: custom
       description: >

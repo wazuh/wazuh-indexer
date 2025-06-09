@@ -32,10 +32,12 @@
       description: >
         Namespace PID of the group.
     - name: users
-      type: keyword[]
+      type: keyword
       level: custom
       description: >
         Users that belong to the group.
+      normalize:
+        - array
     - name: id
       type: unsigned_long
       level: custom

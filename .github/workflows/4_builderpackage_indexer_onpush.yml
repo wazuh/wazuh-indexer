@@ -7,8 +7,13 @@ on:
   pull_request:
     branches:
       - 4.*
+  push:
+    branches:
+      - 4.*
     paths-ignore:
       - '**.md'
+      - 'ecs/**'
+      - 'tools/**'
 
 jobs:
   call-build-workflow:

@@ -4,9 +4,16 @@ name: Build and push Docker image (on push)
 # - Push
 
 on:
+  pull_request:
+    branches:
+      - 5.*
   push:
+    branches:
+      - 5.*
     paths-ignore:
       - '**.md'
+      - 'ecs/**'
+      - 'tools/**'
 
 jobs:
   call-docker-workflow:

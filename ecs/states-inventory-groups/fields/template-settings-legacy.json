@@ -7,6 +7,12 @@
       "number_of_replicas": "0",
       "refresh_interval": "5s",
       "query.default_field": [
+        "group.name",
+        "group.description",
+        "group.id_signed",
+        "group.uuid",
+        "group.namespace_pid",
+        "group.users"
       ]
     }
   }

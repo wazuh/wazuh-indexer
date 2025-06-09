@@ -162,7 +162,7 @@ jobs:
           fi
 
   setup:
-    needs: compatibility-check
+    needs: [compatibility-check]
     name: Set up variables
     runs-on: ubuntu-24.04
     outputs:
@@ -190,7 +190,7 @@ jobs:
           echo "previous_version=$PREVIOUS" >> $GITHUB_OUTPUT
 
   build-wazuh-plugins:
-    needs: compatibility-check
+    needs: [compatibility-check]
     if: ${{ inputs.wazuh_plugins_ref != '' }}
     strategy:
       fail-fast: false

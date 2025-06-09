@@ -245,7 +245,7 @@ jobs:
           EOF
 
           # Check if the indexer is running
-          indexer_running=$(ssh ${{ steps.setup_rpm_env.outputs.ssh_command }} 'systemctl is-active --quiet wazuh-indexer && echo 1 || echo 0')
+          indexer_running=$(${{ steps.setup_rpm_env.outputs.ssh_command }} 'systemctl is-active --quiet wazuh-indexer && echo 1 || echo 0')
           if [[ "$indexer_running" == "1" ]]; then
             echo "The indexer is running after the update, but it should not be."
             exit 1
@@ -268,7 +268,7 @@ jobs:
           EOF
 
           # Check if the indexer is running
-          indexer_running=$(ssh ${{ steps.setup_rpm_env.outputs.ssh_command }} 'systemctl is-active --quiet wazuh-indexer && echo 1 || echo 0')
+          indexer_running=$(${{ steps.setup_rpm_env.outputs.ssh_command }} 'systemctl is-active --quiet wazuh-indexer && echo 1 || echo 0')
           if [[ "$indexer_running" == "0" ]]; then
             echo "The indexer is not running after the update, but it should be."
             exit 1

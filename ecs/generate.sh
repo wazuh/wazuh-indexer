@@ -63,12 +63,12 @@ generate_mappings() {
   find "$OUT_DIR" -type f -exec sed -i 's/flattened/flat_object/g' {} \;
 
   # Replace "scaled_float" type (requires a default value in OpenSearch) with "float"
-  echo "Replacing \"scaled_float\" type with \"float\""
-  find "$OUT_DIR" -type f -exec sed -i 's/scaled_float/float/g' {} \;
+#   echo "Replacing \"scaled_float\" type with \"float\""
+#   find "$OUT_DIR" -type f -exec sed -i 's/scaled_float/float/g' {} \;
 
   # Removing "scaling_factor"
-  echo "Removing \"scaling_factor\""
-  find "$OUT_DIR" -type f -exec sed -i '/scaling_factor/d' {} \;
+#   echo "Removing \"scaling_factor\""
+#   find "$OUT_DIR" -type f -exec sed -i '/scaling_factor/d' {} \;
 
   local IN_FILE="$OUT_DIR/generated/elasticsearch/legacy/template.json"
   local OUT_FILE="$OUT_DIR/generated/elasticsearch/legacy/template-tmp.json"

@@ -1,17 +1,17 @@
-| Field Name      | Type       | Description                                | Destination Field           | Custom |
-| --------------- | ---------- | ------------------------------------------ | --------------------------- | ------ |
-| agent_id        | string     | Unique ID of the agent.                    | agent.id                    | FALSE  |
-| agent_ip        | string     | IP address of the agent.                   | agent.host.ip               | TRUE   |
-| agent_name      | string     | Name of the agent.                         | agent.name                  | FALSE  |
-| agent_version   | string     | Agent version.                             | agent.version               | FALSE  |
-| board_serial    | string     | Serial number of the motherboard.          | host.serial_number          | TRUE   |
-| cpu_name        | string     | Name/model of the CPU.                     | host.cpu.name               | TRUE   |
-| cpu_cores       | long       | Number of CPU cores.                       | host.cpu.cores              | TRUE   |
-| cpu_mhz         | double     | CPU clock speed in MHz.                    | host.cpu.speed              | TRUE   |
-| ram_total       | long       | Total RAM available in the system (Bytes). | host.memory.total           | TRUE   |
-| ram_free        | long       | Free RAM available in the system (Bytes).  | host.memory.free            | TRUE   |
-| ram_usage       | long       | RAM usage in Bytes.                        | host.memory.used            | TRUE   |
-| used_percentage | half_float | Percentage of used memory 0-1.             | host.memory.used_percentage | TRUE   |
-| cluster_name    | string     | Wazuh cluster name                         | wazuh.cluster.name          | TRUE   |
-| cluster_node    | string     | Wazuh cluster node                         | wazuh.cluster.node          | TRUE   |
-| schema_version  | string     | Wazuh schema version                       | wazuh.schema.version        | TRUE   |
+| Field Name     | Type         | Description                           | Destination Field    | Custom |
+| -------------- | ------------ | ------------------------------------- | -------------------- | ------ |
+| agent_id       | string       | Unique ID of the agent.               | agent.id             | FALSE  |
+| agent_ip       | string       | IP address of the agent.              | agent.host.ip        | TRUE   |
+| agent_name     | string       | Name of the agent.                    | agent.name           | FALSE  |
+| agent_version  | string       | Agent version.                        | agent.version        | FALSE  |
+| board_serial   | string       | Serial Number of the device.          | host.serial_number   | TRUE   |
+| cpu_name       | string       | Name/model of the CPU.                | host.cpu.name        | TRUE   |
+| cpu_cores      | long         | Number of CPU cores.                  | host.cpu.cores       | TRUE   |
+| cpu_mhz        | double       | CPU clock speed in MHz.               | host.cpu.speed       | TRUE   |
+| ram_total      | long         | Total memory, in Bytes.               | host.memory.total    | TRUE   |
+| ram_free       | long         | Free memory, in Bytes.                | host.memory.free     | TRUE   |
+| -              | long         | Used memory, in Bytes.                | host.memory.used     | TRUE   |
+| ram_usage      | scaled_float | Percent memory used, between 0 and 1. | host.memory.usage    | TRUE   |
+| cluster_name   | string       | Wazuh cluster name                    | wazuh.cluster.name   | TRUE   |
+| cluster_node   | string       | Wazuh cluster node                    | wazuh.cluster.node   | TRUE   |
+| schema_version | string       | Wazuh schema version                  | wazuh.schema.version | TRUE   |

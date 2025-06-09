@@ -121,21 +121,37 @@ jobs:
     steps:
       - name: Get Wazuh Indexer version
         id: version
-        run: echo "version=$(bash build-scripts/product_version.sh)" >> "$GITHUB_OUTPUT"
+        run: |
+          # Gets the Wazuh Indexer version from the product_version.sh script
+          echo "version=$(bash build-scripts/product_version.sh)" >> "$GITHUB_OUTPUT"
+
+          # Extracts the Opensearch version from buildSrc/version.properties
+          opensearch_version= grep '^opensearch' buildSrc/version.properties | awk -F '=' '{print $2}' | tr -d ' '
+          echo "opensearch_version=$opensearch_version" >> "$GITHUB_OUTPUT"
+
 
       - name: Get Wazuh Indexer plugins version
         id: plugins_version
         run: |
           # Clones the wazuh-indexer-plugins repository to get the version of the plugins
-          git clone --depth 1 --branch "${{ inputs.wazuh_plugins_ref }}" plugins/wazuh-indexer-plugins 
-          cd plugins/wazuh-indexer-plugins
+          git clone --branch "main" https://github.com/wazuh/wazuh-indexer-plugins.git
+          cd wazuh-indexer-plugins/
           echo "plugins_version=$(jq .version -r VERSION.json)" >> "$GITHUB_OUTPUT"
+
+          # Extracts the Opensearch version
+          plugins_opensearch_version=$(grep "opensearch_version =" "plugins/setup/build.gradle" | sed -E 's/.*System.getProperty\("opensearch\.version", "//' | sed -E 's/".*//' | sed -E 's/-SNAPSHOT$//')
+          echo "plugins_opensearch_version=$plugins_opensearch_version" >> "$GITHUB_OUTPUT"
 
       - name: Check version compatibility
         run: |
           if [[ "${{ steps.version.outputs.version }}" != "${{ steps.plugins_version.outputs.plugins_version }}" ]]; then
             echo "The Wazuh Indexer version is not compatible with the plugins version."
             exit 1
+          fi
+          if [[ "${{ steps.version.outputs.opensearch_version }}" != "${{ steps.plugins_version.outputs.plugins_opensearch_version }}" ]]; then
+            echo "The Wazuh Indexer Opensearch version is not compatible with the plugins Opensearch version."
+            exit 1
+          fi
 
   setup:
     name: Set up variables

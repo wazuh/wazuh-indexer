@@ -103,10 +103,16 @@ function validate_inputs() {
     if ! [[ $date =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
         log "Error: Invalid date format $date."
         exit 1
-    else
-        # Convert date to the required format for the script
-        date=$(LANG=en_US.UTF-8 date -d "$date" +"%a %b %d %Y")
     fi
+}
+
+# ====
+# Changes the date format to the format used in the changelog files
+# ====
+function normalize_date() {
+    local date="$1"
+    date=$(LANG=en_US.UTF-8 date -d "$date" +"%a %b %d %Y")
+    echo "$date"
 }
 
 # ====
@@ -210,6 +216,7 @@ function main() {
     navigate_to_project_root
     check_jq_installed
     validate_inputs "$version" "$stage" "$date"
+    date=$(normalize_date "$date")
     update_version_file "$version" "$stage"
     update_rpm_changelog "$version" "$date"
 

@@ -100,9 +100,12 @@ function validate_inputs() {
         exit 1
     fi
 
-    if ! [[ $date =~ ^[A-Za-z]{3}\ [A-Za-z]{3}\ [0-9]{1,2}\ [0-9]{4}$ ]]; then
+    if ! [[ $date =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
         log "Error: Invalid date format $date."
         exit 1
+    else
+        # Convert date to the required format for the script
+        date=$(LANG=en_US.UTF-8 date -d "$date" +"%a %b %d %Y")
     fi
 }
 

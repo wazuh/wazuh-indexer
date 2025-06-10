@@ -15,7 +15,7 @@ on:
         required: false
         type: string
       date:
-        description: 'Version release date (e.g. Mon Jan 02 2025)'
+        description: 'Version release date (yyyy-mm-dd, e.g. 2025-04-13)'
         default: ''
         required: false
         type: string

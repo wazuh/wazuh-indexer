@@ -25,7 +25,7 @@ function usage() {
     echo "Usage: $0 <version> <stage> <date>"
     echo "  version:  The new version to set in VERSION.json (e.g., 4.5.0)"
     echo "  stage:    The new stage to set in VERSION.json (alpha, beta, rc, stable)"
-    echo "  date:     The date to set in the changelog (e.g., 'Mon Jan 02 2025')"
+    echo "  date:     The date to set in the changelog (e.g., '2025-04-13')"
     exit 1
 }
 
@@ -169,7 +169,6 @@ function update_rpm_changelog() {
             }
             END {
                 for (i = 1; i <= NR; i++) print lines[i]
-                if (updated) print ""
             }
         ' "$spec_file" >"${spec_file}.tmp" && mv "${spec_file}.tmp" "$spec_file"
 

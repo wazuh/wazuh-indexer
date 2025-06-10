@@ -50,7 +50,7 @@ def generate_random_data(number):
 
 
 def inject_events(ip, port, index, username, password, data):
-  url = f"http://{ip}:{port}/{index}/_doc"
+  url = f"https://{ip}:{port}/{index}/_doc"
   session = requests.Session()
   session.auth = (username, password)
   session.verify = False

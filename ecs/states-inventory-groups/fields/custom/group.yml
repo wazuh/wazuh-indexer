@@ -26,11 +26,6 @@
       level: custom
       description: >
         Whether the group is hidden.
-    - name: namespace_pid
-      type: integer
-      level: custom
-      description: >
-        Namespace PID of the group.
     - name: users
       type: keyword
       level: custom

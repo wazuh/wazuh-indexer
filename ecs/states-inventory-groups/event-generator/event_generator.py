@@ -36,7 +36,6 @@ def generate_random_group():
         "Support team"
       ]),
       "is_hidden": random.choice([True, False]),
-      "namespace_pid": random.randint(1, 1000),
       "users": [
         ''.join(random.choices(string.ascii_lowercase, k=5))
         for _ in range(random.randint(1, 5))

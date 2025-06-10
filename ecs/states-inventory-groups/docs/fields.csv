@@ -6,6 +6,5 @@ ECS_Version,Indexed,Field_Set,Field,Type,Level,Normalization,Example,Description
 8.10.0,true,group,group.id_signed,long,custom,,,Signed group ID.
 8.10.0,true,group,group.is_hidden,boolean,custom,,,Whether the group is hidden.
 8.10.0,true,group,group.name,keyword,extended,,,Name of the group.
-8.10.0,true,group,group.namespace_pid,integer,custom,,,Namespace PID of the group.
 8.10.0,true,group,group.users,keyword,custom,array,,Users that belong to the group.
 8.10.0,true,group,group.uuid,keyword,custom,,,UUID of the group.

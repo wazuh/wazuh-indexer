@@ -13,5 +13,4 @@ fields:
       id_signed: {}
       uuid: {}
       is_hidden: {}
-      namespace_pid: {}
       users: {}

@@ -4,7 +4,7 @@
   type: group
   group: 2
   description: >
-    Wazuh user's group custom fields.
+    Inventory user's group custom fields.
   fields:
     - name: description
       type: match_only_text
@@ -15,26 +15,26 @@
       type: long
       level: custom
       description: >
-        Signed group ID.
+        A signed int64 version of the group's ID.
     - name: uuid
       type: keyword
       level: custom
       description: >
-        UUID of the group.
+        Unique group ID.
     - name: is_hidden
       type: boolean
       level: custom
       description: >
-        Whether the group is hidden.
+        IsHidden attribute set in OpenDirectory.
     - name: users
       type: keyword
       level: custom
       description: >
-        Users that belong to the group.
+        List of ID of users that belong to the group.
       normalize:
         - array
     - name: id
       type: unsigned_long
       level: custom
       description: >
-        Group ID.
+        Unsigned int64 group ID.

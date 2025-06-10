@@ -1,10 +1,8 @@
 ECS_Version,Indexed,Field_Set,Field,Type,Level,Normalization,Example,Description
-8.10.0,true,base,@timestamp,date,core,,2016-05-23T08:05:34.853Z,Date/time when the event originated.
-8.10.0,true,base,tags,keyword,core,array,"[""production"", ""env2""]",List of keywords used to tag each event.
-8.10.0,true,group,group.description,text,custom,,,Description of the group.
-8.10.0,true,group,group.id,unsigned_long,custom,,,Group ID.
-8.10.0,true,group,group.id_signed,long,custom,,,Signed group ID.
-8.10.0,true,group,group.is_hidden,boolean,custom,,,Whether the group is hidden.
-8.10.0,true,group,group.name,keyword,extended,,,Name of the group.
-8.10.0,true,group,group.users,keyword,custom,array,,Users that belong to the group.
-8.10.0,true,group,group.uuid,keyword,custom,,,UUID of the group.
+8.11.0,true,group,group.description,text,custom,,,Description of the group.
+8.11.0,true,group,group.id,unsigned_long,custom,,,Unsigned int64 group ID.
+8.11.0,true,group,group.id_signed,long,custom,,,A signed int64 version of the group's ID.
+8.11.0,true,group,group.is_hidden,boolean,custom,,,IsHidden attribute set in OpenDirectory.
+8.11.0,true,group,group.name,keyword,extended,,,Name of the group.
+8.11.0,true,group,group.users,keyword,custom,array,,List of ID of users that belong to the group.
+8.11.0,true,group,group.uuid,keyword,custom,,,Unique group ID.

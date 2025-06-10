@@ -9,22 +9,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Add index templates for FIM and Inventory [(#744)](https://github.com/wazuh/wazuh-indexer/pull/744)
 
 ### Dependencies
-- 
+-
 
 ### Changed
 - Update setup-gradle version [(#831)](https://github.com/wazuh/wazuh-indexer/pull/831)
 - Reorganize ecs folder [(#899)](https://github.com/wazuh/wazuh-indexer/pull/899)
+- Update `host.cpu.cores` field type to `short` [(#945)](https://github.com/wazuh/wazuh-indexer/pull/945)
 
 ### Deprecated
-- 
+-
 
 ### Removed
-- 
+-
 
 ### Fixed
-- 
+-
 
 ### Security
-- 
+-
 
 [Unreleased 4.13.x]: https://github.com/wazuh/wazuh-indexer/compare/4.12.0...4.13.0

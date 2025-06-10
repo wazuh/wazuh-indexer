@@ -24,7 +24,9 @@ remove_multi_fields() {
     .mappings.properties.vulnerability.properties.description.fields,
     .mappings.properties.process.properties.command_line.fields,
     .mappings.properties.process.properties.name.fields,
-    .mappings.properties.file.properties.path.fields
+    .mappings.properties.file.properties.path.fields,
+    .mappings.properties.user.properties.name.fields,
+    .mappings.properties.user.properties.full_name.fields
   )' "$IN_FILE" > "$OUT_FILE"
 }
 

@@ -30,7 +30,7 @@
       type: keyword
       level: custom
       description: >
-        List of ID of users that belong to the group.
+        List of users that belong to the group.
       normalize:
         - array
     - name: id

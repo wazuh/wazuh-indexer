@@ -30,7 +30,7 @@
       type: keyword
       level: custom
       description: >
-          Groups the user belongs to.
+        List of groups the user belongs to.
       normalize:
         - array
     - name: uid_signed

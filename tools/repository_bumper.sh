@@ -110,9 +110,18 @@ function validate_inputs() {
 # Changes the date format to the format used in the changelog files
 # ====
 function normalize_date() {
-    local date="$1"
-    date=$(LANG=en_US.UTF-8 date -d "$date" +"%a %b %d %Y")
-    echo "$date"
+    local input_date="$1"
+    local normalized=""
+
+    if date --version >/dev/null 2>&1; then
+        # GNU date (Linux)
+        normalized=$(LANG=en_US.UTF-8 date -d "$input_date" +"%a %b %d %Y")
+    else
+        # BSD date (macOS)
+        normalized=$(LANG=en_US.UTF-8 date -jf "%Y-%m-%d" "$input_date" +"%a %b %d %Y")
+    fi
+
+    echo "$normalized"
 }
 
 # ====

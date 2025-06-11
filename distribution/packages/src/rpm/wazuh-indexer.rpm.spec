@@ -322,7 +322,7 @@ exit 0
 %ghost %attr(440, %{name}, %{name}) %{config_dir}/.was_active
 
 # Certificates files permissions
-%attr(500, %{name}, %{name}) %{buildroot}%{certs_dir}
+%attr(500, %{name}, %{name}) %{certs_dir}
 
 %changelog
 * Thu Dec 18 2025 support <info@wazuh.com> - 6.0.0

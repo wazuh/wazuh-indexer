@@ -76,7 +76,6 @@ on:
         description: "AWS IAM role"
 
 permissions:
-  id-token: write
   contents: read
 # ==========================
 # Bibliography

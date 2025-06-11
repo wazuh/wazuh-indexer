@@ -5,6 +5,15 @@ fields:
     fields:
       tags: []
       "@timestamp": {}
+  agent:
+    fields:
+      id: {}
+      name: {}
+      version: {}
+      host:
+        fields:
+          architecture: {}
+          ip: {}
   group:
     fields:
       id: {}
@@ -14,3 +23,6 @@ fields:
       uuid: {}
       is_hidden: {}
       users: {}
+  wazuh:
+    fields: "*"
+

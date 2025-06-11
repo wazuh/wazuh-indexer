@@ -115,10 +115,10 @@ function normalize_date() {
 
     if date --version >/dev/null 2>&1; then
         # GNU date (Linux)
-        normalized=$(LANG=en_US.UTF-8 date -d "$input_date" +"%a %b %d %Y")
+        normalized=$(LC_TIME=en_US.UTF-8 date -d "$input_date" +"%a %b %d %Y")
     else
         # BSD date (macOS)
-        normalized=$(LANG=en_US.UTF-8 date -jf "%Y-%m-%d" "$input_date" +"%a %b %d %Y")
+        normalized=$(LC_TIME=en_US.UTF-8 date -jf "%Y-%m-%d" "$input_date" +"%a %b %d %Y")
     fi
 
     echo "$normalized"

@@ -35,7 +35,7 @@ apply plugin: 'opensearch.internal-distribution-archive-setup'
 
 CopySpec archiveFiles(CopySpec modulesFiles, String distributionType, String platform, String architecture, JavaPackageType java) {
   return copySpec {
-    def commandLine = ['/bin/bash', 'product_version.sh']Add commentMore actions
+    def commandLine = ['/bin/bash', 'product_version.sh']
     def execProcess = new ProcessBuilder(commandLine)
         .directory(new File('./build-scripts'))
         .start()

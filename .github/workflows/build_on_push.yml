@@ -3,10 +3,12 @@ name: Build packages (on push)
 # This workflow runs when any of the following occur:
 # - On push to branches named after ci/*
 on:
-  push:
-    # Sequence of patterns matched against refs/heads
+  pull_request:
     branches:
-      - "ci/*"
+      - 4.10.*
+    paths-ignore:
+      - '**.md'
+
 
 jobs:
   call-build-workflow:

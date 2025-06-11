@@ -69,6 +69,9 @@ cd %{_topdir} && pwd
 mkdir -p %{buildroot}%{pid_dir}
 mkdir -p %{buildroot}%{product_dir}/plugins
 
+# Create empty certs directory
+mkdir -p %{buildroot}%{certs_dir}
+
 # Install directories/files
 cp -a etc usr var %{buildroot}
 chmod 0755 %{buildroot}%{product_dir}/bin/*
@@ -319,7 +322,7 @@ exit 0
 %ghost %attr(440, %{name}, %{name}) %{config_dir}/.was_active
 
 # Certificates files permissions
-%attr(500, %{name}, %{name}) %{certs_dir}
+%attr(500, %{name}, %{name}) %{buildroot}%{certs_dir}
 
 %changelog
 * Thu Dec 18 2025 support <info@wazuh.com> - 6.0.0
@@ -330,8 +333,6 @@ exit 0
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-14-0.html
 * Wed Jul 16 2025 support <info@wazuh.com> - 4.13.0
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-13-0.html
-* Wed May 21 2025 support <info@wazuh.com> - 4.10.2
-- More info: https://documentation.wazuh.com/current/release-notes/release-4-10-2.html
 * Wed May 07 2025 support <info@wazuh.com> - 4.12.0
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-12-0.html
 * Tue Apr 01 2025 support <info@wazuh.com> - 4.11.2
@@ -340,6 +341,8 @@ exit 0
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-11-1.html
 * Wed Feb 21 2025 support <info@wazuh.com> - 4.11.0
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-11-0.html
+* Wed May 21 2025 support <info@wazuh.com> - 4.10.2
+- More info: https://documentation.wazuh.com/current/release-notes/release-4-10-2.html
 * Thu Jan 16 2025 support <info@wazuh.com> - 4.10.1
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-10-1.html
 * Wed Jan 08 2025 support <info@wazuh.com> - 4.10.0

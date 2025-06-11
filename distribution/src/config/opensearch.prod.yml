@@ -1,6 +1,6 @@
 network.host: "127.0.0.1"
 node.name: "indexer-1"
-cluster.initial_master_nodes:
+cluster.initial_cluster_manager_nodes:
 - "indexer-1"
 #- "indexer-2"
 #- "indexer-3"

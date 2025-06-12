@@ -1,4 +1,9 @@
 ECS_Version,Indexed,Field_Set,Field,Type,Level,Normalization,Example,Description
+8.11.0,true,agent,agent.host.architecture,keyword,core,,x86_64,Operating system architecture.
+8.11.0,true,agent,agent.host.ip,ip,core,array,,Host ip addresses.
+8.11.0,true,agent,agent.id,keyword,core,,8a4f500d,Unique identifier of this agent.
+8.11.0,true,agent,agent.name,keyword,core,,foo,Custom name of the agent.
+8.11.0,true,agent,agent.version,keyword,core,,6.0.0-rc2,Version of the agent.
 8.11.0,true,host,host.ip,ip,core,array,,Host ip addresses.
 8.11.0,true,login,login.status,boolean,custom,,,Whether the login was successful or the user is currently logged in.
 8.11.0,true,login,login.tty,keyword,custom,,,"Terminal associated with the login session (e.g., pts/1)."
@@ -33,3 +38,6 @@ ECS_Version,Indexed,Field_Set,Field,Type,Level,Normalization,Example,Description
 8.11.0,true,user,user.type,keyword,custom,,,"Type of user (e.g., ""system"", ""regular"")."
 8.11.0,true,user,user.uid_signed,long,custom,,,Signed user ID.
 8.11.0,true,user,user.uuid,keyword,custom,,,UUID of the user.
+8.11.0,true,wazuh,wazuh.cluster.name,keyword,custom,,,Wazuh cluster name.
+8.11.0,true,wazuh,wazuh.cluster.node,keyword,custom,,,Wazuh cluster node name.
+8.11.0,true,wazuh,wazuh.schema.version,keyword,custom,,,Wazuh schema version.

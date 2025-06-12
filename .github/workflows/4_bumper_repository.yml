@@ -15,7 +15,7 @@ on:
         required: false
         type: string
       date:
-        description: 'Version release date (e.g. Mon Jan 02 2025)'
+        description: 'Version release date (yyyy-mm-dd, e.g. 2025-04-13)'
         default: ''
         required: false
         type: string
@@ -132,7 +132,7 @@ jobs:
       - name: Merge pull request
         run: |
           # Any checks for the PR are bypassed since the branch is expected to be functional (i.e. the bump process does not introduce any bugs)
-          gh pr merge "${{ steps.create_pr.outputs.pull_request_url }}" --merge
+          gh pr merge "${{ steps.create_pr.outputs.pull_request_url }}" --squash
 
       - name: Show logs
         run: |

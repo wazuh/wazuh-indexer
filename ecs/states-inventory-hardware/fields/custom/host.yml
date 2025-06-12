@@ -39,7 +39,7 @@
     - name: cpu.cores
       description: >
         Number of CPU cores.
-      type: byte
+      type: short
       level: custom
       example: 8
     - name: cpu.speed

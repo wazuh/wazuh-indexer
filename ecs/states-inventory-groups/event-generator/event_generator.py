@@ -25,6 +25,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 def generate_random_group():
   return {
+    "agent": generate_random_agent(),
     "group": {
       "id": str(random.randint(1000, 9999)),
       "id_signed": random.randint(-9999, -1000),
@@ -41,7 +42,34 @@ def generate_random_group():
         for _ in range(random.randint(1, 5))
       ],
       "uuid": ''.join(random.choices("ABCDEF0123456789", k=32))
-    }
+    },
+    "wazuh": generate_random_wazuh(),
+  }
+
+
+def generate_random_agent():
+  return {
+    "id": f"{random.randint(0, 99):03d}",
+    "name": f"Agent{random.randint(0, 99)}",
+    "version": f"v{random.randint(0, 9)}-stable",
+    "host": generate_random_host(),
+  }
+
+
+def generate_random_host():
+  return {
+    "architecture": random.choice(["x86_64", "arm64"]),
+    "ip": f"{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}",
+  }
+
+
+def generate_random_wazuh():
+  return {
+    "cluster": {
+      "name": f"wazuh-cluster-{random.randint(0, 10)}",
+      "node": f"wazuh-cluster-node-{random.randint(0, 10)}",
+    },
+    "schema": {"version": "1.7.0"},
   }
 
 

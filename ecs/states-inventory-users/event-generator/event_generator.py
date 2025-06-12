@@ -28,6 +28,7 @@ def generate_random_user():
   timestamp = now.strftime(DATE_FORMAT)
 
   return {
+    "agent": generate_random_agent(),
     "user": {
       "id": random.randint(1000, 9999),
       "name": ''.join(random.choices(string.ascii_lowercase, k=6)),
@@ -73,7 +74,34 @@ def generate_random_user():
       "status": random.choice([True, False]),
       "tty": random.choice(["tty1", "tty2", "pts/0", "pts/1"]),
       "type": random.choice(["ssh", "console", "remote"])
-    }
+    },
+    "wazuh": generate_random_wazuh(),
+  }
+
+
+def generate_random_agent():
+  return {
+    "id": f"{random.randint(0, 99):03d}",
+    "name": f"Agent{random.randint(0, 99)}",
+    "version": f"v{random.randint(0, 9)}-stable",
+    "host": generate_random_host(),
+  }
+
+
+def generate_random_host():
+  return {
+    "architecture": random.choice(["x86_64", "arm64"]),
+    "ip": f"{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}",
+  }
+
+
+def generate_random_wazuh():
+  return {
+    "cluster": {
+      "name": f"wazuh-cluster-{random.randint(0, 10)}",
+      "node": f"wazuh-cluster-node-{random.randint(0, 10)}",
+    },
+    "schema": {"version": "1.7.0"},
   }
 
 

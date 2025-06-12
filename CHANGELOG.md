@@ -8,21 +8,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Add check to confirm if wazuh-indexer service is running after upgrade [(#940)](https://github.com/wazuh/wazuh-indexer/pull/940)
 
 ### Dependencies
-- 
+-
 
 ### Changed
 - Reorganize ecs folder [(#899)](https://github.com/wazuh/wazuh-indexer/pull/899)
+- Add agent.* and wazuh.* fields to users and groups ECS mappings [(#954)](https://github.com/wazuh/wazuh-indexer/pull/954)
 
 ### Deprecated
-- 
+-
 
 ### Removed
-- 
+-
 
 ### Fixed
-- 
+-
 
 ### Security
-- 
+-
 
 [Unreleased 4.14.x]: https://github.com/wazuh/wazuh-indexer/compare/4.13.0...4.14.0

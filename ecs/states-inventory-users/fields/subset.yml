@@ -5,6 +5,15 @@ fields:
     fields:
       tags: []
       "@timestamp": {}
+  agent:
+    fields:
+      id: {}
+      name: {}
+      version: {}
+      host:
+        fields:
+          architecture: {}
+          ip: {}
   user:
     fields:
       id: {}
@@ -51,3 +60,5 @@ fields:
       status: {}
       type: {}
       tty: {}
+  wazuh:
+    fields: "*"

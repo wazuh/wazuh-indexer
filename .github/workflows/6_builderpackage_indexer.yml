@@ -228,6 +228,9 @@ jobs:
       matrix: ${{ fromJson(needs.matrix.outputs.matrix) }}
     outputs:
       name: ${{ steps.package.outputs.name }}
+    permissions:
+        id-token: write
+        contents: read    
     steps:
       - uses: actions/checkout@v4
 

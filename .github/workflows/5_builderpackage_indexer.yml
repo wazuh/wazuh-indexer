@@ -338,7 +338,7 @@ jobs:
         with:
           aws-region: "us-east-1"
           role-to-assume: ${{ secrets.AWS_IAM_OVA_ROLE }}
-          role-session-name: "5_package_builder_indexer"
+          role-session-name: ${{ github.workflow }} 
 
       - name: Setup RPM environment
         if: ${{ matrix.distribution == 'rpm' }}

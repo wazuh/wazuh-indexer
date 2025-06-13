@@ -22,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Apply Lintian overrides [(#908)](https://github.com/wazuh/wazuh-indexer/pull/908)
 - Add noninteractive option for DEB packages testing [(#914)](https://github.com/wazuh/wazuh-indexer/pull/914)
 - Migrate builder workflows from [(#930)](https://github.com/wazuh/wazuh-indexer/pull/930)
+- Improve allocator usage [(#957)](https://github.com/wazuh/wazuh-indexer/pull/957)
 
 ### Deprecated
 -

@@ -343,7 +343,7 @@ jobs:
       - name: Setup RPM environment
         if: ${{ matrix.distribution == 'rpm' }}
         run: |
-          bash build-scripts/rpm_setup_enviroment.sh ${{ matrix.architecture }} ${{ github.run_id }}
+          bash build-scripts/rpm_setup_environment.sh ${{ matrix.architecture }} ${{ github.run_id }}
 
           ansible_host=$(grep 'ansible_host:' /tmp/inventory.yaml | sed 's/.*: *//') 
           ansible_port=$(grep 'ansible_port:' /tmp/inventory.yaml | sed 's/.*: *//') 

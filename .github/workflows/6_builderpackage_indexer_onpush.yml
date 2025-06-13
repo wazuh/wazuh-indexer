@@ -17,6 +17,8 @@ on:
 
 jobs:
   call-build-workflow:
+    permissions:
+      actions: read
     uses: ./.github/workflows/6_builderpackage_indexer.yml
     secrets: inherit
     with:

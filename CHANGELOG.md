@@ -5,16 +5,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased 4.13.x]
 ### Added
-- Implement version bumper script [(#802)](https://github.com/wazuh/wazuh-indexer/pull/802) [(#803)](https://github.com/wazuh/wazuh-indexer/pull/803)
-- Add index templates for FIM and Inventory [(#744)](https://github.com/wazuh/wazuh-indexer/pull/744)
+- 
 
 ### Dependencies
 -
 
 ### Changed
-- Update setup-gradle version [(#831)](https://github.com/wazuh/wazuh-indexer/pull/831)
-- Reorganize ecs folder [(#899)](https://github.com/wazuh/wazuh-indexer/pull/899)
-- Update `host.cpu.cores` field type to `short` [(#945)](https://github.com/wazuh/wazuh-indexer/pull/945)
+- 
 
 ### Deprecated
 -
@@ -26,6 +23,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 -
 
 ### Security
-- Reduce risk of GITHUB_TOKEN exposure [(#959)](https://github.com/wazuh/wazuh-indexer/pull/959)
+- 
 
-[Unreleased 4.13.x]: https://github.com/wazuh/wazuh-indexer/compare/4.12.0...4.13.0
+[Unreleased 4.13.x]: https://github.com/wazuh/wazuh-indexer/compare/4.13.0...4.13.1

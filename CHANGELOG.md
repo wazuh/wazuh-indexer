@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased 4.10.x]
 ### Added
-- Backport smoke tests [(#970)](https://github.com/wazuh/wazuh-indexer/pull/970)
+- [Backport #729] Automated indexer packages smoke test [(#970)](https://github.com/wazuh/wazuh-indexer/pull/970)
 
 ### Dependencies
 

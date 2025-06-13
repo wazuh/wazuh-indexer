@@ -1,0 +1,80 @@
+# Wazuh stateful indexes read permissions
+stateful-read:
+  reserved: true
+  hidden: false
+  backend_roles: [ ]
+  hosts: [ ]
+  users:
+    - "wazuh-server"
+    - "wazuh-dashboard"
+  and_backend_roles: [ ]
+
+# Wazuh stateful indexes write permissions
+stateful-write:
+  reserved: true
+  hidden: false
+  backend_roles: [ ]
+  hosts: [ ]
+  users:
+    - "wazuh-server"
+  and_backend_roles: [ ]
+
+# Wazuh stateful indexes delete permissions
+stateful-delete:
+  reserved: true
+  hidden: false
+  backend_roles: [ ]
+  hosts: [ ]
+  users:
+    - "wazuh-server"
+  and_backend_roles: [ ]
+
+# Wazuh stateless indexes read permissions
+stateless-write:
+  reserved: true
+  hidden: false
+  backend_roles: [ ]
+  hosts: [ ]
+  users:
+    - "wazuh-server"
+  and_backend_roles: [ ]
+
+# Wazuh stateless indexes write permissions
+stateless-read:
+  reserved: true
+  hidden: false
+  backend_roles: [ ]
+  hosts: [ ]
+  users:
+    - "wazuh-dashboard"
+  and_backend_roles: [ ]
+
+# Wazuh metrics indexes read permissions
+metrics-read:
+  reserved: true
+  hidden: false
+  backend_roles: [ ]
+  hosts: [ ]
+  users:
+    - "wazuh-dashboard"
+  and_backend_roles: [ ]
+
+# Wazuh metrics indexes write permissions
+metrics-write:
+  reserved: true
+  hidden: false
+  backend_roles: [ ]
+  hosts: [ ]
+  users:
+    - "wazuh-dashboard"
+  and_backend_roles: [ ]
+
+# Wazuh sample data indexes management permissions
+sample-data-management:
+  reserved: true
+  hidden: false
+  backend_roles: [ ]
+  hosts: [ ]
+  users:
+    - "wazuh-dashboard"
+  and_backend_roles: [ ]

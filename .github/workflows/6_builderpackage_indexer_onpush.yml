@@ -1,0 +1,25 @@
+name: Build packages (on push)
+
+# This workflow runs when any of the following occur:
+# - Push
+
+on:
+  pull_request:
+    branches:
+      - 6.*
+  push:
+    branches:
+      - 6.*
+    paths-ignore:
+      - '**.md'
+      - 'ecs/**'
+      - 'tools/**'
+
+jobs:
+  call-build-workflow:
+    uses: ./.github/workflows/6_builderpackage_indexer.yml
+    secrets: inherit
+    with:
+      id: ${{ github.ref }}
+      wazuh_plugins_ref: "6.0.0"
+      reporting_plugin_ref: "6.0.0"

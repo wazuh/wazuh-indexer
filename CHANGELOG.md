@@ -26,6 +26,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Fix package upload to bucket subfolder 6.x [(#845)](https://github.com/wazuh/wazuh-indexer/pull/845)
 
 ### Security
-- Reduce risk of GITHUB_TOKEN exposure [(#960)](https://github.com/wazuh/wazuh-indexer/pull/960)
+- Reduce risk of GITHUB_TOKEN exposure [(#964)](https://github.com/wazuh/wazuh-indexer/pull/964)
 
 [Unreleased 6.0.x]: https://github.com/wazuh/wazuh-indexer/compare/main...6.0.0

@@ -34,7 +34,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Run the Eclipse formatter when spotlessJavaCheck runs via precommit/check/build ([#23242](https://github.com/opensearch-project/OpenSearch/pull/23242))
 
 ### Security
-- Block ptrace and process memory access syscalls in the system call filter ([#23491](https://github.com/opensearch-project/OpenSearch/pull/23491))
-
+- Reduce risk of GITHUB_TOKEN exposure [(#972)](https://github.com/wazuh/wazuh-indexer/pull/972)
 
 [Unreleased 4.10.x]: https://github.com/wazuh/wazuh-indexer/compare/v4.10.2...4.10.3

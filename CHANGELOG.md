@@ -26,6 +26,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 -
 
 ### Security
--
+- Reduce risk of GITHUB_TOKEN exposure [(#959)](https://github.com/wazuh/wazuh-indexer/pull/959)
 
 [Unreleased 4.13.x]: https://github.com/wazuh/wazuh-indexer/compare/4.12.0...4.13.0

@@ -24,7 +24,7 @@ on:
         type: string
         default: '[ "rpm", "deb" ]'
       architecture:
-        description: '[ "x64", "arm64" ]'
+        description: '[ "x64" ]'
         type: string
         default: '[ "x64" ]'
       checksum:
@@ -54,7 +54,7 @@ on:
         type: string
         default: '[ "rpm", "deb" ]'
       architecture:
-        description: '[ "x64", "arm64" ]'
+        description: '[ "x64" ]'
         type: string
         default: '[ "x64" ]'
       checksum:
@@ -88,7 +88,7 @@ on:
 jobs:
   matrix:
     name: Set up matrix
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       matrix: ${{ steps.setup.outputs.matrix }}
     steps:
@@ -103,7 +103,7 @@ jobs:
 
   build:
     needs: [matrix]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.matrix.outputs.matrix) }}

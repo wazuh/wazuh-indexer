@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Removed
 - Remove identity-shiro from plugins folder ([#20305](https://github.com/opensearch-project/OpenSearch/pull/20305))
+- Removed unused GitHub Workflows [(#967)](https://github.com/wazuh/wazuh-indexer/pull/967)
 
 ### Fixed
 - Fix handling of unsupported HTTP content encodings ([#23324](https://github.com/opensearch-project/OpenSearch/pull/23324))

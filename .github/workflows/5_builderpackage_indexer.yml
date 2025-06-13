@@ -338,7 +338,7 @@ jobs:
         with:
           aws-region: "us-east-1"
           role-to-assume: ${{ secrets.AWS_IAM_OVA_ROLE }}
-          role-session-name: ${{ github.workflow }} 
+          role-session-name: ${{ github.workflow_ref }} 
 
       - name: Setup RPM environment
         if: ${{ matrix.distribution == 'rpm' }}

@@ -10,6 +10,8 @@ on:
 
 jobs:
   call-docker-workflow:
+    permissions:
+      actions: read
     uses: ./.github/workflows/5_builderpackage_docker.yml
     secrets: inherit
     with:

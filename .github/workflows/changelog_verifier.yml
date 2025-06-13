@@ -6,8 +6,8 @@ on:
 jobs:
   # Enforces the update of a changelog file on every pull request
   verify-changelog:
-    if: github.repository == 'opensearch-project/OpenSearch'
-    runs-on: ubuntu-latest
+    if: github.repository == 'wazuh/wazuh-indexer'
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -17,4 +17,5 @@ jobs:
         id: verify-changelog
         with:
           skipLabels: "autocut, skip-changelog"
-          changeLogPath: 'CHANGELOG.md'
+          changeLogPath: "CHANGELOG.md"
+          

@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Deprecated
 
 ### Removed
+- Removed unused GitHub Workflows [(#967)](https://github.com/wazuh/wazuh-indexer/pull/967)
 
 ### Fixed
 - Fix segment replication failure during rolling restart ([#19234](https://github.com/opensearch-project/OpenSearch/issues/19234))

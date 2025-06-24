@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased 4.13.x]
 ### Added
-- 
+-
 
 ### Dependencies
 -
@@ -20,9 +20,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 -
 
 ### Fixed
--
+- Set corresponding permissions to performance analyzer binary [(#997)](https://github.com/wazuh/wazuh-indexer/pull/997)
 
 ### Security
-- 
+-
 
 [Unreleased 4.13.x]: https://github.com/wazuh/wazuh-indexer/compare/4.13.0...4.13.1

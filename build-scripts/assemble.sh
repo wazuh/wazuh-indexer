@@ -40,6 +40,8 @@ else
     )
     wazuh_plugins=(
         "wazuh-indexer-setup"
+        "wazuh-indexer-reports-scheduler"
+
     )
 fi
 
@@ -55,6 +57,7 @@ function usage() {
     echo -e "-d DISTRIBUTION\t[Optional] Distribution, default is 'tar'."
     echo -e "-r REVISION\t[Optional] Package revision, default is '0'."
     echo -e "-l PLUGINS_HASH\t[Optional] wazuh-indexer-plugins commit hash, default is '0'."
+    echo -e "-e REPORTING_HASH\t[Optional] wazuh-indexer-reporting commit hash, default is '0'."
     echo -e "-o OUTPUT\t[Optional] Output path, default is 'artifacts'."
     echo -e "-h help"
 }
@@ -88,6 +91,11 @@ function parse_args() {
         l)
             PLUGINS_HASH=$OPTARG
             ;;
+        e)
+
+            REPORTING_HASH=$OPTARG
+
+            ;;
         :)
             echo "Error: -${OPTARG} requires an argument"
             usage
@@ -110,6 +118,7 @@ function parse_args() {
     [ -z "$DISTRIBUTION" ] && DISTRIBUTION="tar"
     [ -z "$REVISION" ] && REVISION="0"
     [ -z "$PLUGINS_HASH" ] && PLUGINS_HASH="0"
+    [ -z "$REPORTING_HASH" ] && REPORTING_HASH="0"
 
     case $PLATFORM-$DISTRIBUTION-$ARCHITECTURE in
     linux-tar-x64 | darwin-tar-x64)
@@ -248,7 +257,7 @@ function generate_installer_version_file() {
     local dir
     dir="${1}"
     jq \
-      --arg commit "${INDEXER_HASH}-${PLUGINS_HASH}" \
+        --arg commit "${INDEXER_HASH}-${PLUGINS_HASH}-${REPORTING_HASH}" \
       '. + {"commit": $commit}' \
       "${REPO_PATH}"/VERSION.json > "${dir}"/VERSION.json
 }

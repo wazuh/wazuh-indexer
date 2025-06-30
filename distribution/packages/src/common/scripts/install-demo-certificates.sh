@@ -9,7 +9,7 @@
 # Directories
 TMP_DIR="/tmp/wazuh-indexer/certs"
 CERTS_DIR="/etc/wazuh-indexer/certs"
-$CERTS_NAME="indexer"
+CERTS_NAME="indexer"
 
 # Create directories
 mkdir -p "$TMP_DIR"

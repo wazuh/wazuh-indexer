@@ -59,7 +59,7 @@ bash builder.sh -d deb -a x64 -R 1 -s true
 
 The resulting package will be stored at `wazuh-indexer/artifacts/dist`.
 
-> The `STAGE` option defines the naming of the package. When set to `false`, the package will be unequivocally named with the commits' SHA of the `wazuh-indexer`, `wazuh-indexer-plugins` and `wazuh-indexer-reporting` repositories, in that order. For example: `wazuh-indexer_6.0.0-0_x86_64_aff30960363-846f143-494d125.rpm`.
+> The `STAGE` option defines the naming of the package. When set to `false`, the package will be unequivocally named with the commits' SHA of the `wazuh-indexer`, `wazuh-indexer-plugins` and `wazuh-indexer-reporting` repositories, in that order. For example: `wazuh-indexer_<version>-<revision>_x86_64_aff30960363-846f143-494d125.rpm`.
 
 ## Building wazuh-indexer Docker images
 

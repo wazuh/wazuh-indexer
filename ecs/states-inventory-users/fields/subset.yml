@@ -42,7 +42,6 @@ fields:
           warning_days_before_expiration: {}
           inactive_days: {}
           expiration_date: {}
-          last_set_time: {}
       auth_failures:
         fields:
           count: {}

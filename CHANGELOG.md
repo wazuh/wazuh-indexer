@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Changed
 - Reorganize ecs folder [(#899)](https://github.com/wazuh/wazuh-indexer/pull/899)
 - Add agent.* and wazuh.* fields to users and groups ECS mappings [(#954)](https://github.com/wazuh/wazuh-indexer/pull/954)
+- Update `user.password` mapping [(#1026)](https://github.com/wazuh/wazuh-indexer/pull/1026)
 
 ### Deprecated
 -

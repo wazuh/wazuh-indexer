@@ -27,8 +27,7 @@ ECS_Version,Indexed,Field_Set,Field,Type,Level,Normalization,Example,Description
 8.11.0,true,user,user.password.expiration_date,date,custom,,,Password expiration date (epoch).
 8.11.0,true,user,user.password.hash_algorithm,keyword,custom,,,Algorithm used to hash the password.
 8.11.0,true,user,user.password.inactive_days,integer,custom,,,Number of days of inactivity before disabling the password.
-8.11.0,true,user,user.password.last_change,integer,custom,,,Days since epoch when password was last changed.
-8.11.0,true,user,user.password.last_set_time,date,custom,,,Time the password was last set (epoch).
+8.11.0,true,user,user.password.last_change,date,custom,,,Last time the password was changed (Unix epoch).
 8.11.0,true,user,user.password.max_days_between_changes,integer,custom,,,Maximum days between password changes.
 8.11.0,true,user,user.password.min_days_between_changes,integer,custom,,,Minimum days between password changes.
 8.11.0,true,user,user.password.status,keyword,custom,,,"Password status (e.g., active)."

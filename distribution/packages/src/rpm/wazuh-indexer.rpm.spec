@@ -211,6 +211,8 @@ exit 0
 %posttrans
 set -e
 
+echo "$1"
+
 # Reload systemd
 command -v systemctl > /dev/null && systemctl daemon-reload
 command -v systemctl > /dev/null && systemctl restart systemd-sysctl.service

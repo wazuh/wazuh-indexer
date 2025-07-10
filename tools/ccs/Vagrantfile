@@ -1,5 +1,5 @@
 version = "4.12.0"
-
+provider = "virtualbox"
     
 system("
     if [ #{ARGV[0]} = 'up' ]; then
@@ -14,7 +14,7 @@ Vagrant.configure("2") do |config|
         ccs.vm.synced_folder ".", "/vagrant"
         ccs.vm.network "private_network", ip: "192.168.56.10"
         ccs.vm.hostname = "ccs"
-        ccs.vm.provider "virtualbox" do |vb|
+        ccs.vm.provider "#{provider}" do |vb|
             vb.memory = "4096"
             vb.cpus = "4"
         end
@@ -34,7 +34,7 @@ Vagrant.configure("2") do |config|
         cluster_a.vm.synced_folder ".", "/vagrant"
         cluster_a.vm.network "private_network", ip: "192.168.56.11"
         cluster_a.vm.hostname = "cluster-a"
-        cluster_a.vm.provider "virtualbox" do |vb|
+        cluster_a.vm.provider "#{provider}" do |vb|
             vb.memory = "4096"
             vb.cpus = "4"
         end
@@ -42,6 +42,9 @@ Vagrant.configure("2") do |config|
             systemctl stop firewalld
             systemctl disable firewalld
 
+            cp /vagrant/node-start.sh /home/vagrant/
+            cp /vagrant/wazuh-certificates/root-ca* /home/vagrant
+            bash ./node-start.sh cluster_a #{version}
         SHELL
     end
 
@@ -51,7 +54,7 @@ Vagrant.configure("2") do |config|
         cluster_b.vm.network "private_network", ip: "192.168.56.12"
         cluster_b.vm.hostname = "cluster-b"
 
-        cluster_b.vm.provider "virtualbox" do |vb|
+        cluster_b.vm.provider "#{provider}" do |vb|
             vb.memory = "4096"
             vb.cpus = "4"
         end
@@ -60,6 +63,9 @@ Vagrant.configure("2") do |config|
             systemctl stop firewalld
             systemctl disable firewalld
 
+            cp /vagrant/node-start.sh /home/vagrant/
+            cp /vagrant/wazuh-certificates/root-ca* /home/vagrant
+            bash ./node-start.sh cluster_b #{version}
         SHELL
     end 
 end

@@ -202,9 +202,9 @@ EOF
 
     # Configure the /etc/filebeat/filebeat.yml file
     if [ "$NODE" == "cluster_a" ]; then
-        sed -i 's|^[ \t]*hosts: \["127\.0\.0\.1:9200"\]|hosts: ["192.168.56.11:9200"]|' /etc/filebeat/filebeat.yml
+        sed -i 's|^[ \t]*hosts: \["127\.0\.0\.1:9200"\]|  hosts: ["192.168.56.11:9200"]|' /etc/filebeat/filebeat.yml
     else
-        sed -i 's|^[ \t]*hosts: \["127\.0\.0\.1:9200"\]|hosts: ["192.168.56.12:9200"]|' /etc/filebeat/filebeat.yml
+        sed -i 's|^[ \t]*hosts: \["127\.0\.0\.1:9200"\]|  hosts: ["192.168.56.12:9200"]|' /etc/filebeat/filebeat.yml
     fi
 
     # Create filebeat keystore
@@ -213,7 +213,7 @@ EOF
     echo admin | filebeat keystore add password --stdin --force
 
     # Download the alerts template
-    curl -so /etc/filebeat/wazuh-template.json https://raw.githubusercontent.com/wazuh/wazuh/v$1/extensions/elasticsearch/7.x/wazuh-template.json
+    curl -so /etc/filebeat/wazuh-template.json https://raw.githubusercontent.com/wazuh/wazuh/v$2/extensions/elasticsearch/7.x/wazuh-template.json
     chmod go+r /etc/filebeat/wazuh-template.json
 
     # Install the Wazuh module for Filebeat

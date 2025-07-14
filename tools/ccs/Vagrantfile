@@ -9,25 +9,6 @@ system("
 ")
 
 Vagrant.configure("2") do |config|
-    config.vm.define "ccs" do |ccs|
-        ccs.vm.box = "generic/alma9"
-        ccs.vm.synced_folder ".", "/vagrant"
-        ccs.vm.network "private_network", ip: "192.168.56.10"
-        ccs.vm.hostname = "ccs"
-        ccs.vm.provider "#{provider}" do |vb|
-            vb.memory = "4096"
-            vb.cpus = "4"
-        end
-
-        ccs.vm.provision "shell", inline: <<-SHELL
-            systemctl stop firewalld
-            systemctl disable firewalld
-
-            cp /vagrant/node-start.sh /home/vagrant/
-            cp -r /vagrant/wazuh-certificates /home/vagrant/
-            bash ./node-start.sh ccs #{version}
-        SHELL
-    end
     
     config.vm.define "cluster_a" do |cluster_a|
         cluster_a.vm.box = "generic/alma9"
@@ -68,4 +49,24 @@ Vagrant.configure("2") do |config|
             bash ./node-start.sh cluster_b #{version}
         SHELL
     end 
+
+    config.vm.define "ccs" do |ccs|
+        ccs.vm.box = "generic/alma9"
+        ccs.vm.synced_folder ".", "/vagrant"
+        ccs.vm.network "private_network", ip: "192.168.56.10"
+        ccs.vm.hostname = "ccs"
+        ccs.vm.provider "#{provider}" do |vb|
+            vb.memory = "4096"
+            vb.cpus = "4"
+        end
+
+        ccs.vm.provision "shell", inline: <<-SHELL
+            systemctl stop firewalld
+            systemctl disable firewalld
+
+            cp /vagrant/node-start.sh /home/vagrant/
+            cp -r /vagrant/wazuh-certificates /home/vagrant/
+            bash ./node-start.sh ccs #{version}
+        SHELL
+    end
 end

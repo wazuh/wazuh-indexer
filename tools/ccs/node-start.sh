@@ -107,6 +107,22 @@ EOF
     # Restart the Wazuh dashboard service to apply the changes
     systemctl restart wazuh-dashboard
 
+
+    # Configure the Wazuh indexer cluster settings
+    curl -XPUT -k -u admin:admin "https://192.168.56.10:9200/_cluster/settings" -H 'Content-Type: application/json' -d'
+    {
+    "persistent": {
+        "cluster.remote": {
+        "ca-wazuh-indexer-1": {
+            "seeds": ["192.168.56.11:9300"]
+        },
+        "cb-wazuh-indexer-1": {
+            "seeds": ["192.168.56.12:9300"]
+        }
+        }
+    }
+    }'
+    
 else
     version=$(echo "$2" | cut -d'.' -f1-2) 
 

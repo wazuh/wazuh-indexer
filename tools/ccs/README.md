@@ -61,7 +61,7 @@ Each node is configured with its IP address, hostname, and system resources (RAM
    ```
 
 
-## Set up Cross-Cluster Search 
+## Test the Cross-Cluster Search 
 Perform the following steps on the Wazuh dashboard to enable Cross-Cluster Search from the CCS environment to the remote clusters.
 
 1. Log in to the Wazuh dashboard using the login credentials:
@@ -70,50 +70,8 @@ URL: https://192.168.56.10
 Username: admin
 Password: admin
 ```
-2. Select **☰** >  **Indexer management** > **DevTools** and run the following API call to connect the CCS environment to the remote Wazuh clusters on port `9300`:
 
-``` json
-PUT _cluster/settings 
-{
-  "persistent": {
-    "cluster.remote": {
-      "ca-wazuh-indexer-1": {
-        "seeds": ["192.168.56.11:9300"]
-      },
-      "cb-wazuh-indexer-1": {
-        "seeds": ["192.168.56.12:9300"]
-      }
-    }
-  }
-}
-```
-
-Output
-
-``` json
-{
-  "acknowledged": true,
-  "persistent": {
-    "cluster": {
-      "remote": {
-        "cb-wazuh-indexer-1": {
-          "seeds": [
-            "192.168.56.12:9300"
-          ]
-        },
-        "ca-wazuh-indexer-1": {
-          "seeds": [
-            "192.168.56.11:9300"
-          ]
-        }
-      }
-    }
-  },
-  "transient": {}
-}
-```
-
-3. Test that the remote clusters are connected by running the following API call:
+2. Test that the remote clusters are connected by running the following API call:
 > [!Note] Note: Change the Wazuh indexer name highlighted to match the cluster being tested.
 
 ```
@@ -198,7 +156,7 @@ Output
 
 2. Add the index pattern name using the format `*:wazuh-alerts-*` and select Next step. The wildcard ‘`*`‘ matches all indexers in the remote Wazuh clusters.
    
-3. Select **timestamp** as the primary time field.
+3. Select **@timestamp** as the primary time field.
 
 4. Select **Create index pattern** to create the index pattern.
 

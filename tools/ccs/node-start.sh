@@ -86,7 +86,7 @@ if [ "$NODE" == "ccs" ]; then
     systemctl start wazuh-dashboard
 
     # Configure the Wazuh dashboard /usr/share/wazuh-dashboard/data/wazuh/config/wazuh.yml file
-    sleep 5  # Wait for the wazuh-dashboard plugin to create the file
+    sleep 30  # Wait for the wazuh-dashboard plugin to create the file
     cat <<EOF > /usr/share/wazuh-dashboard/data/wazuh/config/wazuh.yml
 ---
 hosts:

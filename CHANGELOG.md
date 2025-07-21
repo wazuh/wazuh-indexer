@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Add Wazuh version comparison [(#936)](https://github.com/wazuh/wazuh-indexer/pull/936)
 - Include Reporting plugin in Wazuh Indexer by default [(#1008)](https://github.com/wazuh/wazuh-indexer/pull/1008)
 - Make Wazuh Indexer roles reserved [(#1012)](https://github.com/wazuh/wazuh-indexer/pull/1012)
+- Add Cross-Cluster Search environment [(#1034)](https://github.com/wazuh/wazuh-indexer/pull/1034)
 
 ### Fixed
 - Relax index template pattern overlap check to use minimum-string heuristic, allowing distinguishable multi-wildcard patterns at the same priority ([#20702](https://github.com/opensearch-project/OpenSearch/pull/20702))

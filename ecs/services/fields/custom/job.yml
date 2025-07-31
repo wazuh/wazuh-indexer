@@ -1,0 +1,22 @@
+---
+- name: job
+  reusable:
+    top_level: true
+    expected:
+      - { at: service, as: job }
+  fields:
+    - name: id
+      description: >
+        Job ID for pending operations
+      type: int
+      level: custom
+    - name: type
+      description: >
+        Type of systemd job
+      type: keyword
+      level: custom
+    - name: path
+      description: >
+        Path to job object
+      type: keyword
+      level: custom

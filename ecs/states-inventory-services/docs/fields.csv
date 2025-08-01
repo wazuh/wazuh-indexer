@@ -16,14 +16,14 @@ ECS_Version,Indexed,Field_Set,Field,Type,Level,Normalization,Example,Description
 8.11.0,true,service,service.exit_code,int,custom,,,Service-specific exit code on failure.
 8.11.0,true,service,service.following,keyword,custom,,,The name of another unit that this unit follows in state.
 8.11.0,true,service,service.id,keyword,core,,d37e5ebfe0ae6c4972dbe9f0174a1637bb8247f6,Unique identifier of the running service.
-8.11.0,true,service,service.job.id,int,custom,,,Unique identifier for the job.
-8.11.0,true,service,service.job.path,keyword,custom,,,Path to job object.
-8.11.0,true,service,service.job.type,keyword,custom,,,"Type of job, e.g. `start`, `stop`, `restart`, etc."
 8.11.0,true,service,service.name,keyword,core,,elasticsearch-metrics,Name of the service.
 8.11.0,true,service,service.object_path,keyword,custom,,,D-Bus object path of the service.
 8.11.0,true,service,service.start_type,keyword,custom,,,"Service start type: BOOT_START, SYSTEM_START, AUTO_START, DEMAND_START, DISABLED."
 8.11.0,true,service,service.state,keyword,core,,,Current state of the service.
 8.11.0,true,service,service.sub_state,keyword,custom,,,"The low-level unit activation state, values depend on unit type."
+8.11.0,true,service,service.target.address,keyword,extended,,172.26.0.2:5432,Address of this service.
+8.11.0,true,service,service.target.ephemeral_id,keyword,extended,,8a4f500f,Ephemeral identifier of this service.
+8.11.0,true,service,service.target.type,keyword,core,,elasticsearch,The type of the service.
 8.11.0,true,service,service.type,keyword,core,,elasticsearch,The type of the service.
 8.11.0,true,service,service.win32_exit_code,int,custom,,,Win32 exit code on start/stop.
 8.11.0,true,user,user.name,keyword,core,,a.einstein,Short name or login of the user.

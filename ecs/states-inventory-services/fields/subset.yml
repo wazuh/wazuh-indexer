@@ -28,11 +28,11 @@ fields:
       enabled: {}
       following: {}
       object_path: {}
-      job:
+      target:
         fields:
-          id: {}
+          ephemeral_id: {}
           type: {}
-          path: {}
+          address: {}
   process:
     fields:
       pid: {}

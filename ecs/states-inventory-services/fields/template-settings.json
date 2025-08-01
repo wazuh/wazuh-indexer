@@ -1,0 +1,32 @@
+{
+    "index_patterns": [
+        "wazuh-states-inventory-services*"
+    ],
+    "priority": 1,
+    "template": {
+        "settings": {
+            "index": {
+                "number_of_shards": "1",
+                "number_of_replicas": "0",
+                "auto_expand_replicas": "0-1",
+                "refresh_interval": "5s",
+                "query.default_field": [
+                    "service.id",
+                    "service.name",
+                    "service.state",
+                    "service.sub_state",
+                    "service.description",
+                    "service.state",
+                    "service.exit_code",
+                    "service.win32_exit_code",
+                    "process.pid",
+                    "process.executable",
+                    "service.address",
+                    "user.name",
+                    "service.enabled",
+                    "file.path"
+                ]
+            }
+        }
+    }
+}

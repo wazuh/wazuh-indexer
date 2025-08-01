@@ -1,5 +1,5 @@
 {
-  "index_patterns": ["wazuh-services*"],
+  "index_patterns": ["wazuh-states-inventory-services*"],
   "order": 1,
   "settings": {
     "index": {
@@ -8,20 +8,20 @@
       "auto_expand_replicas": "0-1",
       "refresh_interval": "5s",
       "query.default_field": [
+        "service.id",
         "service.name",
         "service.state",
         "service.sub_state",
-        "service.start_type",
-        "service.type",
+        "service.description",
+        "service.state",
+        "service.exit_code",
+        "service.win32_exit_code",
         "process.pid",
         "process.executable",
-        "service.module.path",
-        "service.user",
+        "service.address",
+        "user.name",
         "service.enabled",
-        "service.object.path",
-        "service.job.id",
-        "service.job.path",
-        "service.source.path"
+        "file.path"
       ]
     }
   }

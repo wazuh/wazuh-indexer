@@ -1,22 +1,25 @@
 ---
 - name: job
+  title: job
+  description: >
+    Jobs are requests to systemd to perform actions on these units, such as starting, stopping, restarting, or reloading.
   reusable:
-    top_level: true
+    top_level: false
     expected:
       - { at: service, as: job }
   fields:
     - name: id
       description: >
-        Job ID for pending operations
+        Unique identifier for the job.
       type: int
       level: custom
     - name: type
       description: >
-        Type of systemd job
+        Type of job, e.g. `start`, `stop`, `restart`, etc.
       type: keyword
       level: custom
     - name: path
       description: >
-        Path to job object
+        Path to job object.
       type: keyword
       level: custom

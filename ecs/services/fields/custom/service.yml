@@ -1,0 +1,66 @@
+---
+- name: service
+  title: service
+  description: >
+    The service for or from which the data was collected
+  fields:
+    - name: display_name
+      type: keyword
+      level: custom
+      description: >
+        Display name of the service.
+    - name: description
+      type: keyword
+      level: custom
+      description: >
+        Description of the service/unit.
+    - name: sub_state
+      type: keyword
+      level: custom
+      description: >
+        Low-level `systemd` substate.
+    - name: start_type
+      type: keyword
+      level: custom
+      description: >
+        Start type: `AUTO_START`, `DEMAND_START`, etc.
+    - name: exit_code
+      type: int
+      level: custom
+      description: >
+        Service-specific exit code on failure.
+    - name: win32_exit_code
+      type: int
+      level: custom
+      description: >
+        Win32 exit code on start/stop.
+    - name: module.path
+      type: keyword
+      level: custom
+      description: >
+        Path to the service DLL (ServiceDll).
+    - name: user
+      type: keyword
+      level: custom
+      description: >
+        User account running the service.
+    - name: enabled
+      type: keyword
+      level: custom
+      description: >
+        Whether the unit is enabled: `enabled`, `disabled`, etc.
+    - name: following
+      type: keyword
+      level: custom
+      description: >
+        Unit followed by this unit in `systemd`.
+    - name: object.path
+      type: keyword
+      level: custom
+      description: >
+        D-Bus object path of the unit.
+    - name: source.path
+      type: keyword
+      level: custom
+      description: >
+        Path to the generated unit configuration file.

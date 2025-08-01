@@ -1,0 +1,28 @@
+{
+  "index_patterns": ["wazuh-services*"],
+  "order": 1,
+  "settings": {
+    "index": {
+      "number_of_shards": "1",
+      "number_of_replicas": "0",
+      "auto_expand_replicas": "0-1",
+      "refresh_interval": "5s",
+      "query.default_field": [
+        "service.name",
+        "service.state",
+        "service.sub_state",
+        "service.start_type",
+        "service.type",
+        "process.pid",
+        "process.executable",
+        "service.module.path",
+        "service.user",
+        "service.enabled",
+        "service.object.path",
+        "service.job.id",
+        "service.job.path",
+        "service.source.path"
+      ]
+    }
+  }
+}

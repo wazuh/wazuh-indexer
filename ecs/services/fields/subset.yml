@@ -1,0 +1,9 @@
+---
+name: wazuh-states-fim-files
+fields:
+  base:
+    fields:
+      tags: []
+      "@timestamp": {}
+
+  #/*TO DO*/

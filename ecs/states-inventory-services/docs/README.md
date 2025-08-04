@@ -1,4 +1,4 @@
-## `wazuh-services` index data model
+## `wazuh-states-inventory-services` index data model
 
 ### Fields summary
 

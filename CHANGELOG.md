@@ -6,14 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased 4.14.x]
 ### Added
 - Add check to confirm if wazuh-indexer service is running after upgrade [(#940)](https://github.com/wazuh/wazuh-indexer/pull/940)
-- Add `wazuh-services` index ecs mapping [(#1057)](https://github.com/wazuh/wazuh-indexer/pull/1057)
+- Add index definition for the new index `wazuh-states-inventory-services` [(#1057)](https://github.com/wazuh/wazuh-indexer/pull/1057)
 
 ### Dependencies
 -
 
 ### Changed
 - Reorganize ecs folder [(#899)](https://github.com/wazuh/wazuh-indexer/pull/899)
-- Add agent.* and wazuh.* fields to users and groups ECS mappings [(#954)](https://github.com/wazuh/wazuh-indexer/pull/954)
+- Add `agent.*` and `wazuh.*` fields to users and groups ECS mappings [(#954)](https://github.com/wazuh/wazuh-indexer/pull/954)
 - Update `user.password` mapping [(#1026)](https://github.com/wazuh/wazuh-indexer/pull/1026)
 
 ### Deprecated

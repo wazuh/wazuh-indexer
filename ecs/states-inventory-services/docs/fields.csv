@@ -6,14 +6,12 @@ ECS_Version,Indexed,Field_Set,Field,Type,Level,Normalization,Example,Description
 8.11.0,true,agent,agent.name,keyword,core,,foo,Custom name of the agent.
 8.11.0,true,agent,agent.version,keyword,core,,6.0.0-rc2,Version of the agent.
 8.11.0,true,file,file.path,keyword,extended,,/home/alice/example.png,"Full path to the file, including the file name."
-8.11.0,true,file,file.path.text,match_only_text,extended,,/home/alice/example.png,"Full path to the file, including the file name."
 8.11.0,true,process,process.executable,keyword,extended,,/usr/bin/ssh,Absolute path to the process executable.
-8.11.0,true,process,process.executable.text,match_only_text,extended,,/usr/bin/ssh,Absolute path to the process executable.
 8.11.0,true,process,process.pid,long,core,,4242,Process id.
 8.11.0,true,service,service.address,keyword,extended,,172.26.0.2:5432,Address of this service.
 8.11.0,true,service,service.description,keyword,custom,,,Description of the service.
 8.11.0,true,service,service.enabled,keyword,custom,,,"Whether the unit file is enabled, e.g. `enabled`, `masked`, `disabled`, etc."
-8.11.0,true,service,service.exit_code,int,custom,,,Service-specific exit code on failure.
+8.11.0,true,service,service.exit_code,integer,custom,,,Service-specific exit code on failure.
 8.11.0,true,service,service.following,keyword,custom,,,The name of another unit that this unit follows in state.
 8.11.0,true,service,service.id,keyword,core,,d37e5ebfe0ae6c4972dbe9f0174a1637bb8247f6,Unique identifier of the running service.
 8.11.0,true,service,service.name,keyword,core,,elasticsearch-metrics,Name of the service.
@@ -25,9 +23,8 @@ ECS_Version,Indexed,Field_Set,Field,Type,Level,Normalization,Example,Description
 8.11.0,true,service,service.target.ephemeral_id,keyword,extended,,8a4f500f,Ephemeral identifier of this service.
 8.11.0,true,service,service.target.type,keyword,core,,elasticsearch,The type of the service.
 8.11.0,true,service,service.type,keyword,core,,elasticsearch,The type of the service.
-8.11.0,true,service,service.win32_exit_code,int,custom,,,Win32 exit code on start/stop.
+8.11.0,true,service,service.win32_exit_code,integer,custom,,,Win32 exit code on start/stop.
 8.11.0,true,user,user.name,keyword,core,,a.einstein,Short name or login of the user.
-8.11.0,true,user,user.name.text,match_only_text,core,,a.einstein,Short name or login of the user.
 8.11.0,true,wazuh,wazuh.cluster.name,keyword,custom,,,Wazuh cluster name.
 8.11.0,true,wazuh,wazuh.cluster.node,keyword,custom,,,Wazuh cluster node name.
 8.11.0,true,wazuh,wazuh.schema.version,keyword,custom,,,Wazuh schema version.

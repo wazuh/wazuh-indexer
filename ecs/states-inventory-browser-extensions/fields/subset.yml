@@ -1,0 +1,21 @@
+---
+name: wazuh-states-browser-extensions
+fields:
+  base:
+    fields:
+      tags: []
+  agent:
+    fields:
+      id: {}
+      name: {}
+      version: {}
+      host:
+        fields:
+          architecture: {}
+          ip: {}
+  user:
+    fields:
+      name: {}
+  wazuh:
+    fields: "*"
+

@@ -1,0 +1,6 @@
+---
+- name: package
+  reusable:
+    top_level: true
+    expected:
+      - { at: extension, as: extension }

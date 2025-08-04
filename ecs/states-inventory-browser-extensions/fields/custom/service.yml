@@ -1,0 +1,46 @@
+---
+- name: service
+  title: service
+  description: >
+    The service for or from which the data was collected
+  fields:
+    - name: description
+      type: keyword
+      level: custom
+      description: >
+        Description of the service.
+    - name: sub_state
+      type: keyword
+      level: custom
+      description: >
+        The low-level unit activation state, values depend on unit type.
+    - name: start_type
+      type: keyword
+      level: custom
+      description: >
+        Service start type: BOOT_START, SYSTEM_START, AUTO_START, DEMAND_START, DISABLED.
+    - name: exit_code
+      type: integer
+      level: custom
+      description: >
+        Service-specific exit code on failure.
+    - name: win32_exit_code
+      type: integer
+      level: custom
+      description: >
+        Win32 exit code on start/stop.
+    - name: enabled
+      type: keyword
+      level: custom
+      description: >
+        Whether the unit file is enabled, e.g. `enabled`, `masked`, `disabled`, etc.
+    - name: following
+      type: keyword
+      level: custom
+      description: >
+        The name of another unit that this unit follows in state.
+    - name: object_path
+      type: keyword
+      level: custom
+      description: >
+        D-Bus object path of the service.

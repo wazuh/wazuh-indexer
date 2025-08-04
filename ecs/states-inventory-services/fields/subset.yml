@@ -45,4 +45,3 @@ fields:
       path: {}
   wazuh:
     fields: "*"
-  #/*TO DO*/

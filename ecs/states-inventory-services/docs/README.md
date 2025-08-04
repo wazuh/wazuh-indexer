@@ -32,7 +32,7 @@ Detailed information about the fields can be found in the [fields.csv](fields.cs
 | 14  | 1      | `service.enabled`             | `text`    | `systemd_units.unit_file_state`                      | Linux           | Whether the unit is enabled: `enabled`, `disabled`, etc. |
 | 15  | 1      | `service.following`           | `text`    | `systemd_units.following`                            | Linux           | Unit followed by this unit in `systemd`                  |
 | 16  | 1      | `service.object_path`         | `text`    | `systemd_units.object_path`                          | Linux           | D-Bus object path of the unit                            |
-| 17  | 0      | `service.target.ephemeral_id` | `long`    | `systemd_units.job_id`                               | Linux           | Job ID assigned by `systemd`                           |
-| 18  | 0      | `service.job.type`            | `text`    | `systemd_units.job_type`                             | Linux           | Type of systemd job                                      |
-| 19  | 0      | `service.job.address`         | `text`    | `systemd_units.job_path`                             | Linux           | Path to job object                                       |
+| 17  | 0      | `service.target.ephemeral_id` | `long`    | `systemd_units.job_id`                               | Linux           | Job ID assigned by `systemd`                             |
+| 18  | 0      | `service.target.type`         | `text`    | `systemd_units.job_type`                             | Linux           | Type of systemd job                                      |
+| 19  | 0      | `service.target.address`      | `text`    | `systemd_units.job_path`                             | Linux           | Path to job object                                       |
 | 20  | 0      | `file.path`                   | `text`    | `systemd_units.source_path`                          | Linux           | Path to the generated unit configuration file            |

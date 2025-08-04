@@ -20,12 +20,12 @@
       description: >
         Service start type: BOOT_START, SYSTEM_START, AUTO_START, DEMAND_START, DISABLED.
     - name: exit_code
-      type: int
+      type: integer
       level: custom
       description: >
         Service-specific exit code on failure.
     - name: win32_exit_code
-      type: int
+      type: integer
       level: custom
       description: >
         Win32 exit code on start/stop.

@@ -4,7 +4,7 @@
 
 The fields are based on https://github.com/wazuh/wazuh-agent/issues/807#issuecomment-3113217713
 
-Based on  and ECS:
+Based on osquery and ECS:
 
 - [services table (Windows)](https://osquery.io/schema/5.16.0/#services).
 - [systemd_units table (Linux)](https://osquery.io/schema/5.16.0/#systemd_units).

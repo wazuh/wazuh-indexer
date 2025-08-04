@@ -62,7 +62,7 @@ def generate_process(is_linux=True, state="running"):
     }
 
 def generate_service(is_linux=True):
-    # Estado y subestado según el SO
+    # State and substate depending on the OS
     if is_linux:
         state = random.choice(["active", "inactive", "failed"])
         sub_state = random.choice(["running", "dead", "exited"])
@@ -72,7 +72,7 @@ def generate_service(is_linux=True):
 
     name = random.choice(["nginx", "sshd", "cron", "wuauserv", "winlogon"])
     service_data = {
-        "id": name,                      # Coincide con ECS/osquery
+        "id": name,                      # Matches ECS/osquery
         "name": name.capitalize(),
         "description": f"{name} service",
         "state": state,
@@ -123,10 +123,6 @@ def generate_wazuh():
             "version": f"{random.randint(1,3)}.{random.randint(0,9)}"
         }
     }
-
-# ===================== #
-#   Modificación generate_random_data
-# ===================== #
 
 def generate_random_data(number):
     data = []

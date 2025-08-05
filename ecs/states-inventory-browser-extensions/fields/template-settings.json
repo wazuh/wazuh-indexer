@@ -16,7 +16,13 @@
                     "agent.id",
                     "agent.name",
                     "agent.version",
-            
+                    "browser.name",
+                    "user.id",
+                    "package.name",
+                    "package.id",
+                    "package.version",
+                    "package.vendor",
+                    "package.type",
                     "wazuh.cluster.name",
                     "wazuh.cluster.node",
                     "wazuh.schema.version"

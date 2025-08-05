@@ -20,7 +20,7 @@
       level: custom
       description: >
         Permissions required by the browser extension.
-      example: "[\"tabs\", \"storage\"]"
+      example: '["tabs", "storage"]'
     - name: enabled
       type: boolean
       level: custom

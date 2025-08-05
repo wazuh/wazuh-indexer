@@ -7,6 +7,7 @@ import requests
 import urllib3
 import random
 import string
+import time
 
 # Constants and Configuration
 LOG_FILE = "generate_data.log"
@@ -25,8 +26,91 @@ logging.basicConfig(filename=LOG_FILE, level=logging.INFO)
 # Suppress warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-def random_string(length=6):
+def random_string(length=8):
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
+
+def random_sha256():
+    return ''.join(random.choices('0123456789abcdef', k=64))
+
+def random_permissions():
+    return random.sample(
+        ["tabs", "storage", "cookies", "history", "bookmarks", "notifications"],
+        k=random.randint(1, 3)
+    )
+
+def random_browser():
+    return random.choice(["chrome", "firefox", "safari", "ie"])
+
+def generate_browser_extension():
+    browser = random_browser()
+    is_chrome = browser == "chrome"
+    is_firefox = browser == "firefox"
+    is_safari = browser == "safari"
+    is_ie = browser == "ie"
+
+    # ID and user name
+    user_id = f"user{random.randint(1,10)}" if not is_ie else None
+
+    # Name and ID of the extension
+    ext_name = random.choice(["Adblock Plus", "LastPass", "Grammarly", "Honey", "Dark Reader"])
+    ext_id = random_string(32) if is_chrome else random_string(16)
+
+    # Common fields
+    extension_data = {
+        "browser": {
+            "name": browser,
+            "profile": {}
+        },
+        "user": {
+            "id": user_id
+        },
+        "package": {
+            "name": ext_name,
+            "id": ext_id,
+            "version": f"{random.randint(1,5)}.{random.randint(0,9)}.{random.randint(0,9)}",
+            "description": f"{ext_name} browser extension",
+            "vendor": random.choice(["Google", "Mozilla", "Microsoft", "Independent Dev"]),
+            "build_version": "SafariSDK-602" if is_safari else None,
+            "path": None,
+            "reference": None,
+            "permissions": None,
+            "type": None,
+            "enabled": random.choice([True, False]),
+            "autoupdate": random.choice([True, False]) if is_firefox else None,
+            "persistent": random.choice([True, False]) if is_chrome else None,
+            "from_webstore": random.choice([True, False]) if is_chrome else None,
+            "installed": str(int(time.time()) - random.randint(1000, 1000000)),
+        },
+        "file": {
+            "hash": {
+                "sha256": random_sha256() if is_chrome else None
+            }
+        }
+    }
+
+    # Browser-specific fields
+    if is_chrome:
+        extension_data["browser"]["profile"] = {
+            "name": random.choice(["Default", "Profile 1", "Work"]),
+            "path": f"/home/{user_id}/.config/google-chrome/Profile {random.randint(1,3)}",
+            "referenced": random.choice([True, False])
+        }
+        extension_data["package"]["path"] = f"/home/{user_id}/.config/google-chrome/Profile 1/Extensions/{ext_id}"
+        extension_data["package"]["reference"] = "https://clients2.google.com/service/update2/crx"
+        extension_data["package"]["permissions"] = random_permissions()
+
+    elif is_firefox:
+        extension_data["package"]["type"] = random.choice(["extension", "webapp"])
+        extension_data["package"]["path"] = f"/home/{user_id}/.mozilla/firefox/{random_string(8)}.default/extensions/{ext_id}.xpi"
+        extension_data["package"]["reference"] = f"https://addons.mozilla.org/firefox/downloads/file/{random.randint(1000,9999)}/"
+
+    elif is_safari:
+        extension_data["package"]["path"] = f"/Users/{user_id}/Library/Safari/Extensions/{ext_name}.safariextz"
+
+    elif is_ie:
+        extension_data["package"]["path"] = f"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Internet Explorer\\Extensions\\{ext_id}"
+
+    return extension_data
 
 def generate_agent():
     return {
@@ -37,12 +121,6 @@ def generate_agent():
         "id": random_string(8),
         "name": f"agent-{random.randint(1, 100)}",
         "version": f"{random.randint(1,5)}.{random.randint(0,9)}.{random.randint(0,9)}"
-    }
-
-def generate_user(is_linux=True):
-    return {
-        "name": random.choice(["root", "SYSTEM", "nginx", "admin", "service"])
-        if is_linux else random.choice(["SYSTEM", "Administrator", "LocalService"])
     }
 
 def generate_wazuh():
@@ -59,14 +137,11 @@ def generate_wazuh():
 def generate_random_data(number):
     data = []
     for _ in range(number):
-        is_linux = random.choice([True, False])
+        event_data = generate_browser_extension()
+        # Add agent and Wazuh data
+        event_data["agent"] = generate_agent()
+        event_data["wazuh"] = generate_wazuh()
 
-        event_data = {
-            "agent": generate_agent(),
-            # TODO
-            "user": generate_user(is_linux=is_linux),
-            "wazuh": generate_wazuh()
-        }
         data.append(event_data)
     return data
 

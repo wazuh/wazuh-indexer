@@ -1,5 +1,5 @@
 {
-  "index_patterns": ["wazuh-states-browser-extensions*"],
+  "index_patterns": ["wazuh-states-inventory-browser-extensions*"],
   "order": 1,
   "settings": {
     "index": {

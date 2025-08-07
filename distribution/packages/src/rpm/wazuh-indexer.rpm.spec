@@ -276,7 +276,9 @@ exit 0
 %attr(750, %{name}, %{name}) %{product_dir}/performance-analyzer-rca/bin/*
 
 %changelog
-* Fri May 23 2025 support <info@wazuh.com> - 4.10.3
+* Thu Sep 25 2025 support <info@wazuh.com> - 4.10.4
+- More info: https://documentation.wazuh.com/current/release-notes/release-4-10-4.html
+* Tue Aug 19 2025 support <info@wazuh.com> - 4.10.3
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-10-3.html
 * Wed May 21 2025 support <info@wazuh.com> - 4.10.2
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-10-2.html

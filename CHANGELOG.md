@@ -27,6 +27,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Change date format for the repository bumper[(#944)](https://github.com/wazuh/wazuh-indexer/pull/944)
 - Update `host.cpu.cores` field type to `short` [(#945)](https://github.com/wazuh/wazuh-indexer/pull/945)
 - Update inventory interfaces index template [(#952)](https://github.com/wazuh/wazuh-indexer/pull/952)
+- Update refresh interval to 2 seconds [(#1066)](https://github.com/wazuh/wazuh-indexer/pull/1066)
 
 ### Deprecated
 -

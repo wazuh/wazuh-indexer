@@ -6,25 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased 4.14.x]
 ### Added
 - Add check to confirm if wazuh-indexer service is running after upgrade [(#940)](https://github.com/wazuh/wazuh-indexer/pull/940)
+- Add users and groups ECS mappings [(#890)](https://github.com/wazuh/wazuh-indexer/pull/890)
 
 ### Dependencies
 -
 
 ### Changed
 - Reorganize ecs folder [(#899)](https://github.com/wazuh/wazuh-indexer/pull/899)
-- Add agent.* and wazuh.* fields to users and groups ECS mappings [(#954)](https://github.com/wazuh/wazuh-indexer/pull/954)
-- Update `user.password` mapping [(#1026)](https://github.com/wazuh/wazuh-indexer/pull/1026)
 
 ### Deprecated
 -
 
 ### Removed
--
+-   
 
 ### Fixed
 -
 
 ### Security
--
+- Migrate 4.14.0 to OpenSearch 2.19.3 [(#1050)](https://github.com/wazuh/wazuh-indexer/pull/1050)
 
-[Unreleased 4.14.x]: https://github.com/wazuh/wazuh-indexer/compare/4.13.1...4.14.0
+[Unreleased 4.14.x]: https://github.com/wazuh/wazuh-indexer/compare/b7e222a823164da076c3482b511ab08b3e7b8384...4.14.0

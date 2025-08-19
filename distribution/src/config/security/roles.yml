@@ -408,6 +408,7 @@ ml_config_read:
     masked_fields: []
     allowed_actions:
     - "read"
+    - "system:admin/system_index"
   tenant_permissions: []
   static: false
 
@@ -424,5 +425,6 @@ ml_config_write:
     masked_fields: []
     allowed_actions:
     - "write"
+    - "system:admin/system_index"
   tenant_permissions: []
   static: false

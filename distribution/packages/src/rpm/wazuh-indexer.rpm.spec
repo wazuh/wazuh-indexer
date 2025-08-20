@@ -199,27 +199,15 @@ if command -v systemd-tmpfiles > /dev/null 2>&1 && systemctl > /dev/null 2>&1; t
     systemd-tmpfiles --create %{name}.conf /dev/null 2>&1
 fi
 
-if [ $1 = 2 ]; then
-    if [ -f %{state_file} ]; then
-        echo "Restarting %{name}.service because it was active before upgrade"
-        rm -f %{state_file}
-        if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
-            systemctl restart %{name}.service > /dev/null 2>&1
-        elif command -v service > /dev/null 2>&1; then
-            service %{name} restart > /dev/null 2>&1
-        elif command -v /etc/init.d/%{name} > /dev/null 2>&1; then
-            /etc/init.d/%{name} restart > /dev/null 2>&1
-        fi
-    else
-        echo "### NOT restarting %{name} service after upgrade"
-        echo "### You can start %{name} service by executing"
-        if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
-            echo " sudo systemctl start %{name}.service"
-        elif command -v service > /dev/null 2>&1; then
-            echo " sudo service %{name} start"
-        elif command -v /etc/init.d/%{name} > /dev/null 2>&1; then
-            echo " sudo /etc/init.d/%{name} start"
-        fi
+if [ -f %{state_file} ]; then
+    echo "Restarting %{name}.service because it was active before upgrade"
+    rm -f %{state_file}
+    if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
+        systemctl restart %{name}.service > /dev/null 2>&1
+    elif command -v service > /dev/null 2>&1; then
+        service %{name} restart > /dev/null 2>&1
+    elif command -v /etc/init.d/%{name} > /dev/null 2>&1; then
+        /etc/init.d/%{name} restart > /dev/null 2>&1
     fi
 else
     # Messages
@@ -317,11 +305,11 @@ exit 0
 %changelog
 * Thu Dec 18 2025 support <info@wazuh.com> - 5.0.0
 - More info: https://documentation.wazuh.com/current/release-notes/release-5-0-0.html
+* Thu Sep 25 2025 support <info@wazuh.com> - 4.14.1
+- More info: https://documentation.wazuh.com/current/release-notes/release-4.14.1.html
 * Thu Sep 25 2025 support <info@wazuh.com> - 4.14.0
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-14-0.html
-* Wed Jul 30 2025 support <info@wazuh.com> - 4.13.1
-- More info: https://documentation.wazuh.com/current/release-notes/release-4.13.1.html
-* Wed Jul 16 2025 support <info@wazuh.com> - 4.13.0
+* Thu Sep 04 2025 support <info@wazuh.com> - 4.13.0
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-13-0.html
 * Wed May 07 2025 support <info@wazuh.com> - 4.12.0
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-12-0.html

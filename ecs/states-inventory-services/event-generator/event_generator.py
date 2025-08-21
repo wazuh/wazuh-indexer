@@ -7,6 +7,7 @@ import requests
 import urllib3
 import random
 import string
+from enum import Enum
 
 # Constants and Configuration
 LOG_FILE = "generate_data.log"
@@ -18,6 +19,10 @@ USERNAME = "admin"
 PASSWORD = "admin"
 IP = "127.0.0.1"
 PORT = "9200"
+class OS(Enum):
+    LINUX = "Linux"
+    WINDOWS = "Windows"
+    MACOS = "macOS"
 
 # Configure logging
 logging.basicConfig(filename=LOG_FILE, level=logging.INFO)
@@ -39,79 +44,118 @@ def generate_agent():
         "version": f"{random.randint(1,5)}.{random.randint(0,9)}.{random.randint(0,9)}"
     }
 
-def generate_file(is_linux=True):
-    if is_linux:
+def generate_file(os_type=OS.LINUX):
+    if os_type == OS.LINUX:
         return {
             "path": f"/usr/lib/systemd/system/{random.choice(['nginx.service', 'sshd.service', 'cron.service'])}"
         }
-    else:
+    elif os_type == OS.WINDOWS:
         return {
             "path": f"C:\\Windows\\System32\\{random.choice(['svchost.exe', 'services.exe'])}"
         }
+    else:
+        return {
+            "path": f"/Applications/{random.choice(['App.app', 'Service.app'])}"
+        }
 
-def generate_process(is_linux=True, state="running"):
+def generate_process(os_type=OS.LINUX, state="running"):
     pid = random.randint(1000, 5000) if state.lower() in ["running", "active"] else 0
-    executable = (
-        random.choice(["/usr/bin/python3", "/usr/sbin/sshd", "/usr/sbin/nginx"])
-        if is_linux
-        else random.choice(["C:\\Program Files\\App\\app.exe", "C:\\Windows\\System32\\svchost.exe"])
-    )
-    return {
-        "executable": executable,
-        "pid": pid
-    }
+    if os_type == OS.WINDOWS:
+        executable = random.choice(["C:\\Program Files\\App\\app.exe", "C:\\Windows\\System32\\svchost.exe"])
+    elif os_type == OS.LINUX:
+        executable = random.choice(["/usr/bin/python3", "/usr/sbin/sshd", "/usr/sbin/nginx"])
+    else:
+        executable = random.choice(["/Applications/App.app/Contents/MacOS/App", "/usr/bin/terminal"])
 
-def generate_service(is_linux=True):
+    if os_type == OS.WINDOWS or os_type == OS.LINUX:
+        return {
+            "executable": executable,
+            "pid": pid
+        }
+    else:
+        return {
+            "executable": executable,
+            "pid": pid,
+            "args": [f"--option{random.randint(1, 5)}={random_string(4)}"],
+            "user.name": random.choice(["root", "admin", "user"]),
+            "group.name": random.choice(["root", "admin", "users"]),
+            "working_directory": f"/home/{random.choice(['user1', 'user2', 'user3'])}",
+            "root_directory": f"/home/{random.choice(['user1', 'user2', 'user3'])}"
+        }
+
+def generate_service(os_type=OS.LINUX):
     # State and substate depending on the OS
-    if is_linux:
+    if os_type == OS.LINUX:
         state = random.choice(["active", "inactive", "failed"])
         sub_state = random.choice(["running", "dead", "exited"])
-    else:
+    elif os_type == OS.WINDOWS:
         state = random.choice(["RUNNING", "STOPPED"])
         sub_state = None
+    else:  
+        state = random.choice(["running", "stopped"])
 
     name = random.choice(["nginx", "sshd", "cron", "wuauserv", "winlogon"])
-    service_data = {
-        "id": name,                      # Matches ECS/osquery
-        "name": name.capitalize(),
-        "description": f"{name} service",
-        "state": state,
-        "sub_state": sub_state,
-        "address": (
-            f"/lib/{name}.so" if is_linux else f"C:\\Windows\\System32\\{name}.dll"
-        ),
-        "type": random.choice(["OWN_PROCESS", "WIN32_SHARE_PROCESS"]) if not is_linux else "system",
-        "exit_code": random.randint(0, 5) if state not in ["RUNNING", "active"] else 0,
-        "win32_exit_code": (
-            random.randint(0, 5) if not is_linux and state == "STOPPED" else 0
-        ),
-        "enabled": (
-            random.choice(["enabled", "disabled", "static"]) if is_linux else None
-        ),
-        "following": (
-            random.choice(["none", "multi-user.target"]) if is_linux else None
-        ),
-        "object_path": (
-            f"/org/freedesktop/{name}" if is_linux else None
-        ),
-        "start_type": (
-            random.choice(["AUTO_START", "DEMAND_START", "DISABLED"]) if not is_linux else None
-        ),
-        "target": {
-            "ephemeral_id": str(random.randint(1000, 9999)),
-            "type": random.choice(["start", "stop"]),
+    if os_type == OS.LINUX or os_type == OS.WINDOWS:
+        service_data = {
+            "id": name,                      # Matches ECS/osquery
+            "name": name.capitalize(),
+            "description": f"{name} service",
+            "state": state,
+            "sub_state": sub_state,
             "address": (
-                f"/systemd/job/{name}" if is_linux else f"C:\\Jobs\\{name}"
-            )
+                f"/lib/{name}.so" if os_type == OS.LINUX else f"C:\\Windows\\System32\\{name}.dll"
+            ),
+            "type": random.choice(["OWN_PROCESS", "WIN32_SHARE_PROCESS"]) if not os_type == OS.LINUX else "system",
+            "exit_code": random.randint(0, 5) if state not in ["RUNNING", "active"] else 0,
+            "win32_exit_code": (
+                random.randint(0, 5) if not os_type == OS.LINUX and state == "STOPPED" else 0
+            ),
+            "enabled": (
+                random.choice(["enabled", "disabled", "static"]) if os_type == OS.LINUX else None
+            ),
+            "following": (
+                random.choice(["none", "multi-user.target"]) if os_type == OS.LINUX else None
+            ),
+            "object_path": (
+                f"/org/freedesktop/{name}" if os_type == OS.LINUX else None
+            ),
+            "start_type": (
+                random.choice(["AUTO_START", "DEMAND_START", "DISABLED"]) if not os_type == OS.LINUX else None
+            ),
+            "target": {
+                "ephemeral_id": str(random.randint(1000, 9999)),
+                "type": random.choice(["start", "stop"]),
+                "address": (
+                    f"/systemd/job/{name}" if os_type == OS.LINUX else f"C:\\Jobs\\{name}"
+                )
+            }
         }
-    }
+    else:
+        service_data = {
+            "id": random.choice(["com.apple.mdnamed", "com.apple.sshd"]),
+            "name": random.choice(["MDNSResponder", "SSHD"]),
+            "state": random.choice(["active", "stopped", "failed"]),
+            "start_type": random.choice(["AUTO_START", "DEMAND_START"]),
+            "type": "OWN_PROCESS",
+            "enabled": random.choice(["enabled", "disabled"]),
+            "restart": random.choice(["always", "on-failure", "never"]),
+            "frequency": random.randint(10, 3600),
+            "starts.on_mount": random.choice([True, False]),
+            "starts.on_path_modified": ["/usr/local", "/etc"],
+            "starts.on_not_empty_directory": ["/var/log"],
+            "inetd_compatibility": random.choice([True, False]),
+        }
     return service_data
 
-def generate_user(is_linux=True):
-    return {
-        "name": random.choice(["root", "SYSTEM", "nginx", "admin", "service"])
-        if is_linux else random.choice(["SYSTEM", "Administrator", "LocalService"])
-    }
+def generate_user(os_type=OS.LINUX):
+    if os_type == OS.LINUX:
+        return {
+            "name": random.choice(["root", "SYSTEM", "nginx", "admin", "service"])
+        }
+    elif os_type == OS.WINDOWS:
+        return {
+            "name": random.choice(["SYSTEM", "Administrator", "LocalService"]),
+        }
 
 def generate_wazuh():
     return {
@@ -124,19 +168,44 @@ def generate_wazuh():
         }
     }
 
+def generate_log(os_type=OS.LINUX):
+    if os_type == OS.MACOS:
+        return {
+            "file.path": random.choice([
+                "/var/log/system.log",
+                "/var/log/install.log",
+                "/var/log/secure.log"
+            ]),
+        }
+
+def generate_error(os_type=OS.LINUX):
+    if os_type == OS.MACOS:
+        return {
+            "log.file.path": random.choice([
+                "/var/log/system.log",
+                "/var/log/install.log",
+                "/var/log/secure.log"
+            ]),
+        }
+
 def generate_random_data(number):
     data = []
     for _ in range(number):
-        is_linux = random.choice([True, False])
-        service_data = generate_service(is_linux=is_linux)
+        os_choice = random.choice(list(OS))
+        service_data = generate_service(os_type=os_choice)
         event_data = {
             "agent": generate_agent(),
-            "file": generate_file(is_linux=is_linux),
-            "process": generate_process(is_linux=is_linux, state=service_data["state"]),
+            "file": generate_file(os_type=os_choice),
+            "process": generate_process(os_type=os_choice, state=service_data["state"]),
             "service": service_data,
-            "user": generate_user(is_linux=is_linux),
+            "user": generate_user(os_type=os_choice),
             "wazuh": generate_wazuh()
         }
+
+        if os_choice == OS.MACOS:
+            event_data["log"] = generate_log(os_type=os_choice)
+            event_data["error"] = generate_error(os_type=os_choice)
+
         data.append(event_data)
     return data
 

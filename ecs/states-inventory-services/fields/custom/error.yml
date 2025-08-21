@@ -1,0 +1,11 @@
+---
+- name: error
+  title: error
+  description: >
+    Error information related to the service.
+  fields:
+    - name: log.file.path
+      type: keyword
+      level: custom
+      description: >
+        Redirect stderr to a file/pipe.

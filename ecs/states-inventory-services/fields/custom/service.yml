@@ -44,3 +44,42 @@
       level: custom
       description: >
         D-Bus object path of the service.
+    - name: restart
+      type: keyword
+      level: custom
+      description: >
+        Restart policy for the service, e.g. `always`, `on-failure`, `never`.
+    - name: frecuency
+      type: long
+      level: custom
+      description: >
+        Frequency in seconds at which the service is run.
+
+    - name: starts.on_mount
+      type: boolean
+      level: custom
+      description: >
+        Launches every time a filesystem is mounted.
+    
+    - name: starts.on_path_modified
+      type: keyword
+      level: custom
+      description: >
+        Launches on path modification.
+      normalize:
+        - array
+    
+    - name: starts.on_not_empty_directory
+      type: keyword
+      level: custom
+      description: >
+        Launches when directories become non-empty.
+      normalize:
+        - array
+    
+    - name: inetd_compatibility
+      type: boolean
+      level: custom
+      description: >
+        Run job as if launched from inetd.
+

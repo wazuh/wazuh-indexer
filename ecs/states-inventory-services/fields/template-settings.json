@@ -32,7 +32,20 @@
                     "file.path",
                     "wazuh.cluster.name",
                     "wazuh.cluster.node",
-                    "wazuh.schema.version"
+                    "wazuh.schema.version",
+                    "service.restart",
+                    "service.frecuency",
+                    "service.inetd_compatibility",
+                    "service.starts.on_mount",
+                    "service.starts.on_path_modified",
+                    "service.starts.on_not_empty_directory",
+                    "log.file.path",
+                    "error.log.file.path",
+                    "process.args",
+                    "process.working_directory",
+                    "process.root_directory",
+                    "process.user.name",
+                    "process.group.name"
                 ]
             }
         }

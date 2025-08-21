@@ -28,15 +28,44 @@ fields:
       enabled: {}
       following: {}
       object_path: {}
+      restart: {}
+      frecuency: {}
+      inetd_compatibility: {}
       target:
         fields:
           ephemeral_id: {}
           type: {}
           address: {}
+      starts:
+        fields:
+          on_mount: {}
+          on_path_modified: {}
+          on_not_empty_directory: {}
+  log:
+    fields:
+      file:
+        fields:
+          path: {}
+  error:
+    fields:
+      log:
+        fields:
+          file:
+            fields:
+              path: {}
   process:
     fields:
       pid: {}
       executable: {}
+      args: {}
+      working_directory: {}
+      root_directory: {}
+      user:
+        fields:
+          name: {}
+      group:
+        fields:
+          name: {}
   user:
     fields:
       name: {}

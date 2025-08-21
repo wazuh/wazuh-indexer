@@ -66,9 +66,6 @@ fields:
       group:
         fields:
           name: {}
-  user:
-    fields:
-      name: {}
   file:
     fields:
       path: {}

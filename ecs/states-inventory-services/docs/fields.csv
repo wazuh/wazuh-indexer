@@ -37,7 +37,6 @@ ECS_Version,Indexed,Field_Set,Field,Type,Level,Normalization,Example,Description
 8.11.0,true,service,service.target.type,keyword,core,,elasticsearch,The type of the service.
 8.11.0,true,service,service.type,keyword,core,,elasticsearch,The type of the service.
 8.11.0,true,service,service.win32_exit_code,integer,custom,,,Win32 exit code on start/stop.
-8.11.0,true,user,user.name,keyword,core,,a.einstein,Short name or login of the user.
 8.11.0,true,wazuh,wazuh.cluster.name,keyword,custom,,,Wazuh cluster name.
 8.11.0,true,wazuh,wazuh.cluster.node,keyword,custom,,,Wazuh cluster node name.
 8.11.0,true,wazuh,wazuh.schema.version,keyword,custom,,,Wazuh schema version.

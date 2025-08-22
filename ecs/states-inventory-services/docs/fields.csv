@@ -1,11 +1,10 @@
 ECS_Version,Indexed,Field_Set,Field,Type,Level,Normalization,Example,Description
-8.11.0,true,base,tags,keyword,core,array,"[""production"", ""env2""]",List of keywords used to tag each event.
 8.11.0,true,agent,agent.host.architecture,keyword,core,,x86_64,Operating system architecture.
 8.11.0,true,agent,agent.host.ip,ip,core,array,,Host ip addresses.
 8.11.0,true,agent,agent.id,keyword,core,,8a4f500d,Unique identifier of this agent.
 8.11.0,true,agent,agent.name,keyword,core,,foo,Custom name of the agent.
 8.11.0,true,agent,agent.version,keyword,core,,6.0.0-rc2,Version of the agent.
-8.11.0,true,error,error.log.file.path,keyword,custom,,,Redirect stderr to a file/pipe.
+8.11.0,true,error,error.log.file.path,keyword,extended,,/var/log/fun-times.log,Full path to the log file this event came from.
 8.11.0,true,file,file.path,keyword,extended,,/home/alice/example.png,"Full path to the file, including the file name."
 8.11.0,true,log,log.file.path,keyword,extended,,/var/log/fun-times.log,Full path to the log file this event came from.
 8.11.0,true,process,process.args,keyword,extended,array,"[""/usr/bin/ssh"", ""-l"", ""user"", ""10.0.0.16""]",Array of process arguments.

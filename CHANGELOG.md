@@ -28,6 +28,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Update `host.cpu.cores` field type to `short` [(#945)](https://github.com/wazuh/wazuh-indexer/pull/945)
 - Update inventory interfaces index template [(#952)](https://github.com/wazuh/wazuh-indexer/pull/952)
 - Update refresh interval to 2 seconds [(#1066)](https://github.com/wazuh/wazuh-indexer/pull/1066)
+- Update workflow naming on 4.13.0 branch [(#1094)](https://github.com/wazuh/wazuh-indexer/pull/1094)
 
 ### Deprecated
 -

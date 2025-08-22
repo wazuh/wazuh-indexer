@@ -2,7 +2,8 @@
 
 ### Fields summary
 
-The fields are based on https://github.com/wazuh/wazuh-agent/issues/805#issuecomment-3050200310
+The fields are based on:
+- [Inventory - Browser Extensions mappings](https://github.com/wazuh/wazuh-agent/issues/805#issuecomment-3050200310) (included in 4.14.0)
 
 Based on osquery and ECS:
 
@@ -12,7 +13,7 @@ Based on osquery and ECS:
 - [safari extensions table](https://osquery.io/schema/5.16.0/#safari_extensions).
 - [Package fields](https://www.elastic.co/docs/reference/ecs/ecs-package).
 
-Detailed information about the fields can be found in the [fields.csv](fields.csv) file.
+The detail of the fields can be found in csv file [Inventory Browser Extensions Fields](fields.csv).
 
 ### Transition table
 

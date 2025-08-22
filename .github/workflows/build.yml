@@ -291,6 +291,7 @@ jobs:
       - name: Test DEB package update stopping the indexer
         if: ${{ matrix.distribution == 'deb' && (matrix.architecture == 'x64' || (needs.setup.outputs.previous_version >= '4.12' && matrix.architecture == 'arm64'))}}
         run: |
+          DEBIAN_FRONTEND=noninteractive
           sudo bash packaging_scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }}
           sudo systemctl stop wazuh-indexer
           sudo dpkg -i "artifacts/dist/${{ steps.package.outputs.name }}"
@@ -300,7 +301,7 @@ jobs:
       - name: Test DEB package update without stopping the indexer
         if: ${{ matrix.distribution == 'deb' && (matrix.architecture == 'x64' || (needs.setup.outputs.previous_version >= '4.12' && matrix.architecture == 'arm64'))}}
         run: |
-
+          DEBIAN_FRONTEND=noninteractive
           sudo bash packaging_scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }}
           sudo dpkg -i "artifacts/dist/${{ steps.package.outputs.name }}"
 

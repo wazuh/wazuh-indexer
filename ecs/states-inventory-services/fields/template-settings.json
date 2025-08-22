@@ -33,7 +33,7 @@
                     "wazuh.cluster.node",
                     "wazuh.schema.version",
                     "service.restart",
-                    "service.frecuency",
+                    "service.frequency",
                     "service.inetd_compatibility",
                     "service.starts.on_mount",
                     "service.starts.on_path_modified",

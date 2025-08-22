@@ -19,7 +19,7 @@ ECS_Version,Indexed,Field_Set,Field,Type,Level,Normalization,Example,Description
 8.11.0,true,service,service.enabled,keyword,custom,,enabled,"Whether the unit file is enabled, e.g. `enabled`, `masked`, `disabled`, etc."
 8.11.0,true,service,service.exit_code,integer,custom,,0,Service-specific exit code on failure.
 8.11.0,true,service,service.following,keyword,custom,,apache2.service,The name of another unit that this unit follows in state.
-8.11.0,true,service,service.frecuency,long,custom,,3600,Frequency in seconds at which the service is run.
+8.11.0,true,service,service.frequency,long,custom,,3600,Frequency in seconds at which the service is run.
 8.11.0,true,service,service.id,keyword,core,,d37e5ebfe0ae6c4972dbe9f0174a1637bb8247f6,Unique identifier of the running service.
 8.11.0,true,service,service.inetd_compatibility,boolean,custom,,False,Run job as if launched from inetd.
 8.11.0,true,service,service.name,keyword,core,,elasticsearch-metrics,Name of the service.

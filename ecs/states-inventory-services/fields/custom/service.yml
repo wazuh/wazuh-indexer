@@ -58,7 +58,7 @@
       description: >
         Restart policy for the service, e.g. `always`, `on-failure`, `never`.
       example: 'on-failure'
-    - name: frecuency
+    - name: frequency
       type: long
       level: custom
       description: >

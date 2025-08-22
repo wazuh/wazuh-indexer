@@ -29,7 +29,7 @@ fields:
       following: {}
       object_path: {}
       restart: {}
-      frecuency: {}
+      frequency: {}
       inetd_compatibility: {}
       target:
         fields:

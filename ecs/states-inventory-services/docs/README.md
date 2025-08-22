@@ -2,12 +2,13 @@
 
 ### Fields summary
 
-The fields are based on https://github.com/wazuh/wazuh-agent/issues/807#issuecomment-3113217713
+The fields are based on https://github.com/wazuh/wazuh-agent/issues/807#issuecomment-3212090933
 
 Based on osquery and ECS:
 
 - [services table (Windows)](https://osquery.io/schema/5.16.0/#services).
 - [systemd_units table (Linux)](https://osquery.io/schema/5.16.0/#systemd_units).
+- [launchd table (macOS)](https://osquery.io/schema/5.16.0/#launchd)
 - [Service fields](https://www.elastic.co/docs/reference/ecs/ecs-service).
 
 Detailed information about the fields can be found in the [fields.csv](fields.csv) file.

@@ -1,0 +1,11 @@
+---
+- name: process
+  title: process
+  description: >
+    Process information related to the service.
+  fields:
+    - name: root_directory
+      type: keyword
+      level: custom
+      description: >
+        Chroot directory before execution.

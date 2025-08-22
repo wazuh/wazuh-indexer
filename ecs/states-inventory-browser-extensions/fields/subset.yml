@@ -1,0 +1,45 @@
+---
+name: wazuh-states-browser-extensions
+fields:
+  base:
+    fields:
+      tags: []
+  agent:
+    fields:
+      id: {}
+      name: {}
+      version: {}
+      host:
+        fields:
+          architecture: {}
+          ip: {}
+  browser:
+    fields: "*"
+  package:
+    fields:
+      name: {}
+      id: {}
+      version: {}
+      description: {}
+      vendor: {}
+      build_version: {}
+      path: {}
+      reference: {}
+      permissions: {}
+      type: {}
+      enabled: {}
+      autoupdate: {}
+      persistent: {}
+      from_webstore: {}
+      installed: {}
+  file:
+    fields:
+      hash:
+        fields:
+          sha256: {}
+  user:
+    fields:
+      id: {}
+  wazuh:
+    fields: "*"
+

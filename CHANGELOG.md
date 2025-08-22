@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Add check to confirm if wazuh-indexer service is running after upgrade [(#940)](https://github.com/wazuh/wazuh-indexer/pull/940)
 - Add users and groups ECS mappings [(#890)](https://github.com/wazuh/wazuh-indexer/pull/890)
 - Add index definition for the new index `wazuh-states-inventory-browser-extensions` [(#1058)](https://github.com/wazuh/wazuh-indexer/pull/1058)
+- Add default configuration to allow the AI assistant deployment from the UI [(#1077)](https://github.com/wazuh/wazuh-indexer/pull/1077)
 
 ### Dependencies
 -

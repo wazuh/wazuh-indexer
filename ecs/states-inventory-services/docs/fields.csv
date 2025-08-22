@@ -15,27 +15,27 @@ ECS_Version,Indexed,Field_Set,Field,Type,Level,Normalization,Example,Description
 8.11.0,true,process,process.user.name,keyword,core,,a.einstein,Short name or login of the user.
 8.11.0,true,process,process.working_directory,keyword,extended,,/home/alice,The working directory of the process.
 8.11.0,true,service,service.address,keyword,extended,,172.26.0.2:5432,Address of this service.
-8.11.0,true,service,service.description,keyword,custom,,,Description of the service.
-8.11.0,true,service,service.enabled,keyword,custom,,,"Whether the unit file is enabled, e.g. `enabled`, `masked`, `disabled`, etc."
-8.11.0,true,service,service.exit_code,integer,custom,,,Service-specific exit code on failure.
-8.11.0,true,service,service.following,keyword,custom,,,The name of another unit that this unit follows in state.
-8.11.0,true,service,service.frecuency,long,custom,,,Frequency in seconds at which the service is run.
+8.11.0,true,service,service.description,keyword,custom,,Apache HTTP Server,Description of the service.
+8.11.0,true,service,service.enabled,keyword,custom,,enabled,"Whether the unit file is enabled, e.g. `enabled`, `masked`, `disabled`, etc."
+8.11.0,true,service,service.exit_code,integer,custom,,0,Service-specific exit code on failure.
+8.11.0,true,service,service.following,keyword,custom,,apache2.service,The name of another unit that this unit follows in state.
+8.11.0,true,service,service.frecuency,long,custom,,3600,Frequency in seconds at which the service is run.
 8.11.0,true,service,service.id,keyword,core,,d37e5ebfe0ae6c4972dbe9f0174a1637bb8247f6,Unique identifier of the running service.
-8.11.0,true,service,service.inetd_compatibility,boolean,custom,,,Run job as if launched from inetd.
+8.11.0,true,service,service.inetd_compatibility,boolean,custom,,False,Run job as if launched from inetd.
 8.11.0,true,service,service.name,keyword,core,,elasticsearch-metrics,Name of the service.
-8.11.0,true,service,service.object_path,keyword,custom,,,D-Bus object path of the service.
-8.11.0,true,service,service.restart,keyword,custom,,,"Restart policy for the service, e.g. `always`, `on-failure`, `never`."
-8.11.0,true,service,service.start_type,keyword,custom,,,"Service start type: BOOT_START, SYSTEM_START, AUTO_START, DEMAND_START, DISABLED."
-8.11.0,true,service,service.starts.on_mount,boolean,custom,,,Launches every time a filesystem is mounted.
-8.11.0,true,service,service.starts.on_not_empty_directory,keyword,custom,array,,Launches when directories become non-empty.
-8.11.0,true,service,service.starts.on_path_modified,keyword,custom,array,,Launches on path modification.
+8.11.0,true,service,service.object_path,keyword,custom,,/org/freedesktop/systemd1/unit/apache2_2eservice,D-Bus object path of the service.
+8.11.0,true,service,service.restart,keyword,custom,,on-failure,"Restart policy for the service, e.g. `always`, `on-failure`, `never`."
+8.11.0,true,service,service.start_type,keyword,custom,,AUTO_START,"Service start type: BOOT_START, SYSTEM_START, AUTO_START, DEMAND_START, DISABLED."
+8.11.0,true,service,service.starts.on_mount,boolean,custom,,True,Launches every time a filesystem is mounted.
+8.11.0,true,service,service.starts.on_not_empty_directory,keyword,custom,array,"['/var/spool/mail', '/tmp/uploads']",Launches when directories become non-empty.
+8.11.0,true,service,service.starts.on_path_modified,keyword,custom,array,"['/var/log', '/etc/config']",Launches on path modification.
 8.11.0,true,service,service.state,keyword,core,,,Current state of the service.
-8.11.0,true,service,service.sub_state,keyword,custom,,,"The low-level unit activation state, values depend on unit type."
+8.11.0,true,service,service.sub_state,keyword,custom,,running,"The low-level unit activation state, values depend on unit type."
 8.11.0,true,service,service.target.address,keyword,extended,,172.26.0.2:5432,Address of this service.
 8.11.0,true,service,service.target.ephemeral_id,keyword,extended,,8a4f500f,Ephemeral identifier of this service.
 8.11.0,true,service,service.target.type,keyword,core,,elasticsearch,The type of the service.
 8.11.0,true,service,service.type,keyword,core,,elasticsearch,The type of the service.
-8.11.0,true,service,service.win32_exit_code,integer,custom,,,Win32 exit code on start/stop.
+8.11.0,true,service,service.win32_exit_code,integer,custom,,0,Win32 exit code on start/stop.
 8.11.0,true,wazuh,wazuh.cluster.name,keyword,custom,,,Wazuh cluster name.
 8.11.0,true,wazuh,wazuh.cluster.node,keyword,custom,,,Wazuh cluster node name.
 8.11.0,true,wazuh,wazuh.schema.version,keyword,custom,,,Wazuh schema version.

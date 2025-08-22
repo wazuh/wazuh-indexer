@@ -293,7 +293,7 @@ jobs:
         run: |
           sudo bash packaging_scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }}
           sudo systemctl stop wazuh-indexer
-          sudo DEBIAN_FRONTEND=noninteractive dpkg -i "artifacts/dist/${{ steps.package.outputs.name }}"
+          sudo DEBIAN_FRONTEND=noninteractive dpkg --force-confnew -i "artifacts/dist/${{ steps.package.outputs.name }}"
 
           sudo apt-get remove --purge wazuh-indexer -y
 
@@ -301,7 +301,7 @@ jobs:
         if: ${{ matrix.distribution == 'deb' && (matrix.architecture == 'x64' || (needs.setup.outputs.previous_version >= '4.12' && matrix.architecture == 'arm64'))}}
         run: |
           sudo bash packaging_scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }}
-          sudo DEBIAN_FRONTEND=noninteractive dpkg -i "artifacts/dist/${{ steps.package.outputs.name }}"
+          sudo DEBIAN_FRONTEND=noninteractive dpkg --force-confnew -i "artifacts/dist/${{ steps.package.outputs.name }}"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

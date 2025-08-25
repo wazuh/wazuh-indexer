@@ -144,7 +144,6 @@ def generate_service(os_type=OS.LINUX):
             "restart": random.choice(["always", "on-failure", "never"]),
             "frequency": random.randint(10, 3600),
             "starts": {
-                "on_boot": random.choice([True, False]),
                 "on_mount": random.choice([True, False]),
                 "on_path_modified": ["/usr/local", "/etc"],
                 "on_not_empty_directory": ["/var/log"],

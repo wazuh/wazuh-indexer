@@ -97,7 +97,8 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix }}
-      previous_version: ${{ steps.previous_release.outputs.previous_version }}
+      previous_version: ${{ steps.product_versions.outputs.previous_version }}
+      current_version: ${{ steps.product_versions.outputs.current_version }}
     steps:
       - id: matrix
         run: |
@@ -108,8 +109,8 @@ jobs:
           )
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
       - uses: actions/checkout@v4
-      - id: previous_release
-        name: Get latest Wazuh release from GitHub
+      - id: product_versions
+        name: Get current version and latest Wazuh release from GitHub
         run: |
           CURRENT="$(bash packaging_scripts/product_version.sh)"
           PREVIOUS=$(curl -s https://api.github.com/repos/wazuh/wazuh/releases | jq -r '.[].tag_name' | grep -vE 'alpha|beta|rc' | sed 's/^v//' | grep -E '^4\.[0-9]+\.[0-9]+$' | \
@@ -118,6 +119,7 @@ jobs:
           echo "Current version: $CURRENT"
           echo "Latest release detected: $PREVIOUS"
           echo "previous_version=$PREVIOUS" >> $GITHUB_OUTPUT
+          echo "current_version=$CURRENT" >> $GITHUB_OUTPUT
 
   build:
     needs: [setup]
@@ -293,15 +295,24 @@ jobs:
         run: |
           sudo bash packaging_scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }}
           sudo systemctl stop wazuh-indexer
-          sudo DEBIAN_FRONTEND=noninteractive dpkg --force-confnew -i "artifacts/dist/${{ steps.package.outputs.name }}"
-
+          # Only use non-interactive and --force-confnew options for 4.14.0 (Related issue: https://github.com/wazuh/wazuh-indexer/issues/1083)
+          if [[ "${{ needs.setup.outputs.current_version }}" == "4.14.0" ]]; then
+            sudo DEBIAN_FRONTEND=noninteractive dpkg --force-confnew -i "artifacts/dist/${{ steps.package.outputs.name }}"
+          else
+            sudo dpkg -i "artifacts/dist/${{ steps.package.outputs.name }}"
+          fi
           sudo apt-get remove --purge wazuh-indexer -y
 
       - name: Test DEB package update without stopping the indexer
         if: ${{ matrix.distribution == 'deb' && (matrix.architecture == 'x64' || (needs.setup.outputs.previous_version >= '4.12' && matrix.architecture == 'arm64'))}}
         run: |
           sudo bash packaging_scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }}
-          sudo DEBIAN_FRONTEND=noninteractive dpkg --force-confnew -i "artifacts/dist/${{ steps.package.outputs.name }}"
+          # Only use non-interactive and --force-confnew options for 4.14.0 (Related issue: https://github.com/wazuh/wazuh-indexer/issues/1083)
+          if [[ "${{ needs.setup.outputs.current_version }}" == "4.14.0" ]]; then
+            sudo DEBIAN_FRONTEND=noninteractive dpkg --force-confnew -i "artifacts/dist/${{ steps.package.outputs.name }}"
+          else
+            sudo dpkg -i "artifacts/dist/${{ steps.package.outputs.name }}"
+          fi
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

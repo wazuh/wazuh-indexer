@@ -79,7 +79,7 @@ def generate_browser_extension():
             "autoupdate": random.choice([True, False]) if is_firefox else None,
             "persistent": random.choice([True, False]) if is_chrome else None,
             "from_webstore": random.choice([True, False]) if is_chrome else None,
-            "installed": str(int(time.time()) - random.randint(1000, 1000000)),
+            "installed": int(time.time()) - random.randint(1000, 1000000),
         },
         "file": {
             "hash": {
@@ -103,6 +103,7 @@ def generate_browser_extension():
         extension_data["package"]["type"] = random.choice(["extension", "webapp"])
         extension_data["package"]["path"] = f"/home/{user_id}/.mozilla/firefox/{random_string(8)}.default/extensions/{ext_id}.xpi"
         extension_data["package"]["reference"] = f"https://addons.mozilla.org/firefox/downloads/file/{random.randint(1000,9999)}/"
+        extension_data["package"]["visible"] = random.choice([True, False])
 
     elif is_safari:
         extension_data["package"]["path"] = f"/Users/{user_id}/Library/Safari/Extensions/{ext_name}.safariextz"

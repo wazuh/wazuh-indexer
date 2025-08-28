@@ -27,6 +27,12 @@
       description: >
         Indicates if the browser extension is enabled.
       example: true
+    - name: visible
+      type: boolean
+      level: custom
+      description: >
+        Indicates if the browser extension is visible in the toolbar.
+      example: true
     - name: autoupdate
       type: boolean
       level: custom

@@ -18,7 +18,7 @@ ECS_Version,Indexed,Field_Set,Field,Type,Level,Normalization,Example,Description
 8.11.0,true,package,package.installed,date,extended,,,Time when package was installed.
 8.11.0,true,package,package.name,keyword,extended,,go,Package name
 8.11.0,true,package,package.path,keyword,extended,,/usr/local/Cellar/go/1.12.9/,Path where the package is installed.
-8.11.0,true,package,package.permissions,keyword,custom,"a, r, r, a, y","[""tabs"", ""storage""]",Permissions required by the browser extension.
+8.11.0,true,package,package.permissions,keyword,custom,array,"[""tabs"", ""storage""]",Permissions required by the browser extension.
 8.11.0,true,package,package.persistent,boolean,custom,,True,Indicates if the browser extension is persistent accross tabs.
 8.11.0,true,package,package.reference,keyword,extended,,https://golang.org,Package home page or reference URL
 8.11.0,true,package,package.type,keyword,extended,,rpm,Package type

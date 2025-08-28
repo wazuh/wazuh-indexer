@@ -16,7 +16,8 @@
       example: Example Inc.
     - name: permissions
       type: keyword
-      normalize: array
+      normalize: 
+       - array
       level: custom
       description: >
         Permissions required by the browser extension.

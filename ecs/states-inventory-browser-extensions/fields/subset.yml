@@ -1,5 +1,5 @@
 ---
-name: wazuh-states-browser-extensions
+name: wazuh-states-inventory-browser-extensions
 fields:
   base:
     fields:
@@ -32,6 +32,7 @@ fields:
       persistent: {}
       from_webstore: {}
       installed: {}
+      visible: {}
   file:
     fields:
       hash:

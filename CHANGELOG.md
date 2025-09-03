@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Update OpenTelemetry to 1.67.0 ([#23363](https://github.com/opensearch-project/OpenSearch/issues/23363))
 
 ### Changed
+- Update workflow naming on 4.10.4 branch [(#1092)](https://github.com/wazuh/wazuh-indexer/pull/1092)
 
 ### Deprecated
 

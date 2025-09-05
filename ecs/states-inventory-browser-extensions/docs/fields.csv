@@ -1,0 +1,31 @@
+ECS_Version,Indexed,Field_Set,Field,Type,Level,Normalization,Example,Description
+8.11.0,true,agent,agent.host.architecture,keyword,core,,x86_64,Operating system architecture.
+8.11.0,true,agent,agent.host.ip,ip,core,array,,Host ip addresses.
+8.11.0,true,agent,agent.id,keyword,core,,8a4f500d,Unique identifier of this agent.
+8.11.0,true,agent,agent.name,keyword,core,,foo,Custom name of the agent.
+8.11.0,true,agent,agent.version,keyword,core,,6.0.0-rc2,Version of the agent.
+8.11.0,true,browser,browser.name,keyword,custom,,chrome,"Name of the browser. Valid values: chrome, chromium, opera, yandex, brave, edge, edge_beta."
+8.11.0,true,browser,browser.profile.name,keyword,custom,,default,Name of the browser profile.
+8.11.0,true,browser,browser.profile.path,keyword,custom,,/home/user/.config/google-chrome/Default,Path to the browser profile.
+8.11.0,true,browser,browser.profile.referenced,boolean,custom,,True,Indicates if the extension is referenced by the Preferences file of the browser profile.
+8.11.0,true,file,file.hash.sha256,keyword,extended,,,SHA256 hash.
+8.11.0,true,package,package.autoupdate,boolean,custom,,True,Indicates if the browser extension is set to auto-update.
+8.11.0,true,package,package.build_version,keyword,extended,,36f4f7e89dd61b0988b12ee000b98966867710cd,Build version information
+8.11.0,true,package,package.description,keyword,extended,,Open source programming language to build simple/reliable/efficient software.,Description of the package.
+8.11.0,true,package,package.enabled,boolean,custom,,True,Indicates if the browser extension is enabled.
+8.11.0,true,package,package.from_webstore,boolean,custom,,True,Indicates if the browser extension was installed from a webstore.
+8.11.0,true,package,package.id,keyword,custom,,com.example.extension,Unique identifier for the browser extension.
+8.11.0,true,package,package.installed,date,extended,,,Time when package was installed.
+8.11.0,true,package,package.name,keyword,extended,,go,Package name
+8.11.0,true,package,package.path,keyword,extended,,/usr/local/Cellar/go/1.12.9/,Path where the package is installed.
+8.11.0,true,package,package.permissions,keyword,custom,array,"[""tabs"", ""storage""]",Permissions required by the browser extension.
+8.11.0,true,package,package.persistent,boolean,custom,,True,Indicates if the browser extension is persistent accross tabs.
+8.11.0,true,package,package.reference,keyword,extended,,https://golang.org,Package home page or reference URL
+8.11.0,true,package,package.type,keyword,extended,,rpm,Package type
+8.11.0,true,package,package.vendor,keyword,custom,,Example Inc.,"Vendor, author or creator of the browser extension."
+8.11.0,true,package,package.version,keyword,extended,,1.12.9,Package version
+8.11.0,true,package,package.visible,boolean,custom,,True,Indicates if the browser extension is visible in the toolbar.
+8.11.0,true,user,user.id,keyword,core,,S-1-5-21-202424912787-2692429404-2351956786-1000,Unique identifier of the user.
+8.11.0,true,wazuh,wazuh.cluster.name,keyword,custom,,,Wazuh cluster name.
+8.11.0,true,wazuh,wazuh.cluster.node,keyword,custom,,,Wazuh cluster node name.
+8.11.0,true,wazuh,wazuh.schema.version,keyword,custom,,,Wazuh schema version.

@@ -26,7 +26,10 @@ remove_multi_fields() {
     .mappings.properties.process.properties.name.fields,
     .mappings.properties.file.properties.path.fields,
     .mappings.properties.user.properties.name.fields,
-    .mappings.properties.user.properties.full_name.fields
+    .mappings.properties.user.properties.full_name.fields,
+    .mappings.properties.process.properties.user.properties.name.fields,
+    .mappings.properties.process.properties.executable.fields,
+    .mappings.properties.process.properties.working_directory.fields
   )' "$IN_FILE" > "$OUT_FILE"
 }
 

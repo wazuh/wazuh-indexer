@@ -7,8 +7,7 @@
         "index": {
             "number_of_shards": "1",
             "number_of_replicas": "0",
-            "auto_expand_replicas": "0-1",
-            "refresh_interval": "5s",
+            "refresh_interval": "2s",
             "query.default_field": [
                 "group.name",
                 "group.description",

@@ -1,0 +1,42 @@
+{
+    "index_patterns": [
+        "wazuh-states-inventory-services*"
+    ],
+    "priority": 1,
+    "template": {
+        "settings": {
+            "index": {
+                "number_of_shards": "1",
+                "number_of_replicas": "0",
+                "refresh_interval": "2s",
+                "query.default_field": [
+                    "agent.host.architecture",
+                    "agent.host.ip",
+                    "agent.id",
+                    "agent.name",
+                    "agent.version",
+                    "service.name",
+                    "service.id",
+                    "service.description",
+                    "service.enabled",
+                    "service.restart",
+                    "service.state",
+                    "service.sub_state",
+                    "service.type",
+                    "service.start_type",
+                    "process.executable",
+                    "file.path",
+                    "log.file.path",
+                    "error.log.file.path",
+                    "process.args",
+                    "process.user.name",
+                    "process.group.name",
+                    "service.address",
+                    "wazuh.cluster.name",
+                    "wazuh.cluster.node",
+                    "wazuh.schema.version"
+                ]
+            }
+        }
+    }
+}

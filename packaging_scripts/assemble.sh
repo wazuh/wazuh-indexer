@@ -37,7 +37,7 @@ else
         "performance-analyzer" # "opensearch-performance-analyzer"
         "opensearch-reports-scheduler"
         "opensearch-security"
-        "opensearch-security-analytics"
+        # "opensearch-security-analytics" # Flagged as Trojan by some antivirus software
         "opensearch-sql-plugin" # "opensearch-sql"
     )
 fi

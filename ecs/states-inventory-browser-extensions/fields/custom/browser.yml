@@ -1,0 +1,30 @@
+---
+- name: browser
+  title: browser
+  description: > 
+    Fields for browser extensions in Wazuh states inventory.
+  fields:
+    - name: name
+      type: keyword
+      level: custom
+      description: >
+        Name of the browser. Valid values: chrome, chromium, opera, yandex, brave, edge, edge_beta.
+      example: chrome
+    - name: profile.name
+      type: keyword
+      level: custom
+      description: >
+        Name of the browser profile.
+      example: default
+    - name: profile.path
+      type: keyword
+      level: custom
+      description: >
+        Path to the browser profile.
+      example: /home/user/.config/google-chrome/Default
+    - name: profile.referenced
+      type: boolean
+      level: custom
+      description: >
+        Indicates if the extension is referenced by the Preferences file of the browser profile.
+      example: true

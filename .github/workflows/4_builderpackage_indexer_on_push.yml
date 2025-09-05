@@ -16,7 +16,7 @@ jobs:
       actions: read
       contents: read
       id-token: write
-    uses: ./.github/workflows/build.yml
+    uses: ./.github/workflows/4_builderpackage_indexer.yml
     secrets: inherit
     with:
       id: ${{ github.ref }}

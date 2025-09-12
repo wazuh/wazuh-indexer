@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Rename 6.0.0 bumper workflow [(#987)](https://github.com/wazuh/wazuh-indexer/pull/987)
 
 ### Changed
-- 
+- Update GitHub Actions versions in 6.0.0 [(#1132)](https://github.com/wazuh/wazuh-indexer/pull/1132)
 
 ### Deprecated
 -

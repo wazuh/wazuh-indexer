@@ -120,7 +120,7 @@ jobs:
       - uses: actions/checkout@v5
       - name: Resolve branches
         id: resolve
-        uses: ./.github/actions/resolve-branches
+        uses: ./.github/actions/branch_resolver
         with:
           branch: ${{ inputs.plugins_ref }}
 

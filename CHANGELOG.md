@@ -31,6 +31,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Disable multi-tenancy by default [(#1081)](https://github.com/wazuh/wazuh-indexer/pull/1081)
 - Add version to the GH Workflow names [(#1124)](https://github.com/wazuh/wazuh-indexer/pull/1124)
 - Update GitHub Actions versions in main branch [(#1131)](https://github.com/wazuh/wazuh-indexer/pull/1131)
+- Implement single branch input approach [(#1145)](https://github.com/wazuh/wazuh-indexer/pull/1145)
 
 ### Deprecated
 -

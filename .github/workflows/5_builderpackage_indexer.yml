@@ -143,6 +143,7 @@ jobs:
           echo "opensearch_version=$opensearch_version" >> "$GITHUB_OUTPUT"
   
   get-versions-wazuh-indexer-plugins:
+    needs: [resolve-branches]
     runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.plugins_version.outputs.version }}
@@ -163,6 +164,7 @@ jobs:
           echo "opensearch_version=$opensearch_version" >> "$GITHUB_OUTPUT"
         
   get-versions-wazuh-indexer-reporting:
+    needs: [resolve-branches]
     runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.reporting_version.outputs.version }}

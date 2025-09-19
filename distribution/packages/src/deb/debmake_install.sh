@@ -40,13 +40,13 @@ find "${buildroot}" -type d -exec chmod 750 {} \;
 find "${buildroot}" -type f -exec chmod 640 {} \;
 
 # Permissions for the Systemd files
-systemd_configs=()
-systemd_configs+=("${buildroot}/${service_dir}/${name}.service")
-systemd_configs+=("${buildroot}/usr/lib/sysctl.d/${name}.conf")
-systemd_configs+=("${buildroot}/usr/lib/tmpfiles.d/${name}.conf")
+systemd_files=()
+systemd_files+=("${buildroot}/${service_dir}/${name}.service")
+systemd_files+=("${buildroot}/usr/lib/sysctl.d/${name}.conf")
+systemd_files+=("${buildroot}/usr/lib/tmpfiles.d/${name}.conf")
 
 # Apply permissions
-for i in "${systemd_configs[@]}"; do
+for i in "${systemd_files[@]}"; do
 	chmod -c 0644 "$i"
 done
 

@@ -198,7 +198,6 @@ jobs:
             echo "The Wazuh Indexer version and the plugins version are compatible."
             exit 0
           fi
-
   setup:
     needs: [compatibility-check]
     name: Set up variables
@@ -228,7 +227,7 @@ jobs:
           echo "previous_version=$PREVIOUS" >> $GITHUB_OUTPUT
 
   build-wazuh-plugins:
-    needs: [compatibility-check]
+    needs: [compatibility-check, resolve-branches]
     if: ${{ needs.resolve-branches.outputs.wazuh_plugins_ref != '' }}
     strategy:
       fail-fast: false
@@ -276,7 +275,7 @@ jobs:
           if-no-files-found: error
 
   build-reporting-plugin:
-    needs: [compatibility-check]
+    needs: [compatibility-check, resolve-branches]
     if: ${{ needs.resolve-branches.outputs.reporting_plugin_ref != '' }}
     runs-on: ubuntu-24.04
     outputs:

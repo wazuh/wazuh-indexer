@@ -317,7 +317,7 @@ jobs:
           if-no-files-found: error
   
   build:
-    needs: [setup, build-wazuh-plugins, build-reporting-plugin]
+    needs: [setup, build-wazuh-plugins, build-reporting-plugin, resolve-branches]
     runs-on: ${{ matrix.architecture == 'arm64' && 'wz-linux-arm64' || 'ubuntu-24.04' }}
     strategy:
       fail-fast: false

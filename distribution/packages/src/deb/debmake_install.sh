@@ -45,7 +45,6 @@ systemd_files+=("${buildroot}/${service_dir}/${name}.service")
 systemd_files+=("${buildroot}/usr/lib/sysctl.d/${name}.conf")
 systemd_files+=("${buildroot}/usr/lib/tmpfiles.d/${name}.conf")
 
-# Apply permissions
 for i in "${systemd_files[@]}"; do
 	chmod -c 0644 "$i"
 done

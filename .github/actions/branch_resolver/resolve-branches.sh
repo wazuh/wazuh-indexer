@@ -20,7 +20,7 @@ extract_version_branch() {
     if [[ "$version" == "5.0.0" ]]; then
         echo "main"
     else
-        echo "$version" | awk -F. '{print $1"."$2}'
+        echo "$version"
     fi
 }
 

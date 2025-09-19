@@ -1,4 +1,4 @@
-name: "Changelog Verifier"
+name: (4.x) Check changelog
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
@@ -9,7 +9,7 @@ jobs:
     if: github.repository == 'wazuh/wazuh-indexer'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ github.event.pull_request.head.sha }}

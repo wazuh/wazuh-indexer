@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Force new configuration in Debian packages' upgrade test [(#1093)](https://github.com/wazuh/wazuh-indexer/pull/1093)
 - Add version to the GH Workflow names [(#1123)](https://github.com/wazuh/wazuh-indexer/pull/1123)
 - Update GitHub Actions versions in 4.14.0 [(#1130)](https://github.com/wazuh/wazuh-indexer/pull/1130)
+- Backport changes from main branch to the packages scripts [(#1143)](https://github.com/wazuh/wazuh-indexer/pull/1143)
 
 ### Deprecated
 -

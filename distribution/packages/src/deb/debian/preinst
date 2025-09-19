@@ -17,15 +17,17 @@ state_file=${config_dir}/.was_active
 
 echo "Running Wazuh Indexer Pre-Installation Script"
 
-# Stop existing service
-if command -v systemctl >/dev/null && systemctl is-active ${name}.service >/dev/null; then
-    echo "Stop existing ${name}.service"
-    systemctl --no-reload stop ${name}.service
+# Stop existing ${name}.service
+echo "Stop existing ${name}.service"
+if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1 && systemctl is-active ${name}.service > /dev/null 2>&1; then
+    systemctl --no-reload stop ${name}.service > /dev/null 2>&1
     touch ${state_file}
-fi
-if command -v systemctl >/dev/null && systemctl is-active ${name}-performance-analyzer.service >/dev/null; then
-    echo "Stop existing ${name}-performance-analyzer.service"
-    systemctl --no-reload stop ${name}-performance-analyzer.service
+elif command -v service > /dev/null 2>&1 && service ${name} status > /dev/null 2>&1; then
+    service ${name} stop > /dev/null 2>&1
+    touch ${state_file}
+elif command -v /etc/init.d/${name} > /dev/null 2>&1 && /etc/init.d/${name} status > /dev/null 2>&1; then
+    /etc/init.d/${name} stop > /dev/null 2>&1
+    touch ${state_file}
 fi
 
 # Create user and group if they do not already exist.

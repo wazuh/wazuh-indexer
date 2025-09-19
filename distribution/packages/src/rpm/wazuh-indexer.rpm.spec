@@ -163,15 +163,19 @@ set -e
 if [ "$1" -gt 1 ]; then
     echo "Running upgrade pre-script"
 
-    # Mark if service is running
-    if command -v systemctl >/dev/null && systemctl is-active --quiet %{name}.service; then
-        echo "Service is active, marking it for restart"
+     # Stop wazuh-indexer service and mark if service is running
+    if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1 && systemctl is-active %{name}.service > /dev/null 2>&1; then
+        echo "Stop existing %{name}.service"
+        systemctl --no-reload stop %{name}.service > /dev/null 2>&1
         touch %{state_file}
-
-        echo "Stopping service before upgrade"
-        systemctl stop %{name}.service
-    else
-        echo "Service is inactive; nothing to mark"
+    elif command -v service > /dev/null 2>&1 && service %{name} status > /dev/null 2>&1; then
+        echo "Stop existing %{name} service"
+        service %{name} stop > /dev/null 2>&1
+        touch %{state_file}
+    elif command -v /etc/init.d/%{name} > /dev/null 2>&1 && /etc/init.d/%{name} status > /dev/null 2>&1; then
+        echo "Stop existing %{name} service"
+        /etc/init.d/%{name} stop > /dev/null 2>&1
+        touch %{state_file}
     fi
 fi
 
@@ -211,22 +215,60 @@ exit 0
 %posttrans
 set -e
 
-# Reload systemd
-command -v systemctl > /dev/null && systemctl daemon-reload
-command -v systemctl > /dev/null && systemctl restart systemd-sysctl.service
-command -v systemd-tmpfiles > /dev/null && systemd-tmpfiles --create %{name}.conf
+# Reload systemctl daemon
+if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
+    systemctl daemon-reload > /dev/null 2>&1
+fi
+# Reload other configs
+if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
+    systemctl restart systemd-sysctl.service || true
+fi
+
+if command -v systemd-tmpfiles > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
+    systemd-tmpfiles --create %{name}.conf /dev/null 2>&1
+fi
 
 # Restart if previously active
 if [ -f %{state_file} ]; then
     echo "Restarting %{name}.service because it was active before upgrade"
     rm -f %{state_file}
-    command -v systemctl > /dev/null && systemctl restart %{name}.service
+    if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
+        systemctl restart %{name}.service > /dev/null 2>&1
+    elif command -v service > /dev/null 2>&1; then
+        service %{name} restart > /dev/null 2>&1
+    elif command -v /etc/init.d/%{name} > /dev/null 2>&1; then
+        /etc/init.d/%{name} restart > /dev/null 2>&1
 else
-    echo "### NOT starting on installation, please execute the following statements to configure %{name} service to start automatically using systemd"
-    echo " sudo systemctl daemon-reload"
-    echo " sudo systemctl enable %{name}.service"
-    echo "### You can start the %{name} service by executing"
-    echo " sudo systemctl start %{name}.service"
+      # Messages
+    if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
+        echo "### NOT starting on installation, please execute the following statements to configure %{name} service to start automatically using systemd"
+        echo " sudo systemctl daemon-reload"
+        echo " sudo systemctl enable %{name}.service"
+        echo "### You can start %{name} service by executing"
+        echo " sudo systemctl start %{name}.service"
+    else
+        if command -v chkconfig > /dev/null 2>&1; then
+            echo "### NOT starting on installation, please execute the following statements to configure %{name} service to start automatically using chkconfig"
+            echo " sudo chkconfig --add %{name}"
+        elif command -v update-rc.d > /dev/null 2>&1; then
+            echo "### NOT starting on installation, please execute the following statements to configure %{name} service to start automatically using update-rc.d"
+            echo " sudo update-rc.d %{name} defaults 95 10"
+        fi
+        if command -v service > /dev/null 2>&1; then
+            echo "### You can start %{name} service by executing"
+            echo " sudo service %{name} start"
+        elif command -v /etc/init.d/%{name} > /dev/null 2>&1; then
+            echo "### You can start %{name} service by executing"
+            echo " sudo /etc/init.d/%{name} start"
+        fi
+    fi
+    if ! [ -d %{config_dir}/certs ] && [ -f %{product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh ]; then
+        echo "### Installing %{name} demo certificates in %{config_dir}"
+        echo " If you are using a custom certificates path, ignore this message"
+        echo " See demo certs creation log in %{log_dir}/install_demo_certificates.log"
+        bash %{product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh > %{log_dir}/install_demo_certificates.log 2>&1
+        yes | /usr/share/%{name}/jdk/bin/keytool -trustcacerts -keystore /usr/share/%{name}/jdk/lib/security/cacerts -importcert -alias wazuh-root-ca -file %{config_dir}/certs/root-ca.pem > /dev/null 2>&1
+    fi
 fi
 
 # Remove legacy VERSION file on upgrade
@@ -239,13 +281,19 @@ exit 0
 %preun
 set -e
 
-if command -v systemctl >/dev/null && systemctl is-active %{name}.service >/dev/null; then
-    echo "Stop existing %{name}.service"
-    systemctl --no-reload stop %{name}.service
-fi
-if command -v systemctl >/dev/null && systemctl is-active %{name}-performance-analyzer.service >/dev/null; then
-    echo "Stop existing %{name}-performance-analyzer.service"
-    systemctl --no-reload stop %{name}-performance-analyzer.service
+# Stop the services to remove the package
+if [ $1 = 0 ]; then
+    # Stop wazuh-indexer service
+    if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1 && systemctl is-active %{name}.service > /dev/null 2>&1; then
+        echo "Stop existing %{name}.service"
+        systemctl --no-reload stop %{name}.service > /dev/null 2>&1
+    elif command -v service > /dev/null 2>&1 && service %{name} status > /dev/null 2>&1; then
+        echo "Stop existing %{name} service"
+        service %{name} stop > /dev/null 2>&1
+    elif command -v /etc/init.d/%{name} > /dev/null 2>&1 && /etc/init.d/%{name} status > /dev/null 2>&1; then
+        echo "Stop existing %{name} service"
+        /etc/init.d/%{name} stop > /dev/null 2>&1
+    fi
 fi
 
 exit 0

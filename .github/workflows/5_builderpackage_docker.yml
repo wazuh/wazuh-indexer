@@ -90,8 +90,8 @@ jobs:
       distribution: '[ "tar" ]'
       architecture: '[ "x64" ]'
       id: ${{ inputs.id }}
-      wazuh_plugins_ref: ${{ inputs.wazuh_plugins_ref }}
-      reporting_plugin_ref: ${{ inputs.reporting_plugin_ref }}
+      wazuh_plugins_ref: ${{ inputs.plugins_ref }}
+      reporting_plugin_ref: ${{ inputs.plugins_ref }}
     secrets: inherit
 
   build-and-push-docker-image:

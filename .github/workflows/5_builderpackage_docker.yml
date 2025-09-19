@@ -21,13 +21,8 @@ on:
         description: "ID used to identify the workflow uniquely."
         type: string
         required: false
-      wazuh_plugins_ref:
-        description: "Branch, commit or tag for the wazuh-indexer-plugins repository."
-        type: string
-        default: "main"
-        required: false
-      reporting_plugin_ref:
-        description: "Branch, commit or tag for the wazuh-indexer-reporting repository."
+      plugins_ref:
+        description: "Git ref (branch/tag) to use for all wazuh-indexer plugins"
         type: string
         default: "main"
         required: false
@@ -46,13 +41,8 @@ on:
         description: "ID used to identify the workflow uniquely."
         type: string
         required: false
-      wazuh_plugins_ref:
-        description: "Branch, commit or tag for the wazuh-indexer-plugins repository."
-        type: string
-        default: "main"
-        required: false
-      reporting_plugin_ref:
-        description: "Branch, commit or tag for the wazuh-indexer-reporting repository."
+      plugins_ref:
+        description: "Git ref (branch/tag) to use for all wazuh-indexer plugins"
         type: string
         default: "main"
         required: false

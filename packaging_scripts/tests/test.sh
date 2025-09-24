@@ -1,17 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-set -euo pipefail
-
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-COMPOSE_FILE="$ROOT_DIR/__tests__/test.yml"
+COMPOSE_FILE="$ROOT_DIR/test/compose.yml"
 
-# Avoid invalid image tag due to underscores in __tests__ dir
+# Avoid invalid image tag due to underscores in test dir
 export COMPOSE_PROJECT_NAME=tests
 
 # Available services (single): awk/textual fallback
 SERVICES=(tests-awk)
-SERVICE_LABELS=(awk)
 
 usage() {
   cat <<EOF
@@ -78,8 +75,8 @@ for svc in "${SELECTED_SERVICES[@]}"; do
   echo "==> Running bats in $svc"
   set +e
   # Working dir inside container is /workspace/
-  # The suite lives at /merge_opensearch_yml.bats
-  "${COMPOSE[@]}" -f "$COMPOSE_FILE" run --rm "$svc" bats merge_opensearch_yml.bats "${BATS_ARGS[@]}"
+  # The suite lives at /merge_config.bats
+  "${COMPOSE[@]}" -f "$COMPOSE_FILE" run --rm "$svc" bats merge_config.bats "${BATS_ARGS[@]}"
   rc=$?
   set -e
   if [ $rc -ne 0 ]; then

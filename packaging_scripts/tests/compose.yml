@@ -1,10 +1,10 @@
 services:
 
-  tests-awk:
+  wazuh-indexer-upgrade-config-merge-tests:
     build:
       context: ../../
-      dockerfile: dev-tools/__tests__/Dockerfile.awk
-    working_dir: /workspace/dev-tools/__tests__
+      dockerfile: packaging_scripts/tests/Dockerfile
+    working_dir: /workspace/packaging_scripts/tests
     volumes:
       # Mount repo root at /workspace
       - ../..:/workspace:rw

@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Add index definition for the new index `wazuh-states-inventory-services` [(#1057)](https://github.com/wazuh/wazuh-indexer/pull/1057)
 - Add index definition for the new index `wazuh-states-inventory-browser-extensions` [(#1058)](https://github.com/wazuh/wazuh-indexer/pull/1058)
 - Add default configuration to allow the AI assistant deployment from the UI [(#1077)](https://github.com/wazuh/wazuh-indexer/pull/1077)
-- Handle new default configuration of opensearch.yml file in upgrades [(#1153)](https://github.com/wazuh/wazuh-indexer/pull/1153)
+- Add automatic configuration merge on upgrade [(#1153)](https://github.com/wazuh/wazuh-indexer/pull/1153)
 
 ### Dependencies
 -

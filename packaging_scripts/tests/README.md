@@ -1,13 +1,13 @@
-# Wazuh Indexer Build-Packages Tests (Containerized)
+# Wazuh Indexer packages upgrade tests
 
-This folder contains a containerized test environment for the post‑install config merge helper used by Wazuh Indexer packages.
+This folder contains a containerized test environment for the post‑install configuration merge script used by Wazuh Indexer packages.
 
 ## What’s Included
 
-- `Dockerfile.awk`: Minimal Debian image with test deps (bats, GNU tools).
-- `test.yml`: Docker Compose file to build and run the tests.
-- `merge_opensearch_yml.bats`: Bats test suite covering merge behavior.
-- `run-bats.sh`: Host runner that builds the image and executes the suite in a container (no local deps required).
+- `Dockerfile`: Minimal Debian image with test deps (bats, GNU tools).
+- `compose.yml`: Docker Compose file to build and run the tests.
+- `merge_config.bats`: Bats test suite covering merge behavior.
+- `test.sh`: Host runner that builds the image and executes the suite in a container (no local deps required).
 
 ## Prerequisites
 
@@ -19,24 +19,24 @@ This folder contains a containerized test environment for the post‑install con
 From the `wazuh-indexer/dev-tools/__tests_` directory:
 
 ```sh
-./run-bats.sh          # run the suite (awk service)
-./run-bats.sh -s awk   # only fallback awk/textual
+./test.sh          # run the suite (awk service)
+./test.sh -s awk   # only fallback awk/textual
 ```
 
 Examples:
 
 - Filter tests by name pattern:
   ```sh
-  ./run-bats.sh -f 'nested block'
+  ./test.sh -f 'nested block'
   ```
 - Show test timings:
   ```sh
-  ./run-bats.sh -t
+  ./test.sh -t
   ```
 
 The script will:
 - Build the required test images.
-- Run the Bats suite inside the selected service(s) using `test.yml`.
+- Run the Bats suite inside the selected service(s) using `compose.yml`.
 
 ## What The Suite Verifies
 
@@ -67,7 +67,7 @@ The script will:
 
 ## File Layout
 
-- `./Dockerfile.awk`
-- `./test.yml`
-- `./merge_opensearch_yml.bats`
-- `./run-bats.sh`
+- `./Dockerfile`
+- `./compose.yml`
+- `./merge_config.bats`
+- `./test.sh`

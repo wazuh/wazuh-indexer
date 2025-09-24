@@ -207,15 +207,15 @@ if ! grep -q '## OpenSearch Performance Analyzer' %{config_dir}/jvm.options; the
 fi
 
 # Add new settings to configuration files
-# The merge-config.sh script merges new default settings into existing configuration files in ${config_dir},
+# The merge-config.sh script merges new default settings into existing configuration files in %{config_dir},
 # ensuring user customizations are preserved during upgrades. Errors are tolerated to avoid breaking the upgrade
 # process if merging fails, and details are logged for troubleshooting.
-if [ -f "${product_dir}/bin/merge-config.sh" ] && [ -x "${product_dir}/bin/merge-config.sh" ]; then
+if [ -f "%{product_dir}/bin/merge-config.sh" ] && [ -x "%{product_dir}/bin/merge-config.sh" ]; then
     echo "Running automatic configuration update script"
-    if ! "${product_dir}/bin/merge-config.sh" --config-dir "${config_dir}" > "${log_dir}/merge-config.log" 2>&1; then
-        echo "Warning: merge-config.sh failed. See ${log_dir}/merge-config.log for details."
+    if ! "%{product_dir}/bin/merge-config.sh" --config-dir "%{config_dir}" > "%{log_dir}/merge-config.log" 2>&1; then
+        echo "Warning: merge-config.sh failed. See %{log_dir}/merge-config.log for details."
     fi
-    grep -i "INFO" "${log_dir}/merge-config.log" || true
+    grep -i "INFO" "%{log_dir}/merge-config.log" || true
 fi
 
 exit 0

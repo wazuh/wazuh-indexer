@@ -34,6 +34,12 @@ DEFAULT_FILE_MODE="0640"
 BACKUP_TIMESTAMP_FORMAT="%Y%m%dT%H%M%SZ"
 
 # ---------------------------- Logging utils ---------------------------------
+# log_debug
+#   Emit a debug message to stderr. Useful for detailed traces.
+#   Example:
+#     log_debug "Merging defaults into /etc/wazuh-indexer/opensearch.yml"
+log_debug()  { echo "[DEBUG] $*" 1>&2; }
+
 # log_info
 #   Emit an informational message to stderr. Useful for non-critical traces.
 #   Example:
@@ -47,12 +53,13 @@ log_info()  { echo "[INFO]  $*" 1>&2; }
 #     log_warn "Ignoring unknown argument: --foo"
 log_warn()  { echo "[WARN]  $*" 1>&2; }
 
+
 # log_error
 #   Emit an error to stderr. Does NOT terminate the script; intended to record
 #   non-critical failures that should not abort the merge.
 #   Example:
 #     log_error "Could not set ownership; continuing"
-log_error() { echo "[ERROR] $*" 1>&2; }
+log_error() { echo "[ERROR]  $*" 1>&2; }
 
 # usage
 #   Show script usage help.
@@ -111,13 +118,13 @@ backup_config_file() {
   ts=$(date -u +"$BACKUP_TIMESTAMP_FORMAT")
   dest="${src}.bak.${ts}"
   if cp -p "$src" "$dest" 2>/dev/null; then
-    log_info "Created backup: $dest"
+    log_debug "Backed up file $dest"
   else
     # Try without -p as a fallback (busybox/limited cp implementations)
     if cp "$src" "$dest" 2>/dev/null; then
-      log_info "Created backup: $dest"
+      log_debug "Backed up file $dest"
     else
-      log_error "Failed to create backup at $dest"
+      log_error "Failed to create backup file $dest"
     fi
   fi
 }
@@ -171,6 +178,7 @@ create_tmp_workspace() {
 #
 #  Example:
 #   trap cleanup EXIT INT TERM HUP
+# shellcheck disable=SC2329
 cleanup() {
   if [ "${TMP_DIR:-}" != "" ] && [ -d "$TMP_DIR" ]; then
     rm -rf "$TMP_DIR" || true
@@ -293,6 +301,7 @@ append_missing_top_level_blocks() {
   ' "$2"
 
   if [ -s "$APPEND_FILE" ]; then
+    log_info "New settings added to '$1'"
     echo "# --- Added new default settings on $(date -u +"%Y-%m-%dT%H:%M:%SZ") ---" >> "$1"
     cat "$APPEND_FILE" >> "$1"
     ensure_permissions "$1"
@@ -356,7 +365,7 @@ textual_additive_merge() {
     while IFS= read -r top_level_key; do
       # Only process keys that exist in destination as well
       if grep -q "^${top_level_key}:[[:space:]]*" "$1"; then
-        log_info "[textual-merge] Processing existing top-level key: $top_level_key"
+        log_debug "[textual-merge] Processing existing top-level key: $top_level_key"
         target_key_regex=$(printf '%s' "$top_level_key" | sed -E 's/([][(){}.^$|*+?\\])/\\\\\1/g')
         # Extract the block from the new file (without the "key:" header)
         awk -v target_key_regex="$target_key_regex" '
@@ -372,11 +381,11 @@ textual_additive_merge() {
           # If the new block is a block-style list (lines beginning with '-')
           # skip textual injection and let the dedicated list merge handle it
           if grep -qE '^[[:space:]]*-[[:space:]]+' "$TMP_DIR/block.new"; then
-            log_info "[textual-merge] Skipping list-style block for '$top_level_key' (handled by list merge)."
+            log_debug "[textual-merge] Skipping list-style block for '$top_level_key' (handled by list merge)."
             continue
           fi
-          log_info "[textual-merge] block.new for '$top_level_key':"; sed -n '1,50p' "$TMP_DIR/block.new" 1>&2 || true
-          log_info "[textual-merge] Found new nested lines for '$top_level_key', injecting if absent."
+          log_debug "[textual-merge] block.new for '$top_level_key':"; sed -n '1,50p' "$TMP_DIR/block.new" 1>&2 || true
+          log_debug "[textual-merge] Found new nested lines for '$top_level_key', injecting if absent."
           # Insert missing lines from the new block just after the header in
           # the destination, avoiding duplicates and preserving order
           awk -v target_key_regex="$target_key_regex" -v new_block_path="$TMP_DIR/block.new" -v destination_path="$1" '
@@ -412,7 +421,7 @@ textual_additive_merge() {
           ' "$1" > "$TMP_DIR/target.tmp" 2>/dev/null || true
           if [ -s "$TMP_DIR/target.tmp" ]; then
             mv "$TMP_DIR/target.tmp" "$1"; ensure_permissions "$1"
-            log_info "[textual-merge] Injected nested lines for '$top_level_key'."
+            log_debug "[textual-merge] Injected nested lines for '$top_level_key'."
           fi
         fi
       fi
@@ -453,7 +462,7 @@ merge_inline_flow_arrays() {
     function doesLineStartFlowStyleArrayForKey(lineText, escapedKeyRegex, unusedMatchVar) {
       return (lineText ~ ("^" escapedKeyRegex ":[[:space:]]*\\["))
     }
-    function escapeLiteralToAwkRegexPattern(literalText, tempWorkingText) {
+    function escape_literal_to_awk_regex_pattern(literalText, tempWorkingText) {
       tempWorkingText = literalText
       gsub(/([][(){}.^$|*+?\\])/ , "\\\\&", tempWorkingText)
       return tempWorkingText
@@ -491,7 +500,7 @@ merge_inline_flow_arrays() {
       delete destinationNormalizedTokenMap
       destinationRawTokenArray[0] = 0
 
-      escapedKeyRegexPattern = escapeLiteralToAwkRegexPattern(targetKeyName)
+      escapedKeyRegexPattern = escape_literal_to_awk_regex_pattern(targetKeyName)
       captureActiveFlag = 0
       bracketDepthCounter = 0
       accumulatedBuffer = ""
@@ -548,7 +557,7 @@ merge_inline_flow_arrays() {
       delete destinationNormalizedTokenMap
       destinationRawTokenArray[0] = 0
 
-      escapedKeyRegexPattern = escapeLiteralToAwkRegexPattern(targetKeyName)
+      escapedKeyRegexPattern = escape_literal_to_awk_regex_pattern(targetKeyName)
       totalLineCount = 0
       while ((getline currentLineText < filePath) > 0) {
       fileLineArray[++totalLineCount] = currentLineText
@@ -626,7 +635,7 @@ merge_inline_flow_arrays() {
       # Precompute replacements for each candidate key
       for (ki=1; ki<=keysN; ki++) {
         key = keys[ki]
-        key_re = escapeLiteralToAwkRegexPattern(key)
+        key_re = escape_literal_to_awk_regex_pattern(key)
         # Locate range [start,end] in destination for this key
         start = end = 0
         for (i=1; i<=N; i++) {
@@ -688,7 +697,7 @@ merge_inline_flow_arrays() {
   if [ -s "$TMP_DIR/arrays.merged.tmp" ]; then
     mv "$TMP_DIR/arrays.merged.tmp" "$1"
     ensure_permissions "$1"
-    log_info "[array-merge] Merged inline flow arrays from packaged defaults."
+    log_debug "[array-merge] Merged inline flow arrays from packaged defaults."
   fi
 }
 
@@ -796,7 +805,7 @@ merge_block_lists_preserve_style() {
       if (original_text ~ /^\x27.*\x27$/) return substr(original_text, 2, length(original_text)-2)
       return original_text
     }
-    function escapeLiteralToAwkRegexPatterngex_for_awk(literal_text) {
+    function escape_literal_to_awk_regex_pattern(literal_text) {
       gsub(/([][(){}.^$|*+?\\])/, "\\\\&", literal_text)
       return literal_text
     }
@@ -898,7 +907,7 @@ merge_block_lists_preserve_style() {
       delete new_raw_item_array
       delete new_normalized_item_map
       new_raw_item_array[0] = 0
-      key_regex_literal = escapeLiteralToAwkRegexPatterngex_for_awk(target_key_name)
+      key_regex_literal = escape_literal_to_awk_regex_pattern(target_key_name)
 
       # Block style attempt
       header_line_index = 0
@@ -1060,7 +1069,7 @@ merge_block_lists_preserve_style() {
   if [ -s "$TMP_DIR/blocklists.merged.tmp" ]; then
     mv "$TMP_DIR/blocklists.merged.tmp" "$1"
     ensure_permissions "$1"
-    log_info "[list-merge] Merged block-style lists preserving '-' style."
+    log_debug "[list-merge] Merged block-style lists preserving '-' style."
   fi
 }
 
@@ -1251,7 +1260,7 @@ merge_flow_to_block_via_textual "$TARGET_PATH" "$NEW_PATH"
 
 # Always remove the packaged new config file once handled (idempotent)
 if [ -f "$NEW_PATH" ]; then
-  rm -f "$NEW_PATH" || true
+  rm -f "$NEW_PATH"
 fi
 
 exit 0

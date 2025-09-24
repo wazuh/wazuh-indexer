@@ -1,0 +1,12 @@
+services:
+
+  tests-awk:
+    build:
+      context: ../../
+      dockerfile: dev-tools/__tests__/Dockerfile.awk
+    working_dir: /workspace/dev-tools/__tests__
+    volumes:
+      # Mount repo root at /workspace
+      - ../..:/workspace:rw
+
+    # command will be provided by `docker compose run`

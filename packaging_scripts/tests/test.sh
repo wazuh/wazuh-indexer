@@ -2,13 +2,13 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-COMPOSE_FILE="$ROOT_DIR/test/compose.yml"
+COMPOSE_FILE="$ROOT_DIR/tests/compose.yml"
 
 # Avoid invalid image tag due to underscores in test dir
 export COMPOSE_PROJECT_NAME=tests
 
 # Available services (single): awk/textual fallback
-SERVICES=(tests-awk)
+SERVICES=(wazuh-indexer-upgrade-config-merge-tests)
 
 usage() {
   cat <<EOF
@@ -44,12 +44,12 @@ while (( $# )); do
     -s|--service)
       shift
       case "${1:-}" in
-        awk) SELECTED_SERVICES+=(tests-awk) ;;
+        awk) SELECTED_SERVICES+=(wazuh-indexer-upgrade-config-merge-tests) ;;
         *) echo "Invalid service: ${1:-}" >&2; usage; exit 2 ;;
       esac
       shift ;;
     --list)
-      printf "%-14s %s\n" awk tests-awk
+      printf "%-14s %s\n" awk wazuh-indexer-upgrade-config-merge-tests
       exit 0 ;;
     --)
       shift

@@ -207,8 +207,8 @@ if ! grep -q '## OpenSearch Performance Analyzer' %{config_dir}/jvm.options; the
 fi
 
 # Add new settings to configuration files
-if [ -x %{product_dir}/bin/merge_config.sh ]; then
-  %{product_dir}/bin/merge_config.sh --config-dir "%{config_dir}" >/dev/null 2>&1 || true
+if [ -x %{product_dir}/bin/merge-config.sh ]; then
+  %{product_dir}/bin/merge-config.sh --config-dir "%{config_dir}" >/dev/null 2>&1 || true
 fi
 
 exit 0

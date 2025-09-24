@@ -2,7 +2,7 @@
 
 setup() {
   REPO_DIR="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
-  MERGE_SCRIPT="$REPO_DIR/distribution/src/bin/merge_config.sh"
+  MERGE_SCRIPT="$REPO_DIR/distribution/src/bin/merge-config.sh"
   TMPDIR_TEST=$(mktemp -d)
   CONFIG_DIR="$TMPDIR_TEST/etc/wazuh-indexer"
   mkdir -p "$CONFIG_DIR"

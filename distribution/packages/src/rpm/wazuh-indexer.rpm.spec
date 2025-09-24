@@ -206,6 +206,11 @@ if ! grep -q '## OpenSearch Performance Analyzer' %{config_dir}/jvm.options; the
    echo "--add-opens=jdk.attach/sun.tools.attach=ALL-UNNAMED" >> %{config_dir}/jvm.options
 fi
 
+# Merge any new default settings from packaged opensearch_dashboards.yml
+if [ -x %{product_dir}/bin/merge_opensearch_yml.sh ]; then
+  %{product_dir}/bin/merge_opensearch_yml.sh --config-dir "%{config_dir}" >/dev/null 2>&1 || true
+fi
+
 exit 0
 
 %posttrans

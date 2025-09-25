@@ -206,6 +206,18 @@ if ! grep -q '## OpenSearch Performance Analyzer' %{config_dir}/jvm.options; the
    echo "--add-opens=jdk.attach/sun.tools.attach=ALL-UNNAMED" >> %{config_dir}/jvm.options
 fi
 
+# Add new settings to configuration files
+# The merge-config.sh script merges new default settings into existing configuration files in %{config_dir},
+# ensuring user customizations are preserved during upgrades. Errors are tolerated to avoid breaking the upgrade
+# process if merging fails, and details are logged for troubleshooting.
+if [ -f "%{product_dir}/bin/merge-config.sh" ] && [ -x "%{product_dir}/bin/merge-config.sh" ]; then
+    echo "Running automatic configuration update script"
+    if ! "%{product_dir}/bin/merge-config.sh" --config-dir "%{config_dir}" > "%{log_dir}/merge-config.log" 2>&1; then
+        echo "Warning: merge-config.sh failed. See %{log_dir}/merge-config.log for details."
+    fi
+    grep -i "INFO" "%{log_dir}/merge-config.log" || true
+fi
+
 exit 0
 
 %posttrans
@@ -299,6 +311,8 @@ exit 0
 - More info: https://documentation.wazuh.com/current/release-notes/release-4.14.1.html
 * Wed Oct 29 2025 support <info@wazuh.com> - 4.14.0
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-14-0.html
+* Wed Sep 24 2025 support <info@wazuh.com> - 4.13.1
+- More info: https://documentation.wazuh.com/current/release-notes/release-4.13.1.html
 * Thu Sep 18 2025 support <info@wazuh.com> - 4.13.0
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-13-0.html
 * Wed May 07 2025 support <info@wazuh.com> - 4.12.0

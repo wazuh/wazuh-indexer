@@ -15,6 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Changed
 - Reorganize ecs folder [(#899)](https://github.com/wazuh/wazuh-indexer/pull/899)
+- Add agent.* and wazuh.* fields to users and groups ECS mappings [(#954)](https://github.com/wazuh/wazuh-indexer/pull/954)
+- Update `user.password` mapping [(#1026)](https://github.com/wazuh/wazuh-indexer/pull/1026)
 - Update workflow naming on 4.14.0 branch [(#1095)](https://github.com/wazuh/wazuh-indexer/pull/1095)
 - Add version to the GH Workflow names [(#1123)](https://github.com/wazuh/wazuh-indexer/pull/1123)
 - Update GitHub Actions versions in 4.14.0 [(#1130)](https://github.com/wazuh/wazuh-indexer/pull/1130)

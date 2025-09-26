@@ -295,8 +295,6 @@ exit 0
 %ghost %attr(440, %{name}, %{name}) %{config_dir}/.was_active
 
 %changelog
-* Wed Oct 29 2025 support <info@wazuh.com> - 4.99.0
-- More info: https://documentation.wazuh.com/current/release-notes/release-4.99.0.html
 * Wed Oct 29 2025 support <info@wazuh.com> - 4.14.0
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-14-0.html
 * Wed Sep 24 2025 support <info@wazuh.com> - 4.13.1

@@ -13,10 +13,10 @@
 *.txt text=auto
 
 # Image
-*.ai filter=lfs diff=lfs merge=lfs -text
-*.gif filter=lfs diff=lfs merge=lfs -text
+*.ai -text
+*.gif -text
 *.jpg -text
 *.jpeg -text
-*.png filter=lfs diff=lfs merge=lfs -text
-*.psd filter=lfs diff=lfs merge=lfs -text
-*.tga filter=lfs diff=lfs merge=lfs -text
+*.png -text
+*.psd -text
+*.tga -text

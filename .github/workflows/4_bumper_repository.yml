@@ -112,6 +112,7 @@ jobs:
 
       - name: Commit and push changes
         run: |
+          git status
           git add .
           git commit -m "feat: bump ${{ github.ref_name }}"
           git push origin ${{ steps.vars.outputs.branch_name }}

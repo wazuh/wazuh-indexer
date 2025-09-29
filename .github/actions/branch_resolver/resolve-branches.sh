@@ -17,11 +17,7 @@ declare -A VERSION
 
 extract_version_branch() {
     local version="$1"
-    if [[ "$version" == "5.0.0" ]]; then
-        echo "main"
-    else
-        echo "$version"
-    fi
+    [ "$version" == "5.0.0" ] && echo "main" || echo "$version"
 }
 
 navigate_to_project_root() {
@@ -49,12 +45,11 @@ check_branch_existence() {
         echo "Checking $repo for branch '$BRANCH'..." >&2
         if git ls-remote --exit-code --heads "$url" "$BRANCH" &>/dev/null; then
             BRANCH_EXISTS["$repo"]=1
-            local tmpdir
-            tmpdir="$(mktemp -d)"
-            git clone --depth 1 --branch "$BRANCH" "$url" "$tmpdir" &>/dev/null
-            local version
-            version=$(jq -r '.version' "$tmpdir/VERSION.json" 2>/dev/null)
-            rm -rf "$tmpdir"
+            # Fetch VERSION.json directly from GitHub raw URL
+            local owner version_json_url version
+            owner="wazuh"
+            version_json_url="https://raw.githubusercontent.com/${owner}/${repo}/${BRANCH}/VERSION.json"
+            version=$(curl -sfL "$version_json_url" | jq -r '.version' 2>/dev/null)
             if [[ -n "$version" && "$version" != "null" ]]; then
                 VERSION["$repo"]="$version"
                 echo "    Found branch and version: $version" >&2

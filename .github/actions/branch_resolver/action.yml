@@ -20,4 +20,3 @@ runs:
         echo "wazuh_indexer_plugins_branch=$WAZUH_INDEXER_PLUGINS_BRANCH" >> $GITHUB_OUTPUT
         echo "wazuh_indexer_reporting_branch=$WAZUH_INDEXER_REPORTING_BRANCH" >> $GITHUB_OUTPUT
       shell: bash
-

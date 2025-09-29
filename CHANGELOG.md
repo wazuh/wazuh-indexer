@@ -25,10 +25,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 -
 
 ### Removed
--   
+- 
 
 ### Fixed
--
+- Fix `lfs` related errors on repository bumper workflow [(#1168)](https://github.com/wazuh/wazuh-indexer/pull/1168)
 
 ### Security
 - Migrate 4.14.0 to OpenSearch 2.19.3 [(#1050)](https://github.com/wazuh/wazuh-indexer/pull/1050)

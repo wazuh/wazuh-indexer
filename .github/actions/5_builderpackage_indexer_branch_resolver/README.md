@@ -16,7 +16,7 @@ When working with multiple related repositories, it's common to have issues matc
 
 ```yaml
 jobs:
-  resolve-branches:
+  branches:
     runs-on: ubuntu-24.04
     outputs:
       wazuh_plugins_ref: ${{ steps.resolve.outputs.wazuh_indexer_plugins_branch }}
@@ -26,7 +26,7 @@ jobs:
       
       - name: Resolve branches
         id: resolve
-        uses: ./.github/actions/branch_resolver
+        uses: ./.github/actions/5_builderpackage_indexer_branch_resolver
         with:
           branch: ${{ github.ref_name }}
       
@@ -36,13 +36,13 @@ jobs:
           echo "Reporting branch: ${{ steps.resolve.outputs.wazuh_indexer_reporting_branch }}"
 
   build-with-resolved-branches:
-    needs: [resolve-branches]
+    needs: [branches]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
         with:
           repository: wazuh/wazuh-indexer-plugins
-          ref: ${{ needs.resolve-branches.outputs.wazuh_plugins_ref }}
+          ref: ${{ needs.branches.outputs.wazuh_plugins_ref }}
       
       - name: Build plugins
         run: ./gradlew build
@@ -53,7 +53,7 @@ jobs:
 You can also run the underlying script directly from the command line:
 
 ```bash
-bash .github/actions/branch_resolver/resolve-branches.sh feature-branch
+bash .github/actions/5_builderpackage_indexer_branch_resolver/resolve_branches.sh feature-branch
 ```
 
 ## Inputs
@@ -157,9 +157,9 @@ All dependencies are available in standard GitHub Actions runners.
 ## Files
 
 ```
-.github/actions/branch_resolver/
+.github/actions/5_builderpackage_indexer_branch_resolver/
 ├── action.yml              # GitHub Action metadata
-├── resolve-branches.sh     # Core branch resolution script
+├── resolve_branches.sh     # Core branch resolution script
 └── README.md              # This documentation
 ```
 
@@ -182,7 +182,7 @@ Error messages are sent to stderr and will appear in the GitHub Actions log.
 
 ## Customization
 
-To add more dependent repositories, edit `resolve-branches.sh`:
+To add more dependent repositories, edit `resolve_branches.sh`:
 
 ```bash
 REPOS=(
@@ -213,7 +213,7 @@ outputs:
 To see detailed output when running locally:
 
 ```bash
-bash -x .github/actions/branch_resolver/resolve-branches.sh feature-branch
+bash -x .github/actions/5_builderpackage_indexer_branch_resolver/resolve_branches.sh feature-branch
 ```
 
 ### Common Issues
@@ -221,7 +221,7 @@ bash -x .github/actions/branch_resolver/resolve-branches.sh feature-branch
 **Issue:** "Permission denied" when running script
 ```bash
 # Solution: Make script executable
-chmod +x .github/actions/branch_resolver/resolve-branches.sh
+chmod +x .github/actions/5_builderpackage_indexer_branch_resolver/resolve_branches.sh
 ```
 
 **Issue:** Empty outputs in GitHub Actions

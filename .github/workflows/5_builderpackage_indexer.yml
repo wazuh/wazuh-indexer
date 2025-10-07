@@ -111,7 +111,7 @@ on:
 #   | https://docs.github.com/en/actions/learn-github-actions/expressions#example
 
 jobs:
-  resolve-branches:
+  branches:
     runs-on: ubuntu-24.04
     outputs:
       wazuh_plugins_ref: ${{ steps.branches.outputs.wazuh_indexer_plugins_branch }}
@@ -120,7 +120,7 @@ jobs:
       - uses: actions/checkout@v5
       - name: Resolve branches
         id: branches
-        uses: ./.github/actions/branch_resolver
+        uses: ./.github/actions/5_builderpackage_indexer_branch_resolver
         with:
           branch: ${{ inputs.plugins_ref }}
 
@@ -143,7 +143,7 @@ jobs:
           echo "opensearch_version=$opensearch_version" >> "$GITHUB_OUTPUT"
   
   get-versions-wazuh-indexer-plugins:
-    needs: [resolve-branches]
+    needs: [branches]
     runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.plugins_version.outputs.version }}
@@ -152,7 +152,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           repository: wazuh/wazuh-indexer-plugins
-          ref: ${{ needs.resolve-branches.outputs.wazuh_plugins_ref }}
+          ref: ${{ needs.branches.outputs.wazuh_plugins_ref }}
 
       - name: Read versions from wazuh-indexer-plugins
         id: plugins_version
@@ -164,7 +164,7 @@ jobs:
           echo "opensearch_version=$opensearch_version" >> "$GITHUB_OUTPUT"
         
   get-versions-wazuh-indexer-reporting:
-    needs: [resolve-branches]
+    needs: [branches]
     runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.reporting_version.outputs.version }}
@@ -173,7 +173,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           repository: wazuh/wazuh-indexer-reporting
-          ref: ${{ needs.resolve-branches.outputs.reporting_plugin_ref }}
+          ref: ${{ needs.branches.outputs.reporting_plugin_ref }}
 
       - name: Read versions from wazuh-indexer-reporting
         id: reporting_version
@@ -229,8 +229,8 @@ jobs:
           echo "previous_version=$PREVIOUS" >> $GITHUB_OUTPUT
 
   build-wazuh-plugins:
-    needs: [compatibility-check, resolve-branches]
-    if: ${{ needs.resolve-branches.outputs.wazuh_plugins_ref != '' }}
+    needs: [compatibility-check, branches]
+    if: ${{ needs.branches.outputs.wazuh_plugins_ref != '' }}
     strategy:
       fail-fast: false
       matrix:
@@ -244,7 +244,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           repository: wazuh/wazuh-indexer-plugins
-          ref: ${{ needs.resolve-branches.outputs.wazuh_plugins_ref }}
+          ref: ${{ needs.branches.outputs.wazuh_plugins_ref }}
 
       - uses: actions/setup-java@v5
         with:
@@ -277,8 +277,8 @@ jobs:
           if-no-files-found: error
 
   build-reporting-plugin:
-    needs: [compatibility-check, resolve-branches]
-    if: ${{ needs.resolve-branches.outputs.reporting_plugin_ref != '' }}
+    needs: [compatibility-check, branches]
+    if: ${{ needs.branches.outputs.reporting_plugin_ref != '' }}
     runs-on: ubuntu-24.04
     outputs:
       hash: ${{ steps.save-hash.outputs.hash }}
@@ -288,7 +288,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           repository: wazuh/wazuh-indexer-reporting
-          ref: ${{ needs.resolve-branches.outputs.reporting_plugin_ref }}
+          ref: ${{ needs.branches.outputs.reporting_plugin_ref }}
 
       - uses: actions/setup-java@v5
         with:
@@ -319,7 +319,7 @@ jobs:
           if-no-files-found: error
   
   build:
-    needs: [setup, build-wazuh-plugins, build-reporting-plugin, resolve-branches]
+    needs: [setup, build-wazuh-plugins, build-reporting-plugin, branches]
     runs-on: ${{ matrix.architecture == 'arm64' && 'wz-linux-arm64' || 'ubuntu-24.04' }}
     strategy:
       fail-fast: false
@@ -332,13 +332,13 @@ jobs:
       # Download plugins
       - name: Download plugins
         uses: actions/download-artifact@v5
-        if: ${{ needs.resolve-branches.outputs.wazuh_plugins_ref != '' || needs.resolve-branches.outputs.reporting_plugin_ref != '' }}
+        if: ${{ needs.branches.outputs.wazuh_plugins_ref != '' || needs.branches.outputs.reporting_plugin_ref != '' }}
         with:
           path: ./artifacts/plugins
           merge-multiple: true
 
       - name: Display structure of downloaded files
-        if: ${{ needs.resolve-branches.outputs.wazuh_plugins_ref != '' || needs.resolve-branches.outputs.reporting_plugin_ref != '' }}
+        if: ${{ needs.branches.outputs.wazuh_plugins_ref != '' || needs.branches.outputs.reporting_plugin_ref != '' }}
         run: ls -lR ./artifacts/plugins
 
       - uses: actions/setup-java@v5

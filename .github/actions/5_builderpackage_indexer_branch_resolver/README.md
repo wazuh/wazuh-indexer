@@ -1,16 +1,66 @@
-# Branch Resolver Action
+# Wazuh Indexer Branch Resolver Action
 
-A GitHub Action that automatically determines the correct branch to use for dependent repositories (`wazuh-indexer-plugins` and `wazuh-indexer-reporting`) based on the current branch and VERSION.json files.
+GitHub's limit on Workflow inputs is 10. As Wazuh Indexer is built out of multiple repositories, hitting this limit is more than a possible scenario. This action helps to reduce the number of inputs by automatically resolving the correct branches for dependent repositories based on the current branch and VERSION.json files.
 
-## Overview
+By invoking this action, the workflows that build wazuh-indexer packages can simplify their input parameters and ensure that the correct branches are used for all dependent repositories. This criteria is based on the following decision tree:
 
-When working with multiple related repositories, it's common to have issues matching branch names across them. This action resolves the correct branch for each dependent repository using the following logic:
+```
+1. Does the input branch exist in the repository?
+   ├─ YES → Use that branch
+   └─ NO → Continue to step 2
 
-1. **Direct match**: If a branch with the same name exists in the dependent repo, use it
-2. **Version-based fallback**: If the branch doesn't exist, extract the version from another repo's VERSION.json and use the corresponding version branch (e.g., `4.12.1`)
-3. **Current repo fallback**: If no branches are found in any dependent repo, use the current repo's VERSION.json to determine the branch
+2. Does the input branch exist in any other repository?
+   ├─ YES → Read the product version from that repository's branch (present in VERSION.json)
+   │        └─ Use version-based branch on repositories missing the input branch (e.g., 5.0.0 → main, 4.12.1 → 4.12.1)
+   └─ NO → Continue to step 3
+
+3. Does VERSION.json exist in the current repository?
+   ├─ YES → Use version-based branch
+   └─ NO → ERROR: No fallback available
+```
+
+> **Note:** Currently, only `5.0.0` maps to `main`. All other versions map directly to their full version string.
 
 ## Usage
+
+### Requirements
+
+- **bash**: Shell scripting
+- **jq**: JSON parsing
+- **git**: Repository operations
+- **curl**: Fetching VERSION.json from GitHub
+- **awk**: Text processing
+
+All dependencies are available in standard GitHub Actions runners.
+
+### Inputs
+
+| Input    | Description                      | Required | Default |
+| -------- | -------------------------------- | -------- | ------- |
+| `branch` | Branch name to check and resolve | Yes      | -       |
+
+### Outputs
+
+| Output                           | Description                                                 |
+| -------------------------------- | ----------------------------------------------------------- |
+| `wazuh_indexer_plugins_branch`   | Resolved branch name for wazuh-indexer-plugins repository   |
+| `wazuh_indexer_reporting_branch` | Resolved branch name for wazuh-indexer-reporting repository |
+
+The script outputs branch assignments in `key=value` format:
+
+```
+wazuh-indexer-plugins=feature-branch
+wazuh-indexer-reporting=main
+```
+
+The action will fail with a non-zero exit code in the following scenarios:
+
+1. No branch name provided
+2. Branch not found in any repo and no VERSION.json available
+3. Unable to parse VERSION.json files
+4. Network errors when accessing remote repositories
+
+Diagnostic messages are sent to stderr, allowing easy parsing of stdout.
 
 ### In a Workflow
 
@@ -48,7 +98,7 @@ jobs:
         run: ./gradlew build
 ```
 
-### Standalone Script Usage
+### Locally
 
 You can also run the underlying script directly from the command line:
 
@@ -56,131 +106,38 @@ You can also run the underlying script directly from the command line:
 bash .github/actions/5_builderpackage_indexer_branch_resolver/resolve_branches.sh feature-branch
 ```
 
-## Inputs
-
-| Input | Description | Required | Default |
-|-------|-------------|----------|---------|
-| `branch` | Branch name to check and resolve | Yes | - |
-
-## Outputs
-
-| Output | Description |
-|--------|-------------|
-| `wazuh_indexer_plugins_branch` | Resolved branch name for wazuh-indexer-plugins repository |
-| `wazuh_indexer_reporting_branch` | Resolved branch name for wazuh-indexer-reporting repository |
-
-## How It Works
-
-### Branch Resolution Logic
-
-The action follows this decision tree for each dependent repository:
-
-```
-1. Does the input branch exist in the dependent repo?
-   ├─ YES → Use that branch
-   └─ NO → Continue to step 2
-
-2. Does the input branch exist in any other dependent repo?
-   ├─ YES → Extract version from that repo's VERSION.json
-   │        └─ Use version-based branch (e.g., 5.0.0 → main, 4.12.1 → 4.12.1)
-   └─ NO → Continue to step 3
-
-3. Does VERSION.json exist in current repo?
-   ├─ YES → Use version-based branch from current repo
-   └─ NO → ERROR: No fallback available
-```
-
-### Version to Branch Mapping
-
-- `5.0.0` → `main`
-- `X.Y.Z` → `X.Y.Z` (e.g., `4.12.1` → `4.12.1`)
-
-> **Note:** Currently, only `5.0.0` maps to `main`. All other versions map directly to their full version string.
-
-## Output Format
-
-The script outputs branch assignments in `key=value` format:
-
-```
-wazuh-indexer-plugins=feature-branch
-wazuh-indexer-reporting=main
-```
-
-Diagnostic messages are sent to stderr, allowing easy parsing of stdout.
-
 ## Examples
 
-### Example 1: Direct Branch Match
+**Branch exists in every repository**
+  - Scenario: input branch exists in both repositories.
+  - Input: *feature-xyz*
+  - Output:
+    ```
+    wazuh-indexer-plugins=feature-xyz
+    wazuh-indexer-reporting=feature-xyz
+    ```
 
-**Input:** `feature-xyz` branch exists in both dependent repos
+**Branch exists in one of the repositories**
 
-**Output:**
-```
-wazuh-indexer-plugins=feature-xyz
-wazuh-indexer-reporting=feature-xyz
-```
+- Scenario: input branch exists in **wazuh-indexer-plugins** but not in **wazuh-indexer-reporting**. Input branch is based on version *4.12.1*.
+- Input: *feature-xyz*
+- Output:
+    ```
+    wazuh-indexer-plugins=feature-xyz
+    wazuh-indexer-reporting=4.12.1
+    ```
 
-### Example 2: Partial Match with Fallback
+**Branch doesn't exist in any repository**
 
-**Input:** `feature-xyz` exists in plugins but not in reporting
+- Scenario: input branch does not exist on any repository. The branch in **wazuh-indexer** (holding the main code) is based on version *4.13.1*.
+- Input: *feature-xyz*
+- Output:
+    ```
+    wazuh-indexer-plugins=4.13.1
+    wazuh-indexer-reporting=4.13.1
+    ```
 
-**Scenario:** `feature-xyz` has VERSION.json with version `4.12.1`
-
-**Output:**
-```
-wazuh-indexer-plugins=feature-xyz
-wazuh-indexer-reporting=4.10
-```
-
-### Example 3: No Match, Current Repo Fallback
-
-**Input:** `feature-xyz` doesn't exist in any dependent repo
-
-**Scenario:** Current repo has VERSION.json with version `4.13.1`
-
-**Output:**
-```
-wazuh-indexer-plugins=4.13.1
-wazuh-indexer-reporting=4.13.1
-```
-
-## Dependencies
-
-- **bash**: Shell scripting
-- **jq**: JSON parsing
-- **git**: Repository operations
-- **curl**: Fetching VERSION.json from GitHub
-- **awk**: Text processing
-
-All dependencies are available in standard GitHub Actions runners.
-
-## Files
-
-```
-.github/actions/5_builderpackage_indexer_branch_resolver/
-├── action.yml              # GitHub Action metadata
-├── resolve_branches.sh     # Core branch resolution script
-└── README.md              # This documentation
-```
-
-## Environment Requirements
-
-- The script expects to be run from within a git repository
-- The repository should contain a `.github` directory (used to locate project root)
-- Internet access is required to check remote repositories
-
-## Error Handling
-
-The action will fail with a non-zero exit code in the following scenarios:
-
-1. No branch name provided
-2. Branch not found in any repo and no VERSION.json available
-3. Unable to parse VERSION.json files
-4. Network errors when accessing remote repositories
-
-Error messages are sent to stderr and will appear in the GitHub Actions log.
-
-## Customization
+## Adding new repositories
 
 To add more dependent repositories, edit `resolve_branches.sh`:
 
@@ -208,33 +165,8 @@ outputs:
 
 ## Troubleshooting
 
-### Debug Mode
-
 To see detailed output when running locally:
 
 ```bash
 bash -x .github/actions/5_builderpackage_indexer_branch_resolver/resolve_branches.sh feature-branch
-```
-
-### Common Issues
-
-**Issue:** "Permission denied" when running script
-```bash
-# Solution: Make script executable
-chmod +x .github/actions/5_builderpackage_indexer_branch_resolver/resolve_branches.sh
-```
-
-**Issue:** Empty outputs in GitHub Actions
-```bash
-# Solution: Add debug step to verify outputs
-- name: Debug outputs
-  run: |
-    echo "Plugins: ${{ steps.resolve.outputs.wazuh_indexer_plugins_branch }}"
-    echo "Reporting: ${{ steps.resolve.outputs.wazuh_indexer_reporting_branch }}"
-```
-
-**Issue:** VERSION.json not found
-```bash
-# Solution: Ensure VERSION.json exists in repository root with format:
-# { "version": "X.Y.Z" }
 ```

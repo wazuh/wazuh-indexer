@@ -1,15 +1,15 @@
 name: "Branch Resolver"
-description: "Determine correct branches for dependent repos"
+description: "Select the appropriate branch for dependent repositories based on the current branch"
 inputs:
   branch:
     description: "Branch to check"
     required: true
 outputs:
   wazuh_indexer_plugins_branch:
-    description: "Branch for wazuh-indexer-plugins"
+    description: "Branch to use in wazuh-indexer-plugins repository."
     value: ${{ steps.resolve.outputs.wazuh_indexer_plugins_branch }}
   wazuh_indexer_reporting_branch:
-    description: "Branch for wazuh-indexer-reporting"
+    description: "Branch to use in wazuh-indexer-reporting repository."
     value: ${{ steps.resolve.outputs.wazuh_indexer_reporting_branch }}
 runs:
   using: "composite"

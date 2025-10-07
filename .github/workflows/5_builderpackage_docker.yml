@@ -42,7 +42,7 @@ on:
         type: string
         required: false
       plugins_ref:
-        description: "Git ref (branch/tag) to use for all wazuh-indexer plugins"
+        description: "Branch, commit or tag for the wazuh-indexer plugins repositories."
         type: string
         default: "main"
         required: false

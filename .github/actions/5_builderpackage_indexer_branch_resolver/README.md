@@ -85,7 +85,7 @@ jobs:
           echo "Plugins branch: ${{ steps.resolve.outputs.wazuh_indexer_plugins_branch }}"
           echo "Reporting branch: ${{ steps.resolve.outputs.wazuh_indexer_reporting_branch }}"
 
-  build-with-resolved-branches:
+  build-plugins:
     needs: [branches]
     runs-on: ubuntu-24.04
     steps:

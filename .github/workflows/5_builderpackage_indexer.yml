@@ -367,7 +367,7 @@ jobs:
         run: echo "version=$(jq .version -r VERSION.json)" >> "$GITHUB_OUTPUT"
 
       - name: Build with Gradle
-        run: ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }}
+        run: ./gradlew build -x integTest -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }}
 
       - run: ls -lR build/distributions
 

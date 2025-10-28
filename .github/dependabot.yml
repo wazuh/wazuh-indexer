@@ -1,5 +1,4 @@
 version: 2
-version: 2
 registries:
   gradle-maven:
     type: maven-repository

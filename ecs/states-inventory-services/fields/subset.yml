@@ -1,0 +1,73 @@
+---
+name: wazuh-states-inventory-services
+fields:
+  base:
+    fields:
+      tags: []
+  agent:
+    fields:
+      id: {}
+      name: {}
+      version: {}
+      host:
+        fields:
+          architecture: {}
+          ip: {}
+  service:
+    fields:
+      id: {}
+      name: {}
+      description: {}
+      state: {}
+      sub_state: {}
+      start_type: {}
+      type: {}
+      exit_code: {}
+      win32_exit_code: {}
+      address: {}
+      enabled: {}
+      following: {}
+      object_path: {}
+      restart: {}
+      frequency: {}
+      inetd_compatibility: {}
+      target:
+        fields:
+          ephemeral_id: {}
+          type: {}
+          address: {}
+      starts:
+        fields:
+          on_mount: {}
+          on_path_modified: {}
+          on_not_empty_directory: {}
+  log:
+    fields:
+      file:
+        fields:
+          path: {}
+  error:
+    fields:
+      log:
+        fields:
+          file:
+            fields:
+              path: {}
+  process:
+    fields:
+      pid: {}
+      executable: {}
+      args: {}
+      working_directory: {}
+      root_directory: {}
+      user:
+        fields:
+          name: {}
+      group:
+        fields:
+          name: {}
+  file:
+    fields:
+      path: {}
+  wazuh:
+    fields: "*"

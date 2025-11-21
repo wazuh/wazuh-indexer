@@ -120,3 +120,23 @@ notifications_full_access:
   users:
   - "kibanaserver"
   and_backend_roles: []
+
+# Grant subscription management access to wazuh-dashboard
+content_manager_dashboard_role:
+  reserved: true
+  hidden: false
+  backend_roles: [ ]
+  hosts: [ ]
+  users:
+    - "wazuh-dashboard"
+  and_backend_roles: [ ]
+
+# Grant update access to wazuh-server
+content_manager_server_role:
+  reserved: true
+  hidden: false
+  backend_roles: [ ]
+  hosts: [ ]
+  users:
+    - "wazuh-server"
+  and_backend_roles: [ ]

@@ -172,3 +172,25 @@ ml_config_write:
     - "system:admin/system_index"
   tenant_permissions: []
   static: false
+
+# Role for the dashboard to manage subscription endpoints (POST /subscription, DELETE /subscription)
+content_manager_dashboard_role:
+  reserved: true
+  hidden: false
+  cluster_permissions:
+    - "plugin:content_manager/subscription_post"
+    - "plugin:content_manager/subscription_delete"
+  index_permissions: []
+  tenant_permissions: []
+  static: true
+
+# Role for the server to trigger updates (GET /subscription, POST /update)
+content_manager_server_role:
+  reserved: true
+  hidden: false
+  cluster_permissions:
+    - "plugin:content_manager/subscription_get"
+    - "plugin:content_manager/update"
+  index_permissions: []
+  tenant_permissions: []
+  static: true

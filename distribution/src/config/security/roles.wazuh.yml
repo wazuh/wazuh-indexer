@@ -173,8 +173,17 @@ ml_config_write:
   tenant_permissions: []
   static: false
 
-# Role for the dashboard to manage subscription endpoints (POST /subscription, DELETE /subscription)
-content_manager_dashboard_role:
+# Roles for Content Manager plugin subscription management
+cm_subscription_read:
+  reserved: true
+  hidden: false
+  cluster_permissions:
+    - "plugin:content_manager/subscription_get"
+  index_permissions: []
+  tenant_permissions: []
+  static: true
+
+cm_subscription_write:
   reserved: true
   hidden: false
   cluster_permissions:
@@ -185,11 +194,10 @@ content_manager_dashboard_role:
   static: true
 
 # Role for the server to trigger updates (GET /subscription, POST /update)
-content_manager_server_role:
+cm_update:
   reserved: true
   hidden: false
   cluster_permissions:
-    - "plugin:content_manager/subscription_get"
     - "plugin:content_manager/update"
   index_permissions: []
   tenant_permissions: []

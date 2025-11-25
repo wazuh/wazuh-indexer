@@ -24,7 +24,8 @@ product_dir="/usr/share/${name}"
 config_dir="/etc/${name}"
 pid_dir="/run/${name}"
 service_dir="/usr/lib/systemd/system"
-certs_dir=${config_dir}/certs
+certs_dir="${config_dir}/certs"
+rules_dir="${config_dir}/opensearch-security-analytics/rules"
 
 buildroot="${curdir}/debian/${name}"
 
@@ -33,6 +34,7 @@ mkdir -p "${buildroot}"
 mkdir -p "${buildroot}${pid_dir}"
 mkdir -p "${buildroot}${product_dir}/plugins"
 mkdir -p "${buildroot}${certs_dir}"
+mkdir -p "${buildroot}${rules_dir}"
 
 # Install directories/files
 cp -a "${curdir}"/etc "${curdir}"/usr "${curdir}"/var "${buildroot}"/

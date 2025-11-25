@@ -25,6 +25,7 @@
 %define product_dir %{_datadir}/%{name}
 %define config_dir %{_sysconfdir}/%{name}
 %define certs_dir %{config_dir}/certs
+%define rules_dir %{config_dir}/opensearch-security-analytics/rules
 %define data_dir %{_sharedstatedir}/%{name}
 %define log_dir %{_localstatedir}/log/%{name}
 %define pid_dir %{_localstatedir}/run/%{name}
@@ -67,6 +68,7 @@ cd %{_topdir} && pwd
 # Create necessary directories
 mkdir -p %{buildroot}%{pid_dir}
 mkdir -p %{buildroot}%{product_dir}/plugins
+mkdir -p %{buildroot}%{rules_dir}
 
 # Create empty certs directory
 mkdir -p %{buildroot}%{certs_dir}

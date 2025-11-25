@@ -193,7 +193,6 @@ cm_subscription_write:
   tenant_permissions: []
   static: true
 
-# Role for the server to trigger updates (GET /subscription, POST /update)
 cm_update:
   reserved: true
   hidden: false

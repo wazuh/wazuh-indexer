@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased 4.14.x]
 ### Added
-- 
+- Add compatibility with OpenSearch 2.19.4 [#1230](https://github.com/wazuh/wazuh-indexer/issues/1230)
 
 ### Dependencies
 -
@@ -27,4 +27,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Security
 - 
 
-[Unreleased 4.14.x]: https://github.com/wazuh/wazuh-indexer/compare/4.14.0...4.14.1
+[Unreleased 4.14.x]: https://github.com/wazuh/wazuh-indexer/compare/69825f3eeac86127979f128d18bb01ff1c645fb2...4.14.2

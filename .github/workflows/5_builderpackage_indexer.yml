@@ -284,15 +284,15 @@ jobs:
         run: echo "version=$(jq .version -r VERSION.json)" >> "$GITHUB_OUTPUT"
 
       - name: Clone Security Analytics repository
-        if: ${{ env.plugin_name == 'content-manager' }}
+        if: ${{ matrix.plugins == 'content-manager' }}
         uses: actions/checkout@v6
         with:
           repository: wazuh/wazuh-indexer-security-analytics
-          ref: ${{ needs.branches.outputs.sap_plugin_ref }}
+          ref: ${{ needs.branches.outputs.security_analytics_plugin_ref }}
           path: sap-repo
 
       - name: Publish commons library to mavenLocal
-        if: ${{ env.plugin_name == 'content-manager' }}
+        if: ${{ matrix.plugins == 'content-manager' }}
         working-directory: sap-repo/commons
         run: |
           ../gradlew publishToMavenLocal -x check \
@@ -300,7 +300,7 @@ jobs:
             -Drevision=${{ inputs.revision }}
 
       - name: Publish Security Analytics plugin zip to mavenLocal
-        if: ${{ env.plugin_name == 'content-manager' }}
+        if: ${{ matrix.plugins == 'content-manager' }}
         working-directory: sap-repo
         run: |
           ./gradlew publishToMavenLocal -x check \

@@ -4,7 +4,6 @@
 # The OpenSearch Contributors require contributions made to
 # this file be licensed under the Apache-2.0 license or a
 # compatible open source license.
-
 # No build, no debuginfo
 %define debug_package %{nil}
 
@@ -122,6 +121,7 @@ set -- "$@" "%{product_dir}/jdk/lib/modules"
 set -- "$@" "%{product_dir}/NOTICE.txt"
 set -- "$@" "%{product_dir}/README.md"
 set -- "$@" "%{product_dir}/LICENSE.txt"
+set -- "$@" "%{product_dir}/wazuh-engine/.*"
 set -- "$@" "%{_prefix}/lib/systemd/system/%{name}.service"
 set -- "$@" "%{_sysconfdir}/init.d/%{name}"
 set -- "$@" "%{_sysconfdir}/sysconfig/%{name}"
@@ -293,6 +293,9 @@ exit 0
 %if %reportsscheduler_plugin
 %config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/opensearch-reports-scheduler/reports-scheduler.yml
 %endif
+
+# Wazuh Engine
+%attr(750, %{name}, %{name}) %{product_dir}/wazuh-engine
 
 # Files that need other permissions
 %attr(440, %{name}, %{name}) %{product_dir}/VERSION.json

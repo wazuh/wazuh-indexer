@@ -176,6 +176,10 @@ Closure commonPackageConfig(String type, boolean jdk, String architecture) {
       into('modules') {
         with modulesFiles('linux-' + ((architecture == 'x64') ? 'x64' : architecture))
       }
+      // Add Wazuh Engine
+      into('wazuh-engine') {
+         with engineFiles()
+      }
       if (jdk) {
         into('jdk') {
           with jdkFiles(project, 'linux', architecture)
@@ -198,6 +202,10 @@ Closure commonPackageConfig(String type, boolean jdk, String architecture) {
           }
           if (segments[-2] == 'bin' || segments[-1] == 'jspawnhelper') {
             fcp.permissions(perm -> perm.unix(0755))
+          } else if (fcp.relativePath.pathString.contains('wazuh-engine/bin')) {
+             fcp.permissions(perm -> perm.unix(0750))
+          } else if (fcp.relativePath.pathString.contains('wazuh-engine/run_engine.sh')) {
+             fcp.permissions(perm -> perm.unix(0750))
           } else {
             fcp.permissions(perm -> perm.unix(0644))
           }
@@ -322,6 +330,10 @@ Closure commonPackageConfig(String type, boolean jdk, String architecture) {
     copyEmptyDir('/var/log/wazuh-indexer', 'wazuh-indexer', 'wazuh-indexer', 0750)
     copyEmptyDir('/var/lib/wazuh-indexer', 'wazuh-indexer', 'wazuh-indexer', 0750)
     copyEmptyDir('/usr/share/wazuh-indexer/plugins', 'root', 'root', 0755)
+    copyEmptyDir('/usr/share/wazuh-indexer/wazuh-engine', 'wazuh-indexer', 'wazuh-indexer', 0750)
+    copyEmptyDir('/usr/share/wazuh-indexer/wazuh-engine/logs', 'wazuh-indexer', 'wazuh-indexer', 0750)
+    copyEmptyDir('/usr/share/wazuh-indexer/wazuh-engine/sockets', 'wazuh-indexer', 'wazuh-indexer', 0750)
+    copyEmptyDir('/usr/share/wazuh-indexer/wazuh-engine/data', 'wazuh-indexer', 'wazuh-indexer', 0750)
 
     into '/usr/share/wazuh-indexer'
     with noticeFile(jdk)

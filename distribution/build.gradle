@@ -528,6 +528,29 @@ configure(subprojects.findAll { ['archives', 'packages'].contains(it.name) }) {
         }
       }
     }
+
+    engineFiles = {
+      String enginePath = System.getProperty("wazuhEnginePath") ?: project.hasProperty("wazuhEnginePath") ? project.wazuhEnginePath : null
+      
+      if (enginePath != null) {
+          return copySpec {
+            from(enginePath)
+            
+            // Set permissions for executables
+            eachFile { FileCopyDetails details ->
+              if (details.name == 'wazuh-engine' || details.name == 'run_engine.sh') {
+                details.permissions(perm -> perm.unix(0750))
+              } else if (details.relativePath.segments.contains('lib')) {
+                details.permissions(perm -> perm.unix(0640))
+              } else {
+                details.permissions(perm -> perm.unix(0640))
+              }
+            }
+          }
+      } else {
+          return copySpec {} 
+      }
+    }
   }
 }
 

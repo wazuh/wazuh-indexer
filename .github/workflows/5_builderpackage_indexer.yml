@@ -263,7 +263,7 @@ jobs:
           echo "previous_version=$PREVIOUS" >> $GITHUB_OUTPUT
 
   build-wazuh-engine:
-    uses: wazuh/wazuh/.github/workflows/5_builderpackage_engine-standalone.yml@enhancement/33969-improve-standlone-workflow
+    uses: wazuh/wazuh/.github/workflows/5_builderpackage_engine-standalone.yml@main
     with:
       wazuh-branch: ${{ inputs.wazuh_engine_ref }}
       build-type: 'release'

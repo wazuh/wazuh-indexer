@@ -263,7 +263,9 @@ jobs:
           echo "previous_version=$PREVIOUS" >> $GITHUB_OUTPUT
 
   build-wazuh-engine:
+    needs: [compatibility-check]
     uses: wazuh/wazuh/.github/workflows/5_builderpackage_engine-standalone.yml@main
+    secrets: inherit
     with:
       wazuh-branch: ${{ inputs.wazuh_engine_ref }}
       build-type: 'release'

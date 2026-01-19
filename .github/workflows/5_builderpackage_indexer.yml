@@ -109,6 +109,10 @@ on:
         description: Name of the package built.
         value: ${{ jobs.build.outputs.name }}
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-test
+  cancel-in-progress: true
+
 # ==========================
 # Bibliography
 # ==========================

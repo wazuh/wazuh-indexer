@@ -94,7 +94,7 @@ on:
         default: "main"
       wazuh_engine_ref:
         type: string
-        default: "main"
+        default: "test/3899-bundle-engine"
         required: false
     secrets:
       CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY:
@@ -268,7 +268,7 @@ jobs:
 
   build-wazuh-engine:
     needs: [compatibility-check]
-    uses: wazuh/wazuh/.github/workflows/5_builderpackage_engine-standalone.yml@main
+    uses: wazuh/wazuh/.github/workflows/5_builderpackage_engine-standalone.yml@test/3899-bundle-engine
     secrets: inherit
     with:
       wazuh-branch: ${{ inputs.wazuh_engine_ref }}

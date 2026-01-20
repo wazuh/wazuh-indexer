@@ -452,15 +452,10 @@ jobs:
       # Download plugins
       - name: Download plugins
         uses: actions/download-artifact@v5
-        if: ${{ needs.branches.outputs.wazuh_plugins_ref != '' || needs.branches.outputs.reporting_plugin_ref != '' || needs.branches.outputs.security_analytics_plugin_ref != '' }}
         with:
           pattern: wazuh-indexer-*.zip
           path: ./artifacts/plugins
           merge-multiple: true
-
-      - name: Display structure of downloaded files
-        if: ${{ needs.branches.outputs.wazuh_plugins_ref != '' || needs.branches.outputs.reporting_plugin_ref != '' || needs.branches.outputs.security_analytics_plugin_ref != '' }}
-        run: ls -lR ./artifacts/plugins
 
       # Download Wazuh Engine
       - name: Download Wazuh Engine
@@ -469,6 +464,9 @@ jobs:
           pattern: wazuh-engine-*-linux-${{ matrix.architecture == 'x64' && 'amd64' || 'arm64' }}
           merge-multiple: true
           path: ./artifacts/engine
+      
+      - name: Display structure of downloaded files
+        run: ls -lR ./artifacts/
 
       - uses: actions/setup-java@v5
         with:

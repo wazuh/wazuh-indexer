@@ -276,7 +276,8 @@ function install_wazuh_engine() {
     mkdir -p engine_tmp
     tar -xf "$engine_tarball" -C engine_tmp
 
-    local extracted_dir="engine_tmp/wazuh-engine-standalone"
+    local extracted_dir
+    extracted_dir=$(find engine_tmp -maxdepth 1 -name "wazuh-engine-standalone-*" -type d | head -n 1)
 
     if [ ! -d "$extracted_dir" ]; then
         echo "Error: Expected directory '$extracted_dir' was not found after extraction."

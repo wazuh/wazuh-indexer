@@ -31,6 +31,9 @@ Group=wazuh-indexer
 
 ExecStart=/usr/share/wazuh-indexer/bin/systemd-entrypoint -p ${PID_DIR}/wazuh-indexer.pid --quiet
 
+# Ensure Wazuh Engine is stopped when the service stops
+ExecStopPost=/bin/bash -c "if [ -f ${PID_DIR}/wazuh-engine.pid ]; then kill $(cat ${PID_DIR}/wazuh-engine.pid) > /dev/null 2>&1 || true; rm -f ${PID_DIR}/wazuh-engine.pid; fi"
+
 # StandardOutput is configured to redirect to journalctl since
 # some error messages may be logged in standard output before
 # wazuh-indexer logging system is initialized. Wazuh-indexer

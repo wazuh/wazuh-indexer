@@ -5,7 +5,21 @@
 
 set -e -o pipefail
 
-if [ -n "$OPENSEARCH_KEYSTORE_PASSPHRASE_FILE" ] ; then
+# Start Wazuh Engine in background
+# The engine script is located at /usr/share/wazuh-indexer/engine/run_engine.sh
+# PID_DIR is set by the systemd service environment (default: /run/wazuh-indexer)
+
+ENGINE_SCRIPT="/usr/share/wazuh-indexer/engine/run_engine.sh"
+ENGINE_PID_FILE="${PID_DIR}/wazuh-engine.pid"
+
+if [ -x "$ENGINE_SCRIPT" ]; then
+    # Run in background, redirect output to avoid journal spam (logs should be handled by engine config)
+    "$ENGINE_SCRIPT" > /dev/null 2>&1 &
+    echo $! > "$ENGINE_PID_FILE"
+fi
+
+if [ -n "$OPENSEARCH_KEYSTORE_PASSPHRASE_FILE" ] ;
+then
   exec /usr/share/wazuh-indexer/bin/opensearch "$@" < "$OPENSEARCH_KEYSTORE_PASSPHRASE_FILE"
 else
   exec /usr/share/wazuh-indexer/bin/opensearch "$@"

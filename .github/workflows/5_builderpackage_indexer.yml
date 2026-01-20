@@ -518,8 +518,6 @@ jobs:
             -n ${{ steps.min_package.outputs.name }}
 
       - name: Run `assemble.sh`
-        env:
-          ORG_GRADLE_PROJECT_wazuhEnginePath: ${{ github.workspace }}/artifacts/engine/wazuh-engine-standalone
         run: |
           bash build-scripts/assemble.sh \
             -a ${{ matrix.architecture }} \

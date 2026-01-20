@@ -73,6 +73,7 @@ jobs:
       contents: read
       id-token: write
       actions: read
+      packages: read
     uses: ./.github/workflows/5_builderpackage_indexer.yml
     with:
       revision: ${{ inputs.revision }}

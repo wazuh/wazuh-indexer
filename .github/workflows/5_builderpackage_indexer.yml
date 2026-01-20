@@ -5,10 +5,6 @@ permissions:
   contents: read
   packages: read
 
-# This workflow runs when any of the following occur:
-# - Run manually
-# - Invoked from another workflow
-
 on:
   workflow_dispatch:
     inputs:
@@ -57,12 +53,8 @@ on:
         description: "ID used to identify the workflow uniquely."
         type: string
         required: false
-      plugins_ref:
-        description: "Branch, commit or tag for the wazuh-indexer plugins repositories."
-        type: string
-        default: "main"
-      wazuh_engine_ref:
-        description: "Branch, commit or tag for the wazuh engine."
+      branch:
+        description: "Branch, commit or tag for the wazuh-indexer plugins repositories and engine."
         type: string
         default: "main"
         required: false
@@ -90,10 +82,7 @@ on:
       id:
         type: string
         required: false
-      plugins_ref:
-        type: string
-        default: "main"
-      wazuh_engine_ref:
+      branch:
         type: string
         default: "main"
         required: false
@@ -110,19 +99,6 @@ on:
         description: Name of the package built.
         value: ${{ jobs.build.outputs.name }}
 
-# ==========================
-# Bibliography
-# ==========================
-#
-# * Reusable workflows: limitations
-#   | https://docs.github.com/en/actions/using-workflows/reusing-workflows#limitations
-# * Using matrix in reusable workflows:
-#   | https://docs.github.com/en/actions/using-workflows/reusing-workflows#using-a-matrix-strategy-with-a-reusable-workflow
-# * Reading input from the called workflow
-#   | https://docs.github.com/en/enterprise-cloud@latest/actions/using-workflows/workflow-syntax-for-github-actions#onworkflow_callinputs
-# * Ternary operator
-#   | https://docs.github.com/en/actions/learn-github-actions/expressions#example
-
 jobs:
   branches:
     runs-on: ubuntu-24.04
@@ -130,13 +106,14 @@ jobs:
       wazuh_plugins_ref: ${{ steps.branches.outputs.wazuh_indexer_plugins_branch }}
       reporting_plugin_ref: ${{ steps.branches.outputs.wazuh_indexer_reporting_branch }}
       security_analytics_plugin_ref: ${{ steps.branches.outputs.wazuh_indexer_security_analytics_branch }}
+      wazuh_ref: ${{ steps.branches.outputs.wazuh_branch }}
     steps:
       - uses: actions/checkout@v5
       - name: Resolve branches
         id: branches
         uses: ./.github/actions/5_builderpackage_indexer_branch_resolver
         with:
-          branch: ${{ inputs.plugins_ref }}
+          branch: ${{ inputs.branch }}
 
   get-versions-wazuh-indexer:
     runs-on: ubuntu-24.04
@@ -258,17 +235,14 @@ jobs:
           CURRENT="$(bash build-scripts/product_version.sh)"
           PREVIOUS=$(curl -s https://api.github.com/repos/wazuh/wazuh-indexer/releases | jq -r '.[].tag_name' | grep -vE 'alpha|beta|rc' | sed 's/^v//' | grep -E '^4\.[0-9]+\.[0-9]+$' | \
           grep -v "^${CURRENT}$" | sort -V | awk -v current="$CURRENT" '$0 < current' | tail -n1)
-
-          echo "Current version: $CURRENT"
-          echo "Latest release detected: $PREVIOUS"
           echo "previous_version=$PREVIOUS" >> $GITHUB_OUTPUT
 
   build-wazuh-engine:
-    needs: [compatibility-check]
+    needs: [compatibility-check, branches]
     uses: wazuh/wazuh/.github/workflows/5_builderpackage_engine-standalone.yml@main
     secrets: inherit
     with:
-      wazuh-branch: ${{ inputs.wazuh_engine_ref }}
+      wazuh-branch: ${{ needs.branches.outputs.wazuh_ref }}
       build-type: 'release'
 
   build-wazuh-plugins:

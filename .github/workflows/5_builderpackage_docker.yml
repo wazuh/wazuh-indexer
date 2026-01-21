@@ -21,7 +21,7 @@ on:
         description: "ID used to identify the workflow uniquely."
         type: string
         required: false
-      branch:
+      plugins_ref:
         description: "Branch, commit or tag for the wazuh-indexer plugins repositories and engine."
         type: string
         default: "main"
@@ -41,7 +41,7 @@ on:
         description: "ID used to identify the workflow uniquely."
         type: string
         required: false
-      branch:
+      plugins_ref:
         description: "Branch, commit or tag for the wazuh-indexer plugins repositories and engine."
         type: string
         default: "main"
@@ -81,7 +81,7 @@ jobs:
       distribution: '[ "tar" ]'
       architecture: '[ "x64" ]'
       id: ${{ inputs.id }}
-      branch: ${{ inputs.branch }}
+      plugins_ref: ${{ inputs.plugins_ref }}
     secrets: inherit
 
   build-and-push-docker-image:

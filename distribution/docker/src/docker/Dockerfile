@@ -94,6 +94,13 @@ RUN find /usr/share/wazuh-indexer/jdk -type d -exec chmod 0755 '{}' \\; && \\
     chmod g=u /etc/passwd && \\
     chmod 0775 /usr/local/bin/docker-entrypoint.sh
 
+# Set permissions for Wazuh Engine
+RUN if [ -d "/usr/share/wazuh-indexer/engine" ]; then \
+    find /usr/share/wazuh-indexer/engine -type d -exec chmod 750 {} \; && \
+    find /usr/share/wazuh-indexer/engine -type f -exec chmod 640 {} \; && \
+    chmod 750 /usr/share/wazuh-indexer/engine/run_engine.sh && \
+    chmod 750 /usr/share/wazuh-indexer/engine/bin/wazuh-engine; \
+  fi
 # Ensure that there are no files with setuid or setgid, in order to mitigate "stackclash" attacks.
 RUN find / -xdev -perm -4000 -exec chmod ug-s {} +
 

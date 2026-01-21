@@ -134,7 +134,11 @@ stop() {
     
     # Stop Wazuh Engine
     if [ -f "$PID_DIR/wazuh-engine.pid" ]; then
-        kill $(cat "$PID_DIR/wazuh-engine.pid") > /dev/null 2>&1 || true
+        PID_TO_KILL=$(cat "$PID_DIR/wazuh-engine.pid")
+        if [ -n "$PID_TO_KILL" ]; then
+            pkill -P "$PID_TO_KILL" > /dev/null 2>&1 || true
+            kill "$PID_TO_KILL" > /dev/null 2>&1 || true
+        fi
         rm -f "$PID_DIR/wazuh-engine.pid"
     fi
 

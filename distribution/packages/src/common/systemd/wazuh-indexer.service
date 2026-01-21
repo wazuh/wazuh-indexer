@@ -30,10 +30,6 @@ Group=wazuh-indexer
 
 ExecStart=/usr/share/wazuh-indexer/bin/systemd-entrypoint -p ${PID_DIR}/wazuh-indexer.pid --quiet
 
-# Ensure Wazuh Engine is stopped when the service stops
-# Checks for PID file, kills the process, and waits for it to exit to prevent port conflicts on restart
-ExecStopPost=/bin/bash -c "if [ -f ${PID_DIR}/wazuh-engine.pid ]; then PID=$$(cat ${PID_DIR}/wazuh-engine.pid); kill $$PID > /dev/null 2>&1; while kill -0 $$PID 2>/dev/null; do sleep 0.1; done; rm -f ${PID_DIR}/wazuh-engine.pid; fi"
-
 # StandardOutput is configured to redirect to journalctl since
 # some error messages may be logged in standard output before
 # wazuh-indexer logging system is initialized. Wazuh-indexer
@@ -62,8 +58,8 @@ TimeoutStopSec=0
 # SIGTERM signal is used to stop the Java process
 KillSignal=SIGTERM
 
-# Send the signal only to the JVM rather than its control group
-KillMode=process
+# Send the signal to the control group
+KillMode=control-group
 
 # Java process is never killed
 SendSIGKILL=no

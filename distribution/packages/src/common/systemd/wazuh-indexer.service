@@ -4,7 +4,6 @@
 # The OpenSearch Contributors require contributions made to
 # this file be licensed under the Apache-2.0 license or a
 # compatible open source license.
-
 # Description:
 # Default wazuh-indexer.service file
 
@@ -32,7 +31,8 @@ Group=wazuh-indexer
 ExecStart=/usr/share/wazuh-indexer/bin/systemd-entrypoint -p ${PID_DIR}/wazuh-indexer.pid --quiet
 
 # Ensure Wazuh Engine is stopped when the service stops
-ExecStopPost=/bin/bash -c "if [ -f ${PID_DIR}/wazuh-engine.pid ]; then kill $(cat ${PID_DIR}/wazuh-engine.pid) > /dev/null 2>&1 || true; rm -f ${PID_DIR}/wazuh-engine.pid; fi"
+# Checks for PID file, kills the process, and waits for it to exit to prevent port conflicts on restart
+ExecStopPost=/bin/bash -c "if [ -f ${PID_DIR}/wazuh-engine.pid ]; then PID=$(cat ${PID_DIR}/wazuh-engine.pid); kill $PID > /dev/null 2>&1; while kill -0 $PID 2>/dev/null; do sleep 0.1; done; rm -f ${PID_DIR}/wazuh-engine.pid; fi"
 
 # StandardOutput is configured to redirect to journalctl since
 # some error messages may be logged in standard output before
@@ -91,9 +91,6 @@ ProtectProc=invisible
 
 # Make /usr, /boot, and /etc read-only (less restrictive than 'strict')
 ProtectSystem=full
-
-# Prevent changes to control groups (redundant with earlier setting, can be removed)
-ProtectControlGroups=yes
 
 # Prevent changing the execution domain
 LockPersonality=yes

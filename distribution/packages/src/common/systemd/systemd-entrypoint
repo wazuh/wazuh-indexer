@@ -12,7 +12,8 @@ set -e -o pipefail
 ENGINE_SCRIPT="/usr/share/wazuh-indexer/engine/run_engine.sh"
 ENGINE_PID_FILE="${PID_DIR}/wazuh-engine.pid"
 
-if [ -x "$ENGINE_SCRIPT" ]; then
+if [ -x "$ENGINE_SCRIPT" ];
+then
     # Run in background, redirect output to avoid journal spam (logs should be handled by engine config)
     "$ENGINE_SCRIPT" > /dev/null 2>&1 &
     echo $! > "$ENGINE_PID_FILE"

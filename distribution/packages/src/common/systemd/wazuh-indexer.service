@@ -132,6 +132,7 @@ RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
 ReadWritePaths=/var/log/wazuh-indexer
 ReadWritePaths=/var/lib/wazuh-indexer
 ReadWritePaths=/dev/shm/
+ReadWritePaths=/usr/share/wazuh-indexer/engine
 ReadWritePaths=-/etc/wazuh-indexer
 ReadWritePaths=-/mnt/snapshots
 

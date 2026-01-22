@@ -4,7 +4,7 @@ FROM amazonlinux:2023 AS builder
 ARG VERSION
 ARG INDEXER_TAR_NAME
 
-RUN yum update -y && yum install openssl tar findutils shadow-utils jq -y
+RUN yum update -y && yum install curl-minimal shadow-utils findutils hostname jq tar gzip -y
 
 COPY ${INDEXER_TAR_NAME} /
 

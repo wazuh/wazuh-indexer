@@ -66,7 +66,7 @@ ENV OPENSEARCH_CONTAINER true
 RUN set -e \\
      && dnf -y update \\
      && dnf -y install --setopt=tsflags=nodocs \\
-          nmap-ncat shadow-utils zip unzip \\
+          nmap-ncat shadow-utils zip unzip tar \\
      && dnf clean all \\
      && rm -rf /var/cache/dnf
 

@@ -104,6 +104,9 @@ jobs:
       - name: Display structure of downloaded files
         run: ls -lR ${{env.docker_path }}
 
+      - name: Display Dockerfile content
+        run: cat ${{env.docker_path }}/src/docker/Dockerfile
+        
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 

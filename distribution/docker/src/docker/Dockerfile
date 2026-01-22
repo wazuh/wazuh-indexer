@@ -66,7 +66,7 @@ ENV OPENSEARCH_CONTAINER true
 RUN set -e \\
      && dnf -y update \\
      && dnf -y install --setopt=tsflags=nodocs \\
-          nmap-ncat shadow-utils zip unzip tar \\
+          nmap-ncat shadow-utils zip unzip tar gzip \\
      && dnf clean all \\
      && rm -rf /var/cache/dnf
 
@@ -96,10 +96,10 @@ RUN find /usr/share/wazuh-indexer/jdk -type d -exec chmod 0755 '{}' \\; && \\
 
 # Set permissions for Wazuh Engine
 RUN if [ -d "/usr/share/wazuh-indexer/engine" ]; then \
-    find /usr/share/wazuh-indexer/engine -type d -exec chmod 750 {} \; && \
-    find /usr/share/wazuh-indexer/engine -type f -exec chmod 640 {} \; && \
-    chmod 750 /usr/share/wazuh-indexer/engine/run_engine.sh && \
-    chmod 750 /usr/share/wazuh-indexer/engine/bin/wazuh-engine; \
+    find /usr/share/wazuh-indexer/engine -type d -exec chmod 755 {} \; && \
+    find /usr/share/wazuh-indexer/engine -type f -exec chmod 644 {} \; && \
+    chmod 755 /usr/share/wazuh-indexer/engine/run_engine.sh && \
+    chmod 755 /usr/share/wazuh-indexer/engine/bin/wazuh-engine; \
   fi
 # Ensure that there are no files with setuid or setgid, in order to mitigate "stackclash" attacks.
 RUN find / -xdev -perm -4000 -exec chmod ug-s {} +

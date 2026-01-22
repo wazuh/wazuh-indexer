@@ -48,6 +48,12 @@ CopySpec archiveFiles(CopySpec modulesFiles, String distributionType, String pla
       into('agent') {
         with agentFiles()
       }
+      into('engine') {
+        dirPermissions {
+          unix 0755
+        }
+        with engineFiles()
+      }
       into('config') {
         dirPermissions {
           unix 0750

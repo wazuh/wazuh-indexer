@@ -539,11 +539,11 @@ configure(subprojects.findAll { ['archives', 'packages'].contains(it.name) }) {
             // Set permissions for executables
             eachFile { FileCopyDetails details ->
               if (details.name == 'wazuh-engine' || details.name == 'run_engine.sh') {
-                details.permissions(perm -> perm.unix(0750))
+                details.permissions(perm -> perm.unix(0755))
               } else if (details.relativePath.segments.contains('lib')) {
-                details.permissions(perm -> perm.unix(0640))
+                details.permissions(perm -> perm.unix(0644))
               } else {
-                details.permissions(perm -> perm.unix(0640))
+                details.permissions(perm -> perm.unix(0644))
               }
             }
           }

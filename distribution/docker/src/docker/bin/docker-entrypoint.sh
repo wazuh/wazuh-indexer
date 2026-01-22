@@ -103,4 +103,19 @@ if [[ "$(id -u)" == "0" ]]; then
   fi
 fi
 
+ENGINE_HOME="/usr/share/wazuh-indexer/engine"
+ENGINE_SCRIPT="$ENGINE_HOME/run_engine.sh"
+ENGINE_LIB="$ENGINE_HOME/bin/lib"
+ENGINE_LOG="/usr/share/wazuh-indexer/logs/engine.log"
+
+if [[ -x "$ENGINE_SCRIPT" ]]; then
+    echo "Starting Wazuh Engine..."
+        if [[ "$(id -u)" == "0" ]]; then
+        chroot --userspec=1000:0 / env LD_LIBRARY_PATH="$ENGINE_LIB" "$ENGINE_SCRIPT" > "$ENGINE_LOG" 2>&1 &
+    else
+        export LD_LIBRARY_PATH="$ENGINE_LIB:$LD_LIBRARY_PATH"
+        "$ENGINE_SCRIPT" > "$ENGINE_LOG" 2>&1 &
+    fi
+fi
+
 run_as_other_user_if_needed /usr/share/wazuh-indexer/bin/opensearch <<<"$KEYSTORE_PASSWORD"

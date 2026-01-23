@@ -146,6 +146,14 @@ done
 
 # Change Permissions
 chmod -Rf a+rX,u+w,g-w,o-w %{buildroot}/*
+
+# Fix engine permissions
+find %{buildroot}%{product_dir}/engine -type d -exec chmod 750 {} +
+find %{buildroot}%{product_dir}/engine -type f -exec chmod 640 {} +
+chmod 750 %{buildroot}%{product_dir}/engine/bin/wazuh-engine
+chmod 750 %{buildroot}%{product_dir}/engine/run_engine.sh
+chmod 777 %{buildroot}%{product_dir}/engine/sockets
+
 exit 0
 
 %pre
@@ -296,7 +304,7 @@ exit 0
 %endif
 
 # Wazuh Engine
-%attr(750, %{name}, %{name}) %{product_dir}/engine
+%attr(-, %{name}, %{name}) %{product_dir}/engine
 
 # Files that need other permissions
 %attr(440, %{name}, %{name}) %{product_dir}/VERSION.json

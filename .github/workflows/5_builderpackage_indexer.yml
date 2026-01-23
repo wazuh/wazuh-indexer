@@ -259,11 +259,12 @@ jobs:
 
   build-wazuh-engine:
     needs: [compatibility-check, branches]
-    uses: wazuh/wazuh/.github/workflows/5_builderpackage_engine-standalone.yml@main
+    uses: wazuh/wazuh/.github/workflows/5_builderpackage_engine-standalone.yml@${{ needs.branches.outputs.wazuh_ref }}
     secrets: inherit
     with:
       wazuh-branch: ${{ needs.branches.outputs.wazuh_ref }}
       build-type: 'release'
+      run-identifier: ${{ matrix.distribution }}
 
   build-wazuh-plugins:
     needs: [compatibility-check, branches]

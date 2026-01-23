@@ -122,6 +122,7 @@ set -- "$@" "%{product_dir}/jdk/lib/modules"
 set -- "$@" "%{product_dir}/NOTICE.txt"
 set -- "$@" "%{product_dir}/README.md"
 set -- "$@" "%{product_dir}/LICENSE.txt"
+set -- "$@" "%{product_dir}/engine/.*"
 set -- "$@" "%{_prefix}/lib/systemd/system/%{name}.service"
 set -- "$@" "%{_sysconfdir}/init.d/%{name}"
 set -- "$@" "%{_sysconfdir}/sysconfig/%{name}"
@@ -293,6 +294,9 @@ exit 0
 %if %reportsscheduler_plugin
 %config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/opensearch-reports-scheduler/reports-scheduler.yml
 %endif
+
+# Wazuh Engine
+%attr(750, %{name}, %{name}) %{product_dir}/engine
 
 # Files that need other permissions
 %attr(440, %{name}, %{name}) %{product_dir}/VERSION.json

@@ -257,6 +257,12 @@ jobs:
           echo "Current version: $CURRENT"
           echo "Latest release detected: $PREVIOUS"
           echo "previous_version=$PREVIOUS" >> $GITHUB_OUTPUT
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
 
   publish-security-analytics-to-local-maven:
     runs-on: ubuntu-24.04
@@ -297,14 +303,6 @@ jobs:
         with:
           repository: wazuh/wazuh-indexer-plugins
           ref: ${{ needs.branches.outputs.wazuh_plugins_ref }}
-
-      # - uses: actions/setup-java@v5
-      #   with:
-      #     distribution: temurin
-      #     java-version: 21
-
-      # - name: Setup Gradle
-      #   uses: gradle/actions/setup-gradle@v4
 
       - name: Get version
         id: version

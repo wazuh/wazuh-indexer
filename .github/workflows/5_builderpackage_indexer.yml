@@ -281,7 +281,7 @@ jobs:
       build-type: 'release'
 
   build-wazuh-plugins:
-    needs: [compatibility-check, branches]
+    needs: [compatibility-check, branches, publish-security-analytics-to-local-maven]
     if: ${{ needs.branches.outputs.wazuh_plugins_ref != '' }}
     strategy:
       fail-fast: false

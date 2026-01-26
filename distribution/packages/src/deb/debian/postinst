@@ -100,8 +100,7 @@ else
         if command -v service > /dev/null 2>&1; then
             echo "### You can start ${name} service by executing"
             echo " sudo service ${name} start"
-        elif command -v /etc/init.d/${name} > /dev/null 2>&1;
-then
+        elif command -v /etc/init.d/${name} > /dev/null 2>&1; then
             echo "### You can start ${name} service by executing"
             echo " sudo /etc/init.d/${name} start"
         fi

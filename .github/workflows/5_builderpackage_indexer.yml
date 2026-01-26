@@ -267,7 +267,7 @@ jobs:
           repository: wazuh/wazuh-indexer-security-analytics
           ref: ${{ needs.branches.outputs.security_analytics_plugin_ref }}
       - name: Publish SAP to Local Maven
-        uses: wazuh/wazuh-indexer-security-analytics/.github/actions/5_local_maven_publisher@main
+        uses: wazuh/wazuh-indexer-security-analytics/.github/actions/5_local_maven_publisher@enhancement/743-implement-GHA-to-publish-to-maven
         with:
           version: ${{ needs.get-versions-wazuh-indexer-security-analytics.outputs.version }}
           revision: ${{ inputs.revision }}

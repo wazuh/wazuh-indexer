@@ -125,7 +125,7 @@ jobs:
       security_analytics_plugin_ref: ${{ steps.branches.outputs.wazuh_indexer_security_analytics_branch }}
       wazuh_ref: ${{ steps.branches.outputs.wazuh_branch }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Resolve branches
         id: branches
         uses: ./.github/actions/5_builderpackage_indexer_branch_resolver
@@ -138,7 +138,7 @@ jobs:
       version: ${{ steps.version.outputs.version }}
       opensearch_version: ${{ steps.version.outputs.opensearch_version }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Get Wazuh Indexer version
         id: version
@@ -157,7 +157,7 @@ jobs:
       version: ${{ steps.plugins_version.outputs.version }}
       opensearch_version: ${{ steps.plugins_version.outputs.opensearch_version }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           repository: wazuh/wazuh-indexer-plugins
           ref: ${{ needs.branches.outputs.wazuh_plugins_ref }}
@@ -178,7 +178,7 @@ jobs:
       version: ${{ steps.reporting_version.outputs.version }}
       opensearch_version: ${{ steps.reporting_version.outputs.opensearch_version }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           repository: wazuh/wazuh-indexer-reporting
           ref: ${{ needs.branches.outputs.reporting_plugin_ref }}
@@ -199,7 +199,7 @@ jobs:
       version: ${{ steps.security_analytics_version.outputs.version }}
       opensearch_version: ${{ steps.security_analytics_version.outputs.opensearch_version }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           repository: wazuh/wazuh-indexer-security-analytics
           ref: ${{ needs.branches.outputs.security_analytics_plugin_ref }}
@@ -246,7 +246,7 @@ jobs:
               '{distribution: $distribution, architecture: $architecture}'
           )
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - id: previous_release
         name: Get latest Wazuh release from GitHub
         run: |
@@ -258,7 +258,8 @@ jobs:
           echo "Latest release detected: $PREVIOUS"
           echo "previous_version=$PREVIOUS" >> $GITHUB_OUTPUT
 
-  publish-security-analytics-to-local-maven:
+  # Publish security-analytics-plugin and its commons to Local Maven
+  sap-maven-local-publication:
     runs-on: ubuntu-24.04
     needs: [compatibility-check, branches, get-versions-wazuh-indexer-security-analytics]
     steps:
@@ -272,7 +273,7 @@ jobs:
           version: ${{ needs.get-versions-wazuh-indexer-security-analytics.outputs.version }}
           revision: ${{ inputs.revision }}
       - name: Cache Maven Local
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: ~/.m2/repository
           key: maven-sap-${{ github.run_id }}
@@ -286,7 +287,7 @@ jobs:
       build-type: 'release'
 
   build-wazuh-plugins:
-    needs: [compatibility-check, branches, publish-security-analytics-to-local-maven]
+    needs: [compatibility-check, branches, sap-maven-local-publication]
     if: ${{ needs.branches.outputs.wazuh_plugins_ref != '' }}
     strategy:
       fail-fast: false
@@ -298,7 +299,7 @@ jobs:
     outputs:
       hash: ${{ steps.save-hash.outputs.hash }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           repository: wazuh/wazuh-indexer-plugins
           ref: ${{ needs.branches.outputs.wazuh_plugins_ref }}
@@ -311,8 +312,8 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Restore Maven Local
-        uses: actions/cache/restore@v4
+      - name: Restore Maven Local Cache
+        uses: actions/cache/restore@v5
         with:
           path: ~/.m2/repository
           key: maven-sap-${{ github.run_id }}
@@ -320,30 +321,6 @@ jobs:
       - name: Get version
         id: version
         run: echo "version=$(jq .version -r VERSION.json)" >> "$GITHUB_OUTPUT"
-
-      # - name: Clone Security Analytics repository
-      #   if: ${{ matrix.plugins == 'content-manager' }}
-      #   uses: actions/checkout@v6
-      #   with:
-      #     repository: wazuh/wazuh-indexer-security-analytics
-      #     ref: ${{ needs.branches.outputs.security_analytics_plugin_ref }}
-      #     path: sap-repo
-
-      # - name: Publish commons library to mavenLocal
-      #   if: ${{ matrix.plugins == 'content-manager' }}
-      #   working-directory: sap-repo/commons
-      #   run: |
-      #     ../gradlew publishToMavenLocal -x check \
-      #       -Dversion=${{ steps.version.outputs.version }} \
-      #       -Drevision=${{ inputs.revision }}
-
-      # - name: Publish Security Analytics plugin zip to mavenLocal
-      #   if: ${{ matrix.plugins == 'content-manager' }}
-      #   working-directory: sap-repo
-      #   run: |
-      #     ./gradlew publishToMavenLocal -x check \
-      #       -Dversion=${{ steps.version.outputs.version }} \
-      #       -Drevision=${{ inputs.revision }}
 
       - name: Build with Gradle
         working-directory: ./plugins/${{ matrix.plugins }}
@@ -372,7 +349,7 @@ jobs:
     env:
       plugin_name: wazuh-indexer-reports-scheduler
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           repository: wazuh/wazuh-indexer-reporting
           ref: ${{ needs.branches.outputs.reporting_plugin_ref }}
@@ -414,7 +391,7 @@ jobs:
     env:
       plugin_name: wazuh-indexer-security-analytics
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           repository: wazuh/wazuh-indexer-security-analytics
           ref: ${{ needs.branches.outputs.security_analytics_plugin_ref }}
@@ -463,7 +440,7 @@ jobs:
     outputs:
       name: ${{ steps.package.outputs.name }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       # Download plugins
       - name: Download plugins

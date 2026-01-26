@@ -257,12 +257,6 @@ jobs:
           echo "Current version: $CURRENT"
           echo "Latest release detected: $PREVIOUS"
           echo "previous_version=$PREVIOUS" >> $GITHUB_OUTPUT
-      - uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: 21
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
 
   publish-security-analytics-to-local-maven:
     runs-on: ubuntu-24.04
@@ -303,6 +297,20 @@ jobs:
         with:
           repository: wazuh/wazuh-indexer-plugins
           ref: ${{ needs.branches.outputs.wazuh_plugins_ref }}
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Publish SAP to Local Maven
+        uses: wazuh/wazuh-indexer-security-analytics/.github/actions/5_local_maven_publisher@enhancement/743-implement-GHA-to-publish-to-maven
+        with:
+          version: ${{ needs.get-versions-wazuh-indexer-security-analytics.outputs.version }}
+          revision: ${{ inputs.revision }}
 
       - name: Get version
         id: version

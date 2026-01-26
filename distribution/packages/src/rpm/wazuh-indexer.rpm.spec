@@ -115,6 +115,8 @@ set -- "$@" "%{config_dir}/jvm.options"
 set -- "$@" "%{config_dir}/opensearch.yml"
 set -- "$@" "%{product_dir}/VERSION.json"
 set -- "$@" "%{product_dir}/plugins/opensearch-security/tools/.*\.sh"
+set -- "$@" "%{product_dir}/engine"
+set -- "$@" "%{product_dir}/engine/.*"
 set -- "$@" "%{product_dir}/bin/.*"
 set -- "$@" "%{product_dir}/jdk/bin/.*"
 set -- "$@" "%{product_dir}/jdk/lib/jspawnhelper"
@@ -302,6 +304,7 @@ exit 0
 %attr(750, %{name}, %{name}) %{product_dir}/engine/bin/wazuh-engine
 %attr(750, %{name}, %{name}) %{product_dir}/engine/run_engine.sh
 %dir %attr(777, %{name}, %{name}) %{product_dir}/engine/sockets
+%attr(-, %{name}, %{name}) %{product_dir}/engine/sockets/.keep
 %attr(-, %{name}, %{name}) %{product_dir}/engine/bin/lib
 %attr(-, %{name}, %{name}) %{product_dir}/engine/data
 %attr(-, %{name}, %{name}) %{product_dir}/engine/default-security-policy

@@ -271,6 +271,11 @@ jobs:
         with:
           version: ${{ needs.get-versions-wazuh-indexer-security-analytics.outputs.version }}
           revision: ${{ inputs.revision }}
+      - name: Cache Maven Local
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.m2/repository
+          key: maven-sap-${{ github.run_id }}
 
   build-wazuh-engine:
     needs: [compatibility-check, branches]
@@ -306,11 +311,11 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Publish SAP to Local Maven
-        uses: wazuh/wazuh-indexer-security-analytics/.github/actions/5_local_maven_publisher@enhancement/743-implement-GHA-to-publish-to-maven
+      - name: Restore Maven Local
+        uses: actions/cache/restore@v4
         with:
-          version: ${{ needs.get-versions-wazuh-indexer-security-analytics.outputs.version }}
-          revision: ${{ inputs.revision }}
+          path: ~/.m2/repository
+          key: maven-sap-${{ github.run_id }}
 
       - name: Get version
         id: version

@@ -297,10 +297,17 @@ exit 0
 %endif
 
 # Wazuh Engine
+%dir %attr(750, %{name}, %{name}) %{product_dir}/engine
+%dir %attr(750, %{name}, %{name}) %{product_dir}/engine/bin
 %attr(750, %{name}, %{name}) %{product_dir}/engine/bin/wazuh-engine
 %attr(750, %{name}, %{name}) %{product_dir}/engine/run_engine.sh
 %dir %attr(777, %{name}, %{name}) %{product_dir}/engine/sockets
-%attr(-, %{name}, %{name}) %{product_dir}/engine
+%attr(-, %{name}, %{name}) %{product_dir}/engine/bin/lib
+%attr(-, %{name}, %{name}) %{product_dir}/engine/data
+%attr(-, %{name}, %{name}) %{product_dir}/engine/default-security-policy
+%attr(-, %{name}, %{name}) %{product_dir}/engine/logs
+%attr(-, %{name}, %{name}) %{product_dir}/engine/schemas
+%attr(-, %{name}, %{name}) %{product_dir}/engine/README.md
 
 # Files that need other permissions
 %attr(440, %{name}, %{name}) %{product_dir}/VERSION.json

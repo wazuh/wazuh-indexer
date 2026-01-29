@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Map `alerting_full_access` and `notifications_full_access` roles to the `kibanaserver` user [(#1201)](https://github.com/wazuh/wazuh-indexer/pull/1201)
 - Create new roles for Indexer Content Manager API [(#1243)](https://github.com/wazuh/wazuh-indexer/pull/1243)
 - Add new `cluster.default_number_of_replicas` setting to `opensearch.yml` [(#1292)](https://github.com/wazuh/wazuh-indexer/pull/1292)
-- Bundle engine in wazuh-indexer package [(#1298)](https://github.com/wazuh/wazuh-indexer/pull/1298)
+- Bundle engine in wazuh-indexer package [(#1298)](https://github.com/wazuh/wazuh-indexer/pull/1298) [(#1302)](https://github.com/wazuh/wazuh-indexer/pull/1302)
 - Implement SAP Local Maven publisher GHA [(#1304)](https://github.com/wazuh/wazuh-indexer/pull/1304)
 
 ### Fixed

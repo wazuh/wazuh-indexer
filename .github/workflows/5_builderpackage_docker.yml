@@ -17,6 +17,10 @@ on:
         description: "Enable to use the release naming nomenclature."
         type: boolean
         default: false
+      architecture:
+        description: '[ "x64", "arm64" ]'
+        type: string
+        default: '[ "x64", "arm64" ]'
       id:
         description: "ID used to identify the workflow uniquely."
         type: string
@@ -79,7 +83,7 @@ jobs:
       revision: ${{ inputs.revision }}
       is_stage: ${{ inputs.is_stage }}
       distribution: '[ "tar" ]'
-      architecture: '[ "x64", "arm64" ]'
+      architecture: ${{ inputs.architecture }}
       id: ${{ inputs.id }}
       plugins_ref: ${{ inputs.plugins_ref }}
     secrets: inherit

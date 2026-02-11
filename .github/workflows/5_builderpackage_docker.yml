@@ -41,6 +41,10 @@ on:
         description: "Enable to use the release naming nomenclature."
         type: boolean
         default: false
+      architecture:
+        description: '[ "x64", "arm64" ]'
+        type: string
+        default: '[ "x64", "arm64" ]'
       id:
         description: "ID used to identify the workflow uniquely."
         type: string

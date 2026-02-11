@@ -118,7 +118,7 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           path: ${{ env.docker_path }}
-          pattern: "*${{ matrix.architecture == 'x64' && 'linux-x64' || 'linux-arm64' }}*"
+          pattern: "wazuh-indexer_*${{ matrix.architecture == 'x64' && 'linux-x64' || 'linux-arm64' }}*"
           merge-multiple: true
 
       - name: Display structure of downloaded files
@@ -128,7 +128,7 @@ jobs:
       - name: Resolve tarball name
         id: tarball
         run: |
-          name=$(ls ${{ env.docker_path }}/*.tar.gz | head -1 | xargs basename)
+          name=$(ls ${{ env.docker_path }}/wazuh-indexer_*.tar.gz | head -1 | xargs basename)
           echo "name=${name}" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx

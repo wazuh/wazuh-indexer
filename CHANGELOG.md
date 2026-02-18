@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Add new `cluster.default_number_of_replicas` setting to `opensearch.yml` [(#1292)](https://github.com/wazuh/wazuh-indexer/pull/1292)
 - Bundle engine in wazuh-indexer package [(#1298)](https://github.com/wazuh/wazuh-indexer/pull/1298) [(#1302)](https://github.com/wazuh/wazuh-indexer/pull/1302)
 - Implement SAP Local Maven publisher GHA [(#1304)](https://github.com/wazuh/wazuh-indexer/pull/1304)
+- Enable Wazuh Engine in Docker images and add support for ARM architecture [(#1320)](https://github.com/wazuh/wazuh-indexer/pull/1320)
 
 ### Fixed
 
@@ -44,6 +45,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Change transport.port to http.port in indexer-security-init [(#1233)](https://github.com/wazuh/wazuh-indexer/pull/1233)
 - Update builder script to detect SAP branch [(#1271)](https://github.com/wazuh/wazuh-indexer/pull/1271)
 - Build SAP in CM workflow [(#1272)](https://github.com/wazuh/wazuh-indexer/pull/1272)
+- Use docker commands directly instead of addnab/docker-run-action [(#1326)](https://github.com/wazuh/wazuh-indexer/pull/1326)
 
 ### Deprecated
 -
@@ -71,4 +73,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Update CodeQL configuration [(#1220)](https://github.com/wazuh/wazuh-indexer/pull/1220)
 - Potential fix for code scanning alerts: Workflow does not contain permissions [(#1234)](https://github.com/wazuh/wazuh-indexer/pull/1234)
 
-[Unreleased 5.0.0]: https://github.com/wazuh/wazuh-indexer/compare/4.14.1...5.0.0
+[Unreleased 5.0.0]: https://github.com/wazuh/wazuh-indexer/compare/4.14.2...5.0.0

@@ -131,6 +131,25 @@ jobs:
           name=$(ls ${{ env.docker_path }}/wazuh-indexer_*.tar.gz | head -1 | xargs basename)
           echo "name=${name}" >> "$GITHUB_OUTPUT"
 
+      # Extract the commit hash from the tarball name (for development builds)
+      # e.g. wazuh-indexer_5.0.0-0_linux-x64_2ea8d157-e3bac31-0a1d7ab-38395e6.tar.gz
+      - name: Extract commit hash from tarball name
+        id: commit
+        if: ${{ inputs.is_stage == false }}
+        run: |
+          hash=$(echo "${{ steps.tarball.outputs.name }}" | sed -E 's/^wazuh-indexer_[^_]+_[^_]+_(.+)\.tar\.gz$/\1/')
+          echo "hash=${hash}" >> "$GITHUB_OUTPUT"
+
+      # Compute the tag suffix: commit hash for dev builds, empty for release builds
+      - name: Compute tag suffix
+        id: tag_suffix
+        run: |
+          if [[ "${{ inputs.is_stage }}" == "true" ]]; then
+            echo "suffix=" >> "$GITHUB_OUTPUT"
+          else
+            echo "suffix=-${{ steps.commit.outputs.hash }}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -146,15 +165,16 @@ jobs:
           DOCKER_REPOSITORY: quay.io/wazuh/wazuh-indexer
           VERSION: ${{ steps.version.outputs.version }}
           REVISION: ${{ inputs.revision || '0' }}
+          TAG_SUFFIX: ${{ steps.tag_suffix.outputs.suffix }}
         run: |
           cd ${{ env.docker_path }}
           docker build \
             --build-arg="VERSION=${VERSION}" \
             --build-arg="INDEXER_TAR_NAME=${{ steps.tarball.outputs.name }}" \
-            --tag="${DOCKER_REPOSITORY}:${VERSION}-${REVISION}-${{ matrix.architecture }}" \
+            --tag="${DOCKER_REPOSITORY}:${VERSION}-${REVISION}${TAG_SUFFIX}-${{ matrix.architecture }}" \
             --provenance=false \
             --progress=plain --no-cache .
-          docker push "${DOCKER_REPOSITORY}:${VERSION}-${REVISION}-${{ matrix.architecture }}"
+          docker push "${DOCKER_REPOSITORY}:${VERSION}-${REVISION}${TAG_SUFFIX}-${{ matrix.architecture }}"
 
   create-multi-arch-manifest:
     permissions:
@@ -169,6 +189,21 @@ jobs:
         run: |
           echo "version=$(bash build-scripts/product_version.sh)" >> "$GITHUB_OUTPUT"
 
+      - name: Get commit hash
+        id: commit
+        if: ${{ inputs.is_stage == false }}
+        run: echo "hash=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      # Compute the tag suffix: commit hash for dev builds, empty for release builds
+      - name: Compute tag suffix
+        id: tag_suffix
+        run: |
+          if [[ "${{ inputs.is_stage }}" == "true" ]]; then
+            echo "suffix=" >> "$GITHUB_OUTPUT"
+          else
+            echo "suffix=-${{ steps.commit.outputs.hash }}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Login to Quay.io
         env:
           QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
@@ -181,11 +216,42 @@ jobs:
           DOCKER_REPOSITORY: quay.io/wazuh/wazuh-indexer
           VERSION: ${{ steps.version.outputs.version }}
           REVISION: ${{ inputs.revision || '0' }}
+          TAG_SUFFIX: ${{ steps.tag_suffix.outputs.suffix }}
         run: |
-          TAG="${DOCKER_REPOSITORY}:${VERSION}-${REVISION}"
+          TAG="${DOCKER_REPOSITORY}:${VERSION}-${REVISION}${TAG_SUFFIX}"
           # Remove any locally cached manifest to avoid conflicts
           docker manifest rm "${TAG}" 2>/dev/null || true
           docker manifest create "${TAG}" \
-            "${DOCKER_REPOSITORY}:${VERSION}-${REVISION}-x64" \
-            "${DOCKER_REPOSITORY}:${VERSION}-${REVISION}-arm64"
+            --amend "${DOCKER_REPOSITORY}:${VERSION}-${REVISION}${TAG_SUFFIX}-x64" \
+            --amend "${DOCKER_REPOSITORY}:${VERSION}-${REVISION}${TAG_SUFFIX}-arm64"
           docker manifest push "${TAG}"
+
+      # Push 'latest' tag for release builds
+      - name: Create and push latest manifest
+        if: ${{ inputs.is_stage == true }}
+        env:
+          DOCKER_REPOSITORY: quay.io/wazuh/wazuh-indexer
+          VERSION: ${{ steps.version.outputs.version }}
+          REVISION: ${{ inputs.revision || '0' }}
+        run: |
+          TAG="${DOCKER_REPOSITORY}:latest"
+          docker manifest rm "${TAG}" 2>/dev/null || true
+          docker manifest create "${TAG}" \
+            --amend "${DOCKER_REPOSITORY}:${VERSION}-${REVISION}-x64" \
+            --amend "${DOCKER_REPOSITORY}:${VERSION}-${REVISION}-arm64"
+          docker manifest push "${TAG}"
+
+      - name: Delete per-arch tags from registry
+        env:
+          QUAY_TOKEN: ${{ secrets.QUAY_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+          REVISION: ${{ inputs.revision || '0' }}
+          TAG_SUFFIX: ${{ steps.tag_suffix.outputs.suffix }}
+        run: |
+          for arch in x64 arm64; do
+            tag="${VERSION}-${REVISION}${TAG_SUFFIX}-${arch}"
+            echo "Deleting tag: ${tag}"
+            curl -s -X DELETE \
+              -H "Authorization: Bearer ${QUAY_TOKEN}" \
+              "https://quay.io/api/v1/repository/wazuh/wazuh-indexer/tag/${tag}"
+          done

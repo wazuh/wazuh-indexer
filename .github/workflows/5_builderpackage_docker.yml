@@ -152,6 +152,7 @@ jobs:
             --build-arg="VERSION=${VERSION}" \
             --build-arg="INDEXER_TAR_NAME=${{ steps.tarball.outputs.name }}" \
             --tag="${DOCKER_REPOSITORY}:${VERSION}-${REVISION}-${{ matrix.architecture }}" \
+            --provenance=false \
             --progress=plain --no-cache .
           docker push "${DOCKER_REPOSITORY}:${VERSION}-${REVISION}-${{ matrix.architecture }}"
 
@@ -181,7 +182,10 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
           REVISION: ${{ inputs.revision || '0' }}
         run: |
-          docker manifest create "${DOCKER_REPOSITORY}:${VERSION}-${REVISION}" \
+          TAG="${DOCKER_REPOSITORY}:${VERSION}-${REVISION}"
+          # Remove any locally cached manifest to avoid conflicts
+          docker manifest rm "${TAG}" 2>/dev/null || true
+          docker manifest create "${TAG}" \
             "${DOCKER_REPOSITORY}:${VERSION}-${REVISION}-x64" \
             "${DOCKER_REPOSITORY}:${VERSION}-${REVISION}-arm64"
-          docker manifest push "${DOCKER_REPOSITORY}:${VERSION}-${REVISION}"
+          docker manifest push "${TAG}"

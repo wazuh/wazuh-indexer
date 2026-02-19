@@ -192,6 +192,7 @@ jobs:
 
       - name: Delete per-arch tags from registry
         env:
+          QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
           QUAY_TOKEN: ${{ secrets.QUAY_TOKEN }}
           VERSION: ${{ steps.version.outputs.version }}
           REVISION: ${{ inputs.revision || '0' }}
@@ -199,7 +200,13 @@ jobs:
           for arch in x64 arm64; do
             tag="${VERSION}-${REVISION}-${arch}"
             echo "Deleting tag: ${tag}"
-            curl -s -X DELETE \
-              -H "Authorization: Bearer ${QUAY_TOKEN}" \
-              "https://quay.io/api/v1/repository/wazuh/wazuh-indexer/tag/${tag}"
+            response=$(curl -s -w "\n%{http_code}" -X DELETE \
+              -u "${QUAY_USERNAME}:${QUAY_TOKEN}" \
+              "https://quay.io/api/v1/repository/wazuh/wazuh-indexer/tag/${tag}")
+            http_code=$(echo "$response" | tail -n1)
+            body=$(echo "$response" | sed '$d')
+            echo "Response (HTTP ${http_code}): ${body}"
+            if [[ "$http_code" != "204" && "$http_code" != "200" ]]; then
+              echo "Warning: Failed to delete tag ${tag}"
+            fi
           done

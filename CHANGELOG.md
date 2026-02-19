@@ -21,6 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Enable Wazuh Engine in Docker images and add support for ARM architecture [(#1320)](https://github.com/wazuh/wazuh-indexer/pull/1320)
 
 ### Fixed
+- Set secure permissions (750) for engine sockets directory [(#1330)](https://github.com/wazuh/wazuh-indexer/pull/1330)
 
 ### Dependencies
 -

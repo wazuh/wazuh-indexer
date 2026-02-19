@@ -87,7 +87,7 @@ jobs:
       revision: ${{ inputs.revision }}
       is_stage: ${{ inputs.is_stage }}
       distribution: '[ "tar" ]'
-      architecture: ${{ inputs.architecture }}
+      architecture: '[ "x64" ]'
       id: ${{ inputs.id }}
       plugins_ref: ${{ inputs.plugins_ref }}
     secrets: inherit

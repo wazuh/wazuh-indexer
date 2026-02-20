@@ -87,7 +87,8 @@ jobs:
       revision: ${{ inputs.revision }}
       is_stage: ${{ inputs.is_stage }}
       distribution: '[ "tar" ]'
-      architecture: ${{ inputs.architecture }}
+      # In the build process just generate one tarball since both images uses the same .tar
+      architecture: '[ "x64" ]' 
       id: ${{ inputs.id }}
       plugins_ref: ${{ inputs.plugins_ref }}
     secrets: inherit

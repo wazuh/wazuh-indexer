@@ -508,6 +508,11 @@ jobs:
             -d ${{ matrix.distribution }} \
             -n ${{ steps.min_package.outputs.name }}
 
+      - name: Install RPM utilities
+        if: ${{ matrix.distribution == 'rpm' }}
+        run: |
+          sudo yum install rpm2cpio cpio -y
+
       - name: Run `assemble.sh`
         run: |
           bash build-scripts/assemble.sh \

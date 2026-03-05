@@ -42,8 +42,8 @@ else
         "wazuh-indexer-security-analytics" # Flagged as Trojan by some antivirus software
         "wazuh-indexer-content-manager"
         "wazuh-indexer-reports-scheduler"
-        "wazuh-indexer-notifications"
         "wazuh-indexer-notifications-core"
+        "wazuh-indexer-notifications"
     )
 fi
 

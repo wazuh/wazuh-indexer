@@ -479,7 +479,7 @@ jobs:
 
       - name: Build with Gradle
         working-directory: ./notifications
-        run: ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }}
+        run: ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Dbuild.revision=${{ inputs.revision }}
 
       - run: ls -lR notifications/notifications/build/distributions notifications/core/build/distributions
 

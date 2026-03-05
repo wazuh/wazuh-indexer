@@ -31,8 +31,6 @@ else
         "opensearch-knn"
         "opensearch-ml-plugin" # "opensearch-ml"
         "neural-search"        # "opensearch-neural-search"
-        "opensearch-notifications-core"
-        "notifications" # "opensearch-notifications". Requires "opensearch-notifications-core"
         "opensearch-observability"
         "opensearch-security"
         "opensearch-sql-plugin" # "opensearch-sql"

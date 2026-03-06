@@ -525,6 +525,17 @@ jobs:
             -s ${{ needs.build-security-analytics-plugin.outputs.hash }} \
             -o ${{ github.workspace }}/artifacts
 
+      - name: Install Docker
+        if: ${{ matrix.architecture == 'arm64' && matrix.distribution == 'rpm' }}
+        run: |
+          if ! command -v docker &> /dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y docker.io
+            sudo systemctl start docker
+            sudo chmod 666 /var/run/docker.sock
+          fi
+
+
       - name: Test RPM package installation
         if: ${{ matrix.distribution == 'rpm' }}
         run: |

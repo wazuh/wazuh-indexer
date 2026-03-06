@@ -172,11 +172,11 @@ jobs:
             -d ${{ matrix.distribution }} \
             -n ${{ steps.min_package.outputs.name }}
 
-      - name: Install RPM utilities
-        if: ${{ matrix.distribution == 'rpm' }}
+      - name: Install Build Dependencies
+        if: ${{ matrix.architecture == 'arm64' }}
         run: |
           sudo apt-get update
-          sudo apt-get install -y rpm cpio
+          sudo apt-get install -y maven rpm cpio
 
       - name: Run `assemble.sh`
         run: |

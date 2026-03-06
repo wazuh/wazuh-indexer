@@ -48,6 +48,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Build SAP in CM workflow [(#1272)](https://github.com/wazuh/wazuh-indexer/pull/1272)
 - Use docker commands directly instead of addnab/docker-run-action [(#1326)](https://github.com/wazuh/wazuh-indexer/pull/1326)
 - Adapt build workflows for dedicated runners [(#1347)](https://github.com/wazuh/wazuh-indexer/pull/1347)
+- Merge CodeQL configurations into codeql-analysis.yml [(#1345)](https://github.com/wazuh/wazuh-indexer/pull/1345)
 
 ### Deprecated
 -
@@ -68,6 +69,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Fix unscaped commands in indexer-security-init.sh [(#1196)](https://github.com/wazuh/wazuh-indexer/pull/1196)
 - Fix broken link generation from the repository bumper script [(#1206)](https://github.com/wazuh/wazuh-indexer/pull/1206)
 - Fix demo certificates generation triggered by default [(#1235)](https://github.com/wazuh/wazuh-indexer/pull/1235)
+- Fix link-checker workflow [(#1344)(]https://github.com/wazuh/wazuh-indexer/pull/1344)
 
 ### Security
 - Reduce risk of GITHUB_TOKEN exposure [(#960)](https://github.com/wazuh/wazuh-indexer/pull/960)

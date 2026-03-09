@@ -521,11 +521,7 @@ jobs:
             -s ${{ needs.build-security-analytics-plugin.outputs.hash }} \
             -o ${{ github.workspace }}/artifacts
 
-      - name: Install Docker through provision script
-        if: ${{ matrix.architecture == 'arm64' && matrix.distribution == 'rpm' }}
-        run: |
-          chmod +x ./build-scripts/provision.sh
-          sudo ./build-scripts/provision.sh
+
 
 
       - name: Test RPM package installation

@@ -432,7 +432,7 @@ jobs:
   build:
     needs: [setup, build-wazuh-plugins, build-reporting-plugin, build-security-analytics-plugin, build-wazuh-engine]
     runs-on:
-      group: ${{ matrix.architecture == 'arm64' && 'wz-linux-arm64' || 'wz-linux-amd64' }}
+      group: ${{ matrix.architecture == 'arm64' && 'wz-linux-arm64-2' || 'wz-linux-amd64' }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
@@ -508,11 +508,7 @@ jobs:
             -d ${{ matrix.distribution }} \
             -n ${{ steps.min_package.outputs.name }}
 
-      - name: Install Build Dependencies
-        if: ${{ matrix.architecture == 'arm64' }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y maven rpm cpio
+
 
       - name: Run `assemble.sh`
         run: |
@@ -525,15 +521,11 @@ jobs:
             -s ${{ needs.build-security-analytics-plugin.outputs.hash }} \
             -o ${{ github.workspace }}/artifacts
 
-      - name: Install Docker
+      - name: Install Docker through provision script
         if: ${{ matrix.architecture == 'arm64' && matrix.distribution == 'rpm' }}
         run: |
-          if ! command -v docker &> /dev/null; then
-            sudo apt-get update
-            sudo apt-get install -y docker.io
-            sudo systemctl start docker
-            sudo chmod 666 /var/run/docker.sock
-          fi
+          chmod +x ./build-scripts/provision.sh
+          sudo ./build-scripts/provision.sh
 
 
       - name: Test RPM package installation

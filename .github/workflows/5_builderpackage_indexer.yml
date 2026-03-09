@@ -469,8 +469,7 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Provision
-        if: ${{ matrix.distribution == 'deb' }}
+      - name: Provision unified
         run: |
           sudo bash build-scripts/provision.sh
 

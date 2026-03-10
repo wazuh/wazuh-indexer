@@ -29,8 +29,8 @@ if [[ "$ARCH" == "aarch64" ]]; then
     echo "ARM64 detected: Installing architecture-specific tools..."
 
     # Install Maven, RPM, and CPIO
-        sudo apt-get update
-        sudo apt-get install -y maven rpm cpio
+    sudo apt-get update
+    sudo apt-get install -y maven rpm cpio
 
     # RPM specific logic
     # If the system uses yum/dnf, install Docker
@@ -38,10 +38,10 @@ if [[ "$ARCH" == "aarch64" ]]; then
         if ! command -v docker &> /dev/null; then
             echo "ARM64 + RPM-based system detected. Installing Docker..."
 
-            sudo yum update -y
-            sudo yum install -y docker
-            sudo systemctl start docker || true
-            sudo chmod 666 /var/run/docker.sock || true
+            sudo apt-get update
+            sudo apt-get install -y docker.io
+            sudo systemctl start docker
+            sudo chmod 666 /var/run/docker.sock
         fi
     fi
 fi

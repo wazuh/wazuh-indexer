@@ -32,18 +32,15 @@ if [[ "$ARCH" == "aarch64" ]]; then
     sudo apt-get update
     sudo apt-get install -y maven rpm cpio
 
-    # RPM specific logic
-    # If the system uses yum/dnf, install Docker
-    if command -v yum &> /dev/null || command -v dnf &> /dev/null; then
-        if ! command -v docker &> /dev/null; then
-            echo "ARM64 + RPM-based system detected. Installing Docker..."
+    if ! command -v docker &> /dev/null; then
+        echo "Installing Docker..."
 
-            sudo apt-get update
-            sudo apt-get install -y docker.io
-            sudo systemctl start docker
-            sudo chmod 666 /var/run/docker.sock
-        fi
+        sudo apt-get update
+        sudo apt-get install -y docker.io
+        sudo systemctl start docker
+        sudo chmod 666 /var/run/docker.sock
     fi
+
 fi
 
 echo "--- Provisioning Finished ---"

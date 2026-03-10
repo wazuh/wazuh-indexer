@@ -19,9 +19,6 @@ if command -v apt-get &> /dev/null; then
         libxrandr2 libgbm-dev libxkbcommon-x11-0 libpangocairo-1.0-0 \
         libcairo2 libcairo2-dev libnss3 libnspr4 libnspr4-dev jq
     sudo apt-get clean -y
-
-else
-    echo "DEB-based system not detected. Skipping base DEB tools..."
 fi
 
 # Architecture logic (ARM64)
@@ -35,7 +32,6 @@ if [[ "$ARCH" == "aarch64" ]]; then
     if ! command -v docker &> /dev/null; then
         echo "Installing Docker..."
 
-        sudo apt-get update
         sudo apt-get install -y docker.io
         sudo systemctl start docker
         sudo chmod 666 /var/run/docker.sock

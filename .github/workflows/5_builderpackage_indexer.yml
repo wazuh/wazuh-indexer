@@ -97,6 +97,9 @@ on:
       CI_INTERNAL_DEVELOPMENT_BUCKET_USER_SECRET_KEY:
         required: true
         description: "AWS user secret key"
+      CTI_API_URL:
+        required: false
+        description: "CTI API base URL for downloading threat intelligence snapshots"
 
     outputs:
       name:
@@ -456,6 +459,14 @@ jobs:
           merge-multiple: true
           path: ./artifacts/engine
       
+      # Download CTI snapshots (content, IoC, CVE)
+      - name: Download CTI snapshots
+        if: ${{ secrets.CTI_API_URL != '' }}
+        run: |
+          bash build-scripts/download-cti-snapshots.sh \
+            --env "${{ secrets.CTI_API_URL }}" \
+            --output-dir ./artifacts/cti-snapshots
+
       - name: Display structure of downloaded files
         run: ls -lR ./artifacts/
 

@@ -136,6 +136,9 @@ fetch_snapshot_url() {
     local base_url="$1"
     local context="$2"
     local consumer="$3"
+
+    # Strip trailing slash to avoid double slashes in the URL
+    base_url="${base_url%/}"
     local url="${base_url}/catalog/contexts/${context}/consumers/${consumer}"
 
     echo "  Fetching consumer metadata from ${url}" >&2
@@ -151,6 +154,18 @@ fetch_snapshot_url() {
     if [[ -z "${snapshot_url}" ]]; then
         echo "ERROR: No snapshot link found for ${context}/${consumer}" >&2
         return 1
+    fi
+
+    # The API may return snapshot URLs with a different host than the one
+    # we queried (e.g. cti-pre.wazuh.com instead of cti.pre.cloud.wazuh.com).
+    # Rewrite the host to match the base URL we were given.
+    local base_host="${base_url#https://}"
+    base_host="${base_host%%/*}"
+    local snap_host="${snapshot_url#https://}"
+    snap_host="${snap_host%%/*}"
+    if [[ "${snap_host}" != "${base_host}" ]]; then
+        echo "  Rewriting snapshot host: ${snap_host} -> ${base_host}" >&2
+        snapshot_url="${snapshot_url/${snap_host}/${base_host}}"
     fi
 
     echo "${snapshot_url}"

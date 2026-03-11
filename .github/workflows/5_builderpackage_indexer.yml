@@ -508,8 +508,6 @@ jobs:
             -d ${{ matrix.distribution }} \
             -n ${{ steps.min_package.outputs.name }}
 
-
-
       - name: Run `assemble.sh`
         run: |
           bash build-scripts/assemble.sh \
@@ -520,9 +518,6 @@ jobs:
             -e ${{ needs.build-reporting-plugin.outputs.hash }} \
             -s ${{ needs.build-security-analytics-plugin.outputs.hash }} \
             -o ${{ github.workspace }}/artifacts
-
-
-
 
       - name: Test RPM package installation
         if: ${{ matrix.distribution == 'rpm' }}

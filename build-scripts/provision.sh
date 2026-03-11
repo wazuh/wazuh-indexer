@@ -1,4 +1,8 @@
 #!/bin/bash
+
+# Resolves core build dependencies and libraries for DEB distributions.
+# Detects and configures architecture-specific tools for ARM64 (aarch64).
+
 set -e
 
 # Environment Detection
@@ -34,6 +38,7 @@ if [[ "$ARCH" == "aarch64" ]]; then
 
         sudo apt-get install -y docker.io
         sudo systemctl start docker
+        sudo chmod 660 /var/run/docker.sock
     fi
 
 fi

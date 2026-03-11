@@ -314,7 +314,7 @@ function install_cti_snapshots() {
     fi
 
     echo "Installing CTI snapshots"
-    local dest_path="${target_dir}/plugins/wazuh-indexer-content-manager/cti-snapshots"
+    local dest_path="${target_dir}/plugins/wazuh-indexer-content-manager/snapshots"
     mkdir -p "$dest_path"
 
     cp "${snapshots_src}"/*.zip "$dest_path"

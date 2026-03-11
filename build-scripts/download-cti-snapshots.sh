@@ -18,14 +18,10 @@
 #   plugin for indexing.
 #
 # Usage:
-#   ./download-cti-snapshots.sh --env <base-url> [--cve-env <base-url>]
-#                               [--output-dir <path>] [--help]
+#   ./download-cti-snapshots.sh --env <base-url> [--output-dir <path>] [--help]
 #
 # Arguments:
-#   --env <base-url>         CTI API base URL for content and IoC consumers
-#                            (e.g. https://<your-environment>/api/v1).
-#   --cve-env <base-url>     CTI API base URL for the CVE consumer. Defaults
-#                            to the value of --env if not specified.
+#   --env <base-url>         CTI API base URL (e.g. https://<your-environment>/api/v1).
 #   --output-dir <path>      Directory for the output .zip files (default:
 #                            ./cti-snapshots).
 #   --help                   Show this help message and exit.
@@ -65,7 +61,6 @@ CVE_CONSUMER="vd_4.8.0"
 # Defaults
 # =============================================================================
 CTI_BASE_URL=""
-CTI_CVE_BASE_URL=""
 OUTPUT_DIR="./cti-snapshots"
 
 # =============================================================================
@@ -78,10 +73,7 @@ Usage: $(basename "$0") [OPTIONS]
 Downloads CTI snapshot .zip files for all consumers (content, IoC, CVE).
 
 Options:
-  --env <base-url>        CTI API base URL for content and IoC consumers
-                          (e.g. https://<your-environment>/api/v1).
-  --cve-env <base-url>    CTI API base URL for the CVE consumer.
-                          Defaults to the value of --env if not specified.
+  --env <base-url>        CTI API base URL (e.g. https://<your-environment>/api/v1).
   --output-dir <path>     Output directory (default: ./cti-snapshots).
   --help                  Show this help message and exit.
 
@@ -92,7 +84,6 @@ Output files:
 
 Example:
   $(basename "$0") --env https://<your-environment>/api/v1
-  $(basename "$0") --env https://<your-environment>/api/v1 --cve-env https://<your-environment>/api/v1
 EOF
     exit 0
 }
@@ -104,10 +95,6 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         --env)
             CTI_BASE_URL="${2:?ERROR: --env requires a CTI API base URL}"
-            shift 2
-            ;;
-        --cve-env)
-            CTI_CVE_BASE_URL="${2:?ERROR: --cve-env requires a CTI API base URL}"
             shift 2
             ;;
         --output-dir)
@@ -129,14 +116,6 @@ if [[ -z "${CTI_BASE_URL}" ]]; then
     echo "ERROR: --env is required. Provide the CTI API base URL."
     echo ""
     usage
-fi
-
-# TODO: Remove --cve-env once the CTI API serves all consumers (including CVE)
-#       from the same base URL. Currently the CTI envs are under development so
-#       requires a different endpoint, so --cve-env is needed as a temporary workaround.
-# Default --cve-env to --env if not specified
-if [[ -z "${CTI_CVE_BASE_URL}" ]]; then
-    CTI_CVE_BASE_URL="${CTI_BASE_URL}"
 fi
 
 # =============================================================================
@@ -242,9 +221,6 @@ process_consumer() {
 main() {
     echo "Wazuh CTI Snapshot Downloader"
     echo "CTI API URL: ${CTI_BASE_URL}"
-    if [[ "${CTI_CVE_BASE_URL}" != "${CTI_BASE_URL}" ]]; then
-        echo "CVE API URL: ${CTI_CVE_BASE_URL}"
-    fi
 
     mkdir -p "${OUTPUT_DIR}"
 
@@ -254,7 +230,7 @@ main() {
     # Download all three consumer snapshots
     process_consumer "content" "${CTI_BASE_URL}"     "${CONTENT_CONTEXT}" "${CONTENT_CONSUMER}"
     process_consumer "ioc"     "${CTI_BASE_URL}"     "${IOC_CONTEXT}"     "${IOC_CONSUMER}"
-    process_consumer "cve"     "${CTI_CVE_BASE_URL}" "${CVE_CONTEXT}"     "${CVE_CONSUMER}"
+    process_consumer "cve"     "${CTI_BASE_URL}"     "${CVE_CONTEXT}"     "${CVE_CONSUMER}"
 
     # Print summary
     print_summary "${OUTPUT_DIR}"

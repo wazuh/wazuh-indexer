@@ -38,6 +38,7 @@ if [[ "$ARCH" == "aarch64" ]]; then
 
         sudo apt-get install -y docker.io
         sudo systemctl start docker
+        sudo usermod -aG docker $USER
         sudo chmod 660 /var/run/docker.sock
     fi
 

@@ -43,24 +43,11 @@
 set -euo pipefail
 
 # =============================================================================
-# Constants – Consumer definitions (from PluginSettings defaults)
-# =============================================================================
-# Ruleset consumer (rules, decoders, kvdbs, integrations, policies, filters)
-CONTENT_CONTEXT="development_0.0.3"
-CONTENT_CONSUMER="development_0.0.3_test"
-
-# IoC consumer
-IOC_CONTEXT="ioc_provider_v3"
-IOC_CONSUMER="iocs_v3"
-
-# CVE consumer
-CVE_CONTEXT="vd_1.0.0"
-CVE_CONSUMER="vd_4.8.0"
-
-# =============================================================================
 # Defaults
 # =============================================================================
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CTI_BASE_URL=""
+CONTENT_SOURCES="${SCRIPT_DIR}/content-sources.json"
 OUTPUT_DIR="./cti-snapshots"
 
 # =============================================================================
@@ -77,10 +64,8 @@ Options:
   --output-dir <path>     Output directory (default: ./cti-snapshots).
   --help                  Show this help message and exit.
 
-Output files:
-  content.zip   Ruleset snapshot (rules, decoders, kvdbs, integrations, etc.)
-  ioc.zip       IoC snapshot
-  cve.zip       CVE snapshot
+The script reads consumer definitions from content-sources.json located
+in the same directory as this script. Each key becomes the output filename (<key>.zip).
 
 Example:
   $(basename "$0") --env https://<your-environment>/api/v1
@@ -116,6 +101,12 @@ if [[ -z "${CTI_BASE_URL}" ]]; then
     echo "ERROR: --env is required. Provide the CTI API base URL."
     echo ""
     usage
+fi
+
+# Validate content-sources file exists
+if [[ ! -f "${CONTENT_SOURCES}" ]]; then
+    echo "ERROR: Content sources file not found: ${CONTENT_SOURCES}"
+    exit 1
 fi
 
 # =============================================================================
@@ -235,17 +226,24 @@ process_consumer() {
 # =============================================================================
 main() {
     echo "Wazuh CTI Snapshot Downloader"
-    echo "CTI API URL: ${CTI_BASE_URL}"
+    echo "CTI API URL:       ${CTI_BASE_URL}"
+    echo "Content sources:   ${CONTENT_SOURCES}"
 
     mkdir -p "${OUTPUT_DIR}"
 
     # Remove any previous snapshot .zip files to avoid stale data
     rm -f "${OUTPUT_DIR}"/*.zip
 
-    # Download all three consumer snapshots
-    process_consumer "content" "${CTI_BASE_URL}"     "${CONTENT_CONTEXT}" "${CONTENT_CONSUMER}"
-    process_consumer "ioc"     "${CTI_BASE_URL}"     "${IOC_CONTEXT}"     "${IOC_CONSUMER}"
-    process_consumer "cve"     "${CTI_BASE_URL}"     "${CVE_CONTEXT}"     "${CVE_CONSUMER}"
+    # Iterate over every entry in the content-sources JSON file.
+    # Each key is used as the snapshot label and output filename.
+    local keys
+    keys=$(jq -r 'keys[]' "${CONTENT_SOURCES}")
+    for key in ${keys}; do
+        local context consumer
+        context=$(jq -r --arg k "${key}" '.[$k].context' "${CONTENT_SOURCES}")
+        consumer=$(jq -r --arg k "${key}" '.[$k].consumer' "${CONTENT_SOURCES}")
+        process_consumer "${key}" "${CTI_BASE_URL}" "${context}" "${consumer}"
+    done
 
     # Print summary
     print_summary "${OUTPUT_DIR}"

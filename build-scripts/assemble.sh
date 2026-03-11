@@ -302,28 +302,6 @@ function install_wazuh_engine() {
 }
 
 # ====
-# Install CTI snapshots
-# ====
-function install_cti_snapshots() {
-    local target_dir="${1}"
-    local snapshots_src="${OUTPUT}/cti-snapshots"
-
-    if [ ! -d "${snapshots_src}" ] || [ -z "$(ls -A "${snapshots_src}"/*.zip 2>/dev/null)" ]; then
-        echo "Warning: No CTI snapshots found in ${snapshots_src}. Skipping."
-        return 0
-    fi
-
-    echo "Installing CTI snapshots"
-    local dest_path="${target_dir}/plugins/wazuh-indexer-content-manager/snapshots"
-    mkdir -p "$dest_path"
-
-    cp "${snapshots_src}"/*.zip "$dest_path"
-    chmod -R 750 "$dest_path"
-
-    echo "CTI snapshots installed to $dest_path"
-}
-
-# ====
 # Clean
 # ====
 function clean() {
@@ -368,9 +346,6 @@ function assemble_tar() {
     # Install Wazuh Engine
     install_wazuh_engine "${decompressed_tar_dir}"
 
-    # Install CTI snapshots
-    install_cti_snapshots "${decompressed_tar_dir}"
-
     add_demo_certs_installer
     # Swap configuration files
     add_configuration_files
@@ -410,9 +385,6 @@ function assemble_rpm() {
     
     # Install Wazuh Engine
     install_wazuh_engine "${src_path}"
-
-    # Install CTI snapshots
-    install_cti_snapshots "${src_path}"
 
     add_demo_certs_installer
     # Swap configuration files
@@ -467,9 +439,6 @@ function assemble_deb() {
     
     # Install Wazuh Engine
     install_wazuh_engine "${src_path}"
-
-    # Install CTI snapshots
-    install_cti_snapshots "${src_path}"
 
     add_demo_certs_installer
     # Swap configuration files

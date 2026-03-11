@@ -320,6 +320,15 @@ jobs:
         id: version
         run: echo "version=$(jq .version -r VERSION.json)" >> "$GITHUB_OUTPUT"
 
+      # Download CTI snapshots into plugin resources so they are bundled
+      # into the content-manager plugin .zip during the Gradle build.
+      - name: Download CTI snapshots
+        if: ${{ matrix.plugins == 'content-manager' }}
+        run: |
+          bash <(curl -fsSL "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/build-scripts/download-cti-snapshots.sh") \
+            --env "${{ vars.CTI_API_URL }}" \
+            --output-dir ./plugins/content-manager/src/main/resources/snapshots
+
       - name: Build with Gradle
         working-directory: ./plugins/${{ matrix.plugins }}
         run: ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }}
@@ -456,14 +465,6 @@ jobs:
           merge-multiple: true
           path: ./artifacts/engine
       
-      # Download CTI snapshots (content, IoC, CVE)
-      - name: Download CTI snapshots
-        if: ${{ vars.CTI_API_URL != '' }}
-        run: |
-          bash build-scripts/download-cti-snapshots.sh \
-            --env "${{ vars.CTI_API_URL }}" \
-            --output-dir ./artifacts/cti-snapshots
-
       - name: Display structure of downloaded files
         run: ls -lR ./artifacts/
 

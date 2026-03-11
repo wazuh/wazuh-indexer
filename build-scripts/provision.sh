@@ -44,6 +44,3 @@ if [[ "$ARCH" == "aarch64" ]]; then
 fi
 
 echo "--- Provisioning Finished ---"
-
-
-

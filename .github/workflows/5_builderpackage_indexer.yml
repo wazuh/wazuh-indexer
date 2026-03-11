@@ -469,7 +469,7 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Provision unified
+      - name: Provision
         run: |
           sudo bash build-scripts/provision.sh
 

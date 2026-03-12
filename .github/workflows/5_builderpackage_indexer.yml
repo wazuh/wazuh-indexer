@@ -342,19 +342,6 @@ jobs:
         id: version
         run: echo "version=$(jq .version -r VERSION.json)" >> "$GITHUB_OUTPUT"
 
-      # Download CTI snapshots into plugin resources so they are bundled
-      # into the content-manager plugin .zip during the Gradle build.
-      - name: Download CTI snapshots
-        if: ${{ matrix.plugins == 'content-manager' }}
-        run: |
-          raw_base="https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/build-scripts/cti-content"
-          mkdir -p /tmp/cti-content
-          curl -fsSL -o /tmp/cti-content/download-cti-snapshots.sh "${raw_base}/download-cti-snapshots.sh"
-          curl -fsSL -o /tmp/cti-content/content-sources.json "${raw_base}/content-sources.json"
-          bash /tmp/cti-content/download-cti-snapshots.sh \
-            --env "${{ vars.CTI_API_URL }}" \
-            --output-dir ./plugins/content-manager/src/main/resources/snapshots
-
       - name: Build with Gradle
         working-directory: ./plugins/${{ matrix.plugins }}
         run: ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }}
@@ -594,6 +581,15 @@ jobs:
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }} \
             -n ${{ steps.min_package.outputs.name }}
+
+      # Download CTI snapshots so assemble.sh can install them
+      # alongside the content-manager plugin.
+      - name: Download CTI snapshots
+        if: ${{ vars.CTI_API_URL != '' }}
+        run: |
+          bash build-scripts/cti-content/download-cti-snapshots.sh \
+            --env "${{ vars.CTI_API_URL }}" \
+            --output-dir ${{ github.workspace }}/artifacts/cti-snapshots
 
       - name: Run `assemble.sh`
         run: |

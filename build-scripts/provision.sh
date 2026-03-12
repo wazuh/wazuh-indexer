@@ -33,7 +33,7 @@ if [[ "$ARCH" == "aarch64" ]]; then
     sudo apt-get update
     sudo apt-get install -y maven rpm cpio
     sudo apt-get update && sudo apt-get install -y unzip
-    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+    curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip"
     unzip -q awscliv2.zip
     sudo ./aws/install --update
     

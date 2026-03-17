@@ -175,7 +175,7 @@ jobs:
         run: echo "hash=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
           path: "./plugins/${{ matrix.plugins }}/build/distributions/${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip"
@@ -216,7 +216,7 @@ jobs:
         run: echo "hash=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
           path: build/distributions/${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
@@ -315,7 +315,7 @@ jobs:
           sudo dpkg -i "artifacts/dist/${{ steps.package.outputs.name }}"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.package.outputs.name }}
           path: artifacts/dist/${{ steps.package.outputs.name }}

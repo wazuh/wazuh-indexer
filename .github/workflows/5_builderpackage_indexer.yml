@@ -119,6 +119,7 @@ on:
 jobs:
   branches:
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     outputs:
       wazuh_plugins_ref: ${{ steps.branches.outputs.wazuh_indexer_plugins_branch }}
       reporting_plugin_ref: ${{ steps.branches.outputs.wazuh_indexer_reporting_branch }}
@@ -135,6 +136,7 @@ jobs:
 
   get-versions-wazuh-indexer:
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     outputs:
       version: ${{ steps.version.outputs.version }}
       opensearch_version: ${{ steps.version.outputs.opensearch_version }}
@@ -154,6 +156,7 @@ jobs:
   get-versions-wazuh-indexer-plugins:
     needs: [branches]
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     outputs:
       version: ${{ steps.plugins_version.outputs.version }}
       opensearch_version: ${{ steps.plugins_version.outputs.opensearch_version }}
@@ -175,6 +178,7 @@ jobs:
   get-versions-wazuh-indexer-reporting:
     needs: [branches]
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     outputs:
       version: ${{ steps.reporting_version.outputs.version }}
       opensearch_version: ${{ steps.reporting_version.outputs.opensearch_version }}
@@ -196,6 +200,7 @@ jobs:
   get-versions-wazuh-indexer-security-analytics:
     needs: [branches]
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     outputs:
       version: ${{ steps.security_analytics_version.outputs.version }}
       opensearch_version: ${{ steps.security_analytics_version.outputs.opensearch_version }}
@@ -217,6 +222,7 @@ jobs:
   get-versions-wazuh-indexer-notifications:
     needs: [branches]
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     outputs:
       version: ${{ steps.notifications_version.outputs.version }}
       opensearch_version: ${{ steps.notifications_version.outputs.opensearch_version }}
@@ -237,6 +243,7 @@ jobs:
 
   compatibility-check:
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     needs: [get-versions-wazuh-indexer, get-versions-wazuh-indexer-plugins, get-versions-wazuh-indexer-reporting, get-versions-wazuh-indexer-security-analytics, get-versions-wazuh-indexer-notifications]
     steps:
       - name: Check version compatibility
@@ -256,6 +263,7 @@ jobs:
     needs: [compatibility-check]
     name: Set up variables
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix }}
       previous_version: ${{ steps.previous_release.outputs.previous_version }}
@@ -271,9 +279,13 @@ jobs:
       - uses: actions/checkout@v6
       - id: previous_release
         name: Get latest Wazuh release from GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           CURRENT="$(bash build-scripts/product_version.sh)"
-          PREVIOUS=$(curl -s https://api.github.com/repos/wazuh/wazuh-indexer/releases | jq -r '.[].tag_name' | grep -vE 'alpha|beta|rc' | sed 's/^v//' | grep -E '^4\.[0-9]+\.[0-9]+$' | \
+          PREVIOUS=$(curl -s --retry 3 --retry-delay 5 --connect-timeout 10 --max-time 30 \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            https://api.github.com/repos/wazuh/wazuh-indexer/releases | jq -r '.[].tag_name' | grep -vE 'alpha|beta|rc' | sed 's/^v//' | grep -E '^4\.[0-9]+\.[0-9]+$' | \
           grep -v "^${CURRENT}$" | sort -V | awk -v current="$CURRENT" '$0 < current' | tail -n1)
 
           echo "Current version: $CURRENT"
@@ -283,6 +295,7 @@ jobs:
   # Publish security-analytics-plugin and its commons to Local Maven
   sap-maven-local-publication:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     needs: [compatibility-check, branches, get-versions-wazuh-indexer-security-analytics]
     steps:
       - name: Publish SAP to Local Maven
@@ -314,6 +327,7 @@ jobs:
       matrix:
         plugins: ["setup", "content-manager"]
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     env:
       plugin_name: wazuh-indexer-${{ matrix.plugins }}
     outputs:
@@ -364,6 +378,7 @@ jobs:
     needs: [compatibility-check, branches]
     if: ${{ needs.branches.outputs.reporting_plugin_ref != '' }}
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     outputs:
       hash: ${{ steps.save-hash.outputs.hash }}
     env:
@@ -406,6 +421,7 @@ jobs:
     needs: [compatibility-check, branches]
     if: ${{ needs.branches.outputs.security_analytics_plugin_ref != '' }}
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     outputs:
       hash: ${{ steps.save-hash.outputs.hash }}
     env:
@@ -455,6 +471,7 @@ jobs:
     needs: [compatibility-check, branches]
     if: ${{ needs.branches.outputs.notifications_plugin_ref != '' }}
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     outputs:
       hash: ${{ steps.save-hash.outputs.hash }}
     env:
@@ -506,6 +523,7 @@ jobs:
     runs-on:
       group: ${{ matrix.architecture == 'arm64' && 'wz-linux-arm64' || 'wz-linux-amd64' }}
       labels: ${{ matrix.architecture == 'arm64' && 'wz-linux-arm64-2' || 'wz-linux-amd64' }}
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
@@ -606,6 +624,7 @@ jobs:
       - name: Test RPM package installation
         if: ${{ matrix.distribution == 'rpm' }}
         run: |
+          docker pull redhat/ubi9:latest
           docker run --rm \
             -v "${{ github.workspace }}/artifacts/dist:/artifacts/dist" \
             redhat/ubi9:latest \

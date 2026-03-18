@@ -3,6 +3,24 @@
 
 set -e
 
+# Inline retry utility for this standalone script
+_retry() {
+    local max_attempts="$1" delay="$2"
+    shift 2
+    local attempt=1
+    while true; do
+        if "$@"; then return 0; fi
+        if (( attempt >= max_attempts )); then
+            echo "ERROR: Command failed after ${max_attempts} attempts: $*" >&2
+            return 1
+        fi
+        echo "WARNING: Attempt ${attempt}/${max_attempts} failed. Retrying in ${delay}s..." >&2
+        sleep "$delay"
+        delay=$(( delay * 2 ))
+        attempt=$(( attempt + 1 ))
+    done
+}
+
 REPOS=(
     "wazuh-indexer-plugins"
     "wazuh-indexer-reporting"
@@ -49,13 +67,13 @@ check_branch_existence() {
         local repo="${REPOS[$i]}"
         local url="${REPO_URLS[$i]}"
         echo "Checking $repo for branch '$BRANCH'..." >&2
-        if git ls-remote --exit-code --heads "$url" "$BRANCH" &>/dev/null; then
+        if _retry 3 5 git ls-remote --exit-code --heads "$url" "$BRANCH" &>/dev/null; then
             BRANCH_EXISTS["$repo"]=1
             # Fetch VERSION.json directly from GitHub raw URL
             local owner version_json_url version
             owner="wazuh"
             version_json_url="https://raw.githubusercontent.com/${owner}/${repo}/${BRANCH}/VERSION.json"
-            version=$(curl -sfL "$version_json_url" | jq -r '.version' 2>/dev/null)
+            version=$(curl -sfL --retry 3 --retry-delay 5 --connect-timeout 10 --max-time 30 "$version_json_url" | jq -r '.version' 2>/dev/null)
             if [[ -n "$version" && "$version" != "null" ]]; then
                 VERSION["$repo"]="$version"
                 echo "    Found branch and version: $version" >&2

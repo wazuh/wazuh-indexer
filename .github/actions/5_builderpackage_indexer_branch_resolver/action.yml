@@ -17,6 +17,9 @@ outputs:
   wazuh_indexer_notifications_branch:
     description: "Branch to use in wazuh-indexer-notifications repository."
     value: ${{ steps.resolve.outputs.wazuh_indexer_notifications_branch }}
+  wazuh_indexer_common_utils_branch:
+    description: "Branch to use in wazuh-indexer-common-utils repository."
+    value: ${{ steps.resolve.outputs.wazuh_indexer_common_utils_branch }}
   wazuh_branch:
     description: "Branch to use in wazuh repository."
     value: ${{ steps.resolve.outputs.wazuh_branch }}
@@ -30,5 +33,6 @@ runs:
         echo "wazuh_indexer_reporting_branch=$WAZUH_INDEXER_REPORTING_BRANCH" >> $GITHUB_OUTPUT
         echo "wazuh_indexer_security_analytics_branch=$WAZUH_INDEXER_SECURITY_ANALYTICS_BRANCH" >> $GITHUB_OUTPUT
         echo "wazuh_indexer_notifications_branch=$WAZUH_INDEXER_NOTIFICATIONS_BRANCH" >> $GITHUB_OUTPUT
+        echo "wazuh_indexer_common_utils_branch=$WAZUH_INDEXER_COMMON_UTILS_BRANCH" >> $GITHUB_OUTPUT
         echo "wazuh_branch=$WAZUH_BRANCH" >> $GITHUB_OUTPUT
       shell: bash

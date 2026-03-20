@@ -25,7 +25,7 @@ function usage() {
 # ====
 function parse_args() {
 
-    while getopts ":hp:a:d:r:l:e:s:n:mx" arg; do
+    while getopts ":hp:a:d:r:l:e:s:n:c:mx" arg; do
         case $arg in
         h)
             usage
@@ -37,9 +37,7 @@ function parse_args() {
         a)
             ARCHITECTURE=$OPTARG
             ;;
-        c)
-            COMMON_UTILS_HASH=$OPTARG
-            ;;
+
         d)
             DISTRIBUTION=$OPTARG
             ;;
@@ -57,6 +55,9 @@ function parse_args() {
             ;;
         n)
             NOTIFICATIONS_HASH=$OPTARG
+            ;;
+        c)
+            COMMON_UTILS_HASH=$OPTARG
             ;;
         m)
             IS_MIN=true

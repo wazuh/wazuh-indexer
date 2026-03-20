@@ -368,7 +368,7 @@ jobs:
         run: echo "hash=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
           path: "./plugins/${{ matrix.plugins }}/build/distributions/${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip"
@@ -411,7 +411,7 @@ jobs:
         run: echo "hash=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
           path: build/distributions/${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
@@ -461,7 +461,7 @@ jobs:
         run: echo "hash=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
           path: build/distributions/${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
@@ -505,14 +505,14 @@ jobs:
         run: echo "hash=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Upload notifications artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
           path: notifications/notifications/build/distributions/${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
           if-no-files-found: error
 
       - name: Upload notifications-core artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.plugin_name }}-core-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
           path: notifications/core/build/distributions/${{ env.plugin_name }}-core-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
@@ -684,7 +684,7 @@ jobs:
           sudo DEBIAN_FRONTEND=noninteractive dpkg -i --force-confnew "artifacts/dist/${{ steps.package.outputs.name }}"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.package.outputs.name }}
           path: artifacts/dist/${{ steps.package.outputs.name }}
@@ -692,7 +692,7 @@ jobs:
 
       - name: Set up AWS CLI
         if: ${{ inputs.upload }}
-        uses: aws-actions/configure-aws-credentials@v5
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY }}
           aws-secret-access-key: ${{ secrets.CI_INTERNAL_DEVELOPMENT_BUCKET_USER_SECRET_KEY }}

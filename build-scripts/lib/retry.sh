@@ -22,7 +22,7 @@ retry() {
             return 0
         fi
         if (( attempt >= max_attempts )); then
-            echo "ERROR: Command failed after ${max_attempts} attempts: $*" >&2
+            echo "ERROR: Command failed after ${max_attempts} attempts." >&2
             return 1
         fi
         echo "WARNING: Attempt ${attempt}/${max_attempts} failed. Retrying in ${delay}s..." >&2

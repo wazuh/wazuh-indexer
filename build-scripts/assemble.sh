@@ -214,9 +214,9 @@ function add_wazuh_tools() {
     local download_url
     download_url="https://packages-dev.wazuh.com/${version}"
 
-    retry 3 5 curl -sL --retry 3 --retry-delay 5 --connect-timeout 10 --max-time 60 "${download_url}/config.yml" -o "$PATH_PLUGINS"/opensearch-security/tools/config.yml
-    retry 3 5 curl -sL --retry 3 --retry-delay 5 --connect-timeout 10 --max-time 60 "${download_url}/wazuh-passwords-tool.sh" -o "$PATH_PLUGINS"/opensearch-security/tools/wazuh-passwords-tool.sh
-    retry 3 5 curl -sL --retry 3 --retry-delay 5 --connect-timeout 10 --max-time 60 "${download_url}/wazuh-certs-tool.sh" -o "$PATH_PLUGINS"/opensearch-security/tools/wazuh-certs-tool.sh
+    retry 3 5 curl -sL --connect-timeout 10 --max-time 60 "${download_url}/config.yml" -o "$PATH_PLUGINS"/opensearch-security/tools/config.yml
+    retry 3 5 curl -sL --connect-timeout 10 --max-time 60 "${download_url}/wazuh-passwords-tool.sh" -o "$PATH_PLUGINS"/opensearch-security/tools/wazuh-passwords-tool.sh
+    retry 3 5 curl -sL --connect-timeout 10 --max-time 60 "${download_url}/wazuh-certs-tool.sh" -o "$PATH_PLUGINS"/opensearch-security/tools/wazuh-certs-tool.sh
 }
 
 # ====

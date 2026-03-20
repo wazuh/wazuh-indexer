@@ -37,7 +37,7 @@ if [[ "$ARCH" == "aarch64" ]]; then
     retry 3 10 sudo apt-get update
     retry 3 10 sudo apt-get install -y maven rpm cpio
     retry 3 10 sudo apt-get update && retry 3 10 sudo apt-get install -y unzip
-    retry 3 5 curl --retry 3 --retry-delay 5 --connect-timeout 10 --max-time 120 "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip"
+    retry 3 5 curl --connect-timeout 10 --max-time 120 "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip"
     unzip -q awscliv2.zip
     sudo ./aws/install --update
     

@@ -250,6 +250,16 @@ function install_plugins() {
 
         OPENSEARCH_PATH_CONF=$PATH_CONF "${PATH_BIN}/opensearch-plugin" install --batch --verbose "file:${plugin_path}"
     done
+
+    echo "Workaround: Injecting modified common-utils JAR to opensearch-alerting"
+    PAT_NOTIF_DIR="${PATH_PLUGINS}/wazuh-indexer-notifications"
+    PAT_ALERT_JAR="${PATH_PLUGINS}/opensearch-alerting/common-utils-3.5.0.0.jar"
+
+    if [ -f "${PAT_NOTIF_DIR}/common-utils-3.5.0.0-SNAPSHOT.jar" ]; then
+        cp "${PAT_NOTIF_DIR}/common-utils-3.5.0.0-SNAPSHOT.jar" "$PAT_ALERT_JAR"
+    else
+        unzip -p "${PAT_NOTIF_DIR}"/wazuh-indexer-notifications-*.jar common-utils-3.5.0.0-SNAPSHOT.jar > "$PAT_ALERT_JAR"
+    fi
 }
 
 # ====

@@ -252,13 +252,13 @@ function install_plugins() {
     done
 
     echo "Workaround: Injecting modified common-utils JAR to opensearch-alerting"
-    PAT_NOTIF_DIR="${PATH_PLUGINS}/wazuh-indexer-notifications"
-    PAT_ALERT_JAR="${PATH_PLUGINS}/opensearch-alerting/common-utils-3.5.0.0.jar"
+    local notifications_plugin_dir="${PATH_PLUGINS}/wazuh-indexer-notifications"
+    local commons_utils_jar="${PATH_PLUGINS}/opensearch-alerting/common-utils-3.5.0.0.jar"
 
-    if [ -f "${PAT_NOTIF_DIR}/common-utils-3.5.0.0-SNAPSHOT.jar" ]; then
-        cp "${PAT_NOTIF_DIR}/common-utils-3.5.0.0-SNAPSHOT.jar" "$PAT_ALERT_JAR"
+    if [ -f "${notifications_plugin_dir}/common-utils-3.5.0.0-SNAPSHOT.jar" ]; then
+        cp "${notifications_plugin_dir}/common-utils-3.5.0.0-SNAPSHOT.jar" "$commons_utils_jar"
     else
-        unzip -p "${PAT_NOTIF_DIR}"/wazuh-indexer-notifications-*.jar common-utils-3.5.0.0-SNAPSHOT.jar > "$PAT_ALERT_JAR"
+        unzip -p "${notifications_plugin_dir}"/wazuh-indexer-notifications-*.jar common-utils-3.5.0.0-SNAPSHOT.jar > "$commons_utils_jar"
     fi
 }
 

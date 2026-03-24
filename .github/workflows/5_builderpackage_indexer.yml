@@ -516,7 +516,7 @@ jobs:
 
       # Download plugins
       - name: Download plugins
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           pattern: wazuh-indexer-*.zip
           path: ./artifacts/plugins
@@ -524,7 +524,7 @@ jobs:
 
       # Download Wazuh Engine
       - name: Download Wazuh Engine
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           pattern: wazuh-engine-*-linux-${{ matrix.architecture == 'x64' && 'amd64' || 'arm64' }}
           merge-multiple: true

@@ -235,7 +235,7 @@ jobs:
 
       # Download plugins
       - name: Download plugins
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         if: ${{ inputs.wazuh_plugins_ref != '' || inputs.reporting_plugin_ref != '' }}
         with:
           path: ./artifacts/plugins

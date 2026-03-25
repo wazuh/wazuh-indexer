@@ -282,6 +282,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -o pipefail
           CURRENT="$(bash build-scripts/product_version.sh)"
           PREVIOUS=$(curl -sfSL --retry 3 --retry-all-errors --retry-delay 5 --connect-timeout 10 --max-time 30 \
             -H "Authorization: Bearer ${GH_TOKEN}" \

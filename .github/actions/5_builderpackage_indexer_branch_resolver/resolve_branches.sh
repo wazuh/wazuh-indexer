@@ -7,14 +7,15 @@ set -e
 _retry() {
     local max_attempts="$1" delay="$2"
     shift 2
+    local cmd_label="${1##*/}"
     local attempt=1
     while true; do
         if "$@"; then return 0; fi
         if (( attempt >= max_attempts )); then
-            echo "ERROR: Command failed after ${max_attempts} attempts." >&2
+            echo "ERROR: Command '${cmd_label}' failed after ${max_attempts} attempts." >&2
             return 1
         fi
-        echo "WARNING: Attempt ${attempt}/${max_attempts} failed. Retrying in ${delay}s..." >&2
+        echo "WARNING: Command '${cmd_label}' attempt ${attempt}/${max_attempts} failed. Retrying in ${delay}s..." >&2
         sleep "$delay"
         delay=$(( delay * 2 ))
         attempt=$(( attempt + 1 ))
@@ -67,7 +68,7 @@ check_branch_existence() {
         local repo="${REPOS[$i]}"
         local url="${REPO_URLS[$i]}"
         echo "Checking $repo for branch '$BRANCH'..." >&2
-        if _retry 3 5 git ls-remote --exit-code --heads "$url" "$BRANCH" &>/dev/null; then
+        if _retry 3 5 bash -c 'git ls-remote --exit-code --heads "$@" &>/dev/null' _ "$url" "$BRANCH"; then
             BRANCH_EXISTS["$repo"]=1
             # Fetch VERSION.json directly from GitHub raw URL
             local owner version_json_url version

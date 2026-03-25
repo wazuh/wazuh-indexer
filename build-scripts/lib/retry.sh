@@ -16,16 +16,17 @@ retry() {
     local delay="$2"
     shift 2
 
+    local cmd_label="${1##*/}"
     local attempt=1
     while true; do
         if "$@"; then
             return 0
         fi
         if (( attempt >= max_attempts )); then
-            echo "ERROR: Command failed after ${max_attempts} attempts." >&2
+            echo "ERROR: Command '${cmd_label}' failed after ${max_attempts} attempts." >&2
             return 1
         fi
-        echo "WARNING: Attempt ${attempt}/${max_attempts} failed. Retrying in ${delay}s..." >&2
+        echo "WARNING: Command '${cmd_label}' attempt ${attempt}/${max_attempts} failed. Retrying in ${delay}s..." >&2
         sleep "$delay"
         delay=$(( delay * 2 ))
         attempt=$(( attempt + 1 ))

@@ -319,6 +319,21 @@ jobs:
           path: ~/.m2/repository
           key: maven-sap-${{ github.run_id }}
 
+  # Publish common-utils to Local Maven for notifications plugin
+  common-utils-maven-local-publication:
+    runs-on: ubuntu-24.04
+    needs: [compatibility-check, branches]
+    steps:
+      - name: Publish common-utils to Local Maven
+        uses: wazuh/wazuh-indexer-common-utils/.github/actions/5_local_maven_publisher@main
+        with:
+          reference: ${{ needs.branches.outputs.common_utils_plugin_ref }}
+      - name: Cache Maven Local
+        uses: actions/cache/save@v5
+        with:
+          path: ~/.m2/repository
+          key: maven-common-utils-${{ github.run_id }}
+
   build-wazuh-engine:
     needs: [compatibility-check, branches]
     uses: wazuh/wazuh/.github/workflows/5_builderpackage_engine-standalone.yml@main
@@ -474,7 +489,7 @@ jobs:
           if-no-files-found: error
 
   build-notifications-plugin:
-    needs: [compatibility-check, branches]
+    needs: [compatibility-check, branches, common-utils-maven-local-publication]
     if: ${{ needs.branches.outputs.notifications_plugin_ref != '' }}
     runs-on: ubuntu-24.04
     outputs:
@@ -494,6 +509,12 @@ jobs:
 
       - name: Setup Gradle # Used for caching
         uses: gradle/actions/setup-gradle@v4
+
+      - name: Restore Maven Local Cache
+        uses: actions/cache/restore@v5
+        with:
+          path: ~/.m2/repository
+          key: maven-common-utils-${{ github.run_id }}
 
       - name: Get version
         id: version

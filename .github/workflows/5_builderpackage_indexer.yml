@@ -549,12 +549,6 @@ jobs:
         id: version
         run: echo "version=$(jq .version -r VERSION.json)" >> "$GITHUB_OUTPUT"
 
-      - name: Publish commons library to mavenLocal
-        run: |
-          ./gradlew publishToMavenLocal -x test -x integTest \
-            -Dversion=${{ steps.version.outputs.version }} \
-            -Drevision=${{ inputs.revision }}
-
       - name: Build with Gradle
         run: ./gradlew build -x integTest -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }}
 
@@ -574,7 +568,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
-          path: build/distributions/${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
+          path: build-artifacts/
           if-no-files-found: error
 
   build:

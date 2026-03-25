@@ -555,9 +555,14 @@ jobs:
       - name: Prepare Artifacts
         run: |
           mkdir -p build-artifacts
-          find . -type f \( -name "*.zip" -o -name "*.jar" \) \
-            -path "*/build/distributions/*" -o -path "*/build/libs/*" \
-            -exec cp -v {} build-artifacts/ \;
+          EXPECTED_NAME="${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip"
+          ZIP_SOURCE=$(find . -type f -name "*.zip" -path "*/build/distributions/*" | head -n 1)
+
+          if [ -f "$ZIP_SOURCE" ]; then
+          cp -v "$ZIP_SOURCE" "build-artifacts/$EXPECTED_NAME"
+          else
+            exit 1
+          fi
         shell: bash
 
       - name: Save commit hash

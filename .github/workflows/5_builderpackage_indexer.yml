@@ -489,7 +489,7 @@ jobs:
           if-no-files-found: error
 
   build-notifications-plugin:
-    needs: [compatibility-check, branches, common-utils-maven-local-publication]
+    needs: [compatibility-check, branches, publish-common-utils]
     if: ${{ needs.branches.outputs.notifications_plugin_ref != '' }}
     runs-on: ubuntu-24.04
     outputs:

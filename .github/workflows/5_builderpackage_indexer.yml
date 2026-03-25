@@ -249,7 +249,7 @@ jobs:
           ref: ${{ needs.branches.outputs.common_utils_plugin_ref }}
 
       - name: Read versions from wazuh-indexer-common-utils
-        id: notifications_version
+        id: common_utils_version
         run: |
           echo "version=$(bash ./tools/product_version.sh)" >> "$GITHUB_OUTPUT"
 
@@ -551,15 +551,20 @@ jobs:
 
       - name: Publish commons library to mavenLocal
         run: |
-          cd commons
-          ../gradlew publishToMavenLocal -x check \
+          ./gradlew publishToMavenLocal -x test -x integTest \
             -Dversion=${{ steps.version.outputs.version }} \
             -Drevision=${{ inputs.revision }}
 
       - name: Build with Gradle
         run: ./gradlew build -x integTest -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }}
 
-      - run: ls -lR build/distributions
+      - name: Prepare Artifacts
+        run: |
+          mkdir -p build-artifacts
+          find . -type f \( -name "*.zip" -o -name "*.jar" \) \
+            -path "*/build/distributions/*" -o -path "*/build/libs/*" \
+            -exec cp -v {} build-artifacts/ \;
+        shell: bash
 
       - name: Save commit hash
         id: save-hash

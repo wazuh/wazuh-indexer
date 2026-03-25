@@ -320,7 +320,7 @@ jobs:
           key: maven-sap-${{ github.run_id }}
 
   # Publish common-utils to Local Maven for notifications plugin
-  common-utils-maven-local-publication:
+  publish-common-utils:
     runs-on: ubuntu-24.04
     needs: [compatibility-check, branches]
     steps:

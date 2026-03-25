@@ -568,7 +568,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
-          path: build-artifacts/
+          path: build-artifacts/${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
           if-no-files-found: error
 
   build:

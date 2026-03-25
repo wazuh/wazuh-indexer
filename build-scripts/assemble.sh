@@ -104,7 +104,7 @@ function parse_args() {
         n)
             NOTIFICATIONS_HASH=$OPTARG
             ;;
-        n)
+        c)
             COMMON_UTILS_HASH=$OPTARG
             ;;
         :)

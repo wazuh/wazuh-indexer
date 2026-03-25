@@ -554,11 +554,11 @@ jobs:
 
       - name: Prepare Artifacts
         run: |
+          run: |
           mkdir -p build-artifacts
           find . -type f \( -name "*.zip" -o -name "*.jar" \) \
-            -path "*/build/distributions/*" -o -path "*/build/libs/*" \
+            \( -path "*/build/distributions/*" -o -path "*/build/libs/*" \) \
             -exec cp -v {} build-artifacts/ \;
-          fi
         shell: bash
 
       - name: Save commit hash

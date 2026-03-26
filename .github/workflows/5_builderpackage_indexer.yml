@@ -250,7 +250,9 @@ jobs:
 
   get-versions-wazuh-indexer-common-utils:
     needs: [branches]
-    runs-on: wz-linux-amd64
+    runs-on:
+      group: 'wz-linux-amd64'
+      labels: 'wz-linux-amd64'
     outputs:
       version: ${{ steps.common_utils_version.outputs.version }}
       opensearch_version: ${{ steps.common_utils_version.outputs.opensearch_version }}
@@ -273,7 +275,7 @@ jobs:
     runs-on:
       group: 'wz-linux-amd64'
       labels: 'wz-linux-amd64'
-    needs: [get-versions-wazuh-indexer, get-versions-wazuh-indexer-plugins, get-versions-wazuh-indexer-reporting, get-versions-wazuh-indexer-security-analytics, get-versions-wazuh-indexer-notifications]
+    needs: [get-versions-wazuh-indexer, get-versions-wazuh-indexer-plugins, get-versions-wazuh-indexer-reporting, get-versions-wazuh-indexer-security-analytics, get-versions-wazuh-indexer-notifications, get-versions-wazuh-indexer-common-utils]
     steps:
       - name: Check version compatibility
         run: |
@@ -318,14 +320,29 @@ jobs:
           echo "Latest release detected: $PREVIOUS"
           echo "previous_version=$PREVIOUS" >> $GITHUB_OUTPUT
 
-  # Publish security-analytics-plugin and its commons to Local Maven
-  sap-maven-local-publication:
+  publish-common-utils:
     runs-on:
       group: 'wz-linux-amd64'
       labels: 'wz-linux-amd64'
-    needs: [compatibility-check, branches, get-versions-wazuh-indexer-security-analytics]
+    needs: [compatibility-check, branches]
     steps:
-      - name: Publish SAP to Local Maven
+      - name: Publish common-utils to Maven Local
+        uses: wazuh/wazuh-indexer-common-utils/.github/actions/5_local_maven_publisher@main
+        with:
+          reference: ${{ needs.branches.outputs.common_utils_plugin_ref }}
+      - name: Cache Maven Local
+        uses: actions/cache/save@v5
+        with:
+          path: ~/.m2/repository
+          key: .m2-${{ github.ref_name }}
+
+  publish-security-analytics:
+    runs-on:
+      group: 'wz-linux-amd64'
+      labels: 'wz-linux-amd64'
+    needs: [compatibility-check, branches, get-versions-wazuh-indexer-security-analytics, publish-common-utils]
+    steps:
+      - name: Publish Maven Local
         uses: wazuh/wazuh-indexer-security-analytics/.github/actions/5_local_maven_publisher@main
         with:
           version: ${{ needs.get-versions-wazuh-indexer-security-analytics.outputs.version }}
@@ -335,22 +352,8 @@ jobs:
         uses: actions/cache/save@v5
         with:
           path: ~/.m2/repository
-          key: maven-sap-${{ github.run_id }}
-
-  # Publish common-utils to Local Maven for notifications plugin
-  publish-common-utils:
-    runs-on: wz-linux-amd64
-    needs: [compatibility-check, branches]
-    steps:
-      - name: Publish common-utils to Local Maven
-        uses: wazuh/wazuh-indexer-common-utils/.github/actions/5_local_maven_publisher@1-initialize-common-utils
-        with:
-          reference: ${{ needs.branches.outputs.common_utils_plugin_ref }}
-      - name: Cache Maven Local
-        uses: actions/cache/save@v5
-        with:
-          path: ~/.m2/repository
-          key: maven-common-utils-${{ github.run_id }}
+          key: .m2-${{ github.ref_name }}
+    # TODO move build and upload here to save one job
 
   build-wazuh-engine:
     needs: [compatibility-check, branches]
@@ -362,7 +365,7 @@ jobs:
       arch: ${{ inputs.architecture }}
 
   build-wazuh-plugins:
-    needs: [compatibility-check, branches, sap-maven-local-publication]
+    needs: [compatibility-check, branches, publish-security-analytics]
     if: ${{ needs.branches.outputs.wazuh_plugins_ref != '' }}
     strategy:
       fail-fast: false
@@ -393,7 +396,7 @@ jobs:
         uses: actions/cache/restore@v5
         with:
           path: ~/.m2/repository
-          key: maven-sap-${{ github.run_id }}
+          key: .m2-${{ github.ref_name }}
 
       - name: Get version
         id: version
@@ -418,7 +421,7 @@ jobs:
           if-no-files-found: error
 
   build-reporting-plugin:
-    needs: [compatibility-check, branches]
+    needs: [compatibility-check, branches, publish-common-utils]
     if: ${{ needs.branches.outputs.reporting_plugin_ref != '' }}
     runs-on:
       group: 'wz-linux-amd64'
@@ -461,8 +464,8 @@ jobs:
           path: build/distributions/${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
           if-no-files-found: error
 
-  build-security-analytics-plugin:
-    needs: [compatibility-check, branches]
+  build-security-analytics-plugin: # TODO move to publish-security-analytics to save one job
+    needs: [compatibility-check, branches, publish-common-utils]
     if: ${{ needs.branches.outputs.security_analytics_plugin_ref != '' }}
     runs-on:
       group: 'wz-linux-amd64'
@@ -540,7 +543,7 @@ jobs:
         uses: actions/cache/restore@v5
         with:
           path: ~/.m2/repository
-          key: maven-common-utils-${{ github.run_id }}
+          key: .m2-${{ github.ref_name }}
 
       - name: Get version
         id: version
@@ -570,56 +573,8 @@ jobs:
           path: notifications/core/build/distributions/${{ env.plugin_name }}-core-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
           if-no-files-found: error
 
-  build-common-utils-plugin:
-    needs: [ compatibility-check, branches ]
-    if: ${{ needs.branches.outputs.common_utils_plugin_ref != '' }}
-    runs-on: wz-linux-amd64
-    outputs:
-      hash: ${{ steps.save-hash.outputs.hash }}
-    env:
-      plugin_name: wazuh-indexer-common-utils
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          repository: wazuh/wazuh-indexer-common-utils
-          ref: ${{ needs.branches.outputs.common_utils_plugin_ref }}
-
-      - uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: 25
-
-      - name: Setup Gradle # Used for caching
-        uses: gradle/actions/setup-gradle@v4
-
-      - name: Get version
-        id: version
-        run: echo "version=$(jq .version -r VERSION.json)" >> "$GITHUB_OUTPUT"
-
-      - name: Build with Gradle
-        run: ./gradlew build "-Dversion=${{ steps.version.outputs.version }}" "-Drevision=${{ inputs.revision }}"
-
-      - name: Prepare Artifacts
-        run: |
-          mkdir -p build-artifacts
-          find . -type f \( -name "*.zip" -o -name "*.jar" \) \
-            \( -path "*/build/distributions/*" -o -path "*/build/libs/*" \) \
-            -exec cp -v {} build-artifacts/ \;
-        shell: bash
-
-      - name: Save commit hash
-        id: save-hash
-        run: echo "hash=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.jar
-          path: build-artifacts/${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.jar
-          if-no-files-found: error
-
   build:
-    needs: [setup, build-wazuh-plugins, build-reporting-plugin, build-security-analytics-plugin, build-notifications-plugin, build-common-utils-plugin, build-wazuh-engine]
+    needs: [setup, build-wazuh-plugins, build-reporting-plugin, build-security-analytics-plugin, build-notifications-plugin, build-wazuh-engine]
     runs-on:
       group: ${{ matrix.architecture == 'arm64' && 'wz-linux-arm64' || 'wz-linux-amd64' }}
       labels: ${{ matrix.architecture == 'arm64' && 'wz-linux-arm64-2' || 'wz-linux-amd64' }}
@@ -671,8 +626,7 @@ jobs:
             -l ${{ needs.build-wazuh-plugins.outputs.hash }} \
             -e ${{ needs.build-reporting-plugin.outputs.hash }} \
             -s ${{ needs.build-security-analytics-plugin.outputs.hash }} \
-            -n ${{ needs.build-notifications-plugin.outputs.hash }} \
-            -c ${{ needs.build-common-utils-plugin.outputs.hash }} \
+            -n ${{ needs.build-notifications-plugin.outputs.hash }}
             ${{ inputs.is_stage && '-x' || '' }} \
           )
           echo "name=$name" >> $GITHUB_OUTPUT
@@ -687,8 +641,7 @@ jobs:
             -l ${{ needs.build-wazuh-plugins.outputs.hash }} \
             -e ${{ needs.build-reporting-plugin.outputs.hash }} \
             -s ${{ needs.build-security-analytics-plugin.outputs.hash }} \
-            -n ${{ needs.build-notifications-plugin.outputs.hash }} \
-            -c ${{ needs.build-common-utils-plugin.outputs.hash }} \
+            -n ${{ needs.build-notifications-plugin.outputs.hash }}
             ${{ inputs.is_stage && '-x' || '' }} \
           )
           echo "name=$name" >> $GITHUB_OUTPUT
@@ -720,7 +673,6 @@ jobs:
             -e ${{ needs.build-reporting-plugin.outputs.hash }} \
             -s ${{ needs.build-security-analytics-plugin.outputs.hash }} \
             -n ${{ needs.build-notifications-plugin.outputs.hash }} \
-            -c ${{ needs.build-common-utils-plugin.outputs.hash }} \
             -o ${{ github.workspace }}/artifacts
 
       - name: Test RPM package installation

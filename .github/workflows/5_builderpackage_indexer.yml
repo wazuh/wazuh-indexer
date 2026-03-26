@@ -317,7 +317,6 @@ jobs:
 
   build-wazuh-engine:
     needs: [compatibility-check, branches]
-    # TODO
     uses: wazuh/wazuh/.github/workflows/5_builderpackage_engine-standalone.yml@main
     secrets: inherit
     with:

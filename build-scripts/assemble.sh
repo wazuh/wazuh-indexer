@@ -1,12 +1,5 @@
 #!/bin/bash
 
-# Copyright OpenSearch Contributors
-# SPDX-License-Identifier: Apache-2.0
-#
-# The OpenSearch Contributors require contributions made to
-# this file be licensed under the Apache-2.0 license or a
-# compatible open source license.
-
 set -ex
 
 ### The $TEST variable determines whether we include a minimalistic
@@ -37,7 +30,7 @@ else
     )
     wazuh_plugins=(
         "wazuh-indexer-setup"
-        "wazuh-indexer-security-analytics" # Flagged as Trojan by some antivirus software
+        "wazuh-indexer-security-analytics"
         "wazuh-indexer-content-manager"
         "wazuh-indexer-reports-scheduler"
         "wazuh-indexer-notifications-core"
@@ -331,18 +324,19 @@ function install_wazuh_engine() {
 }
 
 # ====
-# Install CTI snapshots
+# Install snapshots
 # ====
-function install_cti_snapshots() {
+function install_snapshots() {
     local dest="${PATH_PLUGINS}/wazuh-indexer-content-manager/snapshots"
     # Working directory at this point is: artifacts/tmp/{rpm|deb|tar}
-    local src="$(pwd)/../../cti-snapshots"
+    local src
+    src="$(pwd)/../../snapshots"
     if [ -d "${src}" ]; then
-        echo "Installing CTI snapshots to ${dest}"
+        echo "Installing snapshots to ${dest}"
         mkdir -p "${dest}"
         cp "${src}"/*.zip "${dest}/"
     else
-        echo "No CTI snapshots found at ${src}, skipping"
+        echo "No snapshots found at ${src}, skipping"
     fi
 }
 
@@ -387,7 +381,7 @@ function assemble_tar() {
 
     # Install plugins
     install_plugins "${PRODUCT_VERSION}"
-    install_cti_snapshots
+    install_snapshots
 
     # Install Wazuh Engine
     install_wazuh_engine "${decompressed_tar_dir}"
@@ -428,7 +422,7 @@ function assemble_rpm() {
 
     # Install plugins
     install_plugins "${PRODUCT_VERSION}"
-    install_cti_snapshots
+    install_snapshots
 
     # Install Wazuh Engine
     install_wazuh_engine "${src_path}"
@@ -483,7 +477,7 @@ function assemble_deb() {
 
     # Install plugins
     install_plugins "${PRODUCT_VERSION}"
-    install_cti_snapshots
+    install_snapshots
 
     # Install Wazuh Engine
     install_wazuh_engine "${src_path}"

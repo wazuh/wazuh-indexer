@@ -5,6 +5,10 @@ permissions:
   contents: read
   packages: read
 
+env:
+  M2_CACHE_KEY_COMMON: .m2-${{ github.ref_name }}-${{ github.run_id }}-common-utils
+  M2_CACHE_KEY_FULL: .m2-${{ github.ref_name }}-${{ github.run_id }}-with-security-analytics
+
 # This workflow runs when any of the following occur:
 # - Run manually
 # - Invoked from another workflow
@@ -334,7 +338,7 @@ jobs:
         uses: actions/cache/save@v5
         with:
           path: ~/.m2/repository
-          key: .m2-${{ github.ref_name }}
+          key: ${{ env.M2_CACHE_KEY_COMMON }}
 
   publish-security-analytics:
     runs-on:
@@ -361,7 +365,7 @@ jobs:
         uses: actions/cache/restore@v5
         with:
           path: ~/.m2/repository
-          key: .m2-${{ github.ref_name }}
+          key: ${{ env.M2_CACHE_KEY_COMMON }}
 
       - name: Publish security-analytics(+commons) to Maven Local
         uses: wazuh/wazuh-indexer-security-analytics/.github/actions/5_local_maven_publisher@main
@@ -385,7 +389,7 @@ jobs:
         uses: actions/cache/save@v5
         with:
           path: ~/.m2/repository
-          key: .m2-${{ github.ref_name }}
+          key: ${{ env.M2_CACHE_KEY_FULL }}
 
   build-wazuh-engine:
     needs: [compatibility-check, branches]
@@ -428,7 +432,9 @@ jobs:
         uses: actions/cache/restore@v5
         with:
           path: ~/.m2/repository
-          key: .m2-${{ github.ref_name }}
+          key: ${{ env.M2_CACHE_KEY_FULL }}
+          restore-keys: |
+            ${{ env.M2_CACHE_KEY_COMMON }}
 
       - name: Get version
         id: version
@@ -480,7 +486,9 @@ jobs:
         uses: actions/cache/restore@v5
         with:
           path: ~/.m2/repository
-          key: .m2-${{ github.ref_name }}
+          key: ${{ env.M2_CACHE_KEY_FULL }}
+          restore-keys: |
+            ${{ env.M2_CACHE_KEY_COMMON }}
 
       - name: Get version
         id: version
@@ -530,7 +538,9 @@ jobs:
         uses: actions/cache/restore@v5
         with:
           path: ~/.m2/repository
-          key: .m2-${{ github.ref_name }}
+          key: ${{ env.M2_CACHE_KEY_FULL }}
+          restore-keys: |
+            ${{ env.M2_CACHE_KEY_COMMON }}
 
       - name: Get version
         id: version

@@ -341,19 +341,56 @@ jobs:
       group: 'wz-linux-amd64'
       labels: 'wz-linux-amd64'
     needs: [compatibility-check, branches, get-versions-wazuh-indexer-security-analytics, publish-common-utils]
+    outputs:
+      hash: ${{ steps.save-hash.outputs.hash }}
     steps:
-      - name: Publish Maven Local
-        uses: wazuh/wazuh-indexer-security-analytics/.github/actions/5_local_maven_publisher@main
+      - uses: actions/checkout@v6
         with:
-          version: ${{ needs.get-versions-wazuh-indexer-security-analytics.outputs.version }}
-          revision: ${{ inputs.revision }}
-          reference: ${{ needs.branches.outputs.security_analytics_plugin_ref }}
+          repository: wazuh/wazuh-indexer-security-analytics
+          ref: ${{ needs.branches.outputs.security_analytics_plugin_ref }}
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 25
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Restore Maven Local cache
+        uses: actions/cache/restore@v5
+        with:
+          path: ~/.m2/repository
+          key: .m2-${{ github.ref_name }}
+
+      - name: Publish commons library to mavenLocal
+        run: |
+          cd commons
+          ../gradlew publishToMavenLocal -x check \
+            -Dversion=${{ needs.get-versions-wazuh-indexer-security-analytics.outputs.version }} \
+            -Drevision=${{ inputs.revision }}
+
+      - name: Build with Gradle
+        run: ./gradlew build -x integTest -Dversion=${{ needs.get-versions-wazuh-indexer-security-analytics.outputs.version }} -Drevision=${{ inputs.revision }}
+
+      - run: ls -lR build/distributions
+
+      - name: Save commit hash
+        id: save-hash
+        run: echo "hash=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: wazuh-indexer-security-analytics-${{ needs.get-versions-wazuh-indexer-security-analytics.outputs.version }}.${{ inputs.revision }}.zip
+          path: build/distributions/wazuh-indexer-security-analytics-${{ needs.get-versions-wazuh-indexer-security-analytics.outputs.version }}.${{ inputs.revision }}.zip
+          if-no-files-found: error
+
       - name: Cache Maven Local
         uses: actions/cache/save@v5
         with:
           path: ~/.m2/repository
           key: .m2-${{ github.ref_name }}
-    # TODO move build and upload here to save one job
 
   build-wazuh-engine:
     needs: [compatibility-check, branches]
@@ -444,6 +481,12 @@ jobs:
       - name: Setup Gradle # Used for caching
         uses: gradle/actions/setup-gradle@v6
 
+      - name: Restore Maven Local cache
+        uses: actions/cache/restore@v5
+        with:
+          path: ~/.m2/repository
+          key: .m2-${{ github.ref_name }}
+
       - name: Get version
         id: version
         run: echo "version=$(jq .version -r VERSION.json)" >> "$GITHUB_OUTPUT"
@@ -464,56 +507,7 @@ jobs:
           path: build/distributions/${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
           if-no-files-found: error
 
-  build-security-analytics-plugin: # TODO move to publish-security-analytics to save one job
-    needs: [compatibility-check, branches, publish-common-utils]
-    if: ${{ needs.branches.outputs.security_analytics_plugin_ref != '' }}
-    runs-on:
-      group: 'wz-linux-amd64'
-      labels: 'wz-linux-amd64'
-    outputs:
-      hash: ${{ steps.save-hash.outputs.hash }}
-    env:
-      plugin_name: wazuh-indexer-security-analytics
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          repository: wazuh/wazuh-indexer-security-analytics
-          ref: ${{ needs.branches.outputs.security_analytics_plugin_ref }}
 
-      - uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: 25
-
-      - name: Setup Gradle # Used for caching
-        uses: gradle/actions/setup-gradle@v6
-
-      - name: Get version
-        id: version
-        run: echo "version=$(jq .version -r VERSION.json)" >> "$GITHUB_OUTPUT"
-
-      - name: Publish commons library to mavenLocal
-        run: |
-          cd commons
-          ../gradlew publishToMavenLocal -x check \
-            -Dversion=${{ steps.version.outputs.version }} \
-            -Drevision=${{ inputs.revision }}
-
-      - name: Build with Gradle
-        run: ./gradlew build -x integTest -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }}
-
-      - run: ls -lR build/distributions
-
-      - name: Save commit hash
-        id: save-hash
-        run: echo "hash=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: ${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
-          path: build/distributions/${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
-          if-no-files-found: error
 
   build-notifications-plugin:
     needs: [compatibility-check, branches, publish-common-utils]
@@ -574,7 +568,7 @@ jobs:
           if-no-files-found: error
 
   build:
-    needs: [setup, build-wazuh-plugins, build-reporting-plugin, build-security-analytics-plugin, build-notifications-plugin, build-wazuh-engine]
+    needs: [setup, build-wazuh-plugins, build-reporting-plugin, publish-security-analytics, build-notifications-plugin, build-wazuh-engine]
     runs-on:
       group: ${{ matrix.architecture == 'arm64' && 'wz-linux-arm64' || 'wz-linux-amd64' }}
       labels: ${{ matrix.architecture == 'arm64' && 'wz-linux-arm64-2' || 'wz-linux-amd64' }}
@@ -625,7 +619,7 @@ jobs:
             -r ${{ inputs.revision }} \
             -l ${{ needs.build-wazuh-plugins.outputs.hash }} \
             -e ${{ needs.build-reporting-plugin.outputs.hash }} \
-            -s ${{ needs.build-security-analytics-plugin.outputs.hash }} \
+            -s ${{ needs.publish-security-analytics.outputs.hash }} \
             -n ${{ needs.build-notifications-plugin.outputs.hash }}
             ${{ inputs.is_stage && '-x' || '' }} \
           )
@@ -640,7 +634,7 @@ jobs:
             -r ${{ inputs.revision }} \
             -l ${{ needs.build-wazuh-plugins.outputs.hash }} \
             -e ${{ needs.build-reporting-plugin.outputs.hash }} \
-            -s ${{ needs.build-security-analytics-plugin.outputs.hash }} \
+            -s ${{ needs.publish-security-analytics.outputs.hash }} \
             -n ${{ needs.build-notifications-plugin.outputs.hash }}
             ${{ inputs.is_stage && '-x' || '' }} \
           )
@@ -671,7 +665,7 @@ jobs:
             -r ${{ inputs.revision }} \
             -l ${{ needs.build-wazuh-plugins.outputs.hash }} \
             -e ${{ needs.build-reporting-plugin.outputs.hash }} \
-            -s ${{ needs.build-security-analytics-plugin.outputs.hash }} \
+            -s ${{ needs.publish-security-analytics.outputs.hash }} \
             -n ${{ needs.build-notifications-plugin.outputs.hash }} \
             -o ${{ github.workspace }}/artifacts
 

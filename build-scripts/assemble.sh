@@ -258,12 +258,21 @@ function install_plugins() {
 
     echo "Workaround: Injecting modified common-utils JAR to opensearch-alerting"
     local notifications_plugin_dir="${PATH_PLUGINS}/wazuh-indexer-notifications"
-    local commons_utils_jar="${PATH_PLUGINS}/opensearch-alerting/common-utils-3.5.0.0.jar"
+    local alerting_plugin_dir="${PATH_PLUGINS}/opensearch-alerting"
 
-    if [ -f "${notifications_plugin_dir}/common-utils-3.5.0.0-SNAPSHOT.jar" ]; then
-        cp "${notifications_plugin_dir}/common-utils-3.5.0.0-SNAPSHOT.jar" "$commons_utils_jar"
+    # Find the common-utils JARs by glob pattern (version-agnostic)
+    local wazuh_common_utils_jar
+    wazuh_common_utils_jar=$(find "${notifications_plugin_dir}" -maxdepth 1 -name 'common-utils-*.jar' | head -n 1)
+    local upstream_common_utils_jar
+    upstream_common_utils_jar=$(find "${alerting_plugin_dir}" -maxdepth 1 -name 'common-utils-*.jar' | head -n 1)
+
+    if [ -n "${wazuh_common_utils_jar}" ] && [ -n "${upstream_common_utils_jar}" ]; then
+        echo "Replacing ${upstream_common_utils_jar} with ${wazuh_common_utils_jar}"
+        cp "${wazuh_common_utils_jar}" "${upstream_common_utils_jar}"
     else
-        unzip -p "${notifications_plugin_dir}"/wazuh-indexer-notifications-*.jar common-utils-3.5.0.0-SNAPSHOT.jar > "$commons_utils_jar"
+        echo "WARNING: Could not find common-utils JARs for injection."
+        echo "  Wazuh common-utils: ${wazuh_common_utils_jar:-not found}"
+        echo "  Upstream common-utils: ${upstream_common_utils_jar:-not found}"
     fi
 }
 

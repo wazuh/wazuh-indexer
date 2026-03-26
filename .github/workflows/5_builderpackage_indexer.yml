@@ -588,8 +588,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
-          path: build-artifacts/${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
+          name: ${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.jar
+          path: build-artifacts/${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.jar
           if-no-files-found: error
 
   build:

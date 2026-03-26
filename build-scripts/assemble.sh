@@ -42,7 +42,6 @@ else
         "wazuh-indexer-reports-scheduler"
         "wazuh-indexer-notifications-core"
         "wazuh-indexer-notifications"
-        "wazuh-indexer-common-utils"
     )
 fi
 

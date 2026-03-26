@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Exit immediately if a command exits with a non-zero status.
-set -e
+set -ex
 
 # Set default values for environment variables
 INDEXER_PLUGINS_BRANCH=${INDEXER_PLUGINS_BRANCH:-main}
@@ -93,18 +93,25 @@ build_security_analytics() {
     local version="$1"
     local revision="$2"
     cd ${SECURITY_ANALYTICS_REPO_DIR}
+
+    echo "Building security analytics commons..."
+    ./gradlew wazuh-indexer-security-analytics-commons:build -Dversion="$version" -Drevision="$revision" --no-daemon -x check
+    ./gradlew wazuh-indexer-security-analytics-commons:publishToMavenLocal -x check
+
     echo "Building security analytics..."
     ./gradlew build -Dversion="$version" -Drevision="$revision" --no-daemon -x check
+    ./gradlew publishToMavenLocal -x check
 }
 
-# Function to publish common-utils to local Maven (required by notifications)
-publish_common_utils() {
+# Invoke the script to download the snapshots
+download_snapshots() {
     echo "----------------------------------------"
-    echo "Publishing Common Utils to Local Maven"
+    echo "Downloading Snapshots"
     echo "----------------------------------------"
-    cd ${COMMON_UTILS_REPO_DIR}
-    echo "Publishing common-utils..."
-    ./gradlew publishToMavenLocal -x check --no-daemon
+
+    bash ~/build-scripts/download_snapshots.sh \
+        --env "https://cti.pre.cloud.wazuh.com/api/v1/" \
+        --output-dir ~/artifacts/snapshots
 }
 
 # Function to build wazuh-indexer-common-utils
@@ -117,6 +124,7 @@ build_common_utils() {
     cd ${COMMON_UTILS_REPO_DIR}
     echo "Building common-utils..."
     ./gradlew build -Dversion="$version" -Drevision="$revision" --no-daemon
+    ./gradlew publishToMavenLocal -x check --no-daemon
 }
 
 # Function to build wazuh-indexer-notifications
@@ -212,17 +220,12 @@ package_artifacts() {
     local reporting_hash
     local security_analytics_hash
     local package_min_name
-    local package_name
+    # local package_name
 
     plugins_hash=$(cd ${PLUGINS_REPO_DIR} && git rev-parse --short HEAD)
-
     reporting_hash=$(cd ${REPORTING_REPO_DIR} && git rev-parse --short HEAD)
-
     security_analytics_hash=$(cd ${SECURITY_ANALYTICS_REPO_DIR} && git rev-parse --short HEAD)
-
     notifications_hash=$(cd ${NOTIFICATIONS_REPO_DIR} && git rev-parse --short HEAD)
-
-    common_utils_hash=$(cd ${COMMON_UTILS_REPO_DIR} && git rev-parse --short HEAD)
 
     cd ~
 
@@ -235,20 +238,18 @@ package_artifacts() {
         -e "$reporting_hash" \
         -s "$security_analytics_hash" \
         -n "$notifications_hash" \
-        -c "$common_utils_hash" \
         "$(if [ "$is_stage" = "true" ]; then echo "-x"; fi)")
 
-    echo "Creating package name..."
-    package_name=$(bash build-scripts/baptizer.sh \
-        -a "$architecture" \
-        -d "$distribution" \
-        -r "$revision" \
-        -l "$plugins_hash" \
-        -e "$reporting_hash" \
-        -s "$security_analytics_hash" \
-        -n "$notifications_hash" \
-        -c "$common_utils_hash" \
-        "$(if [ "$is_stage" = "true" ]; then echo "-x"; fi)")
+    # echo "Creating package name..."
+    # package_name=$(bash build-scripts/baptizer.sh \
+    #     -a "$architecture" \
+    #     -d "$distribution" \
+    #     -r "$revision" \
+    #     -l "$plugins_hash" \
+    #     -e "$reporting_hash" \
+    #     -s "$security_analytics_hash" \
+    #     -n "$notifications_hash" \
+    #     "$(if [ "$is_stage" = "true" ]; then echo "-x"; fi)")
 
     echo "Building package..."
     bash build-scripts/build.sh -a "$architecture" -d "$distribution" -n "$package_min_name"
@@ -261,8 +262,7 @@ package_artifacts() {
         -l "$plugins_hash" \
         -e "$reporting_hash" \
         -s "$security_analytics_hash" \
-        -n "$notifications_hash" \
-        -c "$common_utils_hash" \
+        -n "$notifications_hash"
 
 }
 
@@ -273,7 +273,7 @@ main() {
     # Set version env var
     VERSION=$(bash ~/build-scripts/product_version.sh)
     # Build and assemble the package
-    publish_common_utils
+    download_snapshots
     build_common_utils "$VERSION" "$REVISION"
     publish_sa_commons "$VERSION" "$REVISION"
     build_security_analytics "$VERSION" "$REVISION"

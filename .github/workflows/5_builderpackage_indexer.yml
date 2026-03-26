@@ -363,17 +363,12 @@ jobs:
           path: ~/.m2/repository
           key: .m2-${{ github.ref_name }}
 
-      - name: Publish commons library to mavenLocal
-        run: |
-          cd commons
-          ../gradlew publishToMavenLocal -x check \
-            -Dversion=${{ needs.get-versions-wazuh-indexer-security-analytics.outputs.version }} \
-            -Drevision=${{ inputs.revision }}
-
-      - name: Build with Gradle
-        run: ./gradlew build -x integTest -Dversion=${{ needs.get-versions-wazuh-indexer-security-analytics.outputs.version }} -Drevision=${{ inputs.revision }}
-
-      - run: ls -lR build/distributions
+      - name: Publish security-analytics(+commons) to Maven Local
+        uses: wazuh/wazuh-indexer-security-analytics/.github/actions/5_local_maven_publisher@main
+        with:
+            version: ${{ needs.get-versions-wazuh-indexer-security-analytics.outputs.version }}
+            revision: ${{ inputs.revision }}
+            reference: ${{ needs.branches.outputs.security_analytics_plugin_ref }}
 
       - name: Save commit hash
         id: save-hash
@@ -506,8 +501,6 @@ jobs:
           name: ${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
           path: build/distributions/${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
           if-no-files-found: error
-
-
 
   build-notifications-plugin:
     needs: [compatibility-check, branches, publish-common-utils]
@@ -648,9 +641,9 @@ jobs:
             -d ${{ matrix.distribution }} \
             -n ${{ steps.min_package.outputs.name }}
 
-      # Download CTI snapshots so assemble.sh can install them
+      # Download snapshots so assemble.sh can install them
       # alongside the content-manager plugin.
-      - name: Download CTI snapshots
+      - name: Download snapshots
         if: ${{ vars.CTI_API_URL != '' }}
         run: |
           bash build-scripts/download_snapshots.sh \

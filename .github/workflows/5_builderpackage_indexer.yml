@@ -319,18 +319,24 @@ jobs:
       labels: 'wz-linux-amd64'
     needs: [get-versions-wazuh-indexer, get-versions-wazuh-indexer-plugins, get-versions-wazuh-indexer-reporting, get-versions-wazuh-indexer-security-analytics, get-versions-wazuh-indexer-notifications, get-versions-wazuh-indexer-common-utils]
     steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            build-scripts/check_compatibility_versions.sh
+
       - name: Check version compatibility
+        env:
+          INDEXER_VERSION: ${{ needs.get-versions-wazuh-indexer.outputs.version }}
+          OPENSEARCH_VERSION: ${{ needs.get-versions-wazuh-indexer.outputs.opensearch_version }}
+          PLUGIN_VERSIONS: |
+            wazuh-indexer-plugins|${{ needs.get-versions-wazuh-indexer-plugins.outputs.version }}|${{ needs.get-versions-wazuh-indexer-plugins.outputs.opensearch_version }}
+            wazuh-indexer-reporting|${{ needs.get-versions-wazuh-indexer-reporting.outputs.version }}|${{ needs.get-versions-wazuh-indexer-reporting.outputs.opensearch_version }}
+            wazuh-indexer-security-analytics|${{ needs.get-versions-wazuh-indexer-security-analytics.outputs.version }}|${{ needs.get-versions-wazuh-indexer-security-analytics.outputs.opensearch_version }}
+            wazuh-indexer-notifications|${{ needs.get-versions-wazuh-indexer-notifications.outputs.version }}|${{ needs.get-versions-wazuh-indexer-notifications.outputs.opensearch_version }}
+            wazuh-indexer-common-utils|${{ needs.get-versions-wazuh-indexer-common-utils.outputs.version }}|${{ needs.get-versions-wazuh-indexer-common-utils.outputs.opensearch_version }}
         run: |
-          if [[ ("${{ needs.get-versions-wazuh-indexer.outputs.version }}" != "${{ needs.get-versions-wazuh-indexer-plugins.outputs.version }}") || ("${{ needs.get-versions-wazuh-indexer.outputs.version }}" != "${{ needs.get-versions-wazuh-indexer-reporting.outputs.version }}") || ("${{ needs.get-versions-wazuh-indexer.outputs.version }}" != "${{ needs.get-versions-wazuh-indexer-security-analytics.outputs.version }}") || ("${{ needs.get-versions-wazuh-indexer.outputs.version }}" != "${{ needs.get-versions-wazuh-indexer-notifications.outputs.version }}") || ("${{ needs.get-versions-wazuh-indexer.outputs.version }}" != "${{ needs.get-versions-wazuh-indexer-common-utils.outputs.version }}") ]]; then
-            echo "The Wazuh Indexer version is not compatible with the plugins, reporting, security analytics, notifications or common utils version."
-            exit 1
-          elif [[ ("${{ needs.get-versions-wazuh-indexer.outputs.opensearch_version }}" != "${{ needs.get-versions-wazuh-indexer-plugins.outputs.opensearch_version }}") || ("${{ needs.get-versions-wazuh-indexer.outputs.opensearch_version }}" != "${{ needs.get-versions-wazuh-indexer-reporting.outputs.opensearch_version }}") || ("${{ needs.get-versions-wazuh-indexer.outputs.opensearch_version }}" != "${{ needs.get-versions-wazuh-indexer-security-analytics.outputs.opensearch_version }}") || ("${{ needs.get-versions-wazuh-indexer.outputs.opensearch_version }}" != "${{ needs.get-versions-wazuh-indexer-notifications.outputs.opensearch_version }}") || ("${{ needs.get-versions-wazuh-indexer.outputs.opensearch_version }}" != "${{ needs.get-versions-wazuh-indexer-common-utils.outputs.opensearch_version }}") ]]; then
-            echo "The Wazuh Indexer Opensearch version is not compatible with the plugins, reporting, security analytics, notifications or common utils Opensearch version."
-            exit 1
-          else
-            echo "The Wazuh Indexer version and the plugins version are compatible."
-            exit 0
-          fi
+          bash build-scripts/check_compatibility_versions.sh
 
   setup:
     name: Set up variables

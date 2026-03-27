@@ -53,7 +53,6 @@ function usage() {
     echo -e "-e REPORTING_HASH\t[Optional] wazuh-indexer-reporting commit hash, default is '0'."
     echo -e "-s SECURITY_HASH\t[Optional] wazuh-indexer-security-analytics commit hash, default is '0'."
     echo -e "-n NOTIFICATIONS_HASH\t[Optional] wazuh-indexer-notifications commit hash, default is '0'."
-    echo -e "-c COMMON_UTILS_HASH\t[Optional] wazuh-indexer-common-utils commit hash, default is '0'."
     echo -e "-o OUTPUT\t[Optional] Output path, default is 'artifacts'."
     echo -e "-h help"
 }
@@ -63,7 +62,7 @@ function usage() {
 # ====
 function parse_args() {
 
-    while getopts ":ho:p:a:d:r:l:e:s:n:c:" arg; do
+    while getopts ":ho:p:a:d:r:l:e:s:n:" arg; do
         case $arg in
         h)
             usage
@@ -96,9 +95,6 @@ function parse_args() {
         n)
             NOTIFICATIONS_HASH=$OPTARG
             ;;
-        c)
-            COMMON_UTILS_HASH=$OPTARG
-            ;;
         :)
             echo "Error: -${OPTARG} requires an argument"
             usage
@@ -124,7 +120,6 @@ function parse_args() {
     [ -z "$REPORTING_HASH" ] && REPORTING_HASH="0"
     [ -z "$SECURITY_HASH" ] && SECURITY_HASH="0"
     [ -z "$NOTIFICATIONS_HASH" ] && NOTIFICATIONS_HASH="0"
-    [ -z "$COMMON_UTILS_HASH" ] && COMMON_UTILS_HASH="0"
 
     case $PLATFORM-$DISTRIBUTION-$ARCHITECTURE in
     linux-tar-x64 | darwin-tar-x64)
@@ -356,7 +351,7 @@ function generate_installer_version_file() {
     local dir
     dir="${1}"
     jq \
-      --arg commit "${INDEXER_HASH}-${PLUGINS_HASH}-${REPORTING_HASH}-${SECURITY_HASH}-${NOTIFICATIONS_HASH}-${COMMON_UTILS_HASH}" \
+      --arg commit "${INDEXER_HASH}-${PLUGINS_HASH}-${REPORTING_HASH}-${SECURITY_HASH}-${NOTIFICATIONS_HASH}" \
       '. + {"commit": $commit}' \
       "${REPO_PATH}"/VERSION.json > "${dir}"/VERSION.json
 }

@@ -1,12 +1,5 @@
 #!/bin/bash
 
-# Copyright OpenSearch Contributors
-# SPDX-License-Identifier: Apache-2.0
-#
-# The OpenSearch Contributors require contributions made to
-# this file be licensed under the Apache-2.0 license or a
-# compatible open source license.
-
 set -ex
 
 # Source shared retry utility
@@ -41,7 +34,7 @@ else
     )
     wazuh_plugins=(
         "wazuh-indexer-setup"
-        "wazuh-indexer-security-analytics" # Flagged as Trojan by some antivirus software
+        "wazuh-indexer-security-analytics"
         "wazuh-indexer-content-manager"
         "wazuh-indexer-reports-scheduler"
         "wazuh-indexer-notifications-core"
@@ -257,12 +250,21 @@ function install_plugins() {
 
     echo "Workaround: Injecting modified common-utils JAR to opensearch-alerting"
     local notifications_plugin_dir="${PATH_PLUGINS}/wazuh-indexer-notifications"
-    local commons_utils_jar="${PATH_PLUGINS}/opensearch-alerting/common-utils-3.5.0.0.jar"
+    local alerting_plugin_dir="${PATH_PLUGINS}/opensearch-alerting"
 
-    if [ -f "${notifications_plugin_dir}/common-utils-3.5.0.0-SNAPSHOT.jar" ]; then
-        cp "${notifications_plugin_dir}/common-utils-3.5.0.0-SNAPSHOT.jar" "$commons_utils_jar"
+    # Find the common-utils JARs by glob pattern (version-agnostic)
+    local wazuh_common_utils_jar
+    wazuh_common_utils_jar=$(find "${notifications_plugin_dir}" -maxdepth 1 -name 'common-utils-*.jar' | head -n 1)
+    local upstream_common_utils_jar
+    upstream_common_utils_jar=$(find "${alerting_plugin_dir}" -maxdepth 1 -name 'common-utils-*.jar' | head -n 1)
+
+    if [ -n "${wazuh_common_utils_jar}" ] && [ -n "${upstream_common_utils_jar}" ]; then
+        echo "Replacing ${upstream_common_utils_jar} with ${wazuh_common_utils_jar}"
+        cp "${wazuh_common_utils_jar}" "${upstream_common_utils_jar}"
     else
-        unzip -p "${notifications_plugin_dir}"/wazuh-indexer-notifications-*.jar common-utils-3.5.0.0-SNAPSHOT.jar > "$commons_utils_jar"
+        echo "WARNING: Could not find common-utils JARs for injection."
+        echo "  Wazuh common-utils: ${wazuh_common_utils_jar:-not found}"
+        echo "  Upstream common-utils: ${upstream_common_utils_jar:-not found}"
     fi
 }
 
@@ -272,7 +274,7 @@ function install_plugins() {
 function install_wazuh_engine() {
     echo "Installing Wazuh Engine"
     local target_dir="${1}"
-    
+
     # Obtain architecture
     local engine_arch
     if [ "$ARCHITECTURE" == "x64" ]; then
@@ -283,7 +285,7 @@ function install_wazuh_engine() {
         echo "Error: Unsupported architecture for engine: $ARCHITECTURE"
         exit 1
     fi
-    
+
     local engine_tarball
     engine_tarball=$(find "${OUTPUT}/engine" -name "wazuh-engine-*-linux-${engine_arch}.tar.gz" | head -n 1)
 
@@ -321,18 +323,19 @@ function install_wazuh_engine() {
 }
 
 # ====
-# Install CTI snapshots
+# Install snapshots
 # ====
-function install_cti_snapshots() {
+function install_snapshots() {
     local dest="${PATH_PLUGINS}/wazuh-indexer-content-manager/snapshots"
     # Working directory at this point is: artifacts/tmp/{rpm|deb|tar}
-    local src="$(pwd)/../../cti-snapshots"
+    local src
+    src="$(pwd)/../../snapshots"
     if [ -d "${src}" ]; then
-        echo "Installing CTI snapshots to ${dest}"
+        echo "Installing snapshots to ${dest}"
         mkdir -p "${dest}"
         cp "${src}"/*.zip "${dest}/"
     else
-        echo "No CTI snapshots found at ${src}, skipping"
+        echo "No snapshots found at ${src}, skipping"
     fi
 }
 
@@ -377,7 +380,7 @@ function assemble_tar() {
 
     # Install plugins
     install_plugins "${PRODUCT_VERSION}"
-    install_cti_snapshots
+    install_snapshots
 
     # Install Wazuh Engine
     install_wazuh_engine "${decompressed_tar_dir}"
@@ -418,7 +421,7 @@ function assemble_rpm() {
 
     # Install plugins
     install_plugins "${PRODUCT_VERSION}"
-    install_cti_snapshots
+    install_snapshots
 
     # Install Wazuh Engine
     install_wazuh_engine "${src_path}"
@@ -473,7 +476,7 @@ function assemble_deb() {
 
     # Install plugins
     install_plugins "${PRODUCT_VERSION}"
-    install_cti_snapshots
+    install_snapshots
 
     # Install Wazuh Engine
     install_wazuh_engine "${src_path}"
@@ -518,7 +521,7 @@ function main() {
 
     REPO_PATH="$(pwd)"
 
-    UPSTREAM_VERSION=$(bash build-scripts/upstream-version.sh)
+    UPSTREAM_VERSION=$(bash build-scripts/opensearch_version.sh)
     PRODUCT_VERSION=$(bash build-scripts/product_version.sh)
     ### Get the commit hash ID
     INDEXER_HASH=$(git rev-parse --short HEAD)

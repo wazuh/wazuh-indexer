@@ -677,7 +677,7 @@ jobs:
             -l ${{ needs.build-wazuh-plugins.outputs.hash }} \
             -e ${{ needs.build-reporting-plugin.outputs.hash }} \
             -s ${{ needs.publish-security-analytics.outputs.hash }} \
-            -n ${{ needs.build-notifications-plugin.outputs.hash }}
+            -n ${{ needs.build-notifications-plugin.outputs.hash }} \
             ${{ inputs.is_stage && '-x' || '' }} \
           )
           echo "name=$name" >> $GITHUB_OUTPUT
@@ -692,7 +692,7 @@ jobs:
             -l ${{ needs.build-wazuh-plugins.outputs.hash }} \
             -e ${{ needs.build-reporting-plugin.outputs.hash }} \
             -s ${{ needs.publish-security-analytics.outputs.hash }} \
-            -n ${{ needs.build-notifications-plugin.outputs.hash }}
+            -n ${{ needs.build-notifications-plugin.outputs.hash }} \
             ${{ inputs.is_stage && '-x' || '' }} \
           )
           echo "name=$name" >> $GITHUB_OUTPUT

@@ -81,6 +81,7 @@ function parse_args() {
     [ -z "$ARCHITECTURE" ] && ARCHITECTURE=$(uname -m)
     [ -z "$DISTRIBUTION" ] && DISTRIBUTION="tar"
     [ -z "$REVISION" ] && REVISION="0"
+    [ -z "$COMMON_UTILS_HASH" ] && COMMON_UTILS_HASH="0"
     [ -z "$IS_MIN" ] && IS_MIN=false
     [ -z "$IS_RELEASE" ] && IS_RELEASE=false
 

@@ -149,6 +149,13 @@ jobs:
       opensearch_version: ${{ steps.version.outputs.opensearch_version }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            VERSION.json
+            build-scripts/product_version.sh
+            build-scripts/upstream-version.sh
+            buildSrc/version.properties
 
       - name: Get Wazuh Indexer version
         id: version
@@ -173,6 +180,12 @@ jobs:
         with:
           repository: wazuh/wazuh-indexer-plugins
           ref: ${{ needs.branches.outputs.wazuh_plugins_ref }}
+          fetch-depth: 1
+          sparse-checkout: |
+            VERSION.json
+            tools/product_version.sh
+            tools/opensearch_version.sh
+            plugins/setup/build.gradle
 
       - name: Read versions from wazuh-indexer-plugins
         id: plugins_version
@@ -196,6 +209,12 @@ jobs:
         with:
           repository: wazuh/wazuh-indexer-reporting
           ref: ${{ needs.branches.outputs.reporting_plugin_ref }}
+          fetch-depth: 1
+          sparse-checkout: |
+            VERSION.json
+            tools/product_version.sh
+            tools/opensearch_version.sh
+            build.gradle
 
       - name: Read versions from wazuh-indexer-reporting
         id: reporting_version
@@ -219,6 +238,12 @@ jobs:
         with:
           repository: wazuh/wazuh-indexer-security-analytics
           ref: ${{ needs.branches.outputs.security_analytics_plugin_ref }}
+          fetch-depth: 1
+          sparse-checkout: |
+            VERSION.json
+            tools/product_version.sh
+            tools/opensearch_version.sh
+            build.gradle
 
       - name: Read versions from wazuh-indexer-security-analytics
         id: security_analytics_version
@@ -242,6 +267,13 @@ jobs:
         with:
           repository: wazuh/wazuh-indexer-notifications
           ref: ${{ needs.branches.outputs.notifications_plugin_ref }}
+          fetch-depth: 1
+          sparse-checkout: |
+            VERSION.json
+            tools/product_version.sh
+            tools/opensearch_version.sh
+            build.gradle
+            notifications/build.gradle
 
       - name: Read versions from wazuh-indexer-notifications
         id: notifications_version
@@ -265,6 +297,12 @@ jobs:
         with:
           repository: wazuh/wazuh-indexer-common-utils
           ref: ${{ needs.branches.outputs.common_utils_plugin_ref }}
+          fetch-depth: 1
+          sparse-checkout: |
+            VERSION.json
+            tools/product_version.sh
+            tools/opensearch_version.sh
+            build.gradle
 
       - name: Read versions from wazuh-indexer-common-utils
         id: common_utils_version

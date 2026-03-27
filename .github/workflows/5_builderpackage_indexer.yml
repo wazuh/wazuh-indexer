@@ -566,56 +566,6 @@ jobs:
           path: build/distributions/${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
           if-no-files-found: error
 
-  build-security-analytics-plugin:
-    needs: [compatibility-check, branches]
-    if: ${{ needs.branches.outputs.security_analytics_plugin_ref != '' }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    outputs:
-      hash: ${{ steps.save-hash.outputs.hash }}
-    env:
-      plugin_name: wazuh-indexer-security-analytics
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          repository: wazuh/wazuh-indexer-security-analytics
-          ref: ${{ needs.branches.outputs.security_analytics_plugin_ref }}
-
-      - uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: 25
-
-      - name: Setup Gradle # Used for caching
-        uses: gradle/actions/setup-gradle@v6
-
-      - name: Get version
-        id: version
-        run: echo "version=$(jq .version -r VERSION.json)" >> "$GITHUB_OUTPUT"
-
-      - name: Publish commons library to mavenLocal
-        run: |
-          cd commons
-          ../gradlew publishToMavenLocal -x check \
-            -Dversion=${{ steps.version.outputs.version }} \
-            -Drevision=${{ inputs.revision }}
-
-      - name: Build with Gradle
-        run: ./gradlew build -x integTest -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }}
-
-      - run: ls -lR build/distributions
-
-      - name: Save commit hash
-        id: save-hash
-        run: echo "hash=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: ${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
-          path: build/distributions/${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
-          if-no-files-found: error
-
   build-notifications-plugin:
     needs: [compatibility-check, branches, publish-common-utils]
     if: ${{ needs.branches.outputs.notifications_plugin_ref != '' }}
@@ -691,7 +641,6 @@ jobs:
     runs-on:
       group: ${{ matrix.architecture == 'arm64' && 'wz-linux-arm64' || 'wz-linux-amd64' }}
       labels: ${{ matrix.architecture == 'arm64' && 'wz-linux-arm64-2' || 'wz-linux-amd64' }}
-    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}

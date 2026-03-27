@@ -522,7 +522,7 @@ function main() {
 
     REPO_PATH="$(pwd)"
 
-    UPSTREAM_VERSION=$(bash build-scripts/upstream-version.sh)
+    UPSTREAM_VERSION=$(bash build-scripts/opensearch_version.sh)
     PRODUCT_VERSION=$(bash build-scripts/product_version.sh)
     ### Get the commit hash ID
     INDEXER_HASH=$(git rev-parse --short HEAD)

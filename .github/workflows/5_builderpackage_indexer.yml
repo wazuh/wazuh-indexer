@@ -154,18 +154,14 @@ jobs:
           sparse-checkout: |
             VERSION.json
             build-scripts/product_version.sh
-            build-scripts/upstream-version.sh
+            build-scripts/opensearch_version.sh
             buildSrc/version.properties
 
-      - name: Get Wazuh Indexer version
+      - name: Read versions
         id: version
         run: |
-          # Get the Wazuh Indexer version using the product_version.sh script
           echo "version=$(bash ./build-scripts/product_version.sh)" >> "$GITHUB_OUTPUT"
-
-          # Extracts the Opensearch version using the upstream-version.sh script
-          opensearch_version=$(bash ./build-scripts/upstream-version.sh)
-          echo "opensearch_version=$opensearch_version" >> "$GITHUB_OUTPUT"
+          echo "opensearch_version=$(bash ./build-scripts/opensearch_version.sh)" >> "$GITHUB_OUTPUT"
 
   get-versions-wazuh-indexer-plugins:
     needs: [branches]
@@ -187,14 +183,11 @@ jobs:
             tools/opensearch_version.sh
             plugins/setup/build.gradle
 
-      - name: Read versions from wazuh-indexer-plugins
+      - name: Read versions
         id: plugins_version
         run: |
           echo "version=$(bash ./tools/product_version.sh)" >> "$GITHUB_OUTPUT"
-
-          # Extracts the Opensearch version
-          opensearch_version=$(bash ./tools/opensearch_version.sh "setup")
-          echo "opensearch_version=$opensearch_version" >> "$GITHUB_OUTPUT"
+          echo "opensearch_version=$(bash ./tools/opensearch_version.sh)" >> "$GITHUB_OUTPUT"
 
   get-versions-wazuh-indexer-reporting:
     needs: [branches]
@@ -216,14 +209,11 @@ jobs:
             tools/opensearch_version.sh
             build.gradle
 
-      - name: Read versions from wazuh-indexer-reporting
+      - name: Read versions
         id: reporting_version
         run: |
           echo "version=$(bash ./tools/product_version.sh)" >> "$GITHUB_OUTPUT"
-
-           # Extracts the Opensearch version
-           opensearch_version=$(bash tools/opensearch_version.sh)
-           echo "opensearch_version=$opensearch_version" >> "$GITHUB_OUTPUT"
+           echo "opensearch_version=$(bash ./tools/opensearch_version.sh)" >> "$GITHUB_OUTPUT"
 
   get-versions-wazuh-indexer-security-analytics:
     needs: [branches]
@@ -245,14 +235,11 @@ jobs:
             tools/opensearch_version.sh
             build.gradle
 
-      - name: Read versions from wazuh-indexer-security-analytics
+      - name: Read versions
         id: security_analytics_version
         run: |
           echo "version=$(bash ./tools/product_version.sh)" >> "$GITHUB_OUTPUT"
-
-           # Extracts the Opensearch version
-           opensearch_version=$(bash tools/opensearch_version.sh)
-           echo "opensearch_version=$opensearch_version" >> "$GITHUB_OUTPUT"
+          echo "opensearch_version=$(bash ./tools/opensearch_version.sh)" >> "$GITHUB_OUTPUT"
 
   get-versions-wazuh-indexer-notifications:
     needs: [branches]
@@ -275,14 +262,11 @@ jobs:
             build.gradle
             notifications/build.gradle
 
-      - name: Read versions from wazuh-indexer-notifications
+      - name: Read versions
         id: notifications_version
         run: |
           echo "version=$(bash ./tools/product_version.sh)" >> "$GITHUB_OUTPUT"
-
-           # Extracts the Opensearch version
-           opensearch_version=$(bash tools/opensearch_version.sh)
-           echo "opensearch_version=$opensearch_version" >> "$GITHUB_OUTPUT"
+           echo "opensearch_version=$(bash ./tools/opensearch_version.sh)" >> "$GITHUB_OUTPUT"
 
   get-versions-wazuh-indexer-common-utils:
     needs: [branches]
@@ -304,14 +288,11 @@ jobs:
             tools/opensearch_version.sh
             build.gradle
 
-      - name: Read versions from wazuh-indexer-common-utils
+      - name: Read versions
         id: common_utils_version
         run: |
           echo "version=$(bash ./tools/product_version.sh)" >> "$GITHUB_OUTPUT"
-
-           # Extracts the Opensearch version
-           opensearch_version=$(bash tools/opensearch_version.sh)
-           echo "opensearch_version=$opensearch_version" >> "$GITHUB_OUTPUT"
+           echo "opensearch_version=$(bash ./tools/opensearch_version.sh)" >> "$GITHUB_OUTPUT"
 
   compatibility-check:
     runs-on:

@@ -779,6 +779,20 @@ jobs:
           sudo bash build-scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }}
           sudo DEBIAN_FRONTEND=noninteractive dpkg -i --force-confnew "artifacts/dist/${{ steps.package.outputs.name }}"
 
+      - name: Clean up DEB test environment
+        if: ${{ always() && matrix.distribution == 'deb' }}
+        run: |
+          if systemctl list-unit-files | grep -q '^wazuh-indexer\.service'; then
+            sudo systemctl stop wazuh-indexer || true
+            sudo systemctl disable wazuh-indexer || true
+          fi
+
+          sudo DEBIAN_FRONTEND=noninteractive apt-get remove --purge wazuh-indexer -y || true
+          sudo DEBIAN_FRONTEND=noninteractive apt-get autoremove -y || true
+          sudo rm -f /etc/apt/sources.list.d/wazuh.list
+          sudo rm -f /usr/share/keyrings/wazuh.gpg
+          sudo apt-get update || true
+
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:

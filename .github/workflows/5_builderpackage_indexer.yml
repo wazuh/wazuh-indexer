@@ -333,7 +333,6 @@ jobs:
           fi
 
   setup:
-    needs: [compatibility-check]
     name: Set up variables
     runs-on:
       group: 'wz-linux-amd64'

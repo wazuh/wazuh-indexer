@@ -123,8 +123,8 @@ on:
 jobs:
   branches:
     runs-on:
-      group: 'wz-linux-amd64'
-      labels: 'wz-linux-amd64'
+      group: "wz-linux-amd64"
+      labels: "wz-linux-amd64"
     outputs:
       wazuh_plugins_ref: ${{ steps.branches.outputs.wazuh_indexer_plugins_branch }}
       reporting_plugin_ref: ${{ steps.branches.outputs.wazuh_indexer_reporting_branch }}
@@ -142,8 +142,8 @@ jobs:
 
   get-versions-wazuh-indexer:
     runs-on:
-      group: 'wz-linux-amd64'
-      labels: 'wz-linux-amd64'
+      group: "wz-linux-amd64"
+      labels: "wz-linux-amd64"
     outputs:
       version: ${{ steps.version.outputs.version }}
       opensearch_version: ${{ steps.version.outputs.opensearch_version }}
@@ -170,8 +170,8 @@ jobs:
   get-versions-wazuh-indexer-plugins:
     needs: [branches]
     runs-on:
-      group: 'wz-linux-amd64'
-      labels: 'wz-linux-amd64'
+      group: "wz-linux-amd64"
+      labels: "wz-linux-amd64"
     outputs:
       version: ${{ steps.plugins_version.outputs.version }}
       opensearch_version: ${{ steps.plugins_version.outputs.opensearch_version }}
@@ -199,8 +199,8 @@ jobs:
   get-versions-wazuh-indexer-reporting:
     needs: [branches]
     runs-on:
-      group: 'wz-linux-amd64'
-      labels: 'wz-linux-amd64'
+      group: "wz-linux-amd64"
+      labels: "wz-linux-amd64"
     outputs:
       version: ${{ steps.reporting_version.outputs.version }}
       opensearch_version: ${{ steps.reporting_version.outputs.opensearch_version }}
@@ -219,17 +219,17 @@ jobs:
       - name: Read versions from wazuh-indexer-reporting
         id: reporting_version
         run: |
-           echo "version=$(bash ./tools/product_version.sh)" >> "$GITHUB_OUTPUT"
+          echo "version=$(bash ./tools/product_version.sh)" >> "$GITHUB_OUTPUT"
 
-            # Extracts the Opensearch version
-            opensearch_version=$(bash tools/opensearch_version.sh)
-            echo "opensearch_version=$opensearch_version" >> "$GITHUB_OUTPUT"
+           # Extracts the Opensearch version
+           opensearch_version=$(bash tools/opensearch_version.sh)
+           echo "opensearch_version=$opensearch_version" >> "$GITHUB_OUTPUT"
 
   get-versions-wazuh-indexer-security-analytics:
     needs: [branches]
     runs-on:
-      group: 'wz-linux-amd64'
-      labels: 'wz-linux-amd64'
+      group: "wz-linux-amd64"
+      labels: "wz-linux-amd64"
     outputs:
       version: ${{ steps.security_analytics_version.outputs.version }}
       opensearch_version: ${{ steps.security_analytics_version.outputs.opensearch_version }}
@@ -248,17 +248,17 @@ jobs:
       - name: Read versions from wazuh-indexer-security-analytics
         id: security_analytics_version
         run: |
-           echo "version=$(bash ./tools/product_version.sh)" >> "$GITHUB_OUTPUT"
+          echo "version=$(bash ./tools/product_version.sh)" >> "$GITHUB_OUTPUT"
 
-            # Extracts the Opensearch version
-            opensearch_version=$(bash tools/opensearch_version.sh)
-            echo "opensearch_version=$opensearch_version" >> "$GITHUB_OUTPUT"
+           # Extracts the Opensearch version
+           opensearch_version=$(bash tools/opensearch_version.sh)
+           echo "opensearch_version=$opensearch_version" >> "$GITHUB_OUTPUT"
 
   get-versions-wazuh-indexer-notifications:
     needs: [branches]
     runs-on:
-      group: 'wz-linux-amd64'
-      labels: 'wz-linux-amd64'
+      group: "wz-linux-amd64"
+      labels: "wz-linux-amd64"
     outputs:
       version: ${{ steps.notifications_version.outputs.version }}
       opensearch_version: ${{ steps.notifications_version.outputs.opensearch_version }}
@@ -278,17 +278,17 @@ jobs:
       - name: Read versions from wazuh-indexer-notifications
         id: notifications_version
         run: |
-           echo "version=$(bash ./tools/product_version.sh)" >> "$GITHUB_OUTPUT"
+          echo "version=$(bash ./tools/product_version.sh)" >> "$GITHUB_OUTPUT"
 
-            # Extracts the Opensearch version
-            opensearch_version=$(bash tools/opensearch_version.sh)
-            echo "opensearch_version=$opensearch_version" >> "$GITHUB_OUTPUT"
+           # Extracts the Opensearch version
+           opensearch_version=$(bash tools/opensearch_version.sh)
+           echo "opensearch_version=$opensearch_version" >> "$GITHUB_OUTPUT"
 
   get-versions-wazuh-indexer-common-utils:
     needs: [branches]
     runs-on:
-      group: 'wz-linux-amd64'
-      labels: 'wz-linux-amd64'
+      group: "wz-linux-amd64"
+      labels: "wz-linux-amd64"
     outputs:
       version: ${{ steps.common_utils_version.outputs.version }}
       opensearch_version: ${{ steps.common_utils_version.outputs.opensearch_version }}
@@ -315,9 +315,17 @@ jobs:
 
   compatibility-check:
     runs-on:
-      group: 'wz-linux-amd64'
-      labels: 'wz-linux-amd64'
-    needs: [get-versions-wazuh-indexer, get-versions-wazuh-indexer-plugins, get-versions-wazuh-indexer-reporting, get-versions-wazuh-indexer-security-analytics, get-versions-wazuh-indexer-notifications, get-versions-wazuh-indexer-common-utils]
+      group: "wz-linux-amd64"
+      labels: "wz-linux-amd64"
+    needs:
+      [
+        get-versions-wazuh-indexer,
+        get-versions-wazuh-indexer-plugins,
+        get-versions-wazuh-indexer-reporting,
+        get-versions-wazuh-indexer-security-analytics,
+        get-versions-wazuh-indexer-notifications,
+        get-versions-wazuh-indexer-common-utils,
+      ]
     steps:
       - uses: actions/checkout@v6
         with:
@@ -341,8 +349,8 @@ jobs:
   setup:
     name: Set up variables
     runs-on:
-      group: 'wz-linux-amd64'
-      labels: 'wz-linux-amd64'
+      group: "wz-linux-amd64"
+      labels: "wz-linux-amd64"
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix }}
       previous_version: ${{ steps.previous_release.outputs.previous_version }}
@@ -373,8 +381,8 @@ jobs:
 
   publish-common-utils:
     runs-on:
-      group: 'wz-linux-amd64'
-      labels: 'wz-linux-amd64'
+      group: "wz-linux-amd64"
+      labels: "wz-linux-amd64"
     needs: [compatibility-check, branches]
     steps:
       - name: Publish common-utils to Maven Local
@@ -389,10 +397,16 @@ jobs:
 
   publish-security-analytics:
     runs-on:
-      group: 'wz-linux-amd64'
-      labels: 'wz-linux-amd64'
+      group: "wz-linux-amd64"
+      labels: "wz-linux-amd64"
     timeout-minutes: 60
-    needs: [compatibility-check, branches, get-versions-wazuh-indexer-security-analytics, publish-common-utils]
+    needs:
+      [
+        compatibility-check,
+        branches,
+        get-versions-wazuh-indexer-security-analytics,
+        publish-common-utils,
+      ]
     outputs:
       hash: ${{ steps.save-hash.outputs.hash }}
     steps:
@@ -418,9 +432,9 @@ jobs:
       - name: Publish security-analytics(+commons) to Maven Local
         uses: wazuh/wazuh-indexer-security-analytics/.github/actions/5_local_maven_publisher@main
         with:
-            version: ${{ needs.get-versions-wazuh-indexer-security-analytics.outputs.version }}
-            revision: ${{ inputs.revision }}
-            reference: ${{ needs.branches.outputs.security_analytics_plugin_ref }}
+          version: ${{ needs.get-versions-wazuh-indexer-security-analytics.outputs.version }}
+          revision: ${{ inputs.revision }}
+          reference: ${{ needs.branches.outputs.security_analytics_plugin_ref }}
 
       - name: Save commit hash
         id: save-hash
@@ -444,7 +458,7 @@ jobs:
     uses: wazuh/wazuh/.github/workflows/5_builderpackage_engine-standalone.yml@main
     with:
       wazuh-branch: ${{ needs.branches.outputs.wazuh_ref }}
-      build-type: 'release'
+      build-type: "release"
       arch: ${{ inputs.architecture }}
 
   build-wazuh-plugins:
@@ -456,8 +470,8 @@ jobs:
       matrix:
         plugins: ["setup", "content-manager"]
     runs-on:
-      group: 'wz-linux-amd64'
-      labels: 'wz-linux-amd64'
+      group: "wz-linux-amd64"
+      labels: "wz-linux-amd64"
     env:
       plugin_name: wazuh-indexer-${{ matrix.plugins }}
     outputs:
@@ -511,8 +525,8 @@ jobs:
     if: ${{ needs.branches.outputs.reporting_plugin_ref != '' }}
     timeout-minutes: 60
     runs-on:
-      group: 'wz-linux-amd64'
-      labels: 'wz-linux-amd64'
+      group: "wz-linux-amd64"
+      labels: "wz-linux-amd64"
     outputs:
       hash: ${{ steps.save-hash.outputs.hash }}
     env:
@@ -564,8 +578,8 @@ jobs:
     if: ${{ needs.branches.outputs.notifications_plugin_ref != '' }}
     timeout-minutes: 60
     runs-on:
-      group: 'wz-linux-amd64'
-      labels: 'wz-linux-amd64'
+      group: "wz-linux-amd64"
+      labels: "wz-linux-amd64"
     outputs:
       hash: ${{ steps.save-hash.outputs.hash }}
     env:
@@ -621,7 +635,15 @@ jobs:
           if-no-files-found: error
 
   build:
-    needs: [setup, build-wazuh-plugins, build-reporting-plugin, publish-security-analytics, build-notifications-plugin, build-wazuh-engine]
+    needs:
+      [
+        setup,
+        build-wazuh-plugins,
+        build-reporting-plugin,
+        publish-security-analytics,
+        build-notifications-plugin,
+        build-wazuh-engine,
+      ]
     timeout-minutes: 60
     runs-on:
       group: ${{ matrix.architecture == 'arm64' && 'wz-linux-arm64' || 'wz-linux-amd64' }}

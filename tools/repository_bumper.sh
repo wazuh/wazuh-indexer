@@ -6,10 +6,12 @@
 # This script updates the VERSION.json file and the changelog section of the
 # RPM spec file for a new version release.
 #
-# It takes three arguments:
+# It takes three required arguments and one optional flag:
 # 1. The new version to set (e.g., 4.5.0)
 # 2. The new stage to set (alpha, beta, rc, stable)
-# 3. The date to set in the changelog (e.g., 'Mon Jan 02 2025')
+# 3. The date to set in the changelog (e.g., '2025-04-13')
+# 4. [--set-as-main] Enable main branch mode: bump version values only,
+#    keep branch references pointing to main
 #
 # The changelog entry will be added to the %changelog section of the RPM spec file,
 # and will be formatted as follows:

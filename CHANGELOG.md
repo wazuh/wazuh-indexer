@@ -22,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Enable Wazuh Engine in Docker images and add support for ARM architecture [(#1320)](https://github.com/wazuh/wazuh-indexer/pull/1320) [(#1328)](https://github.com/wazuh/wazuh-indexer/pull/1328) [(#1401)](https://github.com/wazuh/wazuh-indexer/pull/1401)
 - Bundle CTI content snapshots into Wazuh Indexer packages [(#1353)](https://github.com/wazuh/wazuh-indexer/pull/1353)
 - Implement wazuh-indexer-common-utils plugin build process [(#1385)](https://github.com/wazuh/wazuh-indexer/pull/1385)
+- Add `--set-as-main` flag support to repository bumper [(#1396)](https://github.com/wazuh/wazuh-indexer/pull/1396)
 
 ### Fixed
 - Set secure permissions (750) for engine sockets directory [(#1330)](https://github.com/wazuh/wazuh-indexer/pull/1330)
@@ -53,6 +54,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Use docker commands directly instead of addnab/docker-run-action [(#1326)](https://github.com/wazuh/wazuh-indexer/pull/1326)
 - Adapt build workflows for dedicated runners [(#1347)](https://github.com/wazuh/wazuh-indexer/pull/1347)
 - Merge CodeQL configurations into codeql-analysis.yml [(#1345)](https://github.com/wazuh/wazuh-indexer/pull/1345)
+- Improve build workflow and scripts reliability [(#1378)](https://github.com/wazuh/wazuh-indexer/pull/1378)
 
 ### Deprecated
 -

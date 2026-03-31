@@ -2,11 +2,11 @@
 FROM amazonlinux:2023 AS builder
 
 ARG VERSION
-ARG INDEXER_TAR_NAME
+ARG TARGETARCH
 
 RUN yum update -y && yum install openssl tar findutils shadow-utils tar gzip jq -y
 
-COPY ${INDEXER_TAR_NAME} /
+COPY wazuh-indexer-${TARGETARCH}.tar.gz /wazuh-indexer.tar.gz
 
 COPY config/opensearch.yml /
 
@@ -14,6 +14,7 @@ COPY config/config.yml /
 
 COPY config/config.sh /
 
+ENV INDEXER_TAR_NAME=wazuh-indexer.tar.gz
 RUN bash config.sh
 
 ################################################################################

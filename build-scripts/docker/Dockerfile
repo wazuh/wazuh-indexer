@@ -2,6 +2,8 @@
 FROM amazonlinux:2023 AS builder
 
 ARG VERSION
+# TARGETARCH is automatically set by Docker Buildx to the architecture of the target platform (amd64/arm64).
+# This allows you to build multi-architecture images using a single Dockerfile.
 ARG TARGETARCH
 
 RUN yum update -y && yum install openssl tar findutils shadow-utils tar gzip jq -y

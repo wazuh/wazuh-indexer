@@ -18,7 +18,6 @@ if ($TEST); then
     wazuh_plugins=()
 else
     plugins=(
-        "alerting" # "opensearch-alerting"
         "opensearch-job-scheduler"
         "opensearch-anomaly-detection" # Requires "opensearch-job-scheduler"
         "asynchronous-search"          # "opensearch-asynchronous-search"
@@ -39,6 +38,7 @@ else
         "wazuh-indexer-reports-scheduler"
         "wazuh-indexer-notifications-core"
         "wazuh-indexer-notifications"
+        "wazuh-indexer-alerting"
     )
 fi
 
@@ -57,6 +57,7 @@ function usage() {
     echo -e "-e REPORTING_HASH\t[Optional] wazuh-indexer-reporting commit hash, default is '0'."
     echo -e "-s SECURITY_HASH\t[Optional] wazuh-indexer-security-analytics commit hash, default is '0'."
     echo -e "-n NOTIFICATIONS_HASH\t[Optional] wazuh-indexer-notifications commit hash, default is '0'."
+    echo -e "-t ALERTING_HASH\t[Optional] wazuh-indexer-alerting commit hash, default is '0'."
     echo -e "-o OUTPUT\t[Optional] Output path, default is 'artifacts'."
     echo -e "-h help"
 }
@@ -66,7 +67,7 @@ function usage() {
 # ====
 function parse_args() {
 
-    while getopts ":ho:p:a:d:r:l:e:s:n:" arg; do
+    while getopts ":ho:p:a:d:r:l:e:s:n:t:" arg; do
         case $arg in
         h)
             usage
@@ -99,6 +100,9 @@ function parse_args() {
         n)
             NOTIFICATIONS_HASH=$OPTARG
             ;;
+        t)
+            ALERTING_HASH=$OPTARG
+            ;;
         :)
             echo "Error: -${OPTARG} requires an argument"
             usage
@@ -124,6 +128,7 @@ function parse_args() {
     [ -z "$REPORTING_HASH" ] && REPORTING_HASH="0"
     [ -z "$SECURITY_HASH" ] && SECURITY_HASH="0"
     [ -z "$NOTIFICATIONS_HASH" ] && NOTIFICATIONS_HASH="0"
+    [ -z "$ALERTING_HASH" ] && ALERTING_HASH="0"
 
     case $PLATFORM-$DISTRIBUTION-$ARCHITECTURE in
     linux-tar-x64 | darwin-tar-x64)
@@ -248,9 +253,9 @@ function install_plugins() {
         OPENSEARCH_PATH_CONF=$PATH_CONF "${PATH_BIN}/opensearch-plugin" install --batch --verbose "file:${plugin_path}"
     done
 
-    echo "Workaround: Injecting modified common-utils JAR to opensearch-alerting"
+    echo "Workaround: Injecting modified common-utils JAR to wazuh-indexer-notifications and wazuh-indexer-alerting"
     local notifications_plugin_dir="${PATH_PLUGINS}/wazuh-indexer-notifications"
-    local alerting_plugin_dir="${PATH_PLUGINS}/opensearch-alerting"
+    local alerting_plugin_dir="${PATH_PLUGINS}/wazuh-indexer-alerting"
 
     # Find the common-utils JARs by glob pattern (version-agnostic)
     local wazuh_common_utils_jar
@@ -355,7 +360,7 @@ function generate_installer_version_file() {
     local dir
     dir="${1}"
     jq \
-      --arg commit "${INDEXER_HASH}-${PLUGINS_HASH}-${REPORTING_HASH}-${SECURITY_HASH}-${NOTIFICATIONS_HASH}" \
+      --arg commit "${INDEXER_HASH}-${PLUGINS_HASH}-${REPORTING_HASH}-${SECURITY_HASH}-${NOTIFICATIONS_HASH}-${ALERTING_HASH}" \
       '. + {"commit": $commit}' \
       "${REPO_PATH}"/VERSION.json > "${dir}"/VERSION.json
 }

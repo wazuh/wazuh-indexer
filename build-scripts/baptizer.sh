@@ -14,6 +14,7 @@ function usage() {
     echo -e "-e REPORTING_HASH\t[Optional] Commit hash from the wazuh-indexer-reporting repository"
     echo -e "-s SECURITY_HASH\t[Optional] Commit hash from the wazuh-indexer-security-analytics repository"
     echo -e "-n NOTIFICATIONS_HASH\t[Optional] Commit hash from the wazuh-indexer-notifications repository"
+    echo -e "-t ALERTING_HASH\t[Optional] Commit hash from the wazuh-indexer-alerting repository"
     echo -e "-m MIN\t[Optional] Use naming convention for minimal packages, default is 'false'."
     echo -e "-x RELEASE\t[Optional] Use release naming convention, default is 'false'."
     echo -e "-h help"
@@ -24,7 +25,7 @@ function usage() {
 # ====
 function parse_args() {
 
-    while getopts ":hp:a:d:r:l:e:s:n:mx" arg; do
+    while getopts ":hp:a:d:r:l:e:s:n:t:mx" arg; do
         case $arg in
         h)
             usage
@@ -46,7 +47,7 @@ function parse_args() {
         l)
             PLUGINS_HASH=$OPTARG
             ;;
-         e)
+        e)
             REPORTING_HASH=$OPTARG
             ;;
         s)
@@ -54,6 +55,9 @@ function parse_args() {
             ;;
         n)
             NOTIFICATIONS_HASH=$OPTARG
+            ;;
+        t)
+            ALERTING_HASH=$OPTARG
             ;;
         m)
             IS_MIN=true
@@ -146,8 +150,8 @@ function get_devel_name() {
         PREFIX="$PREFIX"-min
     fi
     # Generate composed commit hash
-    if [ -n "$PLUGINS_HASH" ] && [ -n "$REPORTING_HASH" ] && [ -n "$SECURITY_HASH" ] && [ -n "$NOTIFICATIONS_HASH" ]; then
-        COMMIT_HASH="$GIT_COMMIT"-"$PLUGINS_HASH"-"$REPORTING_HASH"-"$SECURITY_HASH"-"$NOTIFICATIONS_HASH"
+    if [ -n "$PLUGINS_HASH" ] && [ -n "$REPORTING_HASH" ] && [ -n "$SECURITY_HASH" ] && [ -n "$NOTIFICATIONS_HASH" ] && [ -n "$ALERTING_HASH" ]; then
+        COMMIT_HASH="$GIT_COMMIT"-"$PLUGINS_HASH"-"$REPORTING_HASH"-"$SECURITY_HASH"-"$NOTIFICATIONS_HASH"-"$ALERTING_HASH"
     fi
     PACKAGE_NAME="$PREFIX"_"$VERSION"-"$REVISION"_"$SUFFIX"_"$COMMIT_HASH"."$EXT"
 }

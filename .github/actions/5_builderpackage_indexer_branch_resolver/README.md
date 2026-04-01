@@ -48,6 +48,7 @@ All dependencies are available in standard GitHub Actions runners.
 | `wazuh_indexer_security_analytics_branch` | Resolved branch name for wazuh-indexer-security-analytics repository |
 | `wazuh_indexer_notifications_branch`      | Resolved branch name for wazuh-indexer-notifications repository      |
 | `wazuh_indexer_common_utils_branch`       | Resolved branch name for wazuh-indexer-common-utils repository       |
+| `wazuh_indexer_alerting_branch`           | Resolved branch name for wazuh-indexer-alerting repository           |
 
 The script outputs branch assignments in `key=value` format:
 
@@ -90,6 +91,7 @@ jobs:
           echo "Security Analytics branch: ${{ steps.resolve.outputs.wazuh_indexer_security_analytics_branch }}"
           echo "Notifications branch: ${{ steps.resolve.outputs.wazuh_indexer_notifications_branch }}"
           echo "Common Utils branch: ${{ steps.resolve.outputs.wazuh_indexer_common_utils_branch }}"
+          echo "Alerting branch: ${{ steps.resolve.outputs.wazuh_indexer_alerting_branch }}"
 
   build-plugins:
     needs: [branches]
@@ -124,11 +126,12 @@ bash .github/actions/5_builderpackage_indexer_branch_resolver/resolve_branches.s
     wazuh-indexer-security-analytics=feature-xyz
     wazuh-indexer-notifications=feature-xyz
     wazuh-indexer-common-utils=feature-xyz
+    wazuh-indexer-alerting=feature-xyz
     ```
 
 **Branch exists in one of the repositories**
 
-- Scenario: input branch exists in **wazuh-indexer-plugins** but not in **wazuh-indexer-reporting**, **wazuh-indexer-security-analytics**, **wazuh-indexer-notifications** and **wazuh-indexer-common-utils** . Input branch is based on version *4.12.1*.
+- Scenario: input branch exists in **wazuh-indexer-plugins** but not in **wazuh-indexer-reporting**, **wazuh-indexer-security-analytics**, **wazuh-indexer-notifications**, **wazuh-indexer-common-utils** and **wazuh-indexer-alerting**. Input branch is based on version *4.12.1*.
 - Input: *feature-xyz*
 - Output:
     ```
@@ -137,6 +140,7 @@ bash .github/actions/5_builderpackage_indexer_branch_resolver/resolve_branches.s
     wazuh-indexer-security-analytics=4.12.1
     wazuh-indexer-notifications=4.12.1
     wazuh-indexer-common-utils=4.12.1
+    wazuh-indexer-alerting=4.12.1
     ```
 
 **Branch doesn't exist in any repository**
@@ -150,6 +154,7 @@ bash .github/actions/5_builderpackage_indexer_branch_resolver/resolve_branches.s
     wazuh-indexer-security-analytics=4.13.1
     wazuh-indexer-notifications=4.13.1
     wazuh-indexer-common-utils=4.13.1
+    wazuh-indexer-alerting=4.13.1
     ```
 
 ## Adding new repositories
@@ -163,6 +168,7 @@ REPOS=(
     "wazuh-indexer-security-analytics"
     "wazuh-indexer-notifications"
     "wazuh-indexer-common-utils"
+    "wazuh-indexer-alerting"
     "your-new-repo"  # Add here
 )
 REPO_URLS=(
@@ -171,6 +177,7 @@ REPO_URLS=(
     "https://github.com/wazuh/wazuh-indexer-security-analytics.git"
     "https://github.com/wazuh/wazuh-indexer-notifications.git"
     "https://github.com/wazuh/wazuh-indexer-common-utils.git"
+    "https://github.com/wazuh/wazuh-indexer-alerting.git"
     "https://github.com/wazuh/your-new-repo.git"  # Add here
 )
 ```

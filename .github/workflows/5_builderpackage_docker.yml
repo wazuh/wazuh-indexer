@@ -127,12 +127,10 @@ jobs:
       - name: Rename tarballs for multi-arch build
         run: |
           cd ${{ env.docker_path }}
-          for f in wazuh-indexer_*linux-x64*.tar.gz; do
-            [ -f "$f" ] && mv "$f" wazuh-indexer-amd64.tar.gz
-          done
-          for f in wazuh-indexer_*linux-arm64*.tar.gz; do
-            [ -f "$f" ] && mv "$f" wazuh-indexer-arm64.tar.gz
-          done
+          # Rename tarballs to match Docker's TARGETARCH naming (amd64/arm64)
+          # so the Dockerfile can COPY the correct one per platform.
+          mv wazuh-indexer_*linux-x64*.tar.gz wazuh-indexer-amd64.tar.gz 2>/dev/null || true
+          mv wazuh-indexer_*linux-arm64*.tar.gz wazuh-indexer-arm64.tar.gz 2>/dev/null || true
           ls -l wazuh-indexer-*.tar.gz
 
       - name: Set up QEMU

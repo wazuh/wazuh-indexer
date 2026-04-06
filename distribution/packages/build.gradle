@@ -132,14 +132,14 @@ Closure commonPackageConfig(String type, boolean jdk, String architecture) {
     // Follow opensearch's file naming convention
     String jdkString = jdk ? "" : "-no-jdk"
     String prefix = "${architecture == 'arm64' ? 'arm64-' : ''}${jdk ? '' : 'no-jdk-'}${type}"
-    destinationDirectory = file("${prefix}/build/distributions")
+    destinationDirectory.set(file("${prefix}/build/distributions"))
 
     // SystemPackagingTask overrides default archive task convention mappings, but doesn't provide a setter so we have to override the convention mapping itself
     // Deb convention uses a '_' for final separator before architecture, rpm uses a '.'
     if (type == 'deb') {
-      archiveFileName.value(project.provider({ "${destinationDirectory.get()}/${packageName}-min_${project.version}${jdkString}_${archString}.${type}" }))
+      archiveFileName.set(project.provider({ "${destinationDirectory.get()}/${packageName}-min_${project.version}${jdkString}_${archString}.${type}" }))
     } else {
-      archiveFileName.value(project.provider({ "${destinationDirectory.get()}/${packageName}-min-${project.version}${jdkString}.${archString}.${type}" }))
+      archiveFileName.set(project.provider({ "${destinationDirectory.get()}/${packageName}-min-${project.version}${jdkString}.${archString}.${type}" }))
     }
 
     String packagingFiles = "build/packaging/${jdk ? '' : 'no-jdk-'}${type}"

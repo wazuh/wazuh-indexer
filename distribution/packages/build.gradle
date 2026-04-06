@@ -137,9 +137,9 @@ Closure commonPackageConfig(String type, boolean jdk, String architecture) {
     // SystemPackagingTask overrides default archive task convention mappings, but doesn't provide a setter so we have to override the convention mapping itself
     // Deb convention uses a '_' for final separator before architecture, rpm uses a '.'
     if (type == 'deb') {
-      archiveFileName.set(project.provider({ "${destinationDirectory.get()}/${packageName}-min_${project.version}${jdkString}_${archString}.${type}" }))
+      archiveFileName.set(project.provider({ "${packageName}-min_${project.version}${jdkString}_${archString}.${type}" }))
     } else {
-      archiveFileName.set(project.provider({ "${destinationDirectory.get()}/${packageName}-min-${project.version}${jdkString}.${archString}.${type}" }))
+      archiveFileName.set(project.provider({ "${packageName}-min-${project.version}${jdkString}.${archString}.${type}" }))
     }
 
     String packagingFiles = "build/packaging/${jdk ? '' : 'no-jdk-'}${type}"
@@ -449,7 +449,7 @@ subprojects {
   if (dpkgExists() || rpmExists()) {
 
     // sanity checks if packages can be extracted
-    final File extractionDir = new File(buildDir, 'extracted')
+    final File extractionDir = new File(layout.buildDirectory.dir("extracted").get().asFile.path)
     File packageExtractionDir
     if (project.name.contains('deb')) {
       packageExtractionDir = new File(extractionDir, 'deb-extracted')

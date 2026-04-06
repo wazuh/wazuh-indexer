@@ -252,9 +252,9 @@ public class TransportClusterStatsAction extends TransportNodesAction<
 
     /**
      * A metric is required when: all cluster stats are required (OR) if the metric is requested
-     * @param metric
-     * @param clusterStatsRequest
-     * @return
+     * @param metric The metric to check
+     * @param clusterStatsRequest The cluster stats request
+     * @return boolean indicating whether the metric is required based on the request
      */
     private boolean isMetricRequired(Metric metric, ClusterStatsRequest clusterStatsRequest) {
         return clusterStatsRequest.computeAllMetrics() || clusterStatsRequest.requestedMetrics().contains(metric);

@@ -928,7 +928,7 @@ public abstract class BaseStarTreeBuilder implements StarTreeBuilder {
      * @param endDocId end doc id of the star-tree node
      * @param nodeType node type of the star-tree node
      * @param dimensionValue dimension value of the star-tree node
-     * @return
+     * @return return new star-tree node with the given parameters
      */
     private InMemoryTreeNode getNewNode(int dimensionId, int startDocId, int endDocId, byte nodeType, long dimensionValue) {
         numStarTreeNodes++;

@@ -39,7 +39,7 @@ public class QueryGroupsStateAccessor {
 
     /**
      * return QueryGroupState for the given queryGroupId
-     * @param queryGroupId
+     * @param queryGroupId id of the query group
      * @return QueryGroupState for the given queryGroupId, if id is invalid return default query group state
      */
     public QueryGroupState getQueryGroupState(String queryGroupId) {
@@ -48,7 +48,7 @@ public class QueryGroupsStateAccessor {
 
     /**
      * adds new QueryGroupState against given queryGroupId
-     * @param queryGroupId
+     * @param queryGroupId id of the query group
      */
     public void addNewQueryGroup(String queryGroupId) {
         this.queryGroupStateMap.putIfAbsent(queryGroupId, new QueryGroupState());
@@ -56,7 +56,7 @@ public class QueryGroupsStateAccessor {
 
     /**
      * removes QueryGroupState against given queryGroupId
-     * @param queryGroupId
+     * @param queryGroupId id of the query group
      */
     public void removeQueryGroup(String queryGroupId) {
         this.queryGroupStateMap.remove(queryGroupId);

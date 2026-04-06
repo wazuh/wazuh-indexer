@@ -272,11 +272,11 @@ public interface Repository extends LifecycleComponent {
     /**
      * Deletes snapshots and releases respective lock files from remote store repository
      *
-     * @param snapshotIds
-     * @param repositoryStateId
-     * @param repositoryMetaVersion
-     * @param remoteStoreLockManagerFactory
-     * @param listener
+     * @param snapshotIds                          snapshot ids
+     * @param repositoryStateId                    the unique id identifying the state of the repository when the snapshot deletion began
+     * @param repositoryMetaVersion                version of the updated repository metadata to write
+     * @param remoteStoreLockManagerFactory        RemoteStoreLockManagerFactory to be used for cleaning up remote store lock files
+     * @param listener                             completion listener
      */
     default void deleteSnapshotsAndReleaseLockFiles(
         Collection<SnapshotId> snapshotIds,

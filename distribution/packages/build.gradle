@@ -102,17 +102,23 @@ addProcessFilesTask('deb', false)
 addProcessFilesTask('rpm', true)
 addProcessFilesTask('rpm', false)
 
+
 // Common configuration that is package dependent. This can't go in ospackage
 // since we have different templated files that need to be consumed, but the structure
 // is the same
 Closure commonPackageConfig(String type, boolean jdk, String architecture) {
-  project.version = rootProject.file('VERSION').getText()
+  def commandLine = ['/bin/bash', 'product_version.sh']
+  def execProcess = new ProcessBuilder(commandLine)
+    .directory(new File('./packaging_scripts'))
+    .start()
+  project.version = new String(execProcess.getInputStream().readAllBytes(), "UTF-8").trim()
+  execProcess.waitFor()
   return {
     onlyIf {
       OS.current().equals(OS.WINDOWS) == false
     }
     dependsOn "process'${jdk ? '' : 'NoJdk'}${type.capitalize()}Files"
-    packageName "wazuh-indexer"
+    packageName = "wazuh-indexer"
     if (type == 'deb') {
       if (architecture == 'x64') {
         arch = 'amd64'
@@ -132,14 +138,14 @@ Closure commonPackageConfig(String type, boolean jdk, String architecture) {
     // Follow opensearch's file naming convention
     String jdkString = jdk ? "" : "-no-jdk"
     String prefix = "${architecture == 'arm64' ? 'arm64-' : ''}${jdk ? '' : 'no-jdk-'}${type}"
-    destinationDirectory.set(file("${prefix}/build/distributions"))
+    destinationDirectory = file("${prefix}/build/distributions")
 
     // SystemPackagingTask overrides default archive task convention mappings, but doesn't provide a setter so we have to override the convention mapping itself
     // Deb convention uses a '_' for final separator before architecture, rpm uses a '.'
     if (type == 'deb') {
-      archiveFileName.set(project.provider({ "${packageName}-min_${project.version}${jdkString}_${archString}.${type}" }))
+      archiveFileName.value(project.provider({ "${destinationDirectory.get()}/${packageName}-min_${project.version}${jdkString}_${archString}.${type}" }))
     } else {
-      archiveFileName.set(project.provider({ "${packageName}-min-${project.version}${jdkString}.${archString}.${type}" }))
+      archiveFileName.value(project.provider({ "${destinationDirectory.get()}/${packageName}-min-${project.version}${jdkString}.${archString}.${type}" }))
     }
 
     String packagingFiles = "build/packaging/${jdk ? '' : 'no-jdk-'}${type}"
@@ -227,7 +233,7 @@ Closure commonPackageConfig(String type, boolean jdk, String architecture) {
         unix 0750
       }
       into('/etc')
-      permissionGroup 'wazuh-indexer'
+      permissionGroup = 'wazuh-indexer'
       includeEmptyDirs = true
       createDirectoryEntry = true
       include("wazuh-indexer") // empty dir, just to add directory entry
@@ -241,7 +247,7 @@ Closure commonPackageConfig(String type, boolean jdk, String architecture) {
       filePermissions{
         unix 0660
       }
-      permissionGroup 'wazuh-indexer'
+      permissionGroup = 'wazuh-indexer'
       includeEmptyDirs = true
       createDirectoryEntry = true
       fileType CONFIG | NOREPLACE
@@ -250,7 +256,7 @@ Closure commonPackageConfig(String type, boolean jdk, String architecture) {
     configurationFile envFile
     into(new File(envFile).getParent()) {
       fileType CONFIG | NOREPLACE
-      permissionGroup 'wazuh-indexer'
+      permissionGroup = 'wazuh-indexer'
       filePermissions {
         unix 0660
       }
@@ -286,7 +292,7 @@ Closure commonPackageConfig(String type, boolean jdk, String architecture) {
     }
 
     // ========= sysV init =========
-    configurationFile '/etc/init.d/wazuh-indexer'
+    configurationFile = '/etc/init.d/wazuh-indexer'
     into('/etc/init.d') {
       filePermissions {
         unix 0750
@@ -330,7 +336,7 @@ ospackage {
     Reference documentation can be found at
     https://documentation.wazuh.com/current/getting-started/components/wazuh-indexer.html
   '''.stripIndent().trim()
-  url = 'https://documentation.wazuh.com/current/getting-started/components/wazuh-indexer.html'
+  url = 'https://github.com/wazuh/wazuh-indexer'
 
   // signing setup
   if (project.hasProperty('signing.password') && BuildParams.isSnapshotBuild() == false) {
@@ -400,12 +406,12 @@ Closure commonRpmConfig(boolean jdk, String architecture) {
     obsoletes packageName, '7.0.0', Flags.LESS
 
     prefix '/usr'
-    packager = 'OpenSearch'
+    packager = 'Wazuh'
     archiveVersion = project.version.replace('-', '_')
     release = '1'
     os = 'LINUX'
-    distribution = 'OpenSearch'
-    vendor = 'OpenSearch'
+    distribution = 'Wazuh'
+    vendor = 'Wazuh'
     // TODO ospackage doesn't support icon but we used to have one
 
     // without this the rpm will have parent dirs of any files we copy in, eg /etc/wazuh-indexer
@@ -449,7 +455,7 @@ subprojects {
   if (dpkgExists() || rpmExists()) {
 
     // sanity checks if packages can be extracted
-    final File extractionDir = new File(layout.buildDirectory.dir("extracted").get().asFile.path)
+    final File extractionDir = new File(buildDir, 'extracted')
     File packageExtractionDir
     if (project.name.contains('deb')) {
       packageExtractionDir = new File(extractionDir, 'deb-extracted')

@@ -70,7 +70,7 @@ check_branch_existence() {
         local repo="${REPOS[$i]}"
         local url="${REPO_URLS[$i]}"
         echo "Checking $repo for branch '$BRANCH'..." >&2
-        if _retry 3 5 bash -c 'git ls-remote --exit-code --heads "$@" &>/dev/null' _ "$url" "$BRANCH"; then
+        if _retry 3 5 /bin/bash -c 'git ls-remote --exit-code --heads "$@" &>/dev/null' _ "$url" "$BRANCH"; then
             BRANCH_EXISTS["$repo"]=1
             # Fetch VERSION.json directly from GitHub raw URL
             local owner version_json_url version

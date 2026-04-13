@@ -1,0 +1,54 @@
+#!/bin/bash
+
+# Copyright Wazuh Indexer Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# The Wazuh Indexer Contributors require contributions made to
+# this file be licensed under the Apache-2.0 license or a
+# compatible open source license.
+
+# deb wazuh-indexer postinst script
+
+set -e
+
+echo "Running Wazuh Indexer Post-Installation Script"
+
+name="wazuh-indexer"
+product_dir=/usr/share/${name}
+config_dir=/etc/${name}
+data_dir=/var/lib/${name}
+log_dir=/var/log/${name}
+pid_dir=/run/${name}
+state_file=${config_dir}/.was_active
+
+# Set owner
+chown -R ${name}:${name} ${product_dir}
+chown -R ${name}:${name} ${config_dir}
+chown -R ${name}:${name} ${log_dir}
+chown -R ${name}:${name} ${data_dir}
+chown -R ${name}:${name} ${pid_dir}
+
+# Reload systemd
+command -v systemctl >/dev/null && systemctl daemon-reload
+command -v systemctl >/dev/null && systemctl restart systemd-sysctl.service
+command -v systemd-tmpfiles >/dev/null && systemd-tmpfiles --create ${name}.conf
+
+# Preserve service state flag across upgrade
+if [ -f ${state_file} ]; then
+    echo "Restarting ${name}.service because it was active before upgrade"
+    rm -f ${state_file}
+    command -v systemctl >/dev/null && systemctl restart ${name}.service
+else
+    echo "### NOT starting on installation, please execute the following statements to configure ${name} service to start automatically using systemd"
+    echo " sudo systemctl daemon-reload"
+    echo " sudo systemctl enable ${name}.service"
+    echo "### You can start ${name} service by executing"
+    echo " sudo systemctl start ${name}.service"
+fi
+
+# Remove legacy VERSION file on upgrade
+if [ -f "${product_dir}"/VERSION ]; then
+    rm -f "${product_dir}"/VERSION
+fi
+
+exit 0

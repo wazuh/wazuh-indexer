@@ -1,0 +1,32 @@
+{
+    "index_patterns": [
+        "wazuh-states-inventory-browser-extensions*"
+    ],
+    "priority": 1,
+    "template": {
+        "settings": {
+            "index": {
+                "number_of_shards": "1",
+                "number_of_replicas": "0",
+                "refresh_interval": "2s",
+                "query.default_field": [
+                    "agent.host.architecture",
+                    "agent.host.ip",
+                    "agent.id",
+                    "agent.name",
+                    "agent.version",
+                    "browser.name",
+                    "user.id",
+                    "package.name",
+                    "package.id",
+                    "package.version",
+                    "package.vendor",
+                    "package.type",
+                    "wazuh.cluster.name",
+                    "wazuh.cluster.node",
+                    "wazuh.schema.version"
+                ]
+            }
+        }
+    }
+}

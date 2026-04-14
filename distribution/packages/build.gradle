@@ -102,6 +102,7 @@ addProcessFilesTask('deb', false)
 addProcessFilesTask('rpm', true)
 addProcessFilesTask('rpm', false)
 
+
 // Common configuration that is package dependent. This can't go in ospackage
 // since we have different templated files that need to be consumed, but the structure
 // is the same
@@ -112,7 +113,7 @@ Closure commonPackageConfig(String type, boolean jdk, String architecture) {
       OS.current().equals(OS.WINDOWS) == false
     }
     dependsOn "process'${jdk ? '' : 'NoJdk'}${type.capitalize()}Files"
-    packageName "wazuh-indexer"
+    packageName = "wazuh-indexer"
     if (type == 'deb') {
       if (architecture == 'x64') {
         arch = 'amd64'
@@ -227,7 +228,7 @@ Closure commonPackageConfig(String type, boolean jdk, String architecture) {
         unix 0750
       }
       into('/etc')
-      permissionGroup 'wazuh-indexer'
+      permissionGroup = 'wazuh-indexer'
       includeEmptyDirs = true
       createDirectoryEntry = true
       include("wazuh-indexer") // empty dir, just to add directory entry
@@ -241,7 +242,7 @@ Closure commonPackageConfig(String type, boolean jdk, String architecture) {
       filePermissions{
         unix 0660
       }
-      permissionGroup 'wazuh-indexer'
+      permissionGroup = 'wazuh-indexer'
       includeEmptyDirs = true
       createDirectoryEntry = true
       fileType CONFIG | NOREPLACE
@@ -250,7 +251,7 @@ Closure commonPackageConfig(String type, boolean jdk, String architecture) {
     configurationFile envFile
     into(new File(envFile).getParent()) {
       fileType CONFIG | NOREPLACE
-      permissionGroup 'wazuh-indexer'
+      permissionGroup = 'wazuh-indexer'
       filePermissions {
         unix 0660
       }
@@ -286,7 +287,7 @@ Closure commonPackageConfig(String type, boolean jdk, String architecture) {
     }
 
     // ========= sysV init =========
-    configurationFile '/etc/init.d/wazuh-indexer'
+    configurationFile = '/etc/init.d/wazuh-indexer'
     into('/etc/init.d') {
       filePermissions {
         unix 0750
@@ -330,7 +331,7 @@ ospackage {
     Reference documentation can be found at
     https://documentation.wazuh.com/current/getting-started/components/wazuh-indexer.html
   '''.stripIndent().trim()
-  url = 'https://documentation.wazuh.com/current/getting-started/components/wazuh-indexer.html'
+  url = 'https://github.com/wazuh/wazuh-indexer'
 
   // signing setup
   if (project.hasProperty('signing.password') && BuildParams.isSnapshotBuild() == false) {
@@ -400,12 +401,12 @@ Closure commonRpmConfig(boolean jdk, String architecture) {
     obsoletes packageName, '7.0.0', Flags.LESS
 
     prefix '/usr'
-    packager = 'OpenSearch'
+    packager = 'Wazuh'
     archiveVersion = project.version.replace('-', '_')
     release = '1'
     os = 'LINUX'
-    distribution = 'OpenSearch'
-    vendor = 'OpenSearch'
+    distribution = 'Wazuh'
+    vendor = 'Wazuh'
     // TODO ospackage doesn't support icon but we used to have one
 
     // without this the rpm will have parent dirs of any files we copy in, eg /etc/wazuh-indexer

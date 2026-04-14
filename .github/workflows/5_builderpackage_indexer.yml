@@ -425,7 +425,7 @@ jobs:
     needs: [ compatibility-check, branches, get-versions-wazuh-indexer-alerting ]
     steps:
       - name: Publish alerting to Maven Local
-        uses: wazuh/wazuh-indexer-alerting/.github/actions/5_local_maven_publisher@main
+        uses: wazuh/wazuh-indexer-alerting/.github/actions/5_local_maven_publisher@1-initialize-repository
         with:
           version: ${{ needs.get-versions-wazuh-indexer-alerting.outputs.version }}
           revision: ${{ inputs.revision }}

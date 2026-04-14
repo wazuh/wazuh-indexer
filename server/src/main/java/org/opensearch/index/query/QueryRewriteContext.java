@@ -109,7 +109,7 @@ public class QueryRewriteContext {
 
     /**
      * Returns an instance of {@link QueryCoordinatorContext} if available or null otherwise
-     * @return an instance of {@link QueryCoordinatorContext} if available or null otherwise
+     * @return
      */
     public QueryCoordinatorContext convertToCoordinatorContext() {
         return null;

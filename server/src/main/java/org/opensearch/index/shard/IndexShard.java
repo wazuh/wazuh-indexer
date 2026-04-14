@@ -1634,7 +1634,7 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
     /**
      * Fetches the last remote uploaded segment metadata file
      * @return {@link RemoteSegmentMetadata}
-     * @throws IOException if there is some failure
+     * @throws IOException
      */
     public RemoteSegmentMetadata fetchLastRemoteUploadedSegmentMetadata() throws IOException {
         if (!indexSettings.isAssignedOnRemoteNode()) {

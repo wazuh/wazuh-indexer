@@ -21,7 +21,7 @@ public interface TaskSelectionStrategy {
      * Determines how the tasks are selected from the list of given tasks based on resource type
      * @param tasks to select from
      * @param limit min cumulative resource usage sum of selected tasks
-     * @param resourceType to determine how to select tasks
+     * @param resourceType
      * @return list of tasks
      */
     List<QueryGroupTask> selectTasksForCancellation(List<QueryGroupTask> tasks, double limit, ResourceType resourceType);

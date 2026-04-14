@@ -74,7 +74,7 @@ public abstract class AggregatorBridge {
      *
      * @param values            the point values (index structure for numeric values) for a segment
      * @param incrementDocCount a consumer to increment the document count for a range bucket. The First parameter is document count, the second is the key of the bucket
-     * @param ranges the ranges to build the aggregation result for
+     * @param ranges
      */
     abstract FilterRewriteOptimizationContext.DebugInfo tryOptimize(
         PointValues values,

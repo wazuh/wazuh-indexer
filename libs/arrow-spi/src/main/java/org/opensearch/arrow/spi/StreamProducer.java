@@ -31,6 +31,7 @@ import java.io.Closeable;
  *     private final SearchRequest searchRequest;
  *     private static final int BATCH_SIZE = 1000;
  *
+ *     @Override
  *     public VectorSchemaRoot createRoot(BufferAllocator allocator) {
  *         List<Field> fields = Arrays.asList(
  *             Field.nullable("id", FieldType.valueOf(MinorType.VARCHAR)),
@@ -39,8 +40,10 @@ import java.io.Closeable;
  *         return VectorSchemaRoot.create(new Schema(fields), allocator);
  *     }
  *
+ *     @Override
  *     public BatchedJob createJob(BufferAllocator allocator) {
  *         return new BatchedJob() {
+ *             @Override
  *             public void run(VectorSchemaRoot root, FlushSignal flushSignal) {
  *                 SearchResponse response = client.search(searchRequest);
  *                 int currentBatch = 0;

@@ -475,7 +475,7 @@ jobs:
         uses: actions/cache/restore@v5
         with:
           path: ~/.m2/repository
-          key: ${{ env.M2_CACHE_KEY_COMMON }}
+          key: ${{ env.M2_CACHE_KEY_ALERTING }}
 
       - name: Publish security-analytics(+commons) to Maven Local
         uses: wazuh/wazuh-indexer-security-analytics/.github/actions/5_local_maven_publisher@main

@@ -33,12 +33,12 @@ else
     )
     wazuh_plugins=(
         "wazuh-indexer-setup"
+        "wazuh-indexer-alerting"
         "wazuh-indexer-security-analytics"
         "wazuh-indexer-content-manager"
         "wazuh-indexer-reports-scheduler"
         "wazuh-indexer-notifications-core"
         "wazuh-indexer-notifications"
-        "wazuh-indexer-alerting"
     )
 fi
 

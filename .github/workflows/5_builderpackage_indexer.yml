@@ -7,6 +7,7 @@ permissions:
 
 env:
   M2_CACHE_KEY_COMMON: .m2-${{ github.ref_name }}-${{ github.run_id }}-common-utils
+  M2_CACHE_KEY_ALERTING: .m2-${{ github.ref_name }}-${{ github.run_id }}-alerting
   M2_CACHE_KEY_FULL: .m2-${{ github.ref_name }}-${{ github.run_id }}-with-security-analytics
 
 # This workflow runs when any of the following occur:
@@ -439,7 +440,7 @@ jobs:
         uses: actions/cache/save@v5
         with:
           path: ~/.m2/repository
-          key: ${{ env.M2_CACHE_KEY_COMMON }}
+          key: ${{ env.M2_CACHE_KEY_ALERTING }}
 
   publish-security-analytics:
     runs-on:

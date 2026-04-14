@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Changed
 - Update workflow naming on 4.10.4 branch [(#1092)](https://github.com/wazuh/wazuh-indexer/pull/1092)
+- Backport: Redesign the mechanism to preserve the status of the service on upgrades [(#794)](https://github.com/wazuh/wazuh-indexer/pull/794)
 
 ### Deprecated
 

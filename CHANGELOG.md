@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 
 ### Dependencies
+- Migrate 4.10.4 to 2.19.5 [(#1403)](https://github.com/wazuh/wazuh-indexer/pull/1403)
 
 ### Changed
 - Update workflow naming on 4.10.4 branch [(#1092)](https://github.com/wazuh/wazuh-indexer/pull/1092)

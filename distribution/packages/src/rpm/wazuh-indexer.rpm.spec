@@ -28,6 +28,7 @@
 %define log_dir %{_localstatedir}/log/%{name}
 %define pid_dir %{_localstatedir}/run/%{name}
 %define tmp_dir %{log_dir}/tmp
+%define state_file %{config_dir}/.was_active
 %{!?_version: %define _version 0.0.0 }
 %{!?_architecture: %define _architecture x86_64 }
 
@@ -158,12 +159,23 @@ exit 0
 
 %pre
 set -e
-# Stop existing service
-if command -v systemctl >/dev/null && systemctl is-active %{name}.service >/dev/null; then
-    echo "Stop existing %{name}.service"
-    systemctl --no-reload stop %{name}.service
-    touch %{tmp_dir}/wazuh-indexer.restart
+
+# Only during upgrade
+if [ "$1" -gt 1 ]; then
+    echo "Running upgrade pre-script"
+
+    # Mark if service is running
+    if command -v systemctl >/dev/null && systemctl is-active --quiet %{name}.service; then
+        echo "Service is active, marking it for restart"
+        touch %{state_file}
+
+        echo "Stopping service before upgrade"
+        systemctl stop %{name}.service
+    else
+        echo "Service is inactive; nothing to mark"
+    fi
 fi
+
 if command -v systemctl >/dev/null && systemctl is-active %{name}-performance-analyzer.service >/dev/null; then
     echo "Stop existing %{name}-performance-analyzer.service"
     systemctl --no-reload stop %{name}-performance-analyzer.service
@@ -192,34 +204,30 @@ if ! grep -q '## OpenSearch Performance Analyzer' %{config_dir}/jvm.options; the
    echo "-Djava.security.policy=file://%{config_dir}/opensearch-performance-analyzer/opensearch_security.policy" >> %{config_dir}/jvm.options
    echo "--add-opens=jdk.attach/sun.tools.attach=ALL-UNNAMED" >> %{config_dir}/jvm.options
 fi
-# Reload systemctl daemon
-if command -v systemctl > /dev/null; then
-    systemctl daemon-reload
-fi
-# Reload other configs
-if command -v systemctl > /dev/null; then
-    systemctl restart systemd-sysctl.service || true
+
+exit 0
+
+%posttrans
+set -e
+
+# Reload systemd
+command -v systemctl > /dev/null && systemctl daemon-reload
+command -v systemctl > /dev/null && systemctl restart systemd-sysctl.service
+command -v systemd-tmpfiles > /dev/null && systemd-tmpfiles --create %{name}.conf
+
+# Restart if previously active
+if [ -f %{state_file} ]; then
+    echo "Restarting %{name}.service because it was active before upgrade"
+    rm -f %{state_file}
+    command -v systemctl > /dev/null && systemctl restart %{name}.service
+else
+    echo "### NOT starting on installation, please execute the following statements to configure %{name} service to start automatically using systemd"
+    echo " sudo systemctl daemon-reload"
+    echo " sudo systemctl enable %{name}.service"
+    echo "### You can start the %{name} service by executing"
+    echo " sudo systemctl start %{name}.service"
 fi
 
-if command -v systemd-tmpfiles > /dev/null; then
-    systemd-tmpfiles --create %{name}.conf
-fi
-
-if [ -f %{tmp_dir}/wazuh-indexer.restart ]; then
-    rm -f %{tmp_dir}/wazuh-indexer.restart
-    if command -v systemctl > /dev/null; then
-        echo "Restarting wazuh-indexer service..."
-        systemctl restart wazuh-indexer.service > /dev/null 2>&1
-        exit 0
-    fi
-fi
-
-# Messages
-echo "### NOT starting on installation, please execute the following statements to configure wazuh-indexer service to start automatically using systemd"
-echo " sudo systemctl daemon-reload"
-echo " sudo systemctl enable wazuh-indexer.service"
-echo "### You can start wazuh-indexer service by executing"
-echo " sudo systemctl start wazuh-indexer.service"
 exit 0
 
 %preun
@@ -274,6 +282,9 @@ exit 0
 %attr(750, %{name}, %{name}) %{product_dir}/jdk/lib/jspawnhelper
 %attr(750, %{name}, %{name}) %{product_dir}/jdk/lib/modules
 %attr(750, %{name}, %{name}) %{product_dir}/performance-analyzer-rca/bin/*
+
+# Preserve service state flag across upgrade
+%ghost %attr(440, %{name}, %{name}) %{config_dir}/.was_active
 
 %changelog
 * Wed Nov 19 2025 support <info@wazuh.com> - 4.10.4

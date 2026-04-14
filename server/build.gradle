@@ -133,6 +133,11 @@ tasks.withType(JavaCompile).configureEach {
   options.compilerArgs -= '-Xlint:unchecked'
 }
 
+tasks.withType(Javadoc).configureEach {
+    failOnError = false
+    options.addStringOption('Xdoclint:none', '-quiet')
+}
+
 compileJava {
   options.compilerArgs += ['-processor', ['org.apache.logging.log4j.core.config.plugins.processor.PluginProcessor',
     'org.opensearch.common.annotation.processor.ApiAnnotationProcessor'].join(',')]

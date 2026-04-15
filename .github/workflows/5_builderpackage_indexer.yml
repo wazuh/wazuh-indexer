@@ -431,7 +431,7 @@ jobs:
           path: ~/.m2/repository
           key: ${{ env.M2_CACHE_KEY_COMMON }}
       - name: Publish alerting to Maven Local
-        uses: wazuh/wazuh-indexer-alerting/.github/actions/5_local_maven_publisher@1-initialize-alerting-repository
+        uses: wazuh/wazuh-indexer-alerting/.github/actions/5_local_maven_publisher@main
         with:
           version: ${{ needs.get-versions-wazuh-indexer-alerting.outputs.version }}
           revision: ${{ inputs.revision }}

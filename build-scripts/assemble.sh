@@ -252,25 +252,6 @@ function install_plugins() {
 
         OPENSEARCH_PATH_CONF=$PATH_CONF "${PATH_BIN}/opensearch-plugin" install --batch --verbose "file:${plugin_path}"
     done
-
-    echo "Workaround: Injecting modified common-utils JAR to wazuh-indexer-notifications and wazuh-indexer-alerting"
-    local notifications_plugin_dir="${PATH_PLUGINS}/wazuh-indexer-notifications"
-    local alerting_plugin_dir="${PATH_PLUGINS}/wazuh-indexer-alerting"
-
-    # Find the common-utils JARs by glob pattern (version-agnostic)
-    local wazuh_common_utils_jar
-    wazuh_common_utils_jar=$(find "${notifications_plugin_dir}" -maxdepth 1 -name 'common-utils-*.jar' | head -n 1)
-    local upstream_common_utils_jar
-    upstream_common_utils_jar=$(find "${alerting_plugin_dir}" -maxdepth 1 -name 'common-utils-*.jar' | head -n 1)
-
-    if [ -n "${wazuh_common_utils_jar}" ] && [ -n "${upstream_common_utils_jar}" ]; then
-        echo "Replacing ${upstream_common_utils_jar} with ${wazuh_common_utils_jar}"
-        cp "${wazuh_common_utils_jar}" "${upstream_common_utils_jar}"
-    else
-        echo "WARNING: Could not find common-utils JARs for injection."
-        echo "  Wazuh common-utils: ${wazuh_common_utils_jar:-not found}"
-        echo "  Upstream common-utils: ${upstream_common_utils_jar:-not found}"
-    fi
 }
 
 # ====

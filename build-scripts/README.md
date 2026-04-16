@@ -44,6 +44,7 @@ Arguments:
 -r INDEXER_REPORTING_BRANCH     [Optional] wazuh-indexer-reporting repo branch, default is 'main'.
 -s SECURITY_ANALYTICS_BRANCH    [Optional] wazuh-indexer-security-analytics repo branch, default is 'main'.
 -n INDEXER_NOTIFICATIONS_BRANCH [Optional] wazuh-indexer-notifications repo branch, default is 'main'.
+-t INDEXER_ALERTING_BRANCH      [Optional] wazuh-indexer-alerting repo branch, default is 'main'.
 -c COMMON_UTILS_BRANCH          [Optional] wazuh-indexer-common-utils repo branch, default is 'main'.
 -R REVISION     [Optional] Package revision, default is '0'.
 -S STAGE        [Optional] Staging build, default is 'false'.
@@ -62,7 +63,7 @@ bash builder.sh -d deb -a x64 -R 1 -S true
 
 The resulting package will be stored at `wazuh-indexer/artifacts/dist`.
 
-> The `STAGE` option defines the naming of the package. When set to `false`, the package will be unequivocally named with the commits' SHA of the `wazuh-indexer`, `wazuh-indexer-plugins`, `wazuh-indexer-reporting`, `wazuh-indexer-security-analytics` and `wazuh-indexer-notifications` repositories, in that order. For example: `wazuh-indexer_<version>-<revision>_x86_64_aff30960363-846f143-494d125-9c0c1fe.rpm`.
+> The `STAGE` option defines the naming of the package. When set to `false`, the package will be unequivocally named with the commits' SHA of the `wazuh-indexer`, `wazuh-indexer-plugins`, `wazuh-indexer-reporting`, `wazuh-indexer-security-analytics`, `wazuh-indexer-notifications` and `wazuh-indexer-alerting` repositories, in that order. For example: `wazuh-indexer_<version>-<revision>_x86_64_aff30960363-846f143-494d125-9c0c1fe.rpm`.
 
 ## Building wazuh-indexer Docker images
 

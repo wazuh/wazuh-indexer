@@ -8,6 +8,7 @@ INDEXER_PLUGINS_BRANCH=${INDEXER_PLUGINS_BRANCH:-main}
 INDEXER_REPORTING_BRANCH=${INDEXER_REPORTING_BRANCH:-main}
 SECURITY_ANALYTICS_BRANCH=${SECURITY_ANALYTICS_BRANCH:-main}
 NOTIFICATIONS_BRANCH=${NOTIFICATIONS_BRANCH:-main}
+ALERTING_BRANCH=${ALERTING_BRANCH:-main}
 COMMON_UTILS_BRANCH=${COMMON_UTILS_BRANCH:-main}
 ENGINE_TARBALL=${ENGINE_TARBALL:-}
 REVISION=${REVISION:-0}
@@ -19,6 +20,7 @@ PLUGINS_REPO_DIR="/repositories/wazuh-indexer-plugins"
 REPORTING_REPO_DIR="/repositories/wazuh-indexer-reporting"
 SECURITY_ANALYTICS_REPO_DIR="/repositories/wazuh-indexer-security-analytics"
 NOTIFICATIONS_REPO_DIR="/repositories/wazuh-indexer-notifications"
+ALERTING_REPO_DIR="/repositories/wazuh-indexer-alerting"
 COMMON_UTILS_REPO_DIR="/repositories/wazuh-indexer-common-utils"
 
 # Function to clone repositories
@@ -55,6 +57,12 @@ clone_repositories() {
         git -C "$NOTIFICATIONS_REPO_DIR" checkout "$NOTIFICATIONS_BRANCH"
     else
         git clone --branch "$NOTIFICATIONS_BRANCH" https://github.com/wazuh/wazuh-indexer-notifications --depth 1 "$NOTIFICATIONS_REPO_DIR"
+    fi
+
+    if [ -d "$ALERTING_REPO_DIR/.git" ]; then
+        git -C "$ALERTING_REPO_DIR" checkout "$ALERTING_BRANCH"
+    else
+        git clone --branch "$ALERTING_BRANCH" https://github.com/wazuh/wazuh-indexer-alerting --depth 1 "$ALERTING_REPO_DIR"
     fi
 }
 
@@ -139,6 +147,18 @@ build_notifications() {
     ./gradlew build -Dversion="$version" -Dbuild.revision="$revision" --no-daemon -x check
 }
 
+# Function to build wazuh-indexer-alerting
+build_alerting() {
+    echo "----------------------------------------"
+    echo "Building Alerting"
+    echo "----------------------------------------"
+    local version="$1"
+    local revision="$2"
+    cd ${ALERTING_REPO_DIR}
+    echo "Building alerting..."
+    ./gradlew build -Dversion="$version" -Dbuild.revision="$revision" --no-daemon -x check
+}
+
 # Function to publish SA commons to local Maven (required by security-analytics)
 publish_sa_commons() {
     echo "----------------------------------------"
@@ -181,6 +201,8 @@ copy_builds() {
     cp ${NOTIFICATIONS_REPO_DIR}/notifications/notifications/build/distributions/wazuh-indexer-notifications-"$version"."$revision".zip ~/artifacts/plugins
     echo "Copying notifications-core..."
     cp ${NOTIFICATIONS_REPO_DIR}/notifications/core/build/distributions/wazuh-indexer-notifications-core-"$version"."$revision".zip ~/artifacts/plugins
+    echo "Copying alerting..."
+    cp ${ALERTING_REPO_DIR}/alerting/build/distributions/wazuh-indexer-alerting-"$version"."$revision".zip ~/artifacts/plugins
     echo "Copying common-utils..."
     # common-utils is a library (JAR via shadowJar), not an OpenSearch plugin (ZIP).
     # Copy whatever distributable artifacts exist (zip or jar).
@@ -219,6 +241,8 @@ package_artifacts() {
     local plugins_hash
     local reporting_hash
     local security_analytics_hash
+    local notifications_hash
+    local alerting_hash
     local package_min_name
     # local package_name
 
@@ -226,6 +250,7 @@ package_artifacts() {
     reporting_hash=$(cd ${REPORTING_REPO_DIR} && git rev-parse --short HEAD)
     security_analytics_hash=$(cd ${SECURITY_ANALYTICS_REPO_DIR} && git rev-parse --short HEAD)
     notifications_hash=$(cd ${NOTIFICATIONS_REPO_DIR} && git rev-parse --short HEAD)
+    alerting_hash=$(cd ${ALERTING_REPO_DIR} && git rev-parse --short HEAD)
 
     cd ~
 
@@ -238,6 +263,7 @@ package_artifacts() {
         -e "$reporting_hash" \
         -s "$security_analytics_hash" \
         -n "$notifications_hash" \
+        -t "$alerting_hash" \
         "$(if [ "$is_stage" = "true" ]; then echo "-x"; fi)")
 
     # echo "Creating package name..."
@@ -249,6 +275,7 @@ package_artifacts() {
     #     -e "$reporting_hash" \
     #     -s "$security_analytics_hash" \
     #     -n "$notifications_hash" \
+    #     -t "$alerting_hash" \
     #     "$(if [ "$is_stage" = "true" ]; then echo "-x"; fi)")
 
     echo "Building package..."
@@ -262,7 +289,8 @@ package_artifacts() {
         -l "$plugins_hash" \
         -e "$reporting_hash" \
         -s "$security_analytics_hash" \
-        -n "$notifications_hash"
+        -n "$notifications_hash" \
+        -t "$alerting_hash"
 
 }
 
@@ -279,6 +307,7 @@ main() {
     build_security_analytics "$VERSION" "$REVISION"
     publish_security_analytics
     build_notifications "$VERSION" "$REVISION"
+    build_alerting "$VERSION" "$REVISION"
     build_plugins "$VERSION" "$REVISION"
     build_reporting "$VERSION" "$REVISION"
     copy_builds "$VERSION" "$REVISION"

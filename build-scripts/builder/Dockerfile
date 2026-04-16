@@ -65,11 +65,13 @@ RUN mkdir -p /repositories/wazuh-indexer-plugins && \
     mkdir -p /repositories/wazuh-indexer-security-analytics && \
     mkdir -p /repositories/wazuh-indexer-common-utils && \
     mkdir -p /repositories/wazuh-indexer-notifications && \
+    mkdir -p /repositories/wazuh-indexer-alerting && \
     chown wazuh-indexer:wazuh-indexer /repositories/wazuh-indexer-plugins && \
     chown wazuh-indexer:wazuh-indexer /repositories/wazuh-indexer-reporting && \
     chown wazuh-indexer:wazuh-indexer /repositories/wazuh-indexer-security-analytics && \
     chown wazuh-indexer:wazuh-indexer /repositories/wazuh-indexer-common-utils && \
-    chown wazuh-indexer:wazuh-indexer /repositories/wazuh-indexer-notifications
+    chown wazuh-indexer:wazuh-indexer /repositories/wazuh-indexer-notifications && \
+    chown wazuh-indexer:wazuh-indexer /repositories/wazuh-indexer-alerting
 
 # Copy your build scripts into the container as root
 COPY build-scripts/builder/entrypoint.sh /

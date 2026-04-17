@@ -441,11 +441,7 @@ jobs:
           path: ~/.m2/repository
           key: ${{ env.M2_CACHE_KEY_COMMON }}
       - name: Publish alerting to Maven Local
-        uses: wazuh/wazuh-indexer-alerting/.github/actions/5_local_maven_publisher@main
-        with:
-          version: ${{ needs.get-versions-wazuh-indexer-alerting.outputs.version }}.${{ inputs.revision }}
-          revision: ${{ inputs.revision }}
-          reference: ${{ needs.branches.outputs.alerting_plugin_ref }}
+        run: ./gradlew publishToMavenLocal -x check -Dversion=${{ needs.get-versions-wazuh-indexer-alerting.outputs.version }} -Drevision=${{ inputs.revision }}
       - name: Cache Maven Local
         uses: actions/cache/save@v5
         with:

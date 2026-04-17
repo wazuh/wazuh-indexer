@@ -425,6 +425,16 @@ jobs:
       labels: "wz-linux-amd64"
     needs: [ compatibility-check, branches, get-versions-wazuh-indexer-alerting, publish-common-utils ]
     steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: wazuh/wazuh-indexer-alerting
+          ref: ${{ needs.branches.outputs.alerting_plugin_ref }}
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 25
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
       - name: Restore Maven Local cache
         uses: actions/cache/restore@v5
         with:

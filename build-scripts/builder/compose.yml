@@ -10,6 +10,7 @@ services:
       - INDEXER_REPORTING_BRANCH=${INDEXER_REPORTING_BRANCH:-main}
       - SECURITY_ANALYTICS_BRANCH=${SECURITY_ANALYTICS_BRANCH:-main}
       - NOTIFICATIONS_BRANCH=${NOTIFICATIONS_BRANCH:-main}
+      - ALERTING_BRANCH=${ALERTING_BRANCH:-main}
       - COMMON_UTILS_BRANCH=${COMMON_UTILS_BRANCH:-main}
       - ENGINE_TARBALL=${ENGINE_TARBALL:-}
       - REVISION=${REVISION:-0}
@@ -22,6 +23,7 @@ services:
       - wazuh-indexer-reporting:/home/wazuh-indexer/wazuh-indexer-reporting
       - wazuh-indexer-security-analytics:/home/wazuh-indexer/wazuh-indexer-security-analytics
       - wazuh-indexer-notifications:/home/wazuh-indexer/wazuh-indexer-notifications
+      - wazuh-indexer-alerting:/home/wazuh-indexer/wazuh-indexer-alerting
       - wazuh-indexer-common-utils:/home/wazuh-indexer/wazuh-indexer-common-utils
       - ${ENGINE_TARBALL:-/dev/null}:/tmp/engine-tarball.tar.gz:ro
     entrypoint: ["/bin/bash", "/entrypoint.sh"]
@@ -32,4 +34,5 @@ volumes:
   wazuh-indexer-reporting:
   wazuh-indexer-security-analytics:
   wazuh-indexer-notifications:
+  wazuh-indexer-alerting:
   wazuh-indexer-common-utils:

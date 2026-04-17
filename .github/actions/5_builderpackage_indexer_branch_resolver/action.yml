@@ -20,6 +20,9 @@ outputs:
   wazuh_indexer_common_utils_branch:
     description: "Branch to use in wazuh-indexer-common-utils repository."
     value: ${{ steps.resolve.outputs.wazuh_indexer_common_utils_branch }}
+  wazuh_indexer_alerting_branch:
+    description: "Branch to use in wazuh-indexer-alerting repository."
+    value: ${{ steps.resolve.outputs.wazuh_indexer_alerting_branch }}
   wazuh_branch:
     description: "Branch to use in wazuh repository."
     value: ${{ steps.resolve.outputs.wazuh_branch }}
@@ -33,6 +36,7 @@ runs:
         wazuh_indexer_security_analytics_branch=""
         wazuh_indexer_notifications_branch=""
         wazuh_indexer_common_utils_branch=""
+        wazuh_indexer_alerting_branch=""
         wazuh_branch=""
 
         while IFS='=' read -r repo branch; do
@@ -52,6 +56,9 @@ runs:
             wazuh-indexer-common-utils)
               wazuh_indexer_common_utils_branch="$branch"
               ;;
+            wazuh-indexer-alerting)
+              wazuh_indexer_alerting_branch="$branch"
+              ;;
             wazuh)
               wazuh_branch="$branch"
               ;;
@@ -63,5 +70,6 @@ runs:
         echo "wazuh_indexer_security_analytics_branch=$wazuh_indexer_security_analytics_branch" >> "$GITHUB_OUTPUT"
         echo "wazuh_indexer_notifications_branch=$wazuh_indexer_notifications_branch" >> "$GITHUB_OUTPUT"
         echo "wazuh_indexer_common_utils_branch=$wazuh_indexer_common_utils_branch" >> "$GITHUB_OUTPUT"
+        echo "wazuh_indexer_alerting_branch=$wazuh_indexer_alerting_branch" >> "$GITHUB_OUTPUT"
         echo "wazuh_branch=$wazuh_branch" >> "$GITHUB_OUTPUT"
       shell: bash

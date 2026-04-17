@@ -425,17 +425,23 @@ jobs:
       labels: "wz-linux-amd64"
     needs: [ compatibility-check, branches, get-versions-wazuh-indexer-alerting, publish-common-utils ]
     steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: wazuh/wazuh-indexer-alerting
+          ref: ${{ needs.branches.outputs.alerting_plugin_ref }}
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 25
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
       - name: Restore Maven Local cache
         uses: actions/cache/restore@v5
         with:
           path: ~/.m2/repository
           key: ${{ env.M2_CACHE_KEY_COMMON }}
       - name: Publish alerting to Maven Local
-        uses: wazuh/wazuh-indexer-alerting/.github/actions/5_local_maven_publisher@main
-        with:
-          version: ${{ needs.get-versions-wazuh-indexer-alerting.outputs.version }}
-          revision: ${{ inputs.revision }}
-          reference: ${{ needs.branches.outputs.alerting_plugin_ref }}
+        run: ./gradlew publishToMavenLocal -x check -Dversion=${{ needs.get-versions-wazuh-indexer-alerting.outputs.version }} -Drevision=${{ inputs.revision }}
       - name: Cache Maven Local
         uses: actions/cache/save@v5
         with:

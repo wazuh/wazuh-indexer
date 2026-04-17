@@ -433,7 +433,7 @@ jobs:
       - name: Publish alerting to Maven Local
         uses: wazuh/wazuh-indexer-alerting/.github/actions/5_local_maven_publisher@main
         with:
-          version: ${{ needs.get-versions-wazuh-indexer-alerting.outputs.version }}
+          version: ${{ needs.get-versions-wazuh-indexer-alerting.outputs.version }}.${{ inputs.revision }}
           revision: ${{ inputs.revision }}
           reference: ${{ needs.branches.outputs.alerting_plugin_ref }}
       - name: Cache Maven Local

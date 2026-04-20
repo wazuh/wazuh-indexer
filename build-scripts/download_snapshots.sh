@@ -37,8 +37,8 @@ set -euo pipefail
 # Defaults
 # =============================================================================
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CTI_CONFIG="${SCRIPT_DIR}/cti-config.json"
 CTI_BASE_URL=""
-CONTENT_SOURCES="${SCRIPT_DIR}/feeds.json"
 OUTPUT_DIR="./snapshots"
 
 # =============================================================================
@@ -51,12 +51,13 @@ Usage: $(basename "$0") [OPTIONS]
 Downloads CTI snapshot .zip files for all consumers (content, IoC, CVE).
 
 Options:
-  --env <base-url>        CTI API base URL (e.g. https://<your-environment>/api/v1).
+  --env <base-url>        CTI API base URL. Overrides the value in cti-config.json.
   --output-dir <path>     Output directory (default: ./snapshots).
   --help                  Show this help message and exit.
 
-The script reads consumer definitions from feeds.json located
-in the same directory as this script. Each key becomes the output filename (<key>.zip).
+The script reads CTI configuration (API URL and consumer definitions) from
+cti-config.json located in the same directory as this script.
+Each consumer key becomes the output filename (<key>.zip).
 
 Example:
   $(basename "$0") --env https://<your-environment>/api/v1
@@ -87,17 +88,19 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Validate required --env parameter
-if [[ -z "${CTI_BASE_URL}" ]]; then
-    echo "ERROR: --env is required. Provide the CTI API base URL."
-    echo ""
-    usage
+# Validate config file exists
+if [[ ! -f "${CTI_CONFIG}" ]]; then
+    echo "ERROR: CTI config file not found: ${CTI_CONFIG}"
+    exit 1
 fi
 
-# Validate feeds file exists
-if [[ ! -f "${CONTENT_SOURCES}" ]]; then
-    echo "ERROR: Content sources file not found: ${CONTENT_SOURCES}"
-    exit 1
+# If --env was not provided, read the API URL from cti-config.json
+if [[ -z "${CTI_BASE_URL}" ]]; then
+    CTI_BASE_URL=$(jq -r '.api_url // empty' "${CTI_CONFIG}")
+    if [[ -z "${CTI_BASE_URL}" ]]; then
+        echo "ERROR: No CTI API URL found. Provide --env or set api_url in cti-config.json."
+        exit 1
+    fi
 fi
 
 # =============================================================================
@@ -218,21 +221,21 @@ process_consumer() {
 main() {
     echo "Wazuh CTI Snapshot Downloader"
     echo "CTI API URL:       ${CTI_BASE_URL}"
-    echo "Content sources:   ${CONTENT_SOURCES}"
+    echo "CTI config:        ${CTI_CONFIG}"
 
     mkdir -p "${OUTPUT_DIR}"
 
     # Remove any previous snapshot .zip files to avoid stale data
     rm -f "${OUTPUT_DIR}"/*.zip
 
-    # Iterate over every entry in the feeds JSON file.
+    # Iterate over every consumer entry in the CTI config file.
     # Each key is used as the snapshot label and output filename.
     local keys
-    keys=$(jq -r 'keys[]' "${CONTENT_SOURCES}")
+    keys=$(jq -r '.consumers | keys[]' "${CTI_CONFIG}")
     for key in ${keys}; do
         local context consumer
-        context=$(jq -r --arg k "${key}" '.[$k].context' "${CONTENT_SOURCES}")
-        consumer=$(jq -r --arg k "${key}" '.[$k].consumer' "${CONTENT_SOURCES}")
+        context=$(jq -r --arg k "${key}" '.consumers[$k].context' "${CTI_CONFIG}")
+        consumer=$(jq -r --arg k "${key}" '.consumers[$k].consumer' "${CTI_CONFIG}")
         process_consumer "${key}" "${CTI_BASE_URL}" "${context}" "${consumer}"
     done
 

@@ -23,7 +23,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Bundle CTI content snapshots into Wazuh Indexer packages [(#1353)](https://github.com/wazuh/wazuh-indexer/pull/1353)
 - Implement wazuh-indexer-common-utils plugin build process [(#1385)](https://github.com/wazuh/wazuh-indexer/pull/1385)
 - Add `--set-as-main` flag support to repository bumper [(#1396)](https://github.com/wazuh/wazuh-indexer/pull/1396)
-- Add Alerting fork to Wazuh Indexer packages
+- Centralized hub for CTI's feeds names [(#1419)](https://github.com/wazuh/wazuh-indexer/pull/1419)
+- Add Alerting fork to Wazuh Indexer packages [(#1402)](https://github.com/wazuh/wazuh-indexer/pull/1402)
 
 ### Fixed
 - Set secure permissions (750) for engine sockets directory [(#1330)](https://github.com/wazuh/wazuh-indexer/pull/1330)

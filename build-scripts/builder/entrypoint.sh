@@ -72,19 +72,15 @@ download_snapshots() {
 }
 
 # Function to build wazuh-indexer-plugins
-# TODO can't us publishToMavenLocal as indexer-plugins do not generate a POM file manifest.
 build_plugins() {
     echo "----------------------------------------"
     echo "Building Plugins"
     echo "----------------------------------------"
     local version="$1"
     local revision="$2"
-    cd ${PLUGINS_REPO_DIR}/plugins/setup
-    echo "Building setup plugin..."
-    ./gradlew build -Dversion="$version" -Drevision="$revision" --no-daemon
-    cd ${PLUGINS_REPO_DIR}/plugins/content-manager
-    echo "Building content-manager plugin..."
-    ./gradlew build -Dversion="$version" -Drevision="$revision" --no-daemon -x check
+    cd ${PLUGINS_REPO_DIR}
+    echo "Building setup and content-manager plugins..."
+    ./gradlew publishToMavenLocal -Dversion="$version" -Drevision="$revision" --no-daemon -x check
 }
 
 # Function to build wazuh-indexer-reporting
@@ -124,7 +120,7 @@ build_common_utils() {
     local revision="$2"
     cd ${COMMON_UTILS_REPO_DIR}
     echo "Building common-utils..."
-    ./gradlew publishToMavenLocal -Dversion="5.0.0" -Drevision="$revision" -x check --no-daemon
+    ./gradlew publishToMavenLocal -Dversion="$version" -Drevision="$revision" --no-daemon -x check
 }
 
 # Function to build wazuh-indexer-notifications
@@ -162,14 +158,10 @@ copy_builds() {
     local m2="${HOME}/.m2/repository/com/wazuh"
     mkdir -p ~/artifacts/plugins
 
-    # TODO wazuh-indexer-plugins do not publish to Maven local — copy from build/distributions
-    echo "Copying setup plugin..."
-    cp "${PLUGINS_REPO_DIR}/plugins/setup/build/distributions/wazuh-indexer-setup-${v}.zip" ~/artifacts/plugins
-    echo "Copying content-manager plugin..."
-    cp "${PLUGINS_REPO_DIR}/plugins/content-manager/build/distributions/wazuh-indexer-content-manager-${v}.zip" ~/artifacts/plugins
-
-    # All other plugins are published to Maven local — iterate and copy
+    # All plugins are published to Maven local — iterate and copy
     local maven_plugins=(
+        "wazuh-indexer-setup"
+        "wazuh-indexer-content-manager"
         "wazuh-indexer-reports-scheduler"
         "wazuh-indexer-security-analytics"
         "wazuh-indexer-notifications-core"

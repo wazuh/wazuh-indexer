@@ -727,7 +727,7 @@ jobs:
 
       - name: Build with Gradle
         working-directory: .
-        run: ./gradlew build -x integTest -Dversion=${{ steps.version.outputs.version }} -Dbuild.revision=${{ inputs.revision }}
+        run: ./gradlew build -x integTest -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }}
 
       - run: ls -lR alerting/build/distributions
 

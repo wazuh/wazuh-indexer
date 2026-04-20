@@ -158,28 +158,28 @@ copy_builds() {
     echo "----------------------------------------"
     local version="$1"
     local revision="$2"
+    local v="${version}.${revision}"
+    local m2="${HOME}/.m2/repository/com/wazuh"
     mkdir -p ~/artifacts/plugins
+
+    # TODO wazuh-indexer-plugins do not publish to Maven local — copy from build/distributions
     echo "Copying setup plugin..."
-    cp ${PLUGINS_REPO_DIR}/plugins/setup/build/distributions/wazuh-indexer-setup-"$version"."$revision".zip ~/artifacts/plugins
+    cp "${PLUGINS_REPO_DIR}/plugins/setup/build/distributions/wazuh-indexer-setup-${v}.zip" ~/artifacts/plugins
     echo "Copying content-manager plugin..."
-    cp ${PLUGINS_REPO_DIR}/plugins/content-manager/build/distributions/wazuh-indexer-content-manager-"$version"."$revision".zip ~/artifacts/plugins
-    echo "Copying reporting..."
-    cp ${REPORTING_REPO_DIR}/build/distributions/wazuh-indexer-reports-scheduler-"$version"."$revision".zip ~/artifacts/plugins
-    echo "Copying security analytics..."
-    cp ${SECURITY_ANALYTICS_REPO_DIR}/build/distributions/wazuh-indexer-security-analytics-"$version"."$revision".zip ~/artifacts/plugins
-    echo "Copying notifications..."
-    cp ${NOTIFICATIONS_REPO_DIR}/notifications/notifications/build/distributions/wazuh-indexer-notifications-"$version"."$revision".zip ~/artifacts/plugins
-    echo "Copying notifications-core..."
-    cp ${NOTIFICATIONS_REPO_DIR}/notifications/core/build/distributions/wazuh-indexer-notifications-core-"$version"."$revision".zip ~/artifacts/plugins
-    echo "Copying alerting..."
-    cp ${ALERTING_REPO_DIR}/alerting/build/distributions/wazuh-indexer-alerting-"$version"."$revision".zip ~/artifacts/plugins
-    echo "Copying common-utils..."
-    # common-utils is a library (JAR via shadowJar), not an OpenSearch plugin (ZIP).
-    # Copy whatever distributable artifacts exist (zip or jar).
-    find ${COMMON_UTILS_REPO_DIR}/build -type f \( -name "*.zip" -o -name "*.jar" \) \
-        \( -path "*/distributions/*" -o -path "*/libs/*" \) \
-        ! -path "*/agent/*" \
-        -exec cp -v {} ~/artifacts/plugins/ \; || true
+    cp "${PLUGINS_REPO_DIR}/plugins/content-manager/build/distributions/wazuh-indexer-content-manager-${v}.zip" ~/artifacts/plugins
+
+    # All other plugins are published to Maven local — iterate and copy
+    local maven_plugins=(
+        "wazuh-indexer-reports-scheduler"
+        "wazuh-indexer-security-analytics"
+        "wazuh-indexer-notifications-core"
+        "wazuh-indexer-notifications"
+        "wazuh-indexer-alerting"
+    )
+    for artifact in "${maven_plugins[@]}"; do
+        echo "Copying ${artifact}..."
+        cp "${m2}/${artifact}/${v}/${artifact}-${v}.zip" ~/artifacts/plugins
+    done
 }
 
 # Function to set up the Wazuh Engine tarball

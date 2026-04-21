@@ -16,6 +16,17 @@ IS_STAGE=${IS_STAGE:-false}
 DISTRIBUTION=${DISTRIBUTION:-rpm}
 ARCHITECTURE=${ARCHITECTURE:-x64}
 
+# Define repositories as an associative array
+declare -A REPOS=(
+    [PLUGINS]="wazuh-indexer-plugins|$INDEXER_PLUGINS_BRANCH"
+    [REPORTING]="wazuh-indexer-reporting|$INDEXER_REPORTING_BRANCH"
+    [SECURITY_ANALYTICS]="wazuh-indexer-security-analytics|$SECURITY_ANALYTICS_BRANCH"
+    [COMMON_UTILS]="wazuh-indexer-common-utils|$COMMON_UTILS_BRANCH"
+    [NOTIFICATIONS]="wazuh-indexer-notifications|$NOTIFICATIONS_BRANCH"
+    [ALERTING]="wazuh-indexer-alerting|$ALERTING_BRANCH"
+)
+
+# Set repo directory variables
 PLUGINS_REPO_DIR="/repositories/wazuh-indexer-plugins"
 REPORTING_REPO_DIR="/repositories/wazuh-indexer-reporting"
 SECURITY_ANALYTICS_REPO_DIR="/repositories/wazuh-indexer-security-analytics"
@@ -29,86 +40,24 @@ clone_repositories() {
     echo "Cloning Repositories"
     echo "----------------------------------------"
 
-    if [ -d "$PLUGINS_REPO_DIR/.git" ]; then
-        git -C "$PLUGINS_REPO_DIR" checkout "$INDEXER_PLUGINS_BRANCH"
-    else
-        git clone --branch "$INDEXER_PLUGINS_BRANCH" https://github.com/wazuh/wazuh-indexer-plugins --depth 1 "$PLUGINS_REPO_DIR"
-    fi
+    local repo_name 
+    local repo_url 
+    local branch 
+    local repo_dir_var 
+    local repo_dir
 
-    if [ -d "$REPORTING_REPO_DIR/.git" ]; then
-        git -C "$REPORTING_REPO_DIR" checkout "$INDEXER_REPORTING_BRANCH"
-    else
-        git clone --branch "$INDEXER_REPORTING_BRANCH" https://github.com/wazuh/wazuh-indexer-reporting --depth 1 "$REPORTING_REPO_DIR"
-    fi
+    for key in "${!REPOS[@]}"; do
+        IFS='|' read -r repo_name branch <<< "${REPOS[$key]}"
+        repo_dir_var="${key}_REPO_DIR"
+        repo_dir="${!repo_dir_var}"
+        repo_url="https://github.com/wazuh/$repo_name"
 
-    if [ -d "$SECURITY_ANALYTICS_REPO_DIR/.git" ]; then
-        git -C "$SECURITY_ANALYTICS_REPO_DIR" checkout "$SECURITY_ANALYTICS_BRANCH"
-    else
-        git clone --branch "$SECURITY_ANALYTICS_BRANCH" https://github.com/wazuh/wazuh-indexer-security-analytics --depth 1 "$SECURITY_ANALYTICS_REPO_DIR"
-    fi
-
-    if [ -d "$COMMON_UTILS_REPO_DIR/.git" ]; then
-        git -C "$COMMON_UTILS_REPO_DIR" checkout "$COMMON_UTILS_BRANCH"
-    else
-        git clone --branch "$COMMON_UTILS_BRANCH" https://github.com/wazuh/wazuh-indexer-common-utils --depth 1 "$COMMON_UTILS_REPO_DIR"
-    fi
-
-    if [ -d "$NOTIFICATIONS_REPO_DIR/.git" ]; then
-        git -C "$NOTIFICATIONS_REPO_DIR" checkout "$NOTIFICATIONS_BRANCH"
-    else
-        git clone --branch "$NOTIFICATIONS_BRANCH" https://github.com/wazuh/wazuh-indexer-notifications --depth 1 "$NOTIFICATIONS_REPO_DIR"
-    fi
-
-    if [ -d "$ALERTING_REPO_DIR/.git" ]; then
-        git -C "$ALERTING_REPO_DIR" checkout "$ALERTING_BRANCH"
-    else
-        git clone --branch "$ALERTING_BRANCH" https://github.com/wazuh/wazuh-indexer-alerting --depth 1 "$ALERTING_REPO_DIR"
-    fi
-}
-
-# Function to build wazuh-indexer-plugins
-build_plugins() {
-    echo "----------------------------------------"
-    echo "Building Plugins"
-    echo "----------------------------------------"
-    local version="$1"
-    local revision="$2"
-    cd ${PLUGINS_REPO_DIR}/plugins/setup
-    echo "Building setup plugin..."
-    ./gradlew build -Dversion="$version" -Drevision="$revision" --no-daemon
-    cd ${PLUGINS_REPO_DIR}/plugins/content-manager
-    echo "Building content-manager plugin..."
-    ./gradlew build -Dversion="$version" -Drevision="$revision" --no-daemon -x check
-}
-
-# Function to build wazuh-indexer-reporting
-build_reporting() {
-    echo "----------------------------------------"
-    echo "Building Reporting"
-    echo "----------------------------------------"
-    local version="$1"
-    local revision="$2"
-    cd ${REPORTING_REPO_DIR}
-    echo "Building reporting..."
-    ./gradlew build -Dversion="$version" -Drevision="$revision" --no-daemon
-}
-
-# Function to build wazuh-indexer-security-analytics
-build_security_analytics() {
-    echo "----------------------------------------"
-    echo "Building Security Analytics"
-    echo "----------------------------------------"
-    local version="$1"
-    local revision="$2"
-    cd ${SECURITY_ANALYTICS_REPO_DIR}
-
-    echo "Building security analytics commons..."
-    ./gradlew wazuh-indexer-security-analytics-commons:build -Dversion="$version" -Drevision="$revision" --no-daemon -x check
-    ./gradlew wazuh-indexer-security-analytics-commons:publishToMavenLocal -x check
-
-    echo "Building security analytics..."
-    ./gradlew build -Dversion="$version" -Drevision="$revision" --no-daemon -x check
-    ./gradlew publishToMavenLocal -x check
+        if [ -d "$repo_dir/.git" ]; then
+            git -C "$repo_dir" checkout "$branch"
+        else
+            git clone --branch "$branch" "$repo_url" --depth 1 "$repo_dir"
+        fi
+    done
 }
 
 # Invoke the script to download the snapshots
@@ -122,6 +71,46 @@ download_snapshots() {
         --output-dir ~/artifacts/snapshots
 }
 
+# Function to build wazuh-indexer-plugins
+build_plugins() {
+    echo "----------------------------------------"
+    echo "Building Plugins"
+    echo "----------------------------------------"
+    local version="$1"
+    local revision="$2"
+    cd ${PLUGINS_REPO_DIR}
+    echo "Building setup and content-manager plugins..."
+    ./gradlew publishToMavenLocal -Dversion="$version" -Drevision="$revision" --no-daemon -x check
+}
+
+# Function to build wazuh-indexer-reporting
+build_reporting() {
+    echo "----------------------------------------"
+    echo "Building Reporting"
+    echo "----------------------------------------"
+    local version="$1"
+    local revision="$2"
+    cd ${REPORTING_REPO_DIR}
+    echo "Building reporting..."
+    ./gradlew publishToMavenLocal -Dversion="$version" -Drevision="$revision" --no-daemon -x check
+}
+
+# Function to build wazuh-indexer-security-analytics
+build_security_analytics() {
+    echo "----------------------------------------"
+    echo "Building Security Analytics"
+    echo "----------------------------------------"
+    local version="$1"
+    local revision="$2"
+    cd ${SECURITY_ANALYTICS_REPO_DIR}
+
+    echo "Building security analytics commons..."
+    ./gradlew wazuh-indexer-security-analytics-commons:publishToMavenLocal -Dversion="$version" -Drevision="$revision" --no-daemon -x check
+
+    echo "Building security analytics..."
+    ./gradlew publishToMavenLocal -Dversion="$version" -Drevision="$revision" --no-daemon -x check
+}
+
 # Function to build wazuh-indexer-common-utils
 build_common_utils() {
     echo "----------------------------------------"
@@ -131,8 +120,7 @@ build_common_utils() {
     local revision="$2"
     cd ${COMMON_UTILS_REPO_DIR}
     echo "Building common-utils..."
-    ./gradlew build -Dversion="$version" -Drevision="$revision" --no-daemon
-    ./gradlew publishToMavenLocal -x check --no-daemon
+    ./gradlew publishToMavenLocal -Dversion="$version" -Drevision="$revision" --no-daemon -x check
 }
 
 # Function to build wazuh-indexer-notifications
@@ -144,7 +132,7 @@ build_notifications() {
     local revision="$2"
     cd ${NOTIFICATIONS_REPO_DIR}/notifications
     echo "Building notifications..."
-    ./gradlew build -Dversion="$version" -Dbuild.revision="$revision" --no-daemon -x check
+    ./gradlew publishToMavenLocal -Dversion="$version" -Drevision="$revision" --no-daemon -x check
 }
 
 # Function to build wazuh-indexer-alerting
@@ -156,29 +144,7 @@ build_alerting() {
     local revision="$2"
     cd ${ALERTING_REPO_DIR}
     echo "Building alerting..."
-    ./gradlew build -Dversion="$version" -Dbuild.revision="$revision" --no-daemon -x check
-}
-
-# Function to publish SA commons to local Maven (required by security-analytics)
-publish_sa_commons() {
-    echo "----------------------------------------"
-    echo "Publishing Security Analytics Commons to Local Maven"
-    echo "----------------------------------------"
-    local version="$1"
-    local revision="$2"
-    cd ${SECURITY_ANALYTICS_REPO_DIR}/commons
-    echo "Publishing security-analytics-commons..."
-    ../gradlew publishToMavenLocal -Dversion="$version" -Drevision="$revision" --no-daemon
-}
-
-# Function to publish security-analytics to local Maven (required by content-manager)
-publish_security_analytics() {
-    echo "----------------------------------------"
-    echo "Publishing Security Analytics to Local Maven"
-    echo "----------------------------------------"
-    cd ${SECURITY_ANALYTICS_REPO_DIR}
-    echo "Publishing security-analytics..."
-    ./gradlew publishToMavenLocal -x check --no-daemon
+    ./gradlew publishToMavenLocal -Dversion="$version" -Drevision="$revision" --no-daemon -x check
 }
 
 # Function to copy builds
@@ -188,28 +154,24 @@ copy_builds() {
     echo "----------------------------------------"
     local version="$1"
     local revision="$2"
+    local v="${version}.${revision}"
+    local m2="${HOME}/.m2/repository/com/wazuh"
     mkdir -p ~/artifacts/plugins
-    echo "Copying setup plugin..."
-    cp ${PLUGINS_REPO_DIR}/plugins/setup/build/distributions/wazuh-indexer-setup-"$version"."$revision".zip ~/artifacts/plugins
-    echo "Copying content-manager plugin..."
-    cp ${PLUGINS_REPO_DIR}/plugins/content-manager/build/distributions/wazuh-indexer-content-manager-"$version"."$revision".zip ~/artifacts/plugins
-    echo "Copying reporting..."
-    cp ${REPORTING_REPO_DIR}/build/distributions/wazuh-indexer-reports-scheduler-"$version"."$revision".zip ~/artifacts/plugins
-    echo "Copying security analytics..."
-    cp ${SECURITY_ANALYTICS_REPO_DIR}/build/distributions/wazuh-indexer-security-analytics-"$version"."$revision".zip ~/artifacts/plugins
-    echo "Copying notifications..."
-    cp ${NOTIFICATIONS_REPO_DIR}/notifications/notifications/build/distributions/wazuh-indexer-notifications-"$version"."$revision".zip ~/artifacts/plugins
-    echo "Copying notifications-core..."
-    cp ${NOTIFICATIONS_REPO_DIR}/notifications/core/build/distributions/wazuh-indexer-notifications-core-"$version"."$revision".zip ~/artifacts/plugins
-    echo "Copying alerting..."
-    cp ${ALERTING_REPO_DIR}/alerting/build/distributions/wazuh-indexer-alerting-"$version"."$revision".zip ~/artifacts/plugins
-    echo "Copying common-utils..."
-    # common-utils is a library (JAR via shadowJar), not an OpenSearch plugin (ZIP).
-    # Copy whatever distributable artifacts exist (zip or jar).
-    find ${COMMON_UTILS_REPO_DIR}/build -type f \( -name "*.zip" -o -name "*.jar" \) \
-        \( -path "*/distributions/*" -o -path "*/libs/*" \) \
-        ! -path "*/agent/*" \
-        -exec cp -v {} ~/artifacts/plugins/ \; || true
+
+    # All plugins are published to Maven local — iterate and copy
+    local maven_plugins=(
+        "wazuh-indexer-setup"
+        "wazuh-indexer-content-manager"
+        "wazuh-indexer-reports-scheduler"
+        "wazuh-indexer-security-analytics"
+        "wazuh-indexer-notifications-core"
+        "wazuh-indexer-notifications"
+        "wazuh-indexer-alerting"
+    )
+    for artifact in "${maven_plugins[@]}"; do
+        echo "Copying ${artifact}..."
+        cp "${m2}/${artifact}/${v}/${artifact}-${v}.zip" ~/artifacts/plugins
+    done
 }
 
 # Function to set up the Wazuh Engine tarball
@@ -244,7 +206,6 @@ package_artifacts() {
     local notifications_hash
     local alerting_hash
     local package_min_name
-    # local package_name
 
     plugins_hash=$(cd ${PLUGINS_REPO_DIR} && git rev-parse --short HEAD)
     reporting_hash=$(cd ${REPORTING_REPO_DIR} && git rev-parse --short HEAD)
@@ -265,18 +226,6 @@ package_artifacts() {
         -n "$notifications_hash" \
         -t "$alerting_hash" \
         "$(if [ "$is_stage" = "true" ]; then echo "-x"; fi)")
-
-    # echo "Creating package name..."
-    # package_name=$(bash build-scripts/baptizer.sh \
-    #     -a "$architecture" \
-    #     -d "$distribution" \
-    #     -r "$revision" \
-    #     -l "$plugins_hash" \
-    #     -e "$reporting_hash" \
-    #     -s "$security_analytics_hash" \
-    #     -n "$notifications_hash" \
-    #     -t "$alerting_hash" \
-    #     "$(if [ "$is_stage" = "true" ]; then echo "-x"; fi)")
 
     echo "Building package..."
     bash build-scripts/build.sh -a "$architecture" -d "$distribution" -n "$package_min_name"
@@ -302,14 +251,14 @@ main() {
     VERSION=$(bash ~/build-scripts/product_version.sh)
     # Build and assemble the package
     download_snapshots
+    # Order matters
     build_common_utils "$VERSION" "$REVISION"
-    publish_sa_commons "$VERSION" "$REVISION"
-    build_security_analytics "$VERSION" "$REVISION"
-    publish_security_analytics
-    build_notifications "$VERSION" "$REVISION"
     build_alerting "$VERSION" "$REVISION"
-    build_plugins "$VERSION" "$REVISION"
+    build_security_analytics "$VERSION" "$REVISION"
+    build_notifications "$VERSION" "$REVISION"
     build_reporting "$VERSION" "$REVISION"
+    build_plugins "$VERSION" "$REVISION"
+    
     copy_builds "$VERSION" "$REVISION"
     setup_engine_tarball
     package_artifacts "$ARCHITECTURE" "$DISTRIBUTION" "$REVISION" "$IS_STAGE"

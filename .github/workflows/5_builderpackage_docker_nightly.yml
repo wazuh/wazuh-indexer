@@ -4,6 +4,7 @@ name: (5.x) Build Docker image (nightly)
 # - Schedule: every week-day at midnight.
 
 on:
+  workflow_dispatch:
   schedule:
     - cron: "0 0 * * 1-5"
 

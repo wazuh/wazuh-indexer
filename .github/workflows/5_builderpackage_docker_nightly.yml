@@ -1,10 +1,10 @@
+run-name: Build Wazuh Indexer Docker image | nightly
 name: (5.x) Build Docker image (nightly)
 
 # This workflow runs when any of the following occur:
 # - Schedule: every week-day at midnight.
 
 on:
-  push:
   schedule:
     - cron: "0 0 * * 1-5"
 

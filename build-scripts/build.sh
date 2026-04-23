@@ -145,11 +145,11 @@ function build() {
 
     # Build project and publish to maven local.
     echo "Building and publishing OpenSearch project to Maven Local"
-    ./gradlew publishToMavenLocal -Dbuild.snapshot="$SNAPSHOT" -Dbuild.version_qualifier="$QUALIFIER"
+    ./gradlew publishToMavenLocal -Dbuild.snapshot="$SNAPSHOT" -Dbuild.version_qualifier="$QUALIFIER" -Pcrypto.standard=FIPS-140-3
 
     # Publish to existing test repo, using this to stage release versions of the artifacts that can be released from the same build.
     echo "Publishing OpenSearch to Test Repository"
-    ./gradlew publishNebulaPublicationToTestRepository -Dbuild.snapshot="$SNAPSHOT" -Dbuild.version_qualifier="$QUALIFIER"
+    ./gradlew publishNebulaPublicationToTestRepository -Dbuild.snapshot="$SNAPSHOT" -Dbuild.version_qualifier="$QUALIFIER" -Pcrypto.standard=FIPS-140-3
 
     # Copy maven publications to be promoted
     echo "Copying Maven publications to $OUTPUT/maven/org"
@@ -157,7 +157,7 @@ function build() {
 
     # Assemble distribution artifact
     # see https://github.com/opensearch-project/OpenSearch/blob/main/settings.gradle#L34 for other distribution targets
-    ./gradlew ":distribution:$TYPE:$TARGET:assemble" -Dbuild.snapshot="$SNAPSHOT" -Dbuild.version_qualifier="$QUALIFIER"
+    ./gradlew ":distribution:$TYPE:$TARGET:assemble" -Dbuild.snapshot="$SNAPSHOT" -Dbuild.version_qualifier="$QUALIFIER" -Pcrypto.standard=FIPS-140-3
 }
 
 # ====

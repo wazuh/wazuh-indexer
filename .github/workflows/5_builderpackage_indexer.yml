@@ -666,7 +666,7 @@ jobs:
 
       - name: Build with Gradle
         working-directory: ./notifications
-        run: ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }}
+        run: ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }} -Pcrypto.standard=FIPS-140-3
 
       - run: ls -lR notifications/notifications/build/distributions notifications/core/build/distributions
 

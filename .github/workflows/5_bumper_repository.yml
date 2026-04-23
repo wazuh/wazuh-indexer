@@ -206,7 +206,7 @@ jobs:
         if: inputs.revert != true && steps.check_changes.outputs.has_changes == 'true' || (inputs.revert == true && steps.revert_step.outputs.has_changes == 'true')
         run: |
           # Any checks for the PR are bypassed since the branch is expected to be functional
-          gh pr merge "${{ steps.create_pr.outputs.pull_request_url }}" --merge --admin
+          gh pr merge "${{ steps.create_pr.outputs.pull_request_url }}" --squash --admin
 
       - name: Show logs
         if: inputs.revert != true

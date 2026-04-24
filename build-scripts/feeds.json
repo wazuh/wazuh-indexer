@@ -8,7 +8,7 @@
     "consumer": "public-vulnerabilities-5"
   },
   "ruleset": {
-    "context": "t1-ruleset-5",
+    "context": "beta-2-ruleset-5",
     "consumer": "public-ruleset-5"
   }
 }

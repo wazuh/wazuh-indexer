@@ -57,6 +57,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Adapt build workflows for dedicated runners [(#1347)](https://github.com/wazuh/wazuh-indexer/pull/1347)
 - Merge CodeQL configurations into codeql-analysis.yml [(#1345)](https://github.com/wazuh/wazuh-indexer/pull/1345)
 - Improve build workflow and scripts reliability [(#1378)](https://github.com/wazuh/wazuh-indexer/pull/1378)
+- Update ruleset feed for 5.0.0 beta2 [(#1463)](https://github.com/wazuh/wazuh-indexer/pull/1463)
 
 ### Deprecated
 -

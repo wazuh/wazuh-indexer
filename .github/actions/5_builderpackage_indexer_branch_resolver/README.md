@@ -71,7 +71,7 @@ Diagnostic messages are sent to stderr, allowing easy parsing of stdout.
 ```yaml
 jobs:
   branches:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     outputs:
       wazuh_plugins_ref: ${{ steps.resolve.outputs.wazuh_indexer_plugins_branch }}
       reporting_plugin_ref: ${{ steps.resolve.outputs.wazuh_indexer_reporting_branch }}
@@ -95,7 +95,7 @@ jobs:
 
   build-plugins:
     needs: [branches]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v5
         with:

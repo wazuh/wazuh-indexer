@@ -7,7 +7,7 @@ jobs:
   # Checks if the commits are signed, if not the workflow will fail
   verify-signed-commits:
     if: github.repository == 'wazuh/wazuh-indexer'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
     steps:

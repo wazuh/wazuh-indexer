@@ -88,7 +88,7 @@ on:
 jobs:
   matrix:
     name: Set up matrix
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     outputs:
       matrix: ${{ steps.setup.outputs.matrix }}
     steps:
@@ -103,7 +103,7 @@ jobs:
 
   build:
     needs: [matrix]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.matrix.outputs.matrix) }}

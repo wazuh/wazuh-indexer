@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased 4.14.x]
 ### Added
-- 
+- Add support to new Ubuntu LTS 26.04 on 4.14.6 [(#1484)](https://github.com/wazuh/wazuh-indexer/pull/1484)
 
 ### Dependencies
 -

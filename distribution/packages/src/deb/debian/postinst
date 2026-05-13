@@ -16,6 +16,7 @@ echo "Running Wazuh Indexer Post-Installation Script"
 name="wazuh-indexer"
 product_dir=/usr/share/${name}
 config_dir=/etc/${name}
+defaults_dir=/etc/default/${name}
 certs_dir=${config_dir}/certs
 data_dir=/var/lib/${name}
 log_dir=/var/log/${name}
@@ -27,6 +28,7 @@ chown -R ${name}:${name} ${product_dir}
 chown -R ${name}:${name} ${config_dir}
 chown -R ${name}:${name} ${log_dir}
 chown -R ${name}:${name} ${data_dir}
+chown -R ${name}:${name} ${defaults_dir}
 chown -R ${name}:${name} ${pid_dir}
 
 # Change permissions for Wazuh Engine

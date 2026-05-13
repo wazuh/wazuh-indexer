@@ -16,11 +16,11 @@ echo "Running Wazuh Indexer Post-Installation Script"
 name="wazuh-indexer"
 product_dir=/usr/share/${name}
 config_dir=/etc/${name}
-defaults_dir=/etc/default/${name}
 certs_dir=${config_dir}/certs
 data_dir=/var/lib/${name}
 log_dir=/var/log/${name}
 pid_dir=/run/${name}
+defaults_file=/etc/default/${name}
 state_file=${config_dir}/.was_active
 
 # Set owner
@@ -28,8 +28,8 @@ chown -R ${name}:${name} ${product_dir}
 chown -R ${name}:${name} ${config_dir}
 chown -R ${name}:${name} ${log_dir}
 chown -R ${name}:${name} ${data_dir}
-chown -R ${name}:${name} ${defaults_dir}
 chown -R ${name}:${name} ${pid_dir}
+chown ${name}:${name} ${defaults_file}
 
 # Change permissions for Wazuh Engine
 ENGINE_DIR="${product_dir}/engine"

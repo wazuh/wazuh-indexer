@@ -22,7 +22,6 @@ name="wazuh-indexer"
 
 product_dir="/usr/share/${name}"
 config_dir="/etc/${name}"
-defaults_dir="/etc/default/${name}"
 pid_dir="/run/${name}"
 service_dir="/usr/lib/systemd/system"
 certs_dir=${config_dir}/certs
@@ -61,9 +60,6 @@ config_files+=("${buildroot}/${config_dir}/opensearch.yml")
 for i in "${config_files[@]}"; do
 	chmod -c 0660 "$i"
 done
-
-# Permissions for default folder
-chmod -c 750 "${buildroot}${defaults_dir}"
 
 # Plugin-related files
 if [ -e "${buildroot}/${config_dir}/opensearch-observability/observability.yml" ]; then

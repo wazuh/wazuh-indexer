@@ -16,13 +16,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Deprecated
 
 ### Removed
-- Removed unused GitHub Workflows [(#967)](https://github.com/wazuh/wazuh-indexer/pull/967)
+- 
 
 ### Fixed
-- Fix segment replication failure during rolling restart ([#19234](https://github.com/opensearch-project/OpenSearch/issues/19234))
-- Fix SearchPhaseExecutionException to properly initCause ([#20336](https://github.com/opensearch-project/OpenSearch/pull/20336))
+- 
 
 ### Security
-- Reduce risk of GITHUB_TOKEN exposure [(#972)](https://github.com/wazuh/wazuh-indexer/pull/972)
+- 
 
 [Unreleased 4.10.x]: https://github.com/wazuh/wazuh-indexer/compare/v4.10.3...4.10.4

@@ -28,7 +28,7 @@ ERROR: Direct upgrade from Wazuh Indexer 4.X to 5.X is not supported.
 
 A clean installation of Wazuh Indexer 5.x is required.
 ==============================================================
-        EOF
+EOF
                 exit 1
             fi
         fi

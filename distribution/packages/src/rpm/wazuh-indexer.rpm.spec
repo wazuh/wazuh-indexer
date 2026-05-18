@@ -152,6 +152,19 @@ exit 0
 
 %pre
 set -e
+# Hard block: refuse 4.X -> 5.X upgrades
+if [ $1 -gt 1 ]; then
+    if grep -lP '4.\d+.\d+' /usr/share/wazuh-indexer/VERSION* 2>/dev/null | grep -q .; then
+        cat >&2 <<'EOF'
+==============================================================
+ERROR: Direct upgrade from Wazuh Indexer 4.X to 5.X is not supported.
+
+A clean installation of Wazuh Indexer 5.x is required.
+==============================================================
+EOF
+        exit 1
+    fi
+fi
 
 # Stop the services to upgrade the package
 if [ $1 = 2 ]; then

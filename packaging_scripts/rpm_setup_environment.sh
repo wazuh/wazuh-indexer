@@ -99,7 +99,7 @@ CMD=(
     --label-team "$LABEL_TEAM"
     --label-termination-date "$TERMINATION_DATE"
     --working-dir "$WORKDIR"
-    --custom-tags "Name:${INSTANCE_NAME},Team:indexer,Organization:xdrsiem,CreatedBy:github-actions,FixedResource:false,Sensitive:false,Product:wazuh-indexer,Purpose:package-build"
+    --custom-tags "Team:indexer,Organization:xdrsiem,CreatedBy:github-actions,FixedResource:false,Sensitive:false,Product:wazuh-indexer,Purpose:package-build"
 )
 
 # Execute or simulate

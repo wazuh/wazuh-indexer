@@ -14,6 +14,19 @@
 
 set -euo pipefail
 
+# Read version info from VERSION.json
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VERSION_FILE="${SCRIPT_DIR}/../VERSION.json"
+
+if [[ ! -f "$VERSION_FILE" ]]; then
+    echo "❌ Error: VERSION.json not found at $VERSION_FILE"
+    exit 1
+fi
+
+RELEASE="$(grep -oP '"version"\s*:\s*"\K[^"]+' "$VERSION_FILE")"
+STAGE="$(grep -oP '"stage"\s*:\s*"\K[^"]+' "$VERSION_FILE")"
+EXECUTION_ID="${GITHUB_RUN_ID:-unknown}"
+
 # Initialize variables
 DRY_RUN=false
 POSITIONAL_ARGS=()
@@ -99,7 +112,7 @@ CMD=(
     --label-team "$LABEL_TEAM"
     --label-termination-date "$TERMINATION_DATE"
     --working-dir "$WORKDIR"
-    --custom-tags "Organization:xdrsiem,CreatedBy:github-actions,FixedResource:false,Sensitive:false,Product:wazuh-indexer,Purpose:package-build"
+    --custom-tags "Organization:xdrsiem,CreatedBy:github-actions,FixedResource:false,Sensitive:false,Product:wazuh-indexer,Purpose:package-build,Release:${RELEASE},Stage:${STAGE},ExecutionId:${EXECUTION_ID}"
 )
 
 # Execute or simulate

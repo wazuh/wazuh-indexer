@@ -2,178 +2,122 @@
 manage_wazuh_index:
   reserved: true
   hidden: false
-  cluster_permissions: []
+  cluster_permissions:
+    - "cluster:admin/opensearch/notifications/configs/get"
   index_permissions:
   - index_patterns:
     - "wazuh-*"
-    # dls: ""
-    # fls: []
-    # masked_fields: []
     allowed_actions:
     - "read"
-    - "delete"
-    - "manage"
-    - "index"
   tenant_permissions: []
   static: false
 
-# Wazuh roles for security configuration
-
-stateful-read:
+# Wazuh index roles
+settings:
   reserved: true
-  cluster_permissions: []
+  hidden: false
+  cluster_permissions:
+    - "cluster:monitor/health"
   index_permissions:
     - index_patterns:
-        - "wazuh-states-*"
-      # dls: ""
-      # fls: []
-      # masked_fields: []
+        - ".wazuh-settings"
       allowed_actions:
         - "read"
   tenant_permissions: []
   static: true
 
-stateful-write:
+consumers:
   reserved: true
+  hidden: false
+  cluster_permissions:
+    - "cluster:monitor/health"
+  index_permissions:
+    - index_patterns:
+        - ".wazuh-cti-consumers"
+      allowed_actions:
+        - "read"
+  tenant_permissions: []
+  static: true
+
+content:
+  reserved: true
+  hidden: false
+  cluster_permissions:
+    - "cluster:monitor/health"
+  index_permissions:
+    - index_patterns:
+        - "wazuh-threatintel-*"
+      allowed_actions:
+        - "read"
+  tenant_permissions: []
+  static: true
+
+stateless:
+  reserved: true
+  hidden: false
   cluster_permissions: []
   index_permissions:
     - index_patterns:
-        - "wazuh-states-*"
-      # dls: ""
-      # fls: []
-      # masked_fields: []
+        - "wazuh-events-*"
       allowed_actions:
         - "index"
   tenant_permissions: []
   static: true
 
-stateful-delete:
+stateful:
   reserved: true
+  hidden: false
   cluster_permissions: []
   index_permissions:
     - index_patterns:
         - "wazuh-states-*"
-      # dls: ""
-      # fls: []
-      # masked_fields: []
       allowed_actions:
+        - "read"
+        - "index"
         - "delete"
   tenant_permissions: []
   static: true
 
-stateless-read:
+metrics:
   reserved: true
-  cluster_permissions: []
+  hidden: false
+  cluster_permissions:
+    - "cluster:monitor/health"
   index_permissions:
     - index_patterns:
-        - "wazuh-alerts*"
-        - "wazuh-archives*"
-      # dls: ""
-      # fls: []
-      # masked_fields: []
-      allowed_actions:
-        - "read"
-  tenant_permissions: []
-  static: true
-
-stateless-write:
-  reserved: true
-  cluster_permissions: []
-  index_permissions:
-    - index_patterns:
-        - "wazuh-alerts*"
-        - "wazuh-archives*"
-      # dls: ""
-      # fls: []
-      # masked_fields: []
+        - "wazuh-metrics-*"
       allowed_actions:
         - "index"
   tenant_permissions: []
   static: true
 
-metrics-read:
+active-responses:
   reserved: true
+  hidden: false
   cluster_permissions: []
   index_permissions:
     - index_patterns:
-        - "wazuh-monitoring*"
-        - "wazuh-statistics*"
-      # dls: ""
-      # fls: []
-      # masked_fields: []
+        - "wazuh-active-responses-*"
       allowed_actions:
         - "read"
   tenant_permissions: []
   static: true
 
-metrics-write:
+# Plugin Setup
+setup_settings_management:
   reserved: true
-  cluster_permissions: []
+  hidden: false
+  cluster_permissions:
+    - "plugin:wazuh/settings"
   index_permissions:
     - index_patterns:
-        - "wazuh-monitoring*"
-        - "wazuh-statistics*"
-      # dls: ""
-      # fls: []
-      # masked_fields: []
+        - ".wazuh-settings"
       allowed_actions:
-        - "index"
+        - "read"
   tenant_permissions: []
   static: true
 
-sample-data-management:
-  reserved: true
-  cluster_permissions: []
-  index_permissions:
-    - index_patterns:
-        - "*-sample-*"
-      # dls: ""
-      # fls: []
-      # masked_fields: []
-      allowed_actions:
-        - "data_access"
-        - "manage"
-  tenant_permissions: []
-  static: true
-
-# Role to grant read access to ML related indices. Used to configure the AI assistant from the UI.
-ml_config_read:
-  reserved: true
-  hidden: false
-  cluster_permissions: []
-  index_permissions:
-  - index_patterns:
-    - ".plugins-ml-model"
-    - ".plugins-ml-connector"
-    - ".plugins-ml-agent"
-    - ".plugins-ml-config"
-    # dls: ""
-    # fls: []
-    # masked_fields: []
-    allowed_actions:
-    - "read"
-    - "system:admin/system_index"
-  tenant_permissions: []
-  static: false
-
-# Role to grant write access to ML related indices. Used to configure the AI assistant from the UI.
-ml_config_write:
-  reserved: true
-  hidden: false
-  cluster_permissions: []
-  index_permissions:
-  - index_patterns:
-    - ".plugins-ml-config"
-    # dls: ""
-    # fls: []
-    # masked_fields: []
-    allowed_actions:
-    - "write"
-    - "system:admin/system_index"
-  tenant_permissions: []
-  static: false
-
-# Roles for Content Manager plugin subscription management
+# Plugin Content Manager
 cm_subscription_read:
   reserved: true
   hidden: false
@@ -193,11 +137,175 @@ cm_subscription_write:
   tenant_permissions: []
   static: true
 
-cm_update:
+cm_update_management:
   reserved: true
   hidden: false
   cluster_permissions:
     - "plugin:content_manager/update"
+  index_permissions:
+    - index_patterns:
+        - "wazuh-threatintel-*"
+      allowed_actions:
+        - "read"
+  tenant_permissions: []
+  static: true
+
+cm_kvdb_management:
+  reserved: true
+  hidden: false
+  cluster_permissions:
+    - "plugin:content_manager/kvdb_create"
+    - "plugin:content_manager/kvdb_update"
+    - "plugin:content_manager/kvdb_delete"
+  index_permissions:
+    - index_patterns:
+        - "wazuh-threatintel-kvdbs-*"
+      allowed_actions:
+        - "read"
+  tenant_permissions: []
+  static: true
+
+cm_decoder_management:
+  reserved: true
+  hidden: false
+  cluster_permissions:
+    - "plugin:content_manager/decoder_create"
+    - "plugin:content_manager/decoder_update"
+    - "plugin:content_manager/decoder_delete"
+  index_permissions:
+    - index_patterns:
+        - "wazuh-threatintel-decoders-*"
+      allowed_actions:
+        - "read"
+  tenant_permissions: []
+  static: true
+
+cm_filter_management:
+  reserved: true
+  hidden: false
+  cluster_permissions:
+    - "plugin:content_manager/filter_create"
+    - "plugin:content_manager/filter_update"
+    - "plugin:content_manager/filter_delete"
+  index_permissions:
+    - index_patterns:
+        - "wazuh-threatintel-filters-*"
+      allowed_actions:
+        - "read"
+  tenant_permissions: []
+  static: true
+
+cm_rule_management:
+  reserved: true
+  hidden: false
+  cluster_permissions:
+    - "plugin:content_manager/rule_create"
+    - "plugin:content_manager/rule_update"
+    - "plugin:content_manager/rule_delete"
+  index_permissions:
+    - index_patterns:
+        - "wazuh-threatintel-*"
+        - "opensearch-sap-*-*"
+        - ".opensearch-sap-detectors-config"
+      allowed_actions:
+        - "read"
+  tenant_permissions: []
+  static: true
+
+cm_integration_management:
+  reserved: true
+  hidden: false
+  cluster_permissions:
+    - "plugin:content_manager/integration_create"
+    - "plugin:content_manager/integration_update"
+    - "plugin:content_manager/integration_delete"
+  index_permissions:
+    - index_patterns:
+        - "wazuh-threatintel-integrations-*"
+        - "opensearch-sap-*-*"
+        - ".opensearch-sap-detectors-config"
+      allowed_actions:
+        - "read"
+  tenant_permissions: []
+  static: true
+
+cm_logtest:
+  reserved: true
+  hidden: false
+  cluster_permissions:
+    - "plugin:content_manager/engine_logtest"
+    - "plugin:content_manager/engine_logtest_normalization"
+    - "plugin:content_manager/engine_logtest_detection"
   index_permissions: []
+  tenant_permissions: []
+  static: true
+
+cm_promote_management:
+  reserved: true
+  hidden: false
+  cluster_permissions:
+    - "plugin:content_manager/promote_preview"
+    - "plugin:content_manager/promote"
+  index_permissions:
+    - index_patterns:
+        - "wazuh-threatintel-*"
+      allowed_actions:
+        - "read"
+  tenant_permissions: []
+  static: true
+
+cm_policy_management:
+  reserved: true
+  hidden: false
+  cluster_permissions:
+    - "plugin:content_manager/policy_update"
+  index_permissions:
+    - index_patterns:
+        - "wazuh-threatintel-policies-*"
+      allowed_actions:
+        - "read"
+  tenant_permissions: []
+  static: true
+
+cm_space_management:
+  reserved: true
+  hidden: false
+  cluster_permissions:
+    - "plugin:content_manager/space_delete"
+  index_permissions:
+    - index_patterns:
+        - "wazuh-threatintel-*"
+      allowed_actions:
+        - "read"
+  tenant_permissions: []
+  static: true
+
+# Plugin SAP
+sap_detector_read:
+  reserved: true
+  hidden: false
+  cluster_permissions:
+    - "cluster:admin/opensearch/securityanalytics/detector/get"
+    - "cluster:admin/opensearch/securityanalytics/detector/search"
+  index_permissions:
+    - index_patterns:
+        - ".opensearch-sap-*-findings-*"
+      allowed_actions:
+        - "read"
+  tenant_permissions: []
+  static: true
+
+sap_detector_write:
+  reserved: true
+  hidden: false
+  cluster_permissions:
+    - "cluster:admin/opensearch/securityanalytics/detector/write"
+    - "cluster:admin/opensearch/securityanalytics/detector/delete"
+  index_permissions:
+    - index_patterns:
+        - "opensearch-sap-*-*"
+        - ".opensearch-sap-detectors-config"
+      allowed_actions:
+        - "read"
   tenant_permissions: []
   static: true

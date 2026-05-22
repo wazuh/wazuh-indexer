@@ -52,7 +52,7 @@ content:
   tenant_permissions: []
   static: true
 
-stateless:
+stateless-write:
   reserved: true
   hidden: false
   cluster_permissions: []
@@ -75,6 +75,30 @@ stateful:
         - "read"
         - "index"
         - "delete"
+  tenant_permissions: []
+  static: true
+
+stateless-read:
+  reserved: true
+  hidden: false
+  cluster_permissions: []
+  index_permissions:
+    - index_patterns:
+        - "wazuh-events-*"
+      allowed_actions:
+        - "read"
+  tenant_permissions: []
+  static: true
+
+stateful-read:
+  reserved: true
+  hidden: false
+  cluster_permissions: []
+  index_permissions:
+    - index_patterns:
+        - "wazuh-states-*"
+      allowed_actions:
+        - "read"
   tenant_permissions: []
   static: true
 

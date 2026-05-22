@@ -45,7 +45,7 @@ content:
     - "wazuh-readonly"
   and_backend_roles: []
 
-stateless:
+stateless-write:
   reserved: true
   hidden: false
   backend_roles: []
@@ -53,6 +53,16 @@ stateless:
   users:
     - "wazuh-server"
     - "wazuh-admin"
+  and_backend_roles: []
+
+stateless-read:
+  reserved: true
+  hidden: false
+  backend_roles: []
+  hosts: []
+  users:
+    - "wazuh-admin"
+    - "wazuh-readonly"
   and_backend_roles: []
 
 stateful:
@@ -63,6 +73,15 @@ stateful:
   users:
     - "wazuh-server"
     - "wazuh-admin"
+  and_backend_roles: []
+
+stateful-read:
+  reserved: true
+  hidden: false
+  backend_roles: []
+  hosts: []
+  users:
+    - "wazuh-readonly"
   and_backend_roles: []
 
 metrics:

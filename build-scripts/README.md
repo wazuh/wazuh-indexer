@@ -29,9 +29,7 @@ Before you get started, make sure to clean your environment by running `./gradle
 
 3. Clone the [wazuh-indexer](https://github.com/wazuh/wazuh-indexer).
 
-## Obtaining the wazuh-engine tarball
-
-A `wazuh-engine` tarball is required to build the Wazuh Indexer package. Follow the [Engine build instructions](https://github.com/wazuh/wazuh/blob/main/src/engine/standalone/README.md) in the `wazuh/wazuh` repository to produce it. The resulting `.tar.gz` is passed to `builder.sh` via the `-e` flag.
+4. **A `wazuh-engine` tarball is required** to build the Wazuh Indexer package. Follow the [Engine build instructions](https://github.com/wazuh/wazuh/blob/main/src/engine/standalone/README.md) in the `wazuh/wazuh` repository to produce it. The resulting `.tar.gz` is passed to `builder.sh` via the `-e` flag.
 
 ## Building wazuh-indexer packages
 

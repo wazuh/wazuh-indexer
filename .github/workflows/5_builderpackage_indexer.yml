@@ -894,7 +894,7 @@ jobs:
           docker run --rm --privileged \
             -v "${{ github.workspace }}/artifacts/dist:/artifacts/dist" \
             -v "${{ github.workspace }}/build-scripts/:/build-scripts/" \
-            redhat/ubi9:latest \
+            redhat/ubi9-init:latest \
             bash -c "bash /build-scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }} && \
                      systemctl stop wazuh-indexer && \
                      yum localinstall '/artifacts/dist/${{ steps.package.outputs.name }}' -y && \
@@ -906,7 +906,7 @@ jobs:
           docker run --rm --privileged \
             -v "${{ github.workspace }}/artifacts/dist:/artifacts/dist" \
             -v "${{ github.workspace }}/build-scripts/:/build-scripts/" \
-            redhat/ubi9:latest \
+            redhat/ubi9-init:latest \
             bash -c "bash /build-scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }} && \
                      yum localinstall '/artifacts/dist/${{ steps.package.outputs.name }}' -y && \
                      if systemctl is-active --quiet wazuh-indexer; then echo 'Indexer running (expected)'; else echo 'Indexer not running (unexpected)'; exit 1; fi"
@@ -917,7 +917,7 @@ jobs:
           docker run --rm --privileged \
             -v "${{ github.workspace }}/artifacts/dist:/artifacts/dist" \
             -v "${{ github.workspace }}/build-scripts/:/build-scripts/" \
-            redhat/ubi9:latest \
+            redhat/ubi9-init:latest \
             bash -c '
               set -e
               bash /build-scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_4x_version }}

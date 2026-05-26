@@ -70,7 +70,9 @@ if command -v apt-get &> /dev/null; then
     retry 3 10 apt-get update
     retry 3 10 apt-get -y install wazuh-indexer=$1-1
 else
-  retry 3 10 yum install coreutils -y
+  if ! rpm -qa | grep coreutils; then
+    retry 3 10 yum install coreutils -y
+  fi
 
   retry 3 5 rpm --import https://packages.wazuh.com/key/GPG-KEY-WAZUH
   echo -e '[wazuh]\ngpgcheck=1\ngpgkey=https://packages.wazuh.com/key/GPG-KEY-WAZUH\nenabled=1\nname=EL-$releasever - Wazuh\nbaseurl=https://packages.wazuh.com/'"$VERSION_SERIES"'/yum/\nprotect=1' | tee /etc/yum.repos.d/wazuh.repo

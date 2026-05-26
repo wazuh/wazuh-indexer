@@ -914,35 +914,40 @@ jobs:
       - name: Test RPM package refuses upgrade from 4.x
         if: ${{ matrix.distribution == 'rpm' && needs.setup.outputs.previous_4x_version != '' }}
         run: |
-          docker run --rm --privileged \
+          cid=$(docker run -d --rm \
+            --privileged \
+            --cgroupns=host \
+            -v /sys/fs/cgroup:/sys/fs/cgroup:rw \
             -v "${{ github.workspace }}/artifacts/dist:/artifacts/dist" \
             -v "${{ github.workspace }}/build-scripts/:/build-scripts/" \
-            redhat/ubi9-init:latest \
-            bash -c '
-              set -e
-              bash /build-scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_4x_version }}
-              installed_before=$(rpm -q wazuh-indexer)
-              echo "Installed before upgrade: $installed_before"
+            redhat/ubi9-init:latest /sbin/init)
+          trap 'docker stop "$cid" >/dev/null 2>&1 || true' EXIT
 
-              set +e
-              out=$(yum localinstall "/artifacts/dist/${{ steps.package.outputs.name }}" -y 2>&1)
-              rc=$?
-              set -e
-              echo "$out"
+          docker exec "$cid" bash -c '
+            set -e
+            bash /build-scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_4x_version }}
+            installed_before=$(rpm -q wazuh-indexer)
+            echo "Installed before upgrade: $installed_before"
 
-              if [ "$rc" -eq 0 ]; then
-                echo "ERROR: upgrade unexpectedly succeeded"; exit 1
-              fi
-              if ! echo "$out" | grep -qF "Direct upgrade from Wazuh Indexer 4.X to 5.X is not supported"; then
-                echo "ERROR: expected block banner not found in output"; exit 1
-              fi
+            set +e
+            out=$(yum localinstall "/artifacts/dist/${{ steps.package.outputs.name }}" -y 2>&1)
+            rc=$?
+            set -e
+            echo "$out"
 
-              installed_after=$(rpm -q wazuh-indexer)
-              if [ "$installed_before" != "$installed_after" ]; then
-                echo "ERROR: package state changed (before=$installed_before after=$installed_after)"; exit 1
-              fi
-              echo "OK: 5.x package correctly refused upgrade from $installed_after"
-            '
+            if [ "$rc" -eq 0 ]; then
+              echo "ERROR: upgrade unexpectedly succeeded"; exit 1
+            fi
+            if ! echo "$out" | grep -qF "Direct upgrade from Wazuh Indexer 4.X to 5.X is not supported"; then
+              echo "ERROR: expected block banner not found in output"; exit 1
+            fi
+
+            installed_after=$(rpm -q wazuh-indexer)
+            if [ "$installed_before" != "$installed_after" ]; then
+              echo "ERROR: package state changed (before=$installed_before after=$installed_after)"; exit 1
+            fi
+            echo "OK: 5.x package correctly refused upgrade from $installed_after"
+          '
 
       - name: Test DEB package installation
         if: ${{ matrix.distribution == 'deb' }}

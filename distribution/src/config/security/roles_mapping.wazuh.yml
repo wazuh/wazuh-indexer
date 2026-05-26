@@ -63,6 +63,7 @@ stateless-read:
   users:
     - "wazuh-admin"
     - "wazuh-readonly"
+    - "wazuh-dashboard"
   and_backend_roles: []
 
 stateful:
@@ -82,6 +83,7 @@ stateful-read:
   hosts: []
   users:
     - "wazuh-readonly"
+    - "wazuh-dashboard"
   and_backend_roles: []
 
 metrics:
@@ -102,6 +104,7 @@ active-responses:
   users:
     - "wazuh-server"
     - "wazuh-admin"
+    - "wazuh-dashboard"
   and_backend_roles: []
 
 # Plugin Setup

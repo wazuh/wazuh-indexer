@@ -28,6 +28,7 @@ else
         "opensearch-ml-plugin" # "opensearch-ml"
         "neural-search"        # "opensearch-neural-search"
         "opensearch-observability"
+        "workload-management"  # Required by "opensearch-security" (optional dependency)
         "opensearch-security"
         "opensearch-sql-plugin" # "opensearch-sql"
     )

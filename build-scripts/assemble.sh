@@ -242,9 +242,9 @@ function install_plugins() {
         OPENSEARCH_PATH_CONF=$PATH_CONF "${PATH_BIN}/opensearch-plugin" install --batch --verbose "file:${maven_repo_local}/org/opensearch/plugin/${plugin}/${UPSTREAM_VERSION}.0/${plugin}-${UPSTREAM_VERSION}.0.zip"
     done
 
-    echo "Installing locally-built plugins"
+    echo "Installing internal-built plugins"
     for plugin in "${internal_plugins[@]}"; do
-        local plugin_path="$HOME/.m2/repository/org/opensearch/plugin/${plugin}/${UPSTREAM_VERSION}.0/${plugin}-${UPSTREAM_VERSION}.0.zip"
+        local plugin_path="${REPO_PATH}/plugins/${plugin}/build/distributions/${plugin}-${UPSTREAM_VERSION}.zip"
         OPENSEARCH_PATH_CONF=$PATH_CONF "${PATH_BIN}/opensearch-plugin" install --batch --verbose "file:${plugin_path}"
     done
 

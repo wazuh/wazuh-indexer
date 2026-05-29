@@ -1,275 +1,190 @@
-# Wazuh monitoring and statistics index permissions
-manage_wazuh_index:
-  reserved: true
-  hidden: false
-  backend_roles: []
-  hosts: []
-  users:
-  - "kibanaserver"
-  and_backend_roles: []
 
-# Wazuh index roles
-settings:
+# ---------------------------------------------------------------------#
+# Wazuh Indexer Default Roles Mappings
+# ---------------------------------------------------------------------#
+
+dashboard_server:
   reserved: true
   hidden: false
-  backend_roles: []
-  hosts: []
   users:
-    - "wazuh-dashboard"
+    - "kibanaserver"
+
+wazuh_settings_read:
+  reserved: true
+  hidden: false
+  users:
     - "wazuh-admin"
     - "wazuh-readonly"
-  and_backend_roles: []
 
-consumers:
+wazuh_settings_write:
   reserved: true
   hidden: false
-  backend_roles: []
-  hosts: []
+  users:
+    - "wazuh-admin"
+
+wazuh_consumers_read:
+  reserved: true
+  hidden: false
   users:
     - "wazuh-server"
-    - "wazuh-dashboard"
     - "wazuh-admin"
     - "wazuh-content-manager"
     - "wazuh-readonly"
-  and_backend_roles: []
 
-content:
+wazuh_threatintel_read:
   reserved: true
   hidden: false
-  backend_roles: []
-  hosts: []
   users:
-    - "wazuh-dashboard"
+    - "wazuh-server"
     - "wazuh-admin"
     - "wazuh-content-manager"
     - "wazuh-readonly"
-  and_backend_roles: []
 
-stateless-write:
+wazuh_events_read:
   reserved: true
   hidden: false
-  backend_roles: []
-  hosts: []
-  users:
-    - "wazuh-server"
-    - "wazuh-admin"
-  and_backend_roles: []
-
-stateless-read:
-  reserved: true
-  hidden: false
-  backend_roles: []
-  hosts: []
   users:
     - "wazuh-admin"
     - "wazuh-readonly"
-    - "wazuh-dashboard"
-  and_backend_roles: []
 
-stateful:
+wazuh_events_write:
   reserved: true
   hidden: false
-  backend_roles: []
-  hosts: []
+  users:
+    - "wazuh-server"
+
+wazuh_states_read:
+  reserved: true
+  hidden: false
   users:
     - "wazuh-server"
     - "wazuh-admin"
-  and_backend_roles: []
-
-stateful-read:
-  reserved: true
-  hidden: false
-  backend_roles: []
-  hosts: []
-  users:
     - "wazuh-readonly"
-    - "wazuh-dashboard"
-  and_backend_roles: []
 
-metrics:
+wazuh_states_write:
   reserved: true
   hidden: false
-  backend_roles: []
-  hosts: []
   users:
-    - "wazuh-dashboard"
-    - "wazuh-admin"
-  and_backend_roles: []
+    - "wazuh-server"
 
-active-responses:
+wazuh_metrics_read:
   reserved: true
   hidden: false
-  backend_roles: []
-  hosts: []
   users:
     - "wazuh-server"
     - "wazuh-admin"
-    - "wazuh-dashboard"
-  and_backend_roles: []
+    - "wazuh-readonly"
 
-# Plugin Setup
-setup_settings_management:
+wazuh_metrics_write:
   reserved: true
   hidden: false
-  backend_roles: []
-  hosts: []
   users:
-    - "wazuh-dashboard"
+    - "wazuh-server"
+
+wazuh_active_responses_read:
+  reserved: true
+  hidden: false
+  users:
+    - "wazuh-server"
     - "wazuh-admin"
-  and_backend_roles: []
+    - "wazuh-readonly"
 
 # Plugin Content Manager
-cm_subscription_read:
+wazuh_cm_subscription_read:
   reserved: true
   hidden: false
-  backend_roles: []
-  hosts: []
   users:
-    - "wazuh-dashboard"
     - "wazuh-admin"
     - "wazuh-content-manager"
     - "wazuh-readonly"
-  and_backend_roles: []
 
-cm_subscription_write:
+wazuh_cm_subscription_write:
   reserved: true
   hidden: false
-  backend_roles: []
-  hosts: []
   users:
-    - "wazuh-dashboard"
+    - "wazuh-admin"
+
+wazuh_cm_update:
+  reserved: true
+  hidden: false
+  users:
     - "wazuh-admin"
     - "wazuh-content-manager"
-  and_backend_roles: []
 
-cm_update_management:
+wazuh_cm_kvdb_management:
   reserved: true
   hidden: false
-  backend_roles: []
-  hosts: []
   users:
-    - "wazuh-dashboard"
-    - "wazuh-admin"
-    - "wazuh-content-manager"
-  and_backend_roles: []
-
-cm_kvdb_management:
-  reserved: true
-  hidden: false
-  backend_roles: []
-  hosts: []
-  users:
-    - "wazuh-dashboard"
     - "wazuh-content-manager"
     - "wazuh-admin"
-  and_backend_roles: []
 
-cm_decoder_management:
+wazuh_cm_decoder_management:
   reserved: true
   hidden: false
-  backend_roles: []
-  hosts: []
   users:
-    - "wazuh-dashboard"
     - "wazuh-content-manager"
     - "wazuh-admin"
-  and_backend_roles: []
 
-cm_filter_management:
+wazuh_cm_filter_management:
   reserved: true
   hidden: false
-  backend_roles: []
-  hosts: []
   users:
-    - "wazuh-dashboard"
     - "wazuh-content-manager"
     - "wazuh-admin"
-  and_backend_roles: []
 
-cm_rule_management:
+wazuh_cm_rule_management:
   reserved: true
   hidden: false
-  backend_roles: []
-  hosts: []
   users:
-    - "wazuh-dashboard"
     - "wazuh-content-manager"
     - "wazuh-admin"
-  and_backend_roles: []
 
-cm_integration_management:
+wazuh_cm_integration_management:
   reserved: true
   hidden: false
-  backend_roles: []
-  hosts: []
   users:
-    - "wazuh-dashboard"
     - "wazuh-content-manager"
     - "wazuh-admin"
-  and_backend_roles: []
 
-cm_logtest:
+wazuh_cm_logtest:
   reserved: true
   hidden: false
-  backend_roles: []
-  hosts: []
   users:
-    - "wazuh-dashboard"
     - "wazuh-content-manager"
     - "wazuh-admin"
-  and_backend_roles: []
 
-cm_promote_management:
+wazuh_cm_promote_management:
   reserved: true
   hidden: false
-  backend_roles: []
-  hosts: []
   users:
-    - "wazuh-dashboard"
     - "wazuh-content-manager"
     - "wazuh-admin"
-  and_backend_roles: []
 
-cm_policy_management:
+wazuh_cm_policy_management:
   reserved: true
   hidden: false
-  backend_roles: []
-  hosts: []
   users:
-    - "wazuh-dashboard"
     - "wazuh-admin"
     - "wazuh-content-manager"
-  and_backend_roles: []
 
-cm_space_management:
+wazuh_cm_space_reset:
   reserved: true
   hidden: false
-  backend_roles: []
-  hosts: []
   users:
-    - "wazuh-dashboard"
     - "wazuh-admin"
     - "wazuh-content-manager"
-  and_backend_roles: []
 
-# Plugin SAP
-sap_detector_read:
+security_analytics_read_access:
   reserved: true
   hidden: false
-  backend_roles: []
-  hosts: []
   users:
-    - "wazuh-dashboard"
     - "wazuh-admin"
     - "wazuh-readonly"
-  and_backend_roles: []
+    - "wazuh-content-manager"
 
-sap_detector_write:
+security_analytics_full_access:
   reserved: true
   hidden: false
-  backend_roles: []
-  hosts: []
   users:
-    - "wazuh-dashboard"
     - "wazuh-admin"
-  and_backend_roles: []
+    - "wazuh-content-manager"

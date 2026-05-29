@@ -1,4 +1,7 @@
-# This file contains the internal users configuration for Wazuh.
+# ---------------------------------------------------------------------#
+# Wazuh Indexer Default Users
+# ---------------------------------------------------------------------#
+
 wazuh-server:
   # The hash is the hash of the password "wazuh-server"
   hash: "$2y$12$4pwjkynhYg09QJtJ5zxAcuqUSOV8JBziFDca6u9cV/H9oglVCGZEW"
@@ -6,20 +9,12 @@ wazuh-server:
   backend_roles: []
   description: "Wazuh Server user with write-only access to stateless (events) indexes, read/write/delete access to stateful (states) indexes, and read access to consumers, content, and active-responses indexes."
 
-wazuh-dashboard:
-  # The hash is the hash of the password "wazuh-dashboard"
-  hash: "$2y$12$Mn2XvokTfwo2NWL2AK83yOkio1qmJyZrAp0iEWqs3lz0L8ruhu9LK"
-  reserved: true
-  backend_roles: []
-  description: "Wazuh Dashboard user with read access to settings, consumers, and threat intelligence content, write access to metrics indexes, full management access to Setup and Content Manager plugin endpoints, and SAP detector management."
-
 wazuh-admin:
   # The hash is the hash of the password "wazuh-admin"
   hash: "$2y$12$of2izMMGqP3x4WWtijoq2.MtM1VgpoDc4RgP8AAQD/8tEbo1ftxru"
   reserved: true
-  backend_roles:
-  - "admin"
-  description: "Wazuh Administrator user with full access to all indexes and plugin endpoints."
+  backend_roles: []
+  description: "Wazuh Administrator user with full access to all Wazuh indexes and plugin endpoints."
 
 wazuh-content-manager:
   # The hash is the hash of the password "wazuh-content-manager"

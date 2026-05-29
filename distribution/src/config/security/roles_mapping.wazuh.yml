@@ -111,35 +111,35 @@ wazuh_cm_update:
     - "wazuh-admin"
     - "wazuh-content-manager"
 
-wazuh_cm_kvdb_management:
+wazuh_cm_kvdbs_write:
   reserved: true
   hidden: false
   users:
     - "wazuh-content-manager"
     - "wazuh-admin"
 
-wazuh_cm_decoder_management:
+wazuh_cm_decoders_write:
   reserved: true
   hidden: false
   users:
     - "wazuh-content-manager"
     - "wazuh-admin"
 
-wazuh_cm_filter_management:
+wazuh_cm_filters_write:
   reserved: true
   hidden: false
   users:
     - "wazuh-content-manager"
     - "wazuh-admin"
 
-wazuh_cm_rule_management:
+wazuh_cm_rules_write:
   reserved: true
   hidden: false
   users:
     - "wazuh-content-manager"
     - "wazuh-admin"
 
-wazuh_cm_integration_management:
+wazuh_cm_integrations_write:
   reserved: true
   hidden: false
   users:
@@ -153,14 +153,14 @@ wazuh_cm_logtest:
     - "wazuh-content-manager"
     - "wazuh-admin"
 
-wazuh_cm_promote_management:
+wazuh_cm_space_promote:
   reserved: true
   hidden: false
   users:
     - "wazuh-content-manager"
     - "wazuh-admin"
 
-wazuh_cm_policy_management:
+wazuh_cm_policy_write:
   reserved: true
   hidden: false
   users:

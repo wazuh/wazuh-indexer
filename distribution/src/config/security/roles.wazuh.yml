@@ -190,7 +190,7 @@ wazuh_cm_update:
   static: true
 
 # Allows users to manage key-value databases (kvdbs) in the Content Manager plugin.
-wazuh_cm_kvdb_management:
+wazuh_cm_kvdbs_write:
   reserved: true
   hidden: false
   cluster_permissions:
@@ -202,7 +202,7 @@ wazuh_cm_kvdb_management:
   static: true
 
 # Allows users to manage decoders in the Content Manager plugin.
-wazuh_cm_decoder_management:
+wazuh_cm_decoders_write:
   reserved: true
   hidden: false
   cluster_permissions:
@@ -214,7 +214,7 @@ wazuh_cm_decoder_management:
   static: true
 
 # Allows users to manage filters in the Content Manager plugin.
-wazuh_cm_filter_management:
+wazuh_cm_filters_write:
   reserved: true
   hidden: false
   cluster_permissions:
@@ -226,7 +226,7 @@ wazuh_cm_filter_management:
   static: true
 
 # Allows users to manage rules in the Content Manager plugin.
-wazuh_cm_rule_management:
+wazuh_cm_rules_write:
   reserved: true
   hidden: false
   cluster_permissions:
@@ -238,7 +238,7 @@ wazuh_cm_rule_management:
   static: true
 
 # Allows users to manage integrations in the Content Manager plugin.
-wazuh_cm_integration_management:
+wazuh_cm_integrations_write:
   reserved: true
   hidden: false
   cluster_permissions:
@@ -262,7 +262,7 @@ wazuh_cm_logtest:
   static: true
 
 # Allows users to preview and execute content promotions in the Content Manager plugin.
-wazuh_cm_promote_management:
+wazuh_cm_space_promote:
   reserved: true
   hidden: false
   cluster_permissions:
@@ -273,7 +273,7 @@ wazuh_cm_promote_management:
   static: true
 
 # Allows users to manage policies in the Content Manager plugin.
-wazuh_cm_policy_management:
+wazuh_cm_policy_write:
   reserved: true
   hidden: false
   cluster_permissions:

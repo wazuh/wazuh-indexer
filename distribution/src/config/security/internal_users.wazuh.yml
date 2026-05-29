@@ -16,12 +16,12 @@ wazuh-admin:
   backend_roles: []
   description: "Wazuh Administrator user with full access to all Wazuh indexes and plugin endpoints."
 
-wazuh-content-manager:
-  # The hash is the hash of the password "wazuh-content-manager"
-  hash: "$2y$12$If6SsiyYit3B./NRY5Ty..3RB1P1IyeaowGyc7gGAkbUZ14JNcfgS"
+wazuh-default:
+  # The hash is the hash of the password "wazuh-default"
+  hash: "$2y$12$H.yVfrW/ZbX79d9JqErS.Oc1yLiCpJf8NrgcXAcpy.dE6/NIHy8bK"
   reserved: true
   backend_roles: []
-  description: "Wazuh Content Manager user with read access to consumers and threat intelligence content, and full access to Content Manager plugin endpoints: subscriptions, updates, kvdbs, decoders, filters, rules, integrations, logtest, promotions, policies, and spaces."
+  description: "Wazuh user with read access to consumers and threat intelligence content, and full access to Content Manager plugin endpoints: subscriptions, updates, kvdbs, decoders, filters, rules, integrations, logtest, promotions, policies, and spaces."
 
 wazuh-readonly:
   # The hash is the hash of the password "wazuh-readonly"

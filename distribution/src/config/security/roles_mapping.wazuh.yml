@@ -28,7 +28,7 @@ wazuh_consumers_read:
   users:
     - "wazuh-server"
     - "wazuh-admin"
-    - "wazuh-content-manager"
+    - "wazuh-default"
     - "wazuh-readonly"
 
 wazuh_threatintel_read:
@@ -37,7 +37,7 @@ wazuh_threatintel_read:
   users:
     - "wazuh-server"
     - "wazuh-admin"
-    - "wazuh-content-manager"
+    - "wazuh-default"
     - "wazuh-readonly"
 
 wazuh_events_read:
@@ -95,7 +95,7 @@ wazuh_cm_subscription_read:
   hidden: false
   users:
     - "wazuh-admin"
-    - "wazuh-content-manager"
+    - "wazuh-default"
     - "wazuh-readonly"
 
 wazuh_cm_subscription_write:
@@ -109,70 +109,70 @@ wazuh_cm_update:
   hidden: false
   users:
     - "wazuh-admin"
-    - "wazuh-content-manager"
+    - "wazuh-default"
 
 wazuh_cm_kvdbs_write:
   reserved: true
   hidden: false
   users:
-    - "wazuh-content-manager"
     - "wazuh-admin"
+    - "wazuh-default"
 
 wazuh_cm_decoders_write:
   reserved: true
   hidden: false
   users:
-    - "wazuh-content-manager"
     - "wazuh-admin"
+    - "wazuh-default"
 
 wazuh_cm_filters_write:
   reserved: true
   hidden: false
   users:
-    - "wazuh-content-manager"
     - "wazuh-admin"
+    - "wazuh-default"
 
 wazuh_cm_rules_write:
   reserved: true
   hidden: false
   users:
-    - "wazuh-content-manager"
     - "wazuh-admin"
+    - "wazuh-default"
 
 wazuh_cm_integrations_write:
   reserved: true
   hidden: false
   users:
-    - "wazuh-content-manager"
     - "wazuh-admin"
+    - "wazuh-default"
 
 wazuh_cm_logtest:
   reserved: true
   hidden: false
   users:
-    - "wazuh-content-manager"
     - "wazuh-admin"
+    - "wazuh-default"
 
 wazuh_cm_space_promote:
   reserved: true
   hidden: false
   users:
-    - "wazuh-content-manager"
     - "wazuh-admin"
+    - "wazuh-default"
 
 wazuh_cm_policy_write:
   reserved: true
   hidden: false
   users:
     - "wazuh-admin"
-    - "wazuh-content-manager"
+    - "wazuh-default"
 
 wazuh_cm_space_reset:
   reserved: true
   hidden: false
   users:
     - "wazuh-admin"
-    - "wazuh-content-manager"
+    - "wazuh-default"
 
 security_analytics_read_access:
   reserved: true
@@ -180,11 +180,11 @@ security_analytics_read_access:
   users:
     - "wazuh-admin"
     - "wazuh-readonly"
-    - "wazuh-content-manager"
+    - "wazuh-default"
 
 security_analytics_full_access:
   reserved: true
   hidden: false
   users:
     - "wazuh-admin"
-    - "wazuh-content-manager"
+    - "wazuh-default"

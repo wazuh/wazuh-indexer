@@ -3,17 +3,17 @@
 # Wazuh Indexer Default Roles
 # ---------------------------------------------------------------------#
 
-# Read access to Wazuh indexes for the interal user of Wazuh Dashboard.
+# Read access to Wazuh indexes for the internal user of Wazuh Dashboard.
 dashboard_server:
   reserved: true
   hidden: false
   cluster_permissions:
     - "cluster:admin/opensearch/notifications/configs/get"
   index_permissions:
-  - index_patterns:
-    - "wazuh-*"
-    allowed_actions:
-    - "read"
+    - index_patterns:
+      - "wazuh-*"
+      allowed_actions:
+      - "read"
   tenant_permissions: []
   static: false
 
@@ -53,7 +53,7 @@ wazuh_consumers_read:
   tenant_permissions: []
   static: true
 
-# Allows users to read Wazuh content (decoders, rules, etc).
+# Allows users to read Wazuh threat intelligence content.
 wazuh_threatintel_read:
   reserved: true
   hidden: false

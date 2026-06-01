@@ -39,6 +39,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Locale;
+import java.util.regex.Pattern;
 
 /**
  * A stream whose output is sent to the configured logger, line by line.
@@ -52,6 +54,14 @@ class LoggingOutputStream extends OutputStream {
     // limit a single log message to 64k
     static final int MAX_BUFFER_LENGTH = DEFAULT_BUFFER_LENGTH * 64;
 
+    /**
+     * Pattern matching JUL SimpleFormatter header lines, e.g.:
+     * "May 25, 2026 1:25:13 PM org.opensearch.javaagent.bootstrap.AgentPolicy setPolicy"
+     */
+    private static final Pattern JUL_HEADER_PATTERN = Pattern.compile(
+        "^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\\s+\\d{1,2},\\s+\\d{4}\\s+\\d{1,2}:\\d{2}:\\d{2}\\s+(AM|PM)\\s+\\S+"
+    );
+
     class Buffer {
 
         /** The buffer of bytes sent to the stream */
@@ -63,6 +73,9 @@ class LoggingOutputStream extends OutputStream {
 
     // each thread gets its own buffer so messages don't get garbled
     ThreadLocal<Buffer> threadLocal = ThreadLocal.withInitial(Buffer::new);
+
+    // per-thread pending JUL header line awaiting level detection from the next line
+    private final ThreadLocal<String> pendingJulHeader = new ThreadLocal<>();
 
     private final Logger logger;
 
@@ -126,11 +139,62 @@ class LoggingOutputStream extends OutputStream {
 
     @Override
     public void close() {
+        // Flush any pending JUL header before closing
+        String header = pendingJulHeader.get();
+        if (header != null) {
+            logger.log(level, header);
+            pendingJulHeader.remove();
+        }
         threadLocal = null;
     }
 
     // pkg private for testing
     void log(String msg) {
-        logger.log(level, msg);
+        Level detectedLevel = detectJulLevel(msg);
+        if (detectedLevel != null) {
+            // This line starts with a JUL level prefix (e.g., "INFO: message")
+            String header = pendingJulHeader.get();
+            if (header != null) {
+                logger.log(detectedLevel, header);
+                pendingJulHeader.remove();
+            }
+            logger.log(detectedLevel, msg);
+        } else if (JUL_HEADER_PATTERN.matcher(msg).find()) {
+            // This line matches a JUL SimpleFormatter header; buffer it until we see the level line
+            String previousHeader = pendingJulHeader.get();
+            if (previousHeader != null) {
+                // Flush the previous unbounded header at default level
+                logger.log(level, previousHeader);
+            }
+            pendingJulHeader.set(msg);
+        } else {
+            // Regular stderr output
+            String header = pendingJulHeader.get();
+            if (header != null) {
+                logger.log(level, header);
+                pendingJulHeader.remove();
+            }
+            logger.log(level, msg);
+        }
+    }
+
+    /**
+     * Detects a JUL-style level prefix at the start of a message and returns the corresponding Log4j level.
+     * Returns null if no JUL level prefix is found.
+     */
+    static Level detectJulLevel(String msg) {
+        String upper = msg.toUpperCase(Locale.ROOT);
+        if (upper.startsWith("INFO:")) {
+            return Level.INFO;
+        } else if (upper.startsWith("WARNING:")) {
+            return Level.WARN;
+        } else if (upper.startsWith("SEVERE:")) {
+            return Level.ERROR;
+        } else if (upper.startsWith("CONFIG:")) {
+            return Level.DEBUG;
+        } else if (upper.startsWith("FINE:") || upper.startsWith("FINER:") || upper.startsWith("FINEST:")) {
+            return Level.TRACE;
+        }
+        return null;
     }
 }

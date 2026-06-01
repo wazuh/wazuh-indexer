@@ -153,6 +153,27 @@ exit 0
 %pre
 set -e
 
+# Check /tmp partition has at least 10 GB of total space.
+# The Content Manager plugin downloads CTI snapshots to /tmp 
+# which can exceed the default size
+MIN_TMP_SIZE_KB=$((10 * 1024 * 1024)) 
+tmp_size_kb=$(df --output=size /tmp 2>/dev/null | tail -1 | tr -d ' ')
+if [ -n "$tmp_size_kb" ] && [ "$tmp_size_kb" -lt "$MIN_TMP_SIZE_KB" ]; then
+    tmp_size_mb=$((tmp_size_kb / 1024))
+    cat >&2 <<EOF
+==============================================================
+ERROR: The /tmp partition is too small (${tmp_size_mb} MB).
+
+Wazuh Indexer requires at least 10 GB of space in /tmp for
+CTI snapshot downloads during content synchronization.
+
+Please resize the /tmp partition or mount a larger tmpfs
+before installing.
+==============================================================
+EOF
+    exit 1
+fi
+
 # Stop the services to upgrade the package
 if [ $1 = 2 ]; then
     echo "Running upgrade pre-script"

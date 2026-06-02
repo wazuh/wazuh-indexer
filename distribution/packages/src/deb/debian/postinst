@@ -23,6 +23,10 @@ pid_dir=/run/${name}
 defaults_file=/etc/default/${name}
 state_file=${config_dir}/.was_active
 
+# Create tmp directory for snapshot operations (avoids filling /tmp)
+tmp_dir=${data_dir}/tmp
+mkdir -p ${tmp_dir}
+
 # Set owner
 chown -R ${name}:${name} ${product_dir}
 chown -R ${name}:${name} ${config_dir}

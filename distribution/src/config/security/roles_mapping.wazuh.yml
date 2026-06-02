@@ -2,6 +2,8 @@
 # ---------------------------------------------------------------------#
 # Wazuh Indexer Default Roles Mappings
 # ---------------------------------------------------------------------#
+#
+# One composite role per user.
 
 dashboard_server:
   reserved: true
@@ -9,182 +11,26 @@ dashboard_server:
   users:
     - "kibanaserver"
 
-wazuh_settings_read:
+wazuh_admin:
   reserved: true
   hidden: false
   users:
     - "wazuh-admin"
+
+wazuh_demo:
+  reserved: true
+  hidden: false
+  users:
+    - "wazuh-demo"
+
+wazuh_readonly:
+  reserved: true
+  hidden: false
+  users:
     - "wazuh-readonly"
 
-wazuh_settings_write:
-  reserved: true
-  hidden: false
-  users:
-    - "wazuh-admin"
-
-wazuh_consumers_read:
+wazuh_server:
   reserved: true
   hidden: false
   users:
     - "wazuh-server"
-    - "wazuh-admin"
-    - "wazuh-demo"
-    - "wazuh-readonly"
-
-wazuh_threatintel_read:
-  reserved: true
-  hidden: false
-  users:
-    - "wazuh-server"
-    - "wazuh-admin"
-    - "wazuh-demo"
-    - "wazuh-readonly"
-
-wazuh_events_read:
-  reserved: true
-  hidden: false
-  users:
-    - "wazuh-admin"
-    - "wazuh-readonly"
-
-wazuh_events_write:
-  reserved: true
-  hidden: false
-  users:
-    - "wazuh-server"
-
-wazuh_states_read:
-  reserved: true
-  hidden: false
-  users:
-    - "wazuh-server"
-    - "wazuh-admin"
-    - "wazuh-readonly"
-
-wazuh_states_write:
-  reserved: true
-  hidden: false
-  users:
-    - "wazuh-server"
-
-wazuh_metrics_read:
-  reserved: true
-  hidden: false
-  users:
-    - "wazuh-server"
-    - "wazuh-admin"
-    - "wazuh-readonly"
-
-wazuh_metrics_write:
-  reserved: true
-  hidden: false
-  users:
-    - "wazuh-server"
-
-wazuh_active_responses_read:
-  reserved: true
-  hidden: false
-  users:
-    - "wazuh-server"
-    - "wazuh-admin"
-    - "wazuh-readonly"
-
-# Plugin Content Manager
-wazuh_cm_subscription_read:
-  reserved: true
-  hidden: false
-  users:
-    - "wazuh-admin"
-    - "wazuh-demo"
-    - "wazuh-readonly"
-
-wazuh_cm_subscription_write:
-  reserved: true
-  hidden: false
-  users:
-    - "wazuh-admin"
-
-wazuh_cm_update:
-  reserved: true
-  hidden: false
-  users:
-    - "wazuh-admin"
-    - "wazuh-demo"
-
-wazuh_cm_kvdbs_write:
-  reserved: true
-  hidden: false
-  users:
-    - "wazuh-admin"
-    - "wazuh-demo"
-
-wazuh_cm_decoders_write:
-  reserved: true
-  hidden: false
-  users:
-    - "wazuh-admin"
-    - "wazuh-demo"
-
-wazuh_cm_filters_write:
-  reserved: true
-  hidden: false
-  users:
-    - "wazuh-admin"
-    - "wazuh-demo"
-
-wazuh_cm_rules_write:
-  reserved: true
-  hidden: false
-  users:
-    - "wazuh-admin"
-    - "wazuh-demo"
-
-wazuh_cm_integrations_write:
-  reserved: true
-  hidden: false
-  users:
-    - "wazuh-admin"
-    - "wazuh-demo"
-
-wazuh_cm_logtest:
-  reserved: true
-  hidden: false
-  users:
-    - "wazuh-admin"
-    - "wazuh-demo"
-
-wazuh_cm_space_promote:
-  reserved: true
-  hidden: false
-  users:
-    - "wazuh-admin"
-    - "wazuh-demo"
-
-wazuh_cm_policy_write:
-  reserved: true
-  hidden: false
-  users:
-    - "wazuh-admin"
-    - "wazuh-demo"
-
-wazuh_cm_space_reset:
-  reserved: true
-  hidden: false
-  users:
-    - "wazuh-admin"
-    - "wazuh-demo"
-
-security_analytics_read_access:
-  reserved: true
-  hidden: false
-  users:
-    - "wazuh-admin"
-    - "wazuh-readonly"
-    - "wazuh-demo"
-
-security_analytics_full_access:
-  reserved: true
-  hidden: false
-  users:
-    - "wazuh-admin"
-    - "wazuh-demo"

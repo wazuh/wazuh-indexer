@@ -23,4 +23,13 @@ plugins.security.restapi.roles_enabled:
 - "security_rest_api_access"
 plugins.security.system_indices.enabled: true
 plugins.security.system_indices.indices: [".opendistro-alerting-config", ".opendistro-alerting-alert*", ".opendistro-anomaly-results*", ".opendistro-anomaly-detector*", ".opendistro-anomaly-checkpoints", ".opendistro-anomaly-detection-state", ".opendistro-reports-*", ".opendistro-notifications-*", ".opendistro-notebooks", ".opensearch-observability", ".opendistro-asynchronous-search-response*", ".replication-metadata-store", ".wazuh-internal-state"]
+
+# Disable compliance features (field masking is not used by Wazuh Indexer).
+# This suppresses irrelevant WARN messages about compliance salt at startup.
+plugins.security.compliance.salt: wz8hndx3rSlt16ch
+plugins.security.compliance.history.internal_config_enabled: false
+plugins.security.compliance.history.external_config_enabled: false
+plugins.security.compliance.history.read.watched_fields: {}
+plugins.security.compliance.history.write.watched_indices: []
+
 cluster.default_number_of_replicas: 0

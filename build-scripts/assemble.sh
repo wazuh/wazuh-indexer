@@ -194,6 +194,14 @@ function add_configuration_files() {
 
     cp "$PATH_CONF/opensearch.prod.yml" "$PATH_CONF/opensearch.yml"
 
+    # Generate a random master key for the SQL plugin datasource encryption.
+    # This suppresses the WARN log at startup. The external datasource feature
+    # is not used by Wazuh, but the key must be present to avoid the warning.
+    local master_key
+    master_key=$(openssl rand -base64 24)
+    echo "" >>"$PATH_CONF/opensearch.yml"
+    echo "plugins.query.datasources.encryption.masterkey: \"${master_key}\"" >>"$PATH_CONF/opensearch.yml"
+
     rm -r "$PATH_CONF/security"
     rm "$PATH_CONF/opensearch.prod.yml"
 

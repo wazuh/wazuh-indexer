@@ -157,6 +157,18 @@ set -e
 if [ $1 = 2 ]; then
     echo "Running upgrade pre-script"
 
+    # Hard block: refuse 4.X -> 5.X upgrades
+    if grep -Pq '4\.\d+\.\d+' /usr/share/wazuh-indexer/VERSION*; then
+        cat >&2 <<'EOF'
+==============================================================
+ERROR: Direct upgrade from Wazuh Indexer 4.X to 5.X is not supported.
+
+A clean installation of Wazuh Indexer 5.x is required.
+==============================================================
+EOF
+        exit 1
+    fi
+
     # Stop wazuh-indexer service and mark if service is running
     if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1 && systemctl is-active %{name}.service > /dev/null 2>&1; then
         echo "Stop existing %{name}.service"
@@ -183,6 +195,10 @@ exit 0
 
 %post
 set -e
+
+# Create tmp directory for snapshot operations (avoids filling /tmp)
+mkdir -p %{data_dir}/tmp
+chown %{name}:%{name} %{data_dir}/tmp
 
 # Fix ownership and permissions
 chown -R %{name}:%{name} %{config_dir}
@@ -330,7 +346,7 @@ exit 0
 - More info: https://documentation.wazuh.com/current/release-notes/release-5-0-0.html
 * Thu Jul 09 2026 support <info@wazuh.com> - 4.14.7
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-14-7.html
-* Thu May 14 2026 support <info@wazuh.com> - 4.14.6
+* Tue Jun 09 2026 support <info@wazuh.com> - 4.14.6
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-14-6.html
 * Thu Apr 23 2026 support <info@wazuh.com> - 4.14.5
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-14-5.html

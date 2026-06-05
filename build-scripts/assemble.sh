@@ -30,7 +30,6 @@ else
         "neural-search"        # "opensearch-neural-search"
         "opensearch-observability"
         "opensearch-security"
-        "opensearch-sql-plugin" # "opensearch-sql"
     )
     # Plugins built from this repository, installed from the local Maven repo
     # (published by ./gradlew publishToMavenLocal in build.sh)
@@ -193,14 +192,6 @@ function add_configuration_files() {
     sed -i 's/#multitenancy_enabled: true/  multitenancy_enabled: false/' "$PATH_CONF/opensearch-security/config.yml"
 
     cp "$PATH_CONF/opensearch.prod.yml" "$PATH_CONF/opensearch.yml"
-
-    # Generate a random master key for the SQL plugin datasource encryption.
-    # This suppresses the WARN log at startup. The external datasource feature
-    # is not used by Wazuh, but the key must be present to avoid the warning.
-    local master_key
-    master_key=$(openssl rand -base64 24)
-    echo "" >>"$PATH_CONF/opensearch.yml"
-    echo "plugins.query.datasources.encryption.masterkey: \"${master_key}\"" >>"$PATH_CONF/opensearch.yml"
 
     rm -r "$PATH_CONF/security"
     rm "$PATH_CONF/opensearch.prod.yml"

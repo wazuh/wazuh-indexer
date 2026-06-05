@@ -368,6 +368,11 @@ rm -fr %{buildroot}
 %attr(640, %{USER}, %{GROUP}) %{INSTALL_DIR}/plugins/opensearch-alerting/*.jar
 %attr(640, %{USER}, %{GROUP}) %{INSTALL_DIR}/plugins/opensearch-alerting/*.policy
 %attr(640, %{USER}, %{GROUP}) %{INSTALL_DIR}/plugins/opensearch-alerting/*.properties
+%dir %attr(750, %{USER}, %{GROUP}) %{INSTALL_DIR}/plugins/opensearch-sql/
+%attr(640, %{USER}, %{GROUP}) %{INSTALL_DIR}/plugins/opensearch-sql/*.jar
+%attr(640, %{USER}, %{GROUP}) %{INSTALL_DIR}/plugins/opensearch-sql/*.txt
+%attr(640, %{USER}, %{GROUP}) %{INSTALL_DIR}/plugins/opensearch-sql/*.policy
+%attr(640, %{USER}, %{GROUP}) %{INSTALL_DIR}/plugins/opensearch-sql/*.properties
 %dir %attr(750, %{USER}, %{GROUP}) %{INSTALL_DIR}/plugins/opensearch-geospatial/
 %attr(640, %{USER}, %{GROUP}) %{INSTALL_DIR}/plugins/opensearch-geospatial/*.txt
 %attr(640, %{USER}, %{GROUP}) %{INSTALL_DIR}/plugins/opensearch-geospatial/*.jar

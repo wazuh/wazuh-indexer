@@ -31,7 +31,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Resolve dependency mismatch between Alerting and Notifications plugins [(#1379)](https://github.com/wazuh/wazuh-indexer/pull/1379)
 - Fix `/etc/default/wazuh-indexer` ownership and permissions in deb [(#1533)](https://github.com/wazuh/wazuh-indexer/pull/1533)
 - Fix Java warnings by updating JVM options for native access [(#1574)](https://github.com/wazuh/wazuh-indexer/pull/1574)
-- Fix SQL plugin master key warning by removing the SQL plugin entirely from the distribution. [(#1611)](https://github.com/wazuh/wazuh-indexer/pull/1611)
 
 ### Dependencies
 -
@@ -71,6 +70,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Remove extra files [(#866)](https://github.com/wazuh/wazuh-indexer/pull/866) [(#1074)](https://github.com/wazuh/wazuh-indexer/pull/1074)
 - Remove references to legacy VERSION file [(#908)](https://github.com/wazuh/wazuh-indexer/pull/908)
 - Remove opensearch-performance-analyzer [(#892)](https://github.com/wazuh/wazuh-indexer/pull/892)
+- Remove SQL plugin from the distribution [(#1611)](https://github.com/wazuh/wazuh-indexer/pull/1611)
 
 ### Fixed
 - Fix package upload to bucket subfolder 5.x [(#846)](https://github.com/wazuh/wazuh-indexer/pull/846)

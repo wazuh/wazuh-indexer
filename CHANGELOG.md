@@ -31,6 +31,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Resolve dependency mismatch between Alerting and Notifications plugins [(#1379)](https://github.com/wazuh/wazuh-indexer/pull/1379)
 - Fix `/etc/default/wazuh-indexer` ownership and permissions in deb [(#1533)](https://github.com/wazuh/wazuh-indexer/pull/1533)
 - Fix Java warnings by updating JVM options for native access [(#1574)](https://github.com/wazuh/wazuh-indexer/pull/1574)
+- Fix SLF4J startup warning in reindex module by adding Log4j2 provider [(#1617)](https://github.com/wazuh/wazuh-indexer/pull/1617)
 
 ### Dependencies
 -
@@ -72,6 +73,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Remove opensearch-performance-analyzer [(#892)](https://github.com/wazuh/wazuh-indexer/pull/892)
 - Remove SQL plugin from the distribution [(#1611)](https://github.com/wazuh/wazuh-indexer/pull/1611)
 - Remove opensearch-ml plugin [(#1615)](https://github.com/wazuh/wazuh-indexer/pull/1615)
+- Remove opensearch-knn and opensearch-neural-search plugins [(#1620)](https://github.com/wazuh/wazuh-indexer/pull/1620)
 
 ### Fixed
 - Fix package upload to bucket subfolder 5.x [(#846)](https://github.com/wazuh/wazuh-indexer/pull/846)

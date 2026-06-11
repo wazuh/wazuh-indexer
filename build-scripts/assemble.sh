@@ -10,7 +10,7 @@ source "${LIB_DIR}/retry.sh"
 ### or the full set of OpenSearch plugins
 
 TEST=${TEST:-false}
-
+#test
 if ($TEST); then
     plugins=(
         "opensearch-security"

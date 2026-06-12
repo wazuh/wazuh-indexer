@@ -29,4 +29,4 @@ This is when workflows will be triggered for the first time.
 Every PR is expected to include a changelog entry. The `5_codequality_changelog.yml` workflow enforces this.
 
 - If the linked issue belongs to a **private repository**, do not add a changelog entry. Apply the **`skip-changelog`** label to the PR to bypass the check.
-- If the PR genuinely does not require a changelog update, apply the **`skip-changelog`** label as well.
+- If the PR is linked to a public issue, but it genuinely does not require a changelog update, apply the **`skip-changelog`** label as well.

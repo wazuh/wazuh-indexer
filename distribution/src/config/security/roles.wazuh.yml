@@ -39,6 +39,7 @@ wazuh_admin:
     - 'cluster_monitor'
     # Content Manager
     - 'plugin:wazuh/settings/write'
+    - 'plugin:content_manager/policy/update'
     - 'plugin:content_manager/integration/*'
     - 'plugin:content_manager/decoder/*'
     - 'plugin:content_manager/rule/*'
@@ -133,7 +134,6 @@ wazuh_demo:
     - 'plugin:content_manager/kvdb/*'
     - 'plugin:content_manager/filter/*'
     - 'plugin:content_manager/subscription/get'
-    - 'plugin:content_manager/update'
     - 'plugin:content_manager/logtest'
     - 'plugin:content_manager/logtest/*'
     - 'plugin:content_manager/promote/*'

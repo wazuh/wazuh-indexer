@@ -307,11 +307,11 @@ wazuh_readonly:
   static: true
 
 # ---------------------------------------------------------------------#
-# wazuh-server: service account. Reads CTI consumer state, active
+# wazuh-manager: service account. Reads CTI consumer state, active
 # responses and threat intelligence content; ingests events, metrics
 # and states; manages state documents (index + delete).
 # ---------------------------------------------------------------------#
-wazuh_server:
+wazuh_manager:
   reserved: true
   hidden: false
   cluster_permissions:

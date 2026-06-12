@@ -3,12 +3,12 @@
 # ---------------------------------------------------------------------#
 # WARNING: Change these default passwords immediately after installation.
 
-wazuh-server:
-  # The hash is the hash of the password "wazuh-server"
-  hash: "$2y$12$4pwjkynhYg09QJtJ5zxAcuqUSOV8JBziFDca6u9cV/H9oglVCGZEW"
+wazuh-manager:
+  # The hash is the hash of the password "wazuh-manager"
+  hash: "$2y$12$wiNDDyE7q9ZoS.QSdCx8KuQb3gMAoZMuHf2WzNeCIrciE1JMN6kv2"
   reserved: true
   backend_roles: []
-  description: "Wazuh Server user with write-only access to stateless (events) indexes, read/write/delete access to stateful (states) indexes, and read access to consumers, threat intelligence content, and active-responses indexes."
+  description: "Wazuh Manager user with write-only access to stateless (events) indexes, read/write/delete access to stateful (states) indexes, and read access to consumers, threat intelligence content, and active-responses indexes."
 
 wazuh-admin:
   # The hash is the hash of the password "wazuh-admin"

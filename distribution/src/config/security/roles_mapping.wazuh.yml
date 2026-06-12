@@ -29,8 +29,8 @@ wazuh_readonly:
   users:
     - "wazuh-readonly"
 
-wazuh_server:
+wazuh_manager:
   reserved: true
   hidden: false
   users:
-    - "wazuh-server"
+    - "wazuh-manager"

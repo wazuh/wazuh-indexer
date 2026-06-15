@@ -97,4 +97,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 There are no prior versions. This is the initial release of Wazuh Indexer.
 
-[v5.0.0]: https://github.com/wazuh/wazuh-indexer/compare/f79ea09c71af66902e1613e2a6de215631a34997...v5.0.0
+[Unreleased 5.0.0]: https://github.com/wazuh/wazuh-indexer/compare/f79ea09c71af66902e1613e2a6de215631a34997...main

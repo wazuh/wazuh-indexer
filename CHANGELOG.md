@@ -94,8 +94,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Update CodeQL configuration [(#1220)](https://github.com/wazuh/wazuh-indexer/pull/1220)
 - Potential fix for code scanning alerts: Workflow does not contain permissions [(#1234)](https://github.com/wazuh/wazuh-indexer/pull/1234)
 
-## Prior versions
-
-This is the initial release of Wazuh Indexer 5.0, so there are no prior 5.x versions. Previous releases can be found under the 4.x branch.
+## Prior version
+- []()
 
 [Unreleased 5.0.0]: https://github.com/wazuh/wazuh-indexer/compare/f79ea09c71af66902e1613e2a6de215631a34997...main

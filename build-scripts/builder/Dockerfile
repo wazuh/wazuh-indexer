@@ -34,8 +34,18 @@ RUN apt-get update && \
     python3-debian \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Install OpenJDK 21
-RUN wget -O- https://download.java.net/openjdk/jdk21/ri/openjdk-21+35_linux-x64_bin.tar.gz | tar xz -C /opt/
+# Install OpenJDK 21 (architecture-aware).
+# TARGETARCH is set automatically by Docker Buildx (amd64/arm64); default to
+# the host arch when building with the classic builder.
+ARG TARGETARCH
+RUN set -eux; \
+    arch="${TARGETARCH:-$(dpkg --print-architecture)}"; \
+    case "$arch" in \
+      amd64) jdk_arch="x64" ;; \
+      arm64) jdk_arch="aarch64" ;; \
+      *) echo "Unsupported architecture: $arch" >&2; exit 1 ;; \
+    esac; \
+    wget -O- "https://download.java.net/openjdk/jdk21/ri/openjdk-21+35_linux-${jdk_arch}_bin.tar.gz" | tar xz -C /opt/
 
 # Set JAVA_HOME environment variable
 ENV JAVA_HOME=/opt/jdk-21
@@ -50,7 +60,7 @@ RUN wget https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.
 
 # Set GRADLE_HOME environment variable
 ENV GRADLE_HOME=/opt/gradle/gradle-${GRADLE_VERSION}
-ENV PATH=$GRADLE_HOME/bin/$PATH
+ENV PATH=$GRADLE_HOME/bin:$PATH
 
 # Clean up APT when done
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*

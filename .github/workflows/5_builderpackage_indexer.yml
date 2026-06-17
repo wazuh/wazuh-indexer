@@ -5,11 +5,6 @@ permissions:
   contents: read
   packages: read
 
-env:
-  M2_CACHE_KEY_COMMON: .m2-${{ github.ref_name }}-${{ github.run_id }}-common-utils
-  M2_CACHE_KEY_ALERTING: .m2-${{ github.ref_name }}-${{ github.run_id }}-alerting
-  M2_CACHE_KEY_FULL: .m2-${{ github.ref_name }}-${{ github.run_id }}-with-security-analytics
-
 # This workflow runs when any of the following occur:
 # - Run manually
 # - Invoked from another workflow
@@ -403,111 +398,6 @@ jobs:
           echo "Latest 4.x release detected: $PREVIOUS_4X"
           echo "previous_4x_version=$PREVIOUS_4X" >> $GITHUB_OUTPUT
 
-  publish-common-utils:
-    timeout-minutes: 10
-    runs-on:
-      - codebuild-github-actions-codebuild-runner-${{ github.run_id }}-${{ github.run_attempt }}
-    needs: [compatibility-check, branches, get-versions-wazuh-indexer-common-utils]
-    steps:
-      - name: Publish common-utils to Maven Local
-        uses: wazuh/wazuh-indexer-common-utils/.github/actions/5_local_maven_publisher@main
-        with:
-          version: ${{ needs.get-versions-wazuh-indexer-common-utils.outputs.version }}
-          revision: ${{ inputs.revision }}
-          reference: ${{ needs.branches.outputs.common_utils_plugin_ref }}
-      - name: Cache Maven Local
-        uses: actions/cache/save@v5
-        with:
-          path: ~/.m2/repository
-          key: ${{ env.M2_CACHE_KEY_COMMON }}
-
-  publish-alerting:
-    timeout-minutes: 10
-    runs-on:
-      - codebuild-github-actions-codebuild-runner-${{ github.run_id }}-${{ github.run_attempt }}
-    needs: [ compatibility-check, branches, get-versions-wazuh-indexer-alerting, publish-common-utils ]
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          repository: wazuh/wazuh-indexer-alerting
-          ref: ${{ needs.branches.outputs.alerting_plugin_ref }}
-      - uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: 25
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
-      - name: Restore Maven Local cache
-        uses: actions/cache/restore@v5
-        with:
-          path: ~/.m2/repository
-          key: ${{ env.M2_CACHE_KEY_COMMON }}
-      - name: Publish alerting to Maven Local
-        run: ./gradlew publishToMavenLocal -x check -Dversion=${{ needs.get-versions-wazuh-indexer-alerting.outputs.version }} -Drevision=${{ inputs.revision }}
-      - name: Cache Maven Local
-        uses: actions/cache/save@v5
-        with:
-          path: ~/.m2/repository
-          key: ${{ env.M2_CACHE_KEY_ALERTING }}
-
-  publish-security-analytics:
-    runs-on:
-      - codebuild-github-actions-codebuild-runner-${{ github.run_id }}-${{ github.run_attempt }}
-    timeout-minutes: 60
-    needs:
-      [
-        compatibility-check,
-        branches,
-        get-versions-wazuh-indexer-security-analytics,
-        publish-common-utils,
-        publish-alerting
-      ]
-    outputs:
-      hash: ${{ steps.save-hash.outputs.hash }}
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          repository: wazuh/wazuh-indexer-security-analytics
-          ref: ${{ needs.branches.outputs.security_analytics_plugin_ref }}
-
-      - uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: 25
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
-
-      - name: Restore Maven Local cache
-        uses: actions/cache/restore@v5
-        with:
-          path: ~/.m2/repository
-          key: ${{ env.M2_CACHE_KEY_ALERTING }}
-
-      - name: Publish security-analytics(+commons) to Maven Local
-        uses: wazuh/wazuh-indexer-security-analytics/.github/actions/5_local_maven_publisher@main
-        with:
-          version: ${{ needs.get-versions-wazuh-indexer-security-analytics.outputs.version }}
-          revision: ${{ inputs.revision }}
-          reference: ${{ needs.branches.outputs.security_analytics_plugin_ref }}
-
-      - name: Save commit hash
-        id: save-hash
-        run: echo "hash=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: wazuh-indexer-security-analytics-${{ needs.get-versions-wazuh-indexer-security-analytics.outputs.version }}.${{ inputs.revision }}.zip
-          path: build/distributions/wazuh-indexer-security-analytics-${{ needs.get-versions-wazuh-indexer-security-analytics.outputs.version }}.${{ inputs.revision }}.zip
-          if-no-files-found: error
-
-      - name: Cache Maven Local
-        uses: actions/cache/save@v5
-        with:
-          path: ~/.m2/repository
-          key: ${{ env.M2_CACHE_KEY_FULL }}
-
   build-wazuh-engine:
     needs: [compatibility-check, branches]
     uses: wazuh/wazuh/.github/workflows/5_builderpackage_engine-standalone.yml@main
@@ -516,243 +406,11 @@ jobs:
       build-type: "release"
       arch: ${{ inputs.architecture }}
 
-  build-wazuh-plugins:
-    needs: [compatibility-check, branches, publish-security-analytics]
-    if: ${{ needs.branches.outputs.wazuh_plugins_ref != '' }}
-    timeout-minutes: 60
-    strategy:
-      fail-fast: false
-      matrix:
-        plugins: ["setup", "content-manager"]
-    runs-on:
-      - codebuild-github-actions-codebuild-runner-${{ github.run_id }}-${{ github.run_attempt }}
-    env:
-      plugin_name: wazuh-indexer-${{ matrix.plugins }}
-    outputs:
-      hash: ${{ steps.save-hash.outputs.hash }}
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          repository: wazuh/wazuh-indexer-plugins
-          ref: ${{ needs.branches.outputs.wazuh_plugins_ref }}
-
-      - uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: 25
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
-
-      - name: Restore Maven Local Cache
-        uses: actions/cache/restore@v5
-        with:
-          path: ~/.m2/repository
-          key: ${{ env.M2_CACHE_KEY_FULL }}
-          restore-keys: |
-            ${{ env.M2_CACHE_KEY_COMMON }}
-
-      - name: Get version
-        id: version
-        run: echo "version=$(jq .version -r VERSION.json)" >> "$GITHUB_OUTPUT"
-
-      - name: Build with Gradle
-        working-directory: ./plugins/${{ matrix.plugins }}
-        run: ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }}
-
-      - run: ls -lR build/distributions
-        working-directory: ./plugins/${{ matrix.plugins }}
-
-      - name: Save commit hash
-        id: save-hash
-        run: echo "hash=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: ${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
-          path: "./plugins/${{ matrix.plugins }}/build/distributions/${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip"
-          if-no-files-found: error
-
-  build-reporting-plugin:
-    needs: [compatibility-check, branches, publish-common-utils]
-    if: ${{ needs.branches.outputs.reporting_plugin_ref != '' }}
-    timeout-minutes: 60
-    runs-on:
-      - codebuild-github-actions-codebuild-runner-${{ github.run_id }}-${{ github.run_attempt }}
-    outputs:
-      hash: ${{ steps.save-hash.outputs.hash }}
-    env:
-      plugin_name: wazuh-indexer-reports-scheduler
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          repository: wazuh/wazuh-indexer-reporting
-          ref: ${{ needs.branches.outputs.reporting_plugin_ref }}
-
-      - uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: 25
-
-      - name: Setup Gradle # Used for caching
-        uses: gradle/actions/setup-gradle@v6
-
-      - name: Restore Maven Local cache
-        uses: actions/cache/restore@v5
-        with:
-          path: ~/.m2/repository
-          key: ${{ env.M2_CACHE_KEY_FULL }}
-          restore-keys: |
-            ${{ env.M2_CACHE_KEY_COMMON }}
-
-      - name: Get version
-        id: version
-        run: echo "version=$(jq .version -r VERSION.json)" >> "$GITHUB_OUTPUT"
-
-      - name: Build with Gradle
-        run: ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }}
-
-      - run: ls -lR build/distributions
-
-      - name: Save commit hash
-        id: save-hash
-        run: echo "hash=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: ${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
-          path: build/distributions/${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
-          if-no-files-found: error
-
-  build-notifications-plugin:
-    needs: [compatibility-check, branches, publish-common-utils]
-    if: ${{ needs.branches.outputs.notifications_plugin_ref != '' }}
-    timeout-minutes: 60
-    runs-on:
-      - codebuild-github-actions-codebuild-runner-${{ github.run_id }}-${{ github.run_attempt }}
-    outputs:
-      hash: ${{ steps.save-hash.outputs.hash }}
-    env:
-      plugin_name: wazuh-indexer-notifications
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          repository: wazuh/wazuh-indexer-notifications
-          ref: ${{ needs.branches.outputs.notifications_plugin_ref }}
-
-      - uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: 25
-
-      - name: Setup Gradle # Used for caching
-        uses: gradle/actions/setup-gradle@v6
-
-      - name: Restore Maven Local Cache
-        uses: actions/cache/restore@v5
-        with:
-          path: ~/.m2/repository
-          key: ${{ env.M2_CACHE_KEY_FULL }}
-          restore-keys: |
-            ${{ env.M2_CACHE_KEY_COMMON }}
-
-      - name: Get version
-        id: version
-        run: echo "version=$(jq .version -r VERSION.json)" >> "$GITHUB_OUTPUT"
-
-      - name: Build with Gradle
-        working-directory: ./notifications
-        run: ./gradlew build -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }} -Pcrypto.standard=FIPS-140-3
-
-      - run: ls -lR notifications/notifications/build/distributions notifications/core/build/distributions
-
-      - name: Save commit hash
-        id: save-hash
-        run: echo "hash=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
-
-      - name: Upload notifications artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: ${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
-          path: notifications/notifications/build/distributions/${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
-          if-no-files-found: error
-
-      - name: Upload notifications-core artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: ${{ env.plugin_name }}-core-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
-          path: notifications/core/build/distributions/${{ env.plugin_name }}-core-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
-          if-no-files-found: error
-
-  build-alerting-plugin:
-    needs: [ compatibility-check, branches, publish-common-utils ]
-    if: ${{ needs.branches.outputs.alerting_plugin_ref != '' }}
-    timeout-minutes: 60
-    runs-on:
-      - codebuild-github-actions-codebuild-runner-${{ github.run_id }}-${{ github.run_attempt }}
-    outputs:
-      hash: ${{ steps.save-hash.outputs.hash }}
-    env:
-      plugin_name: wazuh-indexer-alerting
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          repository: wazuh/wazuh-indexer-alerting
-          ref: ${{ needs.branches.outputs.alerting_plugin_ref }}
-
-      - uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: 25
-
-      - name: Setup Gradle # Used for caching
-        uses: gradle/actions/setup-gradle@v6
-
-      - name: Restore Maven Local Cache
-        uses: actions/cache/restore@v5
-        with:
-          path: ~/.m2/repository
-          key: ${{ env.M2_CACHE_KEY_FULL }}
-          restore-keys: |
-            ${{ env.M2_CACHE_KEY_COMMON }}
-
-      - name: Get version
-        id: version
-        run: echo "version=$(jq .version -r VERSION.json)" >> "$GITHUB_OUTPUT"
-
-      - name: Build with Gradle
-        working-directory: .
-        run: ./gradlew build -x integTest -Dversion=${{ steps.version.outputs.version }} -Drevision=${{ inputs.revision }}
-
-      - run: ls -lR alerting/build/distributions
-
-      - name: Save commit hash
-        id: save-hash
-        run: echo "hash=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
-
-      - name: Upload alerting artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: ${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
-          path: alerting/build/distributions/${{ env.plugin_name }}-${{ steps.version.outputs.version }}.${{ inputs.revision }}.zip
-          if-no-files-found: error
-
   build:
-    needs:
-      [
-        setup,
-        build-wazuh-plugins,
-        build-reporting-plugin,
-        publish-security-analytics,
-        build-notifications-plugin,
-        build-alerting-plugin,
-        build-wazuh-engine,
-      ]
-    timeout-minutes: 60
+    needs: [setup, branches, build-wazuh-engine]
+    timeout-minutes: 90
     runs-on:
-      - codebuild-github-actions-codebuild-runner-arm64-${{ github.run_id }}-${{ github.run_attempt }}
+      - codebuild-github-actions-codebuild-runner${{ matrix.architecture == 'arm64' && '-arm64' || '' }}-${{ github.run_id }}-${{ github.run_attempt }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
@@ -761,97 +419,65 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      # Download plugins
-      - name: Download plugins
-        uses: actions/download-artifact@v8
-        with:
-          pattern: wazuh-indexer-*.zip
-          path: ./artifacts/plugins
-          merge-multiple: true
-
-      # Download Wazuh Engine
+      # Download the Wazuh Engine tarball produced by the build-wazuh-engine job.
+      # The Docker builder ingests it to assemble the final package.
       - name: Download Wazuh Engine
         uses: actions/download-artifact@v8
         with:
           pattern: wazuh-engine-*-linux-${{ matrix.architecture == 'x64' && 'amd64' || 'arm64' }}
           merge-multiple: true
-          path: ./artifacts/engine
+          path: ${{ github.workspace }}/artifacts/engine
 
       - name: Display structure of downloaded files
-        run: ls -lR ./artifacts/
+        run: ls -lR ${{ github.workspace }}/artifacts/engine
 
-      - uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: 25
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
-
-      - name: Provision
+      # Build the complete wazuh-indexer package inside the non-root Docker
+      # builder. It clones and builds every plugin repo at the resolved
+      # branches, ingests the engine tarball, then runs baptizer/build/assemble.
+      - name: Build package with the Docker builder
+        env:
+          # Consumed by build-scripts/builder/compose.yml for snapshot download.
+          CTI_API_URL: ${{ vars.CTI_API_URL }}
         run: |
-          sudo bash build-scripts/provision.sh
+          ENGINE_TARBALL=$(find "${{ github.workspace }}/artifacts/engine" \
+            -name 'wazuh-engine-*-linux-*.tar.gz' | head -n1)
+          if [ -z "$ENGINE_TARBALL" ]; then
+            echo "::error::Wazuh Engine tarball not found in artifacts/engine"
+            ls -lR "${{ github.workspace }}/artifacts/engine" || true
+            exit 1
+          fi
+          echo "Using engine tarball: $ENGINE_TARBALL"
 
-      - name: Run `baptizer.sh` (min)
-        run: |
-          name=$(bash build-scripts/baptizer.sh -m \
-            -a ${{ matrix.architecture }} \
-            -d ${{ matrix.distribution }}  \
-            -r ${{ inputs.revision }} \
-            -l ${{ needs.build-wazuh-plugins.outputs.hash }} \
-            -e ${{ needs.build-reporting-plugin.outputs.hash }} \
-            -s ${{ needs.publish-security-analytics.outputs.hash }} \
-            -n ${{ needs.build-notifications-plugin.outputs.hash }} \
-            -t ${{ needs.build-alerting-plugin.outputs.hash }} \
-            ${{ inputs.is_stage && '-x' || '' }} \
-          )
-          echo "name=$name" >> $GITHUB_OUTPUT
-        id: min_package
+          cd build-scripts/builder
+          bash ./builder.sh \
+            -p "${{ needs.branches.outputs.wazuh_plugins_ref }}" \
+            -r "${{ needs.branches.outputs.reporting_plugin_ref }}" \
+            -s "${{ needs.branches.outputs.security_analytics_plugin_ref }}" \
+            -n "${{ needs.branches.outputs.notifications_plugin_ref }}" \
+            -t "${{ needs.branches.outputs.alerting_plugin_ref }}" \
+            -c "${{ needs.branches.outputs.common_utils_plugin_ref }}" \
+            -e "$ENGINE_TARBALL" \
+            -R "${{ inputs.revision }}" \
+            -S "${{ inputs.is_stage }}" \
+            -d "${{ matrix.distribution }}" \
+            -a "${{ matrix.architecture }}"
 
-      - name: Run `baptizer.sh`
-        run: |
-          name=$(bash build-scripts/baptizer.sh \
-            -a ${{ matrix.architecture }} \
-            -d ${{ matrix.distribution }}  \
-            -r ${{ inputs.revision }} \
-            -l ${{ needs.build-wazuh-plugins.outputs.hash }} \
-            -e ${{ needs.build-reporting-plugin.outputs.hash }} \
-            -s ${{ needs.publish-security-analytics.outputs.hash }} \
-            -n ${{ needs.build-notifications-plugin.outputs.hash }} \
-            -t ${{ needs.build-alerting-plugin.outputs.hash }} \
-            ${{ inputs.is_stage && '-x' || '' }} \
-          )
-          echo "name=$name" >> $GITHUB_OUTPUT
+      # The builder bind-mounts the repo root, so the assembled package lands
+      # in ./artifacts/dist on the runner. Resolve its name for the test and
+      # upload steps below.
+      - name: Resolve built package name
         id: package
-
-      - name: Run `build.sh`
         run: |
-          bash build-scripts/build.sh \
-            -a ${{ matrix.architecture }} \
-            -d ${{ matrix.distribution }} \
-            -n ${{ steps.min_package.outputs.name }}
-
-      # Download snapshots so assemble.sh can install them
-      # alongside the content-manager plugin.
-      - name: Download snapshots
-        if: ${{ vars.CTI_API_URL != '' }}
-        run: |
-          bash build-scripts/download_snapshots.sh \
-            --env "${{ vars.CTI_API_URL }}" \
-            --output-dir ${{ github.workspace }}/artifacts/snapshots
-
-      - name: Run `assemble.sh`
-        run: |
-          bash build-scripts/assemble.sh \
-            -a ${{ matrix.architecture }} \
-            -d ${{ matrix.distribution }} \
-            -r ${{ inputs.revision }} \
-            -l ${{ needs.build-wazuh-plugins.outputs.hash }} \
-            -e ${{ needs.build-reporting-plugin.outputs.hash }} \
-            -s ${{ needs.publish-security-analytics.outputs.hash }} \
-            -n ${{ needs.build-notifications-plugin.outputs.hash }} \
-            -t ${{ needs.build-alerting-plugin.outputs.hash }} \
-            -o ${{ github.workspace }}/artifacts
+          pkg=$(find "${{ github.workspace }}/artifacts/dist" -maxdepth 1 -type f \
+            -name 'wazuh-indexer*' ! -name '*.sha512' | head -n1)
+          if [ -z "$pkg" ]; then
+            echo "::error::No package found in artifacts/dist"
+            ls -lR "${{ github.workspace }}/artifacts" || true
+            exit 1
+          fi
+          name=$(basename "$pkg")
+          echo "Built package: $name"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
 
       - name: Test RPM package installation
         if: ${{ matrix.distribution == 'rpm' }}

@@ -53,7 +53,9 @@ clone_repositories() {
         repo_url="https://github.com/wazuh/$repo_name"
 
         if [ -d "$repo_dir/.git" ]; then
-            git -C "$repo_dir" checkout "$branch"
+            # Named volumes persist across runs; fetch so a moved branch ref is honored.
+            git -C "$repo_dir" fetch --depth 1 origin "$branch"
+            git -C "$repo_dir" checkout FETCH_HEAD
         else
             git clone --branch "$branch" "$repo_url" --depth 1 "$repo_dir"
         fi
@@ -67,7 +69,7 @@ download_snapshots() {
     echo "----------------------------------------"
 
     bash ~/build-scripts/download_snapshots.sh \
-        --env "https://api.pre.cloud.wazuh.com/api/v1" \
+        --env "${CTI_API_URL:-https://api.pre.cloud.wazuh.com/api/v1}" \
         --output-dir ~/artifacts/snapshots
 }
 

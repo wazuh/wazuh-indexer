@@ -185,11 +185,19 @@ setup_engine_tarball() {
     echo "----------------------------------------"
     echo "Setting up Wazuh Engine tarball"
     echo "----------------------------------------"
-    local tarball_name
+    local tarball_name dest
     tarball_name=$(basename "$ENGINE_TARBALL")
+    dest=~/artifacts/engine/"$tarball_name"
     mkdir -p ~/artifacts/engine
-    cp /tmp/engine-tarball.tar.gz ~/artifacts/engine/"$tarball_name"
-    echo "Engine tarball copied to artifacts/engine/$tarball_name"
+    # ENGINE_TARBALL may already live inside the bind-mounted workspace
+    # (artifacts/engine/), which is also exposed as /tmp/engine-tarball.tar.gz.
+    # Skip the copy when both paths resolve to the same inode.
+    if [ /tmp/engine-tarball.tar.gz -ef "$dest" ]; then
+        echo "Engine tarball already in place at artifacts/engine/$tarball_name"
+    else
+        cp /tmp/engine-tarball.tar.gz "$dest"
+        echo "Engine tarball copied to artifacts/engine/$tarball_name"
+    fi
 }
 
 # Function for packaging process

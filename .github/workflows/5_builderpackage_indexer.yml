@@ -431,6 +431,14 @@ jobs:
       - name: Display structure of downloaded files
         run: ls -lR ${{ github.workspace }}/artifacts/engine
 
+      # The Docker builder runs as UID 1000 but the workspace is owned by the
+      # runner user. Pre-create every artifact subdirectory the container will
+      # write into and make them world-writable so UID 1000 can create files there.
+      - name: Prepare artifact directories for container user
+        run: |
+          mkdir -p artifacts/snapshots artifacts/plugins artifacts/dist
+          chmod -R 777 artifacts
+
       # Build the complete wazuh-indexer package inside the non-root Docker
       # builder. It clones and builds every plugin repo at the resolved
       # branches, ingests the engine tarball, then runs baptizer/build/assemble.

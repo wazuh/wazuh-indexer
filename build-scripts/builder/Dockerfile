@@ -91,6 +91,8 @@ RUN mkdir -p /repositories/wazuh-indexer-plugins && \
     chown wazuh-indexer:wazuh-indexer /repositories/wazuh-indexer-notifications && \
     chown wazuh-indexer:wazuh-indexer /repositories/wazuh-indexer-alerting
 
+RUN git config --system --add safe.directory '*'
+
 # Copy your build scripts into the container as root
 COPY build-scripts/builder/entrypoint.sh /
 

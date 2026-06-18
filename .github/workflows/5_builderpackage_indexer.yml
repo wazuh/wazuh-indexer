@@ -120,7 +120,7 @@ jobs:
   branches:
     timeout-minutes: 5
     runs-on:
-      - codebuild-github-actions-codebuild-runner-${{ github.run_id }}-${{ github.run_attempt }}
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
     outputs:
       wazuh_plugins_ref: ${{ steps.branches.outputs.wazuh_indexer_plugins_branch }}
       reporting_plugin_ref: ${{ steps.branches.outputs.wazuh_indexer_reporting_branch }}
@@ -140,7 +140,7 @@ jobs:
   get-versions-wazuh-indexer:
     timeout-minutes: 5
     runs-on:
-      - codebuild-github-actions-codebuild-runner-${{ github.run_id }}-${{ github.run_attempt }}
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
     outputs:
       version: ${{ steps.version.outputs.version }}
       opensearch_version: ${{ steps.version.outputs.opensearch_version }}
@@ -164,7 +164,7 @@ jobs:
     needs: [branches]
     timeout-minutes: 5
     runs-on:
-      - codebuild-github-actions-codebuild-runner-${{ github.run_id }}-${{ github.run_attempt }}
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
     outputs:
       version: ${{ steps.plugins_version.outputs.version }}
       opensearch_version: ${{ steps.plugins_version.outputs.opensearch_version }}
@@ -190,7 +190,7 @@ jobs:
     needs: [branches]
     timeout-minutes: 5
     runs-on:
-      - codebuild-github-actions-codebuild-runner-${{ github.run_id }}-${{ github.run_attempt }}
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
     outputs:
       version: ${{ steps.reporting_version.outputs.version }}
       opensearch_version: ${{ steps.reporting_version.outputs.opensearch_version }}
@@ -216,7 +216,7 @@ jobs:
     needs: [branches]
     timeout-minutes: 5
     runs-on:
-      - codebuild-github-actions-codebuild-runner-${{ github.run_id }}-${{ github.run_attempt }}
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
     outputs:
       version: ${{ steps.security_analytics_version.outputs.version }}
       opensearch_version: ${{ steps.security_analytics_version.outputs.opensearch_version }}
@@ -242,7 +242,7 @@ jobs:
     needs: [branches]
     timeout-minutes: 5
     runs-on:
-      - codebuild-github-actions-codebuild-runner-${{ github.run_id }}-${{ github.run_attempt }}
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
     outputs:
       version: ${{ steps.notifications_version.outputs.version }}
       opensearch_version: ${{ steps.notifications_version.outputs.opensearch_version }}
@@ -268,7 +268,7 @@ jobs:
   get-versions-wazuh-indexer-common-utils:
     needs: [branches]
     runs-on:
-      - codebuild-github-actions-codebuild-runner-${{ github.run_id }}-${{ github.run_attempt }}
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
     outputs:
       version: ${{ steps.common_utils_version.outputs.version }}
       opensearch_version: ${{ steps.common_utils_version.outputs.opensearch_version }}
@@ -293,7 +293,7 @@ jobs:
   get-versions-wazuh-indexer-alerting:
     needs: [ branches ]
     runs-on:
-      - codebuild-github-actions-codebuild-runner-${{ github.run_id }}-${{ github.run_attempt }}
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
     outputs:
       version: ${{ steps.alerting_version.outputs.version }}
       opensearch_version: ${{ steps.alerting_version.outputs.opensearch_version }}
@@ -318,7 +318,7 @@ jobs:
   compatibility-check:
     timeout-minutes: 5
     runs-on:
-      - codebuild-github-actions-codebuild-runner-${{ github.run_id }}-${{ github.run_attempt }}
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
     needs:
       [
         get-versions-wazuh-indexer,
@@ -354,7 +354,7 @@ jobs:
     name: Set up variables
     timeout-minutes: 5
     runs-on:
-      - codebuild-github-actions-codebuild-runner-${{ github.run_id }}-${{ github.run_attempt }}
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix }}
       previous_version: ${{ steps.previous_release.outputs.previous_version }}
@@ -400,7 +400,7 @@ jobs:
 
   build-wazuh-engine:
     needs: [compatibility-check, branches]
-    uses: wazuh/wazuh/.github/workflows/5_builderpackage_engine-standalone.yml@test-codebuild-runners
+    uses: wazuh/wazuh/.github/workflows/5_builderpackage_engine-standalone.yml@main
     with:
       wazuh-branch: ${{ needs.branches.outputs.wazuh_ref }}
       build-type: "release"
@@ -410,7 +410,7 @@ jobs:
     needs: [setup, branches, build-wazuh-engine]
     timeout-minutes: 90
     runs-on:
-      - codebuild-github-actions-codebuild-runner${{ matrix.architecture == 'arm64' && '-arm64' || '' }}-${{ github.run_id }}-${{ github.run_attempt }}
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}

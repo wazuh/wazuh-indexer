@@ -1,5 +1,5 @@
-# Use the official Ubuntu Noble image as the base image
-FROM ubuntu:jammy
+# Use the Ubuntu jammy image from AWS ECR Public (no pull-rate limits on CodeBuild).
+FROM public.ecr.aws/ubuntu/ubuntu:jammy
 
 USER root
 

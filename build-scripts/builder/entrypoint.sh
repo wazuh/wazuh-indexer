@@ -157,7 +157,7 @@ copy_builds() {
     local version="$1"
     local revision="$2"
     local v="${version}.${revision}"
-    local m2="${HOME}/.m2/repository/com/wazuh"
+    local m2="/var/m2/com/wazuh"
     mkdir -p ~/artifacts/plugins
 
     # All plugins are published to Maven local — iterate and copy

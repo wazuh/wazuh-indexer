@@ -51,7 +51,9 @@ RUN set -eux; \
 ENV JAVA_HOME=/opt/jdk-21
 ENV PATH=$JAVA_HOME/bin:$PATH
 ENV GRADLE_VERSION=8.14
-ENV GRADLE_OPTS="-Xmx2048m -XX:ReservedCodeCacheSize=440m"
+ENV GRADLE_OPTS="-Xmx2048m -XX:ReservedCodeCacheSize=440m -Dmaven.repo.local=/var/m2"
+# Keep Gradle's wrapper cache and daemon files out of the bind-mounted home dir.
+ENV GRADLE_USER_HOME=/var/gradle
 
 # Download gradle
 RUN wget https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip -P /tmp \
@@ -68,6 +70,12 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 # Create a non-root user
 RUN addgroup --gid 1000 wazuh-indexer && \
     adduser --ingroup wazuh-indexer --uid 1000 wazuh-indexer
+
+# Gradle wrapper/daemon cache and Maven local repo — must not live inside the
+# bind-mounted workspace (/home/wazuh-indexer) because that is owned by the
+# runner user; redirect them here so UID 1000 always has write access.
+RUN mkdir -p /var/gradle /var/m2 && \
+    chown wazuh-indexer:wazuh-indexer /var/gradle /var/m2
 
 # Create repositories path
 RUN mkdir -p /repositories/wazuh-indexer-plugins && \

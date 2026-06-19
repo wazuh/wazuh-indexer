@@ -17,7 +17,9 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         systemd \
         systemd-sysv \
-        dbus && \
+        dbus \
+        curl \
+        ca-certificates && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
     # Drop units that are pointless (and slow/noisy) inside a container.

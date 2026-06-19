@@ -410,7 +410,7 @@ jobs:
     needs: [setup, branches, build-wazuh-engine]
     timeout-minutes: 90
     runs-on:
-      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
+      - codebuild-github-actions-codebuild-runner-indexer-${{ matrix.architecture == 'arm64' && 'arm' || 'amd' }}-${{ github.run_id }}-${{ github.run_attempt }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
@@ -427,9 +427,6 @@ jobs:
           pattern: wazuh-engine-*-linux-${{ matrix.architecture == 'x64' && 'amd64' || 'arm64' }}
           merge-multiple: true
           path: ${{ github.workspace }}/artifacts/engine
-
-      - name: Display structure of downloaded files
-        run: ls -lR ${{ github.workspace }}/artifacts/engine
 
       # The Docker builder runs as UID 1000 and bind-mounts the workspace into
       # /home/wazuh-indexer, but the self-hosted runner checks the workspace out
@@ -582,12 +579,8 @@ jobs:
             echo "OK: 5.x package correctly refused upgrade from $installed_after"
           '
 
-      # The runner is itself a container without systemd as PID 1, so the
-      # wazuh-indexer maintainer scripts (which call systemctl) cannot run on
-      # the host. Like the RPM tests, the DEB tests run inside a privileged,
-      # systemd-enabled Ubuntu init container (the Debian-family equivalent of
-      # redhat/ubi9-init). A shared helper boots the container, waits for
-      # systemd, runs the test body via `docker exec`, and tears it down.
+      # DEB maintainer scripts call systemctl, so the test body runs inside a
+      # systemd init container via the shared helper (see the script header).
       - name: Test DEB package installation
         if: ${{ matrix.distribution == 'deb' }}
         run: |
@@ -604,8 +597,6 @@ jobs:
           bash build-scripts/run_in_systemd_container.sh "${{ github.workspace }}" '
             set -e
             export DEBIAN_FRONTEND=noninteractive
-            apt-get update
-            apt-get install -y --no-install-recommends curl ca-certificates
             bash /build-scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }}
             systemctl stop wazuh-indexer
             dpkg -i --force-confnew "/artifacts/dist/${{ steps.package.outputs.name }}"
@@ -617,8 +608,6 @@ jobs:
           bash build-scripts/run_in_systemd_container.sh "${{ github.workspace }}" '
             set -e
             export DEBIAN_FRONTEND=noninteractive
-            apt-get update
-            apt-get install -y --no-install-recommends curl ca-certificates
             bash /build-scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }}
             dpkg -i --force-confnew "/artifacts/dist/${{ steps.package.outputs.name }}"
           '
@@ -629,9 +618,6 @@ jobs:
           bash build-scripts/run_in_systemd_container.sh "${{ github.workspace }}" '
             set -e
             export DEBIAN_FRONTEND=noninteractive
-            apt-get update
-            apt-get install -y --no-install-recommends curl ca-certificates
-
             bash /build-scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_4x_version }}
             installed_before=$(dpkg-query -W -f="\${Version}" wazuh-indexer)
             echo "Installed before upgrade: wazuh-indexer=$installed_before"

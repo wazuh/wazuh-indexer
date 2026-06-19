@@ -52,7 +52,6 @@ ENV JAVA_HOME=/opt/jdk-21
 ENV PATH=$JAVA_HOME/bin:$PATH
 ENV GRADLE_VERSION=8.14
 ENV GRADLE_OPTS="-Xmx2048m -XX:ReservedCodeCacheSize=440m -Dmaven.repo.local=/var/m2"
-# Keep Gradle's wrapper cache and daemon files out of the bind-mounted home dir.
 ENV GRADLE_USER_HOME=/var/gradle
 
 # Download gradle

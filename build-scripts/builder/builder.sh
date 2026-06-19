@@ -156,7 +156,6 @@ function main() {
     # --abort-on-container-exit + --exit-code-from make `up` return the
     # builder service's exit code, so a failed build fails the CI job.
     $compose_cmd up --build --abort-on-container-exit --exit-code-from wazuh-indexer-builder
-    #$compose_cmd down -v
 }
 
 main "$@"

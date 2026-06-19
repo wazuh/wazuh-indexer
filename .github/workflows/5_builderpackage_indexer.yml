@@ -447,15 +447,20 @@ jobs:
           chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
           docker compose version
 
-      # The ARM runner image currently ships Docker without the daemon running;
-      # start it so the builder and package tests can use it. No-op when it's
-      # already up (e.g. the amd runner). TODO: remove once baked into the runner.
+      # The ARM runner is a container whose overlayfs root can't nest overlay
+      # mounts, so Docker/BuildKit must use the vfs storage driver; the ARM image
+      # also doesn't start the daemon. No-op when a daemon is already running
+      # (e.g. the amd runner). TODO: remove once baked into the runner.
       - name: Ensure Docker daemon
         run: |
           if docker info >/dev/null 2>&1; then
             echo "Docker daemon already running."; exit 0
           fi
-          echo "Starting Docker daemon..."
+          echo "Starting Docker daemon with the vfs storage driver..."
+          # vfs + the classic image store avoid overlay mounts, which fail
+          # (overlay-on-overlay) inside the containerized runner.
+          mkdir -p /etc/docker
+          echo '{"storage-driver":"vfs","features":{"containerd-snapshotter":false}}' > /etc/docker/daemon.json
           if command -v systemctl >/dev/null 2>&1 && systemctl start docker 2>/dev/null; then :; \
           elif command -v service >/dev/null 2>&1 && service docker start 2>/dev/null; then :; \
           else dockerd >/tmp/dockerd.log 2>&1 & fi

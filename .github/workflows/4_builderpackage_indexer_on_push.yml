@@ -14,5 +14,5 @@ jobs:
   call-build-workflow:
     permissions:
       actions: read
-    uses: ./.github/workflows/build.yml
+    uses: ./.github/workflows/4_builderpackage_indexer.yml
     secrets: inherit

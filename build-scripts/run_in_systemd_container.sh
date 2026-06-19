@@ -29,9 +29,21 @@ if [ -z "$WORKSPACE" ] || [ -z "$SCRIPT_BODY" ]; then
     exit 1
 fi
 
-# Systemd-enabled Ubuntu image. Override with SYSTEMD_IMAGE to pin a digest or
-# pull from an internal mirror (e.g. to avoid Docker Hub rate limits).
-SYSTEMD_IMAGE="${SYSTEMD_IMAGE:-jrei/systemd-ubuntu:latest}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Systemd-enabled Ubuntu image. By default it is built locally from AWS ECR
+# Public (no Docker Hub pull-rate limits on CI), so the first call builds it and
+# the rest hit the layer cache. Override SYSTEMD_IMAGE to use a prebuilt image
+# (e.g. one pushed to an internal registry) and skip the build.
+SYSTEMD_IMAGE="${SYSTEMD_IMAGE:-wazuh-indexer-systemd-test:jammy}"
+
+if ! docker image inspect "$SYSTEMD_IMAGE" >/dev/null 2>&1; then
+    echo "Building systemd test image ${SYSTEMD_IMAGE}..."
+    # The Dockerfile has no COPY/ADD, so an empty build context keeps it fast.
+    docker build -t "$SYSTEMD_IMAGE" \
+        -f "${SCRIPT_DIR}/builder/systemd-test.Dockerfile" \
+        "${SCRIPT_DIR}/builder"
+fi
 
 cid=$(docker run -d --rm \
     --privileged \

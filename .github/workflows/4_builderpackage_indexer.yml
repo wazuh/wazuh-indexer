@@ -148,6 +148,10 @@ jobs:
 
       - name: Run `build.sh`
         run: |
+          id -u builder &>/dev/null || useradd -m builder
+          cp -a "$HOME/.m2" /home/builder/.m2 2>/dev/null || true
+          chown -R builder:builder "$GITHUB_WORKSPACE" /home/builder
+          runuser -u builder -- env "JAVA_HOME=$JAVA_HOME" "PATH=$PATH" \
           bash packaging_scripts/build.sh \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }} \

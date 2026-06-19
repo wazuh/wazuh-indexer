@@ -88,7 +88,8 @@ on:
 jobs:
   matrix:
     name: Set up matrix
-    runs-on: ubuntu-24.04
+    runs-on:
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
     outputs:
       matrix: ${{ steps.setup.outputs.matrix }}
     steps:
@@ -103,7 +104,8 @@ jobs:
 
   build:
     needs: [matrix]
-    runs-on: ubuntu-24.04
+    runs-on:
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.matrix.outputs.matrix) }}

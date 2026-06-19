@@ -478,14 +478,29 @@ jobs:
       - name: Resolve built package name
         id: package
         run: |
-          pkg=$(find "${{ github.workspace }}/artifacts/dist" -maxdepth 1 -type f \
-            -name 'wazuh-indexer*' ! -name '*.sha512' | head -n1)
-          if [ -z "$pkg" ]; then
-            echo "::error::No package found in artifacts/dist"
+          # build.sh leaves the OpenSearch "min" package (wazuh-indexer-min-*)
+          # in artifacts/dist alongside the assembled final package
+          # (wazuh-indexer-*). They are NOT interchangeable: only the assembled
+          # package carries the wazuh maintainer scripts (e.g. the %pre / preinst
+          # 4.x->5.x upgrade block). Exclude the min package explicitly and fail
+          # if more than one candidate remains, so we never test or ship the
+          # bare min package by accident.
+          mapfile -t pkgs < <(find "${{ github.workspace }}/artifacts/dist" -maxdepth 1 -type f \
+            -name 'wazuh-indexer*' \
+            ! -name '*.sha512' \
+            ! -name 'wazuh-indexer-min-*' \
+            ! -name 'wazuh-indexer-min_*' | sort)
+          if [ "${#pkgs[@]}" -eq 0 ]; then
+            echo "::error::No assembled wazuh-indexer package found in artifacts/dist"
             ls -lR "${{ github.workspace }}/artifacts" || true
             exit 1
           fi
-          name=$(basename "$pkg")
+          if [ "${#pkgs[@]}" -gt 1 ]; then
+            echo "::error::Multiple candidate packages found in artifacts/dist:"
+            printf '  %s\n' "${pkgs[@]}"
+            exit 1
+          fi
+          name=$(basename "${pkgs[0]}")
           echo "Built package: $name"
           echo "name=$name" >> "$GITHUB_OUTPUT"
 
@@ -567,69 +582,79 @@ jobs:
             echo "OK: 5.x package correctly refused upgrade from $installed_after"
           '
 
+      # The runner is itself a container without systemd as PID 1, so the
+      # wazuh-indexer maintainer scripts (which call systemctl) cannot run on
+      # the host. Like the RPM tests, the DEB tests run inside a privileged,
+      # systemd-enabled Ubuntu init container (the Debian-family equivalent of
+      # redhat/ubi9-init). A shared helper boots the container, waits for
+      # systemd, runs the test body via `docker exec`, and tears it down.
       - name: Test DEB package installation
         if: ${{ matrix.distribution == 'deb' }}
         run: |
-          sudo dpkg -i "artifacts/dist/${{ steps.package.outputs.name }}"
-          sudo apt-get remove --purge wazuh-indexer -y
+          bash build-scripts/run_in_systemd_container.sh "${{ github.workspace }}" '
+            set -e
+            export DEBIAN_FRONTEND=noninteractive
+            dpkg -i "/artifacts/dist/${{ steps.package.outputs.name }}"
+            apt-get remove --purge wazuh-indexer -y
+          '
 
       - name: Test DEB package update stopping the indexer
         if: ${{ matrix.distribution == 'deb' && needs.setup.outputs.previous_version >= '5.0' }}
         run: |
-          sudo bash build-scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }}
-          sudo systemctl stop wazuh-indexer
-          sudo DEBIAN_FRONTEND=noninteractive dpkg -i --force-confnew "artifacts/dist/${{ steps.package.outputs.name }}"
-
-          sudo apt-get remove --purge wazuh-indexer -y
+          bash build-scripts/run_in_systemd_container.sh "${{ github.workspace }}" '
+            set -e
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get update
+            apt-get install -y --no-install-recommends curl ca-certificates
+            bash /build-scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }}
+            systemctl stop wazuh-indexer
+            dpkg -i --force-confnew "/artifacts/dist/${{ steps.package.outputs.name }}"
+          '
 
       - name: Test DEB package update without stopping the indexer
         if: ${{ matrix.distribution == 'deb' && needs.setup.outputs.previous_version >= '5.0' }}
         run: |
-
-          sudo bash build-scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }}
-          sudo DEBIAN_FRONTEND=noninteractive dpkg -i --force-confnew "artifacts/dist/${{ steps.package.outputs.name }}"
+          bash build-scripts/run_in_systemd_container.sh "${{ github.workspace }}" '
+            set -e
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get update
+            apt-get install -y --no-install-recommends curl ca-certificates
+            bash /build-scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }}
+            dpkg -i --force-confnew "/artifacts/dist/${{ steps.package.outputs.name }}"
+          '
 
       - name: Test DEB package refuses upgrade from 4.x
         if: ${{ matrix.distribution == 'deb' && needs.setup.outputs.previous_4x_version != '' }}
         run: |
-          set -e
-          sudo bash build-scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_4x_version }}
-          installed_before=$(dpkg-query -W -f='${Version}' wazuh-indexer)
-          echo "Installed before upgrade: wazuh-indexer=$installed_before"
+          bash build-scripts/run_in_systemd_container.sh "${{ github.workspace }}" '
+            set -e
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get update
+            apt-get install -y --no-install-recommends curl ca-certificates
 
-          set +e
-          out=$(sudo DEBIAN_FRONTEND=noninteractive dpkg -i --force-confnew \
-            "artifacts/dist/${{ steps.package.outputs.name }}" 2>&1)
-          rc=$?
-          set -e
-          echo "$out"
+            bash /build-scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_4x_version }}
+            installed_before=$(dpkg-query -W -f="\${Version}" wazuh-indexer)
+            echo "Installed before upgrade: wazuh-indexer=$installed_before"
 
-          if [ "$rc" -eq 0 ]; then
-            echo "ERROR: upgrade unexpectedly succeeded"; exit 1
-          fi
-          if ! echo "$out" | grep -qF "Direct upgrade from Wazuh Indexer 4.X to 5.X is not supported"; then
-            echo "ERROR: expected block banner not found in output"; exit 1
-          fi
+            set +e
+            out=$(dpkg -i --force-confnew "/artifacts/dist/${{ steps.package.outputs.name }}" 2>&1)
+            rc=$?
+            set -e
+            echo "$out"
 
-          installed_after=$(dpkg-query -W -f='${Version}' wazuh-indexer)
-          if [ "$installed_before" != "$installed_after" ]; then
-            echo "ERROR: package state changed (before=$installed_before after=$installed_after)"; exit 1
-          fi
-          echo "OK: 5.x package correctly refused upgrade from wazuh-indexer=$installed_after"
+            if [ "$rc" -eq 0 ]; then
+              echo "ERROR: upgrade unexpectedly succeeded"; exit 1
+            fi
+            if ! echo "$out" | grep -qF "Direct upgrade from Wazuh Indexer 4.X to 5.X is not supported"; then
+              echo "ERROR: expected block banner not found in output"; exit 1
+            fi
 
-      - name: Clean up DEB test environment
-        if: ${{ always() && matrix.distribution == 'deb' }}
-        run: |
-          if systemctl list-unit-files | grep -q '^wazuh-indexer\.service'; then
-            sudo systemctl stop wazuh-indexer || true
-            sudo systemctl disable wazuh-indexer || true
-          fi
-
-          sudo DEBIAN_FRONTEND=noninteractive apt-get remove --purge wazuh-indexer -y || true
-          sudo DEBIAN_FRONTEND=noninteractive apt-get autoremove -y || true
-          sudo rm -f /etc/apt/sources.list.d/wazuh.list
-          sudo rm -f /usr/share/keyrings/wazuh.gpg
-          sudo apt-get update || true
+            installed_after=$(dpkg-query -W -f="\${Version}" wazuh-indexer)
+            if [ "$installed_before" != "$installed_after" ]; then
+              echo "ERROR: package state changed (before=$installed_before after=$installed_after)"; exit 1
+            fi
+            echo "OK: 5.x package correctly refused upgrade from wazuh-indexer=$installed_after"
+          '
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7

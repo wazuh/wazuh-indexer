@@ -419,8 +419,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      # Download the Wazuh Engine tarball produced by the build-wazuh-engine job.
-      # The Docker builder ingests it to assemble the final package.
+      # Built by the build-wazuh-engine job; ingested by the Docker builder.
       - name: Download Wazuh Engine
         uses: actions/download-artifact@v8
         with:
@@ -428,19 +427,14 @@ jobs:
           merge-multiple: true
           path: ${{ github.workspace }}/artifacts/engine
 
-      # The Docker builder runs as UID 1000 and bind-mounts the workspace into
-      # /home/wazuh-indexer, but the self-hosted runner checks the workspace out
-      # as root. Pre-create the artifact subdirectories and hand the whole
-      # workspace to UID 1000 so the in-container build can write gradle caches,
-      # distribution build outputs and artifacts into the bind mount.
+      # The runner checks out as root, but the builder container runs as UID 1000.
+      # Hand it the workspace so the in-container build can write into the bind mount.
       - name: Prepare workspace for container user
         run: |
           mkdir -p artifacts/snapshots artifacts/plugins artifacts/dist
           chown -R 1000:1000 "${{ github.workspace }}"
 
-      # Build the complete wazuh-indexer package inside the non-root Docker
-      # builder. It clones and builds every plugin repo at the resolved
-      # branches, ingests the engine tarball, then runs baptizer/build/assemble.
+      # Clones+builds every plugin repo, ingests the engine, then assembles the package.
       - name: Build package with the Docker builder
         env:
           # Consumed by build-scripts/builder/compose.yml for snapshot download.
@@ -469,19 +463,13 @@ jobs:
             -d "${{ matrix.distribution }}" \
             -a "${{ matrix.architecture }}"
 
-      # The builder bind-mounts the repo root, so the assembled package lands
-      # in ./artifacts/dist on the runner. Resolve its name for the test and
-      # upload steps below.
+      # The builder writes the assembled package to artifacts/dist; resolve its name.
       - name: Resolve built package name
         id: package
         run: |
-          # build.sh leaves the OpenSearch "min" package (wazuh-indexer-min-*)
-          # in artifacts/dist alongside the assembled final package
-          # (wazuh-indexer-*). They are NOT interchangeable: only the assembled
-          # package carries the wazuh maintainer scripts (e.g. the %pre / preinst
-          # 4.x->5.x upgrade block). Exclude the min package explicitly and fail
-          # if more than one candidate remains, so we never test or ship the
-          # bare min package by accident.
+          # build.sh leaves the OpenSearch "min" package alongside the assembled
+          # one; only the assembled package has the wazuh maintainer scripts.
+          # Exclude min and fail on multiple matches so we never ship the min package.
           mapfile -t pkgs < <(find "${{ github.workspace }}/artifacts/dist" -maxdepth 1 -type f \
             -name 'wazuh-indexer*' \
             ! -name '*.sha512' \

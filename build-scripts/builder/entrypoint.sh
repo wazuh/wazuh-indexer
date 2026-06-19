@@ -55,7 +55,7 @@ clone_repositories() {
         if [ ! -d "$repo_dir/.git" ]; then
             git clone --depth 1 "$repo_url" "$repo_dir"
         fi
-        # Resolve branch, tag, or commit SHA uniformly (named volumes persist across runs).
+        # Resolve a branch, tag, or commit SHA (volumes persist across runs).
         git -C "$repo_dir" fetch --depth 1 origin "$branch"
         git -C "$repo_dir" checkout --detach FETCH_HEAD
     done
@@ -188,9 +188,7 @@ setup_engine_tarball() {
     tarball_name=$(basename "$ENGINE_TARBALL")
     dest=~/artifacts/engine/"$tarball_name"
     mkdir -p ~/artifacts/engine
-    # ENGINE_TARBALL may already live inside the bind-mounted workspace
-    # (artifacts/engine/), which is also exposed as /tmp/engine-tarball.tar.gz.
-    # Skip the copy when both paths resolve to the same inode.
+    # Skip the copy if the source and destination are the same file.
     if [ /tmp/engine-tarball.tar.gz -ef "$dest" ]; then
         echo "Engine tarball already in place at artifacts/engine/$tarball_name"
     else

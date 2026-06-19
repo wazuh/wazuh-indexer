@@ -34,9 +34,7 @@ RUN apt-get update && \
     python3-debian \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Install OpenJDK 21 (architecture-aware).
-# TARGETARCH is set automatically by Docker Buildx (amd64/arm64); default to
-# the host arch when building with the classic builder.
+# Architecture-aware JDK 21 (TARGETARCH from Buildx, else the host arch).
 ARG TARGETARCH
 RUN set -eux; \
     arch="${TARGETARCH:-$(dpkg --print-architecture)}"; \
@@ -70,9 +68,7 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 RUN addgroup --gid 1000 wazuh-indexer && \
     adduser --ingroup wazuh-indexer --uid 1000 wazuh-indexer
 
-# Gradle wrapper/daemon cache and Maven local repo — must not live inside the
-# bind-mounted workspace (/home/wazuh-indexer) because that is owned by the
-# runner user; redirect them here so UID 1000 always has write access.
+# Gradle/Maven caches outside the bind-mounted workspace, owned by UID 1000.
 RUN mkdir -p /var/gradle /var/m2 && \
     chown wazuh-indexer:wazuh-indexer /var/gradle /var/m2
 

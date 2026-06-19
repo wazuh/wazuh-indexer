@@ -12,7 +12,9 @@ RUN apt-get update && \
         systemd-sysv \
         dbus \
         curl \
-        ca-certificates && \
+        ca-certificates \
+        gnupg \
+        apt-transport-https && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
     # Drop units that are pointless (and slow/noisy) inside a container.

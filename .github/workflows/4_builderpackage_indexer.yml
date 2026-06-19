@@ -94,7 +94,8 @@ permissions:
 jobs:
   setup:
     name: Set up variables
-    runs-on: ubuntu-24.04
+    runs-on:
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix }}
       previous_version: ${{ steps.product_versions.outputs.previous_version }}
@@ -123,7 +124,8 @@ jobs:
 
   build:
     needs: [setup]
-    runs-on: ${{ matrix.architecture == 'arm64' && 'wz-linux-arm64' || 'ubuntu-24.04' }}
+    runs-on:
+      - codebuild-github-actions-codebuild-runner-indexer-${{ matrix.architecture == 'arm64' && 'arm' || 'amd' }}-${{ github.run_id }}-${{ github.run_attempt }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
@@ -141,6 +143,12 @@ jobs:
         if: ${{ matrix.distribution == 'deb' }}
         run: |
           sudo bash packaging_scripts/provision.sh
+
+      - name: Provision (rpm)
+        if: ${{ matrix.distribution == 'rpm' }}
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y cpio rpm
 
       - name: Run `baptizer.sh` (min)
         run: |
@@ -166,6 +174,10 @@ jobs:
 
       - name: Run `build.sh`
         run: |
+          id -u builder &>/dev/null || useradd -m builder
+          cp -a "$HOME/.m2" /home/builder/.m2 2>/dev/null || true
+          chown -R builder:builder "$GITHUB_WORKSPACE" /home/builder
+          runuser -u builder -- env "JAVA_HOME=$JAVA_HOME" "PATH=$PATH" \
           bash packaging_scripts/build.sh \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }} \

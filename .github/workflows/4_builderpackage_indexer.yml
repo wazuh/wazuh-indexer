@@ -124,6 +124,12 @@ jobs:
         run: |
           sudo bash packaging_scripts/provision.sh
 
+      - name: Provision (rpm)
+        if: ${{ matrix.distribution == 'rpm' }}
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y cpio rpm
+
       - name: Run `baptizer.sh` (min)
         run: |
           name=$(bash packaging_scripts/baptizer.sh -m \

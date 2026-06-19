@@ -122,7 +122,16 @@ function usage() {
 function main() {
     check_project_root_folder $0
     compose_file="build-scripts/${current}/compose.yml"
-    compose_cmd="docker compose -f $compose_file"
+    # Prefer the Docker Compose v2 plugin; fall back to standalone docker-compose
+    # (v1) when the plugin isn't installed (e.g. runners without it).
+    if docker compose version >/dev/null 2>&1; then
+        compose_cmd="docker compose -f $compose_file"
+    elif command -v docker-compose >/dev/null 2>&1; then
+        compose_cmd="docker-compose -f $compose_file"
+    else
+        echo "Error: neither 'docker compose' nor 'docker-compose' is available." >&2
+        exit 1
+    fi
     REPO_PATH=$(pwd)
     VERSION="$(bash ${REPO_PATH}/build-scripts/product_version.sh)"
 

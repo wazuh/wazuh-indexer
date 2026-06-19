@@ -447,6 +447,22 @@ jobs:
           chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
           docker compose version
 
+      # The ARM runner image currently ships Docker without the daemon running;
+      # start it so the builder and package tests can use it. No-op when it's
+      # already up (e.g. the amd runner). TODO: remove once baked into the runner.
+      - name: Ensure Docker daemon
+        run: |
+          if docker info >/dev/null 2>&1; then
+            echo "Docker daemon already running."; exit 0
+          fi
+          echo "Starting Docker daemon..."
+          if command -v systemctl >/dev/null 2>&1 && systemctl start docker 2>/dev/null; then :; \
+          elif command -v service >/dev/null 2>&1 && service docker start 2>/dev/null; then :; \
+          else dockerd >/tmp/dockerd.log 2>&1 & fi
+          for _ in $(seq 1 30); do docker info >/dev/null 2>&1 && break; sleep 1; done
+          chmod 666 /var/run/docker.sock 2>/dev/null || true
+          docker info
+
       - name: Build package with the Docker builder
         env:
           CTI_API_URL: ${{ vars.CTI_API_URL }}

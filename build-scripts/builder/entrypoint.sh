@@ -202,6 +202,11 @@ package_artifacts() {
     echo "----------------------------------------"
     echo "Packaging Artifacts"
     echo "----------------------------------------"
+    # Drop packages from previous runs (the bind-mounted artifacts/ persists
+    # locally); assemble.sh matches wazuh-indexer-min* by glob and breaks on a
+    # stale match.
+    rm -rf ~/artifacts/dist ~/artifacts/tmp
+
     local architecture="$1"
     local distribution="$2"
     local revision="$3"

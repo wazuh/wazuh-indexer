@@ -150,6 +150,10 @@ jobs:
           sudo apt-get update -y
           sudo apt-get install -y cpio rpm
 
+      - name: Provision (maven)
+        run: |
+          command -v mvn >/dev/null || (sudo apt-get update -y && sudo apt-get install -y maven)
+
       - name: Run `baptizer.sh` (min)
         run: |
           name=$(bash packaging_scripts/baptizer.sh -m \
@@ -183,6 +187,7 @@ jobs:
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }} \
             -n ${{ steps.min_package.outputs.name }}
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Run `assemble.sh`
         run: |

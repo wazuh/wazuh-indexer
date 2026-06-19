@@ -432,6 +432,21 @@ jobs:
           mkdir -p artifacts/snapshots artifacts/plugins artifacts/dist
           chown -R 1000:1000 "${{ github.workspace }}"
 
+      # The ARM runner image currently ships without Docker Compose; install the
+      # v2 plugin so builder.sh can run `docker compose`. No-op when it's already
+      # present (e.g. the amd runner). TODO: remove once baked into the runner.
+      - name: Ensure Docker Compose
+        run: |
+          if docker compose version >/dev/null 2>&1; then
+            echo "Docker Compose already available."; exit 0
+          fi
+          COMPOSE_VERSION=v2.29.7
+          mkdir -p /usr/local/lib/docker/cli-plugins
+          curl -fsSL "https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-linux-$(uname -m)" \
+            -o /usr/local/lib/docker/cli-plugins/docker-compose
+          chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+          docker compose version
+
       - name: Build package with the Docker builder
         env:
           CTI_API_URL: ${{ vars.CTI_API_URL }}

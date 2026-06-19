@@ -419,7 +419,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      # Built by the build-wazuh-engine job; ingested by the Docker builder.
+      # Built by the build-wazuh-engine job
       - name: Download Wazuh Engine
         uses: actions/download-artifact@v8
         with:
@@ -427,17 +427,13 @@ jobs:
           merge-multiple: true
           path: ${{ github.workspace }}/artifacts/engine
 
-      # The runner checks out as root, but the builder container runs as UID 1000.
-      # Hand it the workspace so the in-container build can write into the bind mount.
       - name: Prepare workspace for container user
         run: |
           mkdir -p artifacts/snapshots artifacts/plugins artifacts/dist
           chown -R 1000:1000 "${{ github.workspace }}"
 
-      # Clones+builds every plugin repo, ingests the engine, then assembles the package.
       - name: Build package with the Docker builder
         env:
-          # Consumed by build-scripts/builder/compose.yml for snapshot download.
           CTI_API_URL: ${{ vars.CTI_API_URL }}
         run: |
           ENGINE_TARBALL=$(find "${{ github.workspace }}/artifacts/engine" \
@@ -463,12 +459,9 @@ jobs:
             -d "${{ matrix.distribution }}" \
             -a "${{ matrix.architecture }}"
 
-      # The builder writes the assembled package to artifacts/dist; resolve its name.
       - name: Resolve built package name
         id: package
         run: |
-          # build.sh leaves the OpenSearch "min" package alongside the assembled
-          # one; only the assembled package has the wazuh maintainer scripts.
           # Exclude min and fail on multiple matches so we never ship the min package.
           mapfile -t pkgs < <(find "${{ github.workspace }}/artifacts/dist" -maxdepth 1 -type f \
             -name 'wazuh-indexer*' \
@@ -567,8 +560,6 @@ jobs:
             echo "OK: 5.x package correctly refused upgrade from $installed_after"
           '
 
-      # DEB maintainer scripts call systemctl, so the test body runs inside a
-      # systemd init container via the shared helper (see the script header).
       - name: Test DEB package installation
         if: ${{ matrix.distribution == 'deb' }}
         run: |

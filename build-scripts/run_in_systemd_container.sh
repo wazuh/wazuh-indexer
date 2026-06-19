@@ -1,23 +1,15 @@
 #!/bin/bash
 
-# Run a DEB package test body inside a privileged, systemd-enabled Ubuntu
-# container.
-#
-# The CI runner is itself a container in which systemd is not running as PID 1,
-# so the wazuh-indexer maintainer scripts (preinst/postinst call `systemctl`)
-# cannot run directly on the runner host. This helper boots a throwaway
-# systemd init container - the Debian-family equivalent of the redhat/ubi9-init
-# image used by the RPM tests - waits for systemd to come up, runs the provided
-# test body via `docker exec`, and always tears the container down afterwards.
+# Run a DEB package test body inside a privileged, systemd-enabled container.
+# The CI runner has no systemd as PID 1, so wazuh-indexer's maintainer scripts
+# (which call systemctl) can't run on the host. This boots a throwaway systemd
+# container (Debian-family analog of redhat/ubi9-init), waits for systemd, runs
+# the body via `docker exec`, and tears it down.
 #
 # Usage: run_in_systemd_container.sh <workspace> <script-body>
-#
-# Arguments:
-# - workspace     [required] Host path checked out by the workflow. Its
-#                            artifacts/dist and build-scripts directories are
-#                            bind-mounted into the container at /artifacts/dist
-#                            and /build-scripts.
-# - script-body   [required] Bash snippet executed inside the container.
+#   workspace    Host workspace; its artifacts/dist and build-scripts are
+#                bind-mounted to /artifacts/dist and /build-scripts.
+#   script-body  Bash snippet executed inside the container.
 
 set -e
 
@@ -31,10 +23,8 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Systemd-enabled Ubuntu image. By default it is built locally from AWS ECR
-# Public (no Docker Hub pull-rate limits on CI), so the first call builds it and
-# the rest hit the layer cache. Override SYSTEMD_IMAGE to use a prebuilt image
-# (e.g. one pushed to an internal registry) and skip the build.
+# Built locally (from ECR Public) on first call and reused via the layer cache.
+# Override SYSTEMD_IMAGE with a prebuilt image to skip the build.
 SYSTEMD_IMAGE="${SYSTEMD_IMAGE:-wazuh-indexer-systemd-test:jammy}"
 
 if ! docker image inspect "$SYSTEMD_IMAGE" >/dev/null 2>&1; then

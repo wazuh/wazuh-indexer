@@ -1,13 +1,6 @@
-# Minimal systemd-enabled Ubuntu image for DEB package tests.
-#
-# The CI runner is itself a container without systemd as PID 1, so the
-# wazuh-indexer maintainer scripts (which call systemctl) cannot run on the
-# host. The DEB tests therefore run inside this image booted with /sbin/init,
-# the Debian-family equivalent of redhat/ubi9-init used by the RPM tests.
-#
-# Built from AWS ECR Public (no unauthenticated pull-rate limits on CodeBuild),
-# mirroring build-scripts/builder/Dockerfile, instead of a Docker Hub systemd
-# image which trips `toomanyrequests`.
+# Minimal systemd-enabled Ubuntu image for the DEB package tests, booted with
+# /sbin/init (Debian-family analog of redhat/ubi9-init). Built from AWS ECR
+# Public to avoid Docker Hub unauthenticated pull-rate limits on CodeBuild.
 FROM public.ecr.aws/ubuntu/ubuntu:jammy
 
 ENV DEBIAN_FRONTEND=noninteractive

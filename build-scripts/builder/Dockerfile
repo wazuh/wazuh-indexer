@@ -34,7 +34,9 @@ RUN apt-get update && \
     python3-debian \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Architecture-aware JDK 21 (TARGETARCH from Buildx, else the host arch).
+# Architecture-aware JDK 21 from Adoptium/Temurin, which ships both x64 and
+# aarch64 Linux builds (the OpenJDK RI is x64-only). TARGETARCH from Buildx,
+# else the host arch. --strip-components keeps JAVA_HOME stable at /opt/jdk-21.
 ARG TARGETARCH
 RUN set -eux; \
     arch="${TARGETARCH:-$(dpkg --print-architecture)}"; \
@@ -43,7 +45,9 @@ RUN set -eux; \
       arm64) jdk_arch="aarch64" ;; \
       *) echo "Unsupported architecture: $arch" >&2; exit 1 ;; \
     esac; \
-    wget -O- "https://download.java.net/openjdk/jdk21/ri/openjdk-21+35_linux-${jdk_arch}_bin.tar.gz" | tar xz -C /opt/
+    mkdir -p /opt/jdk-21; \
+    wget -O- "https://api.adoptium.net/v3/binary/latest/21/ga/linux/${jdk_arch}/jdk/hotspot/normal/eclipse" \
+      | tar xz -C /opt/jdk-21 --strip-components=1
 
 # Set JAVA_HOME environment variable
 ENV JAVA_HOME=/opt/jdk-21

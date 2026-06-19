@@ -203,7 +203,7 @@ jobs:
         run: |
           git clone https://${{ env.username }}:${{ secrets.INDEXER_BOT_TOKEN }}@github.com/wazuh/wazuh-automation.git -b $(bash packaging_scripts/product_version.sh)
           cd wazuh-automation
-          sudo python3 -m pip install -r deployability/deps/requirements.txt
+          python3 -m pip install -r deployability/deps/requirements.txt
 
       - name: Configure AWS credentials
         if: ${{ matrix.distribution == 'rpm' }}

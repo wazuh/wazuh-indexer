@@ -176,8 +176,9 @@ jobs:
         run: |
           id -u builder &>/dev/null || useradd -m builder
           cp -a "$HOME/.m2" /home/builder/.m2 2>/dev/null || true
+          cp -a "$GRADLE_USER_HOME" /home/builder/.gradle 2>/dev/null || true
           chown -R builder:builder "$GITHUB_WORKSPACE" /home/builder
-          runuser -u builder -- env "JAVA_HOME=$JAVA_HOME" "PATH=$PATH" \
+          runuser -u builder -- env "JAVA_HOME=$JAVA_HOME" "PATH=$PATH" "GRADLE_USER_HOME=/home/builder/.gradle" \
           bash packaging_scripts/build.sh \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }} \

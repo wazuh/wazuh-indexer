@@ -5,7 +5,8 @@ on:
 
 jobs:
   linkchecker:
-    runs-on: ubuntu-24.04
+    runs-on: 
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
 
     steps:
       - uses: actions/checkout@v4

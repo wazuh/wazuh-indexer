@@ -20,12 +20,10 @@ if ($TEST); then
 else
     plugins=(
         "opensearch-job-scheduler"
-        "opensearch-anomaly-detection" # Requires "opensearch-job-scheduler"
-        "asynchronous-search"          # "opensearch-asynchronous-search"
         "opensearch-cross-cluster-replication"
-        "geospatial" # "opensearch-geospatial"
+        "opensearch-custom-codecs" # Provides the zstd/zstd_no_dict index codecs
+        "geospatial"               # "opensearch-geospatial"
         "opensearch-index-management"
-        "opensearch-observability"
         "opensearch-security"
     )
     # Plugins built from this repository, installed from the local Maven repo

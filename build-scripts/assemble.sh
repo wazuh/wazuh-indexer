@@ -21,7 +21,8 @@ else
     plugins=(
         "opensearch-job-scheduler"
         "opensearch-cross-cluster-replication"
-        "geospatial" # "opensearch-geospatial"
+        "opensearch-custom-codecs" # Provides the zstd/zstd_no_dict index codecs
+        "geospatial"               # "opensearch-geospatial"
         "opensearch-index-management"
         "opensearch-security"
     )

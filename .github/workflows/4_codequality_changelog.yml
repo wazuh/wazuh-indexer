@@ -7,7 +7,8 @@ jobs:
   # Enforces the update of a changelog file on every pull request
   verify-changelog:
     if: github.repository == 'wazuh/wazuh-indexer'
-    runs-on: ubuntu-24.04
+    runs-on:
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:

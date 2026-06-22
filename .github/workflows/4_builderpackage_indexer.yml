@@ -88,7 +88,8 @@ on:
 jobs:
   matrix:
     name: Set up matrix
-    runs-on: ubuntu-24.04
+    runs-on:
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
     outputs:
       matrix: ${{ steps.setup.outputs.matrix }}
     steps:
@@ -103,7 +104,8 @@ jobs:
 
   build:
     needs: [matrix]
-    runs-on: ubuntu-24.04
+    runs-on:
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.matrix.outputs.matrix) }}
@@ -121,6 +123,12 @@ jobs:
         if: ${{ matrix.distribution == 'deb' }}
         run: |
           sudo bash packaging_scripts/provision.sh
+
+      - name: Provision (rpm)
+        if: ${{ matrix.distribution == 'rpm' }}
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y cpio rpm
 
       - name: Run `baptizer.sh` (min)
         run: |
@@ -146,6 +154,10 @@ jobs:
 
       - name: Run `build.sh`
         run: |
+          id -u builder &>/dev/null || useradd -m builder
+          cp -a "$HOME/.m2" /home/builder/.m2 2>/dev/null || true
+          chown -R builder:builder "$GITHUB_WORKSPACE" /home/builder
+          runuser -u builder -- env "JAVA_HOME=$JAVA_HOME" "PATH=$PATH" \
           bash packaging_scripts/build.sh \
             -a ${{ matrix.architecture }} \
             -d ${{ matrix.distribution }} \
@@ -160,16 +172,19 @@ jobs:
 
       - name: Test RPM package
         if: ${{ matrix.distribution == 'rpm' }}
-        uses: addnab/docker-run-action@v3
-        with:
-          image: redhat/ubi9:latest
-          options: -v ${{ github.workspace }}/artifacts/dist:/artifacts/dist
-          run: |
-            yum localinstall "/artifacts/dist/${{ steps.package.outputs.name }}" -y
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}/artifacts/dist:/artifacts/dist \
+            registry.access.redhat.com/ubi9:latest \
+            bash -c "yum localinstall /artifacts/dist/${{ steps.package.outputs.name }} -y"
 
       - name: Test DEB package
         if: ${{ matrix.distribution == 'deb' }}
         run: |
+          # AWS CodeBuild runners execute jobs in a container without a real
+          # systemd PID 1, so postinst's systemctl calls fail with "Host is down".
+          # Hide systemctl so postinst takes its already-supported non-systemd path.
+          sudo mv /usr/bin/systemctl /usr/bin/systemctl.bak 2>/dev/null || true
           sudo dpkg -i "artifacts/dist/${{ steps.package.outputs.name }}"
 
       - name: Upload artifact

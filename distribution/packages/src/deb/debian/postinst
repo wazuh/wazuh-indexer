@@ -11,6 +11,13 @@
 
 set -e
 
+# If a pre-5.x version is still installed on disk, the preinst blocked a 4.x -> 5.x
+# upgrade and the new package files were never unpacked. dpkg is not atomic and may still
+# invoke this postinst, so do nothing in that case (rpm aborts the transaction instead).
+if grep -Pq '4\.\d+\.\d+' /usr/share/wazuh-indexer/VERSION* 2>/dev/null; then
+    exit 0
+fi
+
 echo "Running Wazuh Indexer Post-Installation Script"
 
 name="wazuh-indexer"

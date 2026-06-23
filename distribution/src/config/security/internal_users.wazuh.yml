@@ -12,3 +12,10 @@ wazuh-dashboard:
   reserved: true
   backend_roles: []
   description: "Wazuh Dashboard user with read access to stateful and stateless indexes, write access to metrics indexes and management for sample data indexes."
+
+wazuh-admin:
+  # The hash is the hash of the password "wazuh-admin"
+  hash: "$2y$12$uEL972YnJBcj7Xu9b9BqR.TuXFuLIqWQDKu2p56IlINMljRel4L9S"
+  reserved: true
+  backend_roles: []
+  description: "Wazuh administrative user authorized to modify sensitive indexer configuration (content policy, content update trigger, setup settings)."

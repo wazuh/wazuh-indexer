@@ -165,3 +165,18 @@ cm_update:
   index_permissions: []
   tenant_permissions: []
   static: true
+
+# Role for the administrative user authorized to modify sensitive indexer configuration:
+# content policy updates, content update triggers, and setup settings. These endpoints are gated by
+# the transport-action names below; only principals holding these permissions (or a wildcard, e.g.
+# all_access) may modify them.
+wazuh_admin:
+  reserved: true
+  hidden: false
+  cluster_permissions:
+    - "plugin:content_manager/policy/update"
+    - "plugin:content_manager/update/post"
+    - "plugin:setup/settings/write"
+  index_permissions: []
+  tenant_permissions: []
+  static: true

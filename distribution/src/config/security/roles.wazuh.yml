@@ -174,7 +174,7 @@ wazuh_admin:
   reserved: true
   hidden: false
   cluster_permissions:
-    - "plugin:content_manager/policy/update"
+    - "plugin:content_manager/policy/put"
     - "plugin:content_manager/update/post"
     - "plugin:setup/settings/write"
   index_permissions: []

@@ -37,11 +37,16 @@ on:
         default: false
         required: false
         type: boolean
+      bump-issue-link:
+        description: 'Issue link used in the original bump (required for revert if different from issue-link)'
+        required: false
+        type: string
 
 jobs:
   bump:
     name: Repository bumper
-    runs-on: ubuntu-22.04
+    runs-on:
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
     permissions:
       contents: write
       pull-requests: write
@@ -80,7 +85,7 @@ jobs:
           export GPG_TTY=$(tty)
 
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           token: ${{ env.GH_TOKEN }}
           fetch-depth: 0
@@ -154,8 +159,18 @@ jobs:
         id: revert_step
         if: inputs.revert == true
         run: |
+          # 1. Get the current issue number (for the new revert branch/PR)
           ISSUE_NUMBER=$(echo "${{ inputs.issue-link }}" | awk -F'/' '{print $NF}')
-          BUMP_BRANCH="enhancement/wqa${ISSUE_NUMBER}-bump-${{ github.ref_name }}"
+
+          # 2. Get the issue number from the original bump (if provided; otherwise, defaults to the current one)
+          if [ -n "${{ inputs.bump-issue-link }}" ]; then
+            BUMP_ISSUE_NUMBER=$(echo "${{ inputs.bump-issue-link }}" | awk -F'/' '{print $NF}')
+          else
+            BUMP_ISSUE_NUMBER=$ISSUE_NUMBER
+          fi
+
+          # 3. Search for the original bump branch using the obtained BUMP ISSUE number
+          BUMP_BRANCH="enhancement/wqa${BUMP_ISSUE_NUMBER}-bump-${{ github.ref_name }}"
 
           PR_NUMBER=$(gh pr list --head "$BUMP_BRANCH" --base "${{ github.ref_name }}" --state merged --json number --jq '.[0].number')
 

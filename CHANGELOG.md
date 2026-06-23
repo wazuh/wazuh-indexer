@@ -3,7 +3,7 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See the [CONTRIBUTING guide](./CONTRIBUTING.md#Changelog) for instructions on how to add changelog entries.
 
-## [Unreleased 5.0.0]
+## [v5.0.0]
 ### Added
 - Add new users, roles and mappings [(#886)](https://github.com/wazuh/wazuh-indexer/pull/886)
 - Add custom GitHub Action to validate commiter's emails by domain [(#896)](https://github.com/wazuh/wazuh-indexer/pull/896)
@@ -25,13 +25,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Add `--set-as-main` flag support to repository bumper [(#1396)](https://github.com/wazuh/wazuh-indexer/pull/1396)
 - Add Alerting fork to Wazuh Indexer packages [(#1402)](https://github.com/wazuh/wazuh-indexer/pull/1402)
 - Add nightly Docker image build workflow [(#1442)](https://github.com/wazuh/wazuh-indexer/pull/1442)
+- Bundle the `opensearch-custom-codecs` plugin to provide the zstd index codec [(#1636)](https://github.com/wazuh/wazuh-indexer/issues/1636)
 
 ### Fixed
 - Set secure permissions (750) for engine sockets directory [(#1330)](https://github.com/wazuh/wazuh-indexer/pull/1330)
 - Resolve dependency mismatch between Alerting and Notifications plugins [(#1379)](https://github.com/wazuh/wazuh-indexer/pull/1379)
 - Fix `/etc/default/wazuh-indexer` ownership and permissions in deb [(#1533)](https://github.com/wazuh/wazuh-indexer/pull/1533)
 - Fix Java warnings by updating JVM options for native access [(#1574)](https://github.com/wazuh/wazuh-indexer/pull/1574)
-- Fix SLF4J startup warning in reindex module by adding Log4j2 provider [(#1617)](https://github.com/wazuh/wazuh-indexer/pull/1617)
+- Fix SLF4J startup warning in reindex module by adding Log4j2 provider [(#1650)](https://github.com/wazuh/wazuh-indexer/pull/1650)
 
 ### Dependencies
 -
@@ -64,6 +65,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Update users, roles and role mappings for Wazuh security configuration [(#1561)](https://github.com/wazuh/wazuh-indexer/pull/1561)
 - Block 5.x updates from 4.x [(#1545)](https://github.com/wazuh/wazuh-indexer/pull/1545)
 - Bundle missing workload-management dependency in the distribution package [(#1597)](https://github.com/wazuh/wazuh-indexer/pull/1597)
+- Unify indexer upgrade block message [(#1655)](https://github.com/wazuh/wazuh-indexer/pull/1655)
 
 ### Deprecated
 -
@@ -75,6 +77,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Remove SQL plugin from the distribution [(#1611)](https://github.com/wazuh/wazuh-indexer/pull/1611)
 - Remove opensearch-ml plugin [(#1615)](https://github.com/wazuh/wazuh-indexer/pull/1615)
 - Remove opensearch-knn and opensearch-neural-search plugins [(#1620)](https://github.com/wazuh/wazuh-indexer/pull/1620)
+- Remove asynchronous-search, opensearch-anomaly-detection, opensearch-observability plugins [(#1645)](https://github.com/wazuh/wazuh-indexer/pull/1645)
 
 ### Fixed
 - Fix package upload to bucket subfolder 5.x [(#846)](https://github.com/wazuh/wazuh-indexer/pull/846)
@@ -94,5 +97,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Use the latest Amazon Linux 2023 Docker image [(#1182)](https://github.com/wazuh/wazuh-indexer/pull/1182)
 - Update CodeQL configuration [(#1220)](https://github.com/wazuh/wazuh-indexer/pull/1220)
 - Potential fix for code scanning alerts: Workflow does not contain permissions [(#1234)](https://github.com/wazuh/wazuh-indexer/pull/1234)
+
+## Prior version
+- []()
 
 [Unreleased 5.0.0]: https://github.com/wazuh/wazuh-indexer/compare/f79ea09c71af66902e1613e2a6de215631a34997...main

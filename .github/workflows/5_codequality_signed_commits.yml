@@ -1,13 +1,14 @@
 name: (5.x) Check signed commits
 on:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
+    types: [opened, synchronize, ready_for_review]
 
 jobs:
   # Checks if the commits are signed, if not the workflow will fail
   verify-signed-commits:
-    if: github.repository == 'wazuh/wazuh-indexer'
-    runs-on: ubuntu-24.04
+    if: ${{ !github.event.pull_request.draft && github.repository == 'wazuh/wazuh-indexer' }}
+    runs-on:
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
     permissions:
       contents: read
     steps:

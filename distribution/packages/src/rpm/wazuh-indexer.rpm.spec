@@ -57,7 +57,6 @@ For more information, see: https://www.wazuh.com/
 
 %build
 
-%define observability_plugin %( if [ -f %{_topdir}/etc/wazuh-indexer/opensearch-observability/observability.yml ]; then echo "1" ; else echo "0"; fi )
 %define reportsscheduler_plugin %( if [ -f %{_topdir}/etc/wazuh-indexer/opensearch-reports-scheduler/reports-scheduler.yml ]; then echo "1" ; else echo "0"; fi )
 
 %install
@@ -79,7 +78,6 @@ if [ -d %{buildroot}%{product_dir}/plugins/opensearch-security ]; then
 fi
 
 # Pre-populate the folders to ensure rpm build success even without all plugins
-mkdir -p %{buildroot}%{config_dir}/opensearch-observability
 mkdir -p %{buildroot}%{config_dir}/opensearch-reports-scheduler
 
 # Build a filelist to be included in the %files section
@@ -130,12 +128,7 @@ set -- "$@" "%{_sysconfdir}/sysconfig/%{name}"
 set -- "$@" "%{_prefix}/lib/sysctl.d/%{name}.conf"
 set -- "$@" "%{_prefix}/lib/tmpfiles.d/%{name}.conf"
 
-# Check if we are including the observability and reports scheduler
-# plugins
-if [ %observability_plugin -eq 1 ]; then
-    set -- "$@" "%{config_dir}/opensearch-observability/observability.yml"
-fi
-
+# Check if we are including the reports scheduler plugin
 if [ %reportsscheduler_plugin -eq 1 ]; then
     set -- "$@" "%{config_dir}/opensearch-reports-scheduler/reports-scheduler.yml"
 fi
@@ -158,12 +151,16 @@ if [ $1 = 2 ]; then
     echo "Running upgrade pre-script"
 
     # Hard block: refuse 4.X -> 5.X upgrades
-    if grep -Pq '4\.\d+\.\d+' /usr/share/wazuh-indexer/VERSION*; then
-        cat >&2 <<'EOF'
+    detected_version=$(grep -Pho '4\.\d+\.\d+' /usr/share/wazuh-indexer/VERSION* 2>/dev/null | head -n1)
+    if [ -n "${detected_version}" ]; then
+        cat >&2 <<EOF
 ==============================================================
-ERROR: Direct upgrade from Wazuh Indexer 4.X to 5.X is not supported.
+ERROR: Upgrade from indexer versions prior to 5.x is not supported.
 
-A clean installation of Wazuh Indexer 5.x is required.
+Detected installed version: ${detected_version}
+
+A clean installation of indexer 5.x is required.
+Refer to the 5.x migration guide for more information.
 ==============================================================
 EOF
         exit 1
@@ -304,10 +301,6 @@ exit 0
 %config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/jvm.options
 %config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/opensearch.yml
 %config(noreplace) %attr(640, %{name}, %{name}) %{config_dir}/opensearch-security/*
-
-%if %observability_plugin
-%config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/opensearch-observability/observability.yml
-%endif
 
 %if %reportsscheduler_plugin
 %config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/opensearch-reports-scheduler/reports-scheduler.yml

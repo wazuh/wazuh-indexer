@@ -161,7 +161,7 @@ cm_update:
   reserved: true
   hidden: false
   cluster_permissions:
-    - "plugin:content_manager/update"
+    - "plugin:content_manager/update/post"
   index_permissions: []
   tenant_permissions: []
   static: true

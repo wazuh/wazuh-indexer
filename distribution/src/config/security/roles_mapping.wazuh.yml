@@ -120,22 +120,3 @@ cm_subscription_write:
   users:
     - "wazuh-dashboard"
   and_backend_roles: [ ]
-
-cm_update:
-  reserved: true
-  hidden: false
-  backend_roles: [ ]
-  hosts: [ ]
-  users:
-    - "wazuh-dashboard"
-  and_backend_roles: [ ]
-
-# Authorized administrative user for sensitive indexer configuration changes.
-wazuh_admin:
-  reserved: true
-  hidden: false
-  backend_roles: [ ]
-  hosts: [ ]
-  users:
-    - "wazuh-admin"
-  and_backend_roles: [ ]

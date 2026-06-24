@@ -38,19 +38,14 @@ wazuh_admin:
     - 'cluster_composite_ops'
     - 'cluster_monitor'
     # Content Manager
-    - 'plugin:wazuh/settings/write'
-    - 'plugin:content_manager/policy/update'
-    - 'plugin:content_manager/integration/*'
-    - 'plugin:content_manager/decoder/*'
-    - 'plugin:content_manager/rule/*'
-    - 'plugin:content_manager/kvdb/*'
-    - 'plugin:content_manager/filter/*'
+    - 'plugin:content_manager/policy/put'
+    - 'plugin:content_manager/create/*'
+    - 'plugin:content_manager/update/*'
+    - 'plugin:content_manager/delete/*'
     - 'plugin:content_manager/subscription/get'
     - 'plugin:content_manager/subscription/post'
     - 'plugin:content_manager/subscription/delete'
-    - 'plugin:content_manager/update'
-    - 'plugin:content_manager/logtest'
-    - 'plugin:content_manager/logtest/*'
+    - 'plugin:content_manager/logtest*'
     - 'plugin:content_manager/promote/*'
     - 'plugin:content_manager/space/delete'
     # Security Analytics
@@ -114,6 +109,8 @@ wazuh_admin:
       allowed_actions:
         - 'index'
         - 'delete'
+        - 'indices:admin/exists'
+        - 'indices:admin/refresh'
   tenant_permissions: []
   static: true
 
@@ -128,14 +125,11 @@ wazuh_demo:
     - 'cluster_composite_ops'
     - 'cluster_monitor'
     # Content Manager
-    - 'plugin:content_manager/integration/*'
-    - 'plugin:content_manager/decoder/*'
-    - 'plugin:content_manager/rule/*'
-    - 'plugin:content_manager/kvdb/*'
-    - 'plugin:content_manager/filter/*'
+    - 'plugin:content_manager/create/*'
+    - 'plugin:content_manager/update/*'
+    - 'plugin:content_manager/delete/*'
     - 'plugin:content_manager/subscription/get'
-    - 'plugin:content_manager/logtest'
-    - 'plugin:content_manager/logtest/*'
+    - 'plugin:content_manager/logtest*'
     - 'plugin:content_manager/promote/*'
     - 'plugin:content_manager/space/delete'
     # Security Analytics
@@ -212,6 +206,8 @@ wazuh_demo:
       allowed_actions:
         - 'index'
         - 'delete'
+        - 'indices:admin/exists'
+        - 'indices:admin/refresh'
   tenant_permissions: []
   static: true
 
@@ -225,8 +221,7 @@ wazuh_readonly:
     - 'cluster_composite_ops'
     - 'cluster_monitor'
     - 'plugin:content_manager/subscription/get'
-    - 'plugin:content_manager/logtest'
-    - 'plugin:content_manager/logtest/*'
+    - 'plugin:content_manager/logtest*'
     - 'cluster:admin/wazuh/securityanalytics/rules/evaluate'
     # Security Analytics (OpenSearch plugin, read)
     - 'cluster:admin/opensearch/securityanalytics/alerts/get'
@@ -320,7 +315,7 @@ wazuh_manager:
   index_permissions:
     - index_patterns:
         - '.wazuh-cti-consumers'
-        - 'wazuh-active-responses-*'
+        - '.wazuh-active-responses-*'
         - 'wazuh-threatintel-*'
       allowed_actions:
         - 'read'

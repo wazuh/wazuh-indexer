@@ -1,6 +1,11 @@
 run-name: Build ${{ inputs.distribution }} Wazuh Indexer on ${{ inputs.architecture }} | ${{ inputs.id }}
 name: (4.x) Build packages
 
+env:
+  CI_DEV_INTERNAL_BUCKET: s3://xdrsiem-ci-dev-internal
+  CI_ARTIFACTS_REPO: wazuh-indexer
+  CI_ARTIFACTS_WORKFLOW: 4_builderpackage_indexer
+
 # This workflow runs when any of the following occur:
 # - Run manually
 # - Invoked from another workflow
@@ -71,6 +76,9 @@ on:
       CI_INTERNAL_DEVELOPMENT_BUCKET_USER_SECRET_KEY:
         required: true
         description: "AWS user secret key"
+      CI_AWS_REGION:
+        required: true
+        description: "AWS region"
       AWS_IAM_OVA_ROLE:
         required: true
         description: "AWS IAM role"
@@ -305,20 +313,26 @@ jobs:
           sudo bash packaging_scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }}
           sudo dpkg -i "artifacts/dist/${{ steps.package.outputs.name }}"
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: ${{ steps.package.outputs.name }}
-          path: artifacts/dist/${{ steps.package.outputs.name }}
-          if-no-files-found: error
-
       - name: Set up AWS CLI
-        if: ${{ inputs.upload }}
         uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY }}
           aws-secret-access-key: ${{ secrets.CI_INTERNAL_DEVELOPMENT_BUCKET_USER_SECRET_KEY }}
           aws-region: ${{ secrets.CI_AWS_REGION }}
+
+      - name: Upload package artifact to S3
+        run: |
+          pkg_name="${{ steps.package.outputs.name }}"
+          pkg_path="artifacts/dist/${pkg_name}"
+          s3_stage_base="${{ env.CI_DEV_INTERNAL_BUCKET }}/${{ env.CI_ARTIFACTS_REPO }}/${{ env.CI_ARTIFACTS_WORKFLOW }}/staging_${{ github.run_id }}/${{ matrix.distribution }}_${{ matrix.architecture }}"
+
+          if [ ! -f "$pkg_path" ]; then
+            echo "::error::Package not found at ${pkg_path}"
+            exit 1
+          fi
+
+          aws s3 cp "$pkg_path" "${s3_stage_base}/${pkg_name}"
+          echo "::notice::Staged artifact in S3: ${s3_stage_base}/${pkg_name}"
 
       - name: Upload package to S3
         if: ${{ inputs.upload }}
@@ -343,3 +357,34 @@ jobs:
         run: |
           cd wazuh-automation/deployability
           python3 modules/allocation/main.py --action delete --track-output /tmp/track.yaml
+
+  bundle-artifacts:
+    name: Bundle workflow artifacts
+    needs: [build]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.CI_INTERNAL_DEVELOPMENT_BUCKET_USER_SECRET_KEY }}
+          aws-region: ${{ secrets.CI_AWS_REGION }}
+
+      - name: Create and upload consolidated artifact ZIP
+        run: |
+          s3_base="${{ env.CI_DEV_INTERNAL_BUCKET }}/${{ env.CI_ARTIFACTS_REPO }}/${{ env.CI_ARTIFACTS_WORKFLOW }}"
+          s3_stage_base="${s3_base}/staging_${{ github.run_id }}"
+          zip_name="artifacts_${{ github.run_id }}.zip"
+
+          rm -rf artifacts_staging
+          mkdir -p artifacts_staging
+          aws s3 cp "${s3_stage_base}/" artifacts_staging/ --recursive
+
+          if [ -z "$(find artifacts_staging -type f -print -quit)" ]; then
+            echo "::error::No staged artifacts found at ${s3_stage_base}"
+            exit 1
+          fi
+
+          (cd artifacts_staging && zip -r "../${zip_name}" .)
+          aws s3 cp "${zip_name}" "${s3_base}/${zip_name}"
+          echo "::notice::Artifact uploaded to S3: ${s3_base}/${zip_name}"

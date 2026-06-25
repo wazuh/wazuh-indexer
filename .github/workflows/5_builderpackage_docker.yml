@@ -66,15 +66,9 @@ on:
       QUAY_TOKEN:
         required: true
         description: "Quay.io token"
-      CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY:
+      AWS_INDEXER_ACTIONS_ROLE:
         required: true
-        description: "AWS user access key"
-      CI_INTERNAL_DEVELOPMENT_BUCKET_USER_SECRET_KEY:
-        required: true
-        description: "AWS user secret key"
-      CI_AWS_REGION:
-        required: true
-        description: "AWS region"
+        description: "AWS IAM OIDC role for S3 access"
 
 # ==========================
 # Bibliography
@@ -109,6 +103,7 @@ jobs:
   build-and-push-docker-image:
     permissions:
       contents: read
+      id-token: write
     needs: [call-build-workflow]
     runs-on:
       - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
@@ -128,11 +123,13 @@ jobs:
           platforms=$(echo '${{ inputs.architecture }}' | jq -r '[.[] | if . == "x64" then "linux/amd64" elif . == "arm64" then "linux/arm64" else empty end] | join(",")')
           echo "platforms=${platforms}" >> "$GITHUB_OUTPUT"
 
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_INDEXER_ACTIONS_ROLE }}
+          aws-region: "us-east-1"
+
       - name: Download tarballs
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_INTERNAL_DEVELOPMENT_BUCKET_USER_SECRET_KEY }}
-          AWS_DEFAULT_REGION: ${{ secrets.CI_AWS_REGION }}
         run: |
           mkdir -p "${{ env.docker_path }}"
           s3_base="${{ env.CI_DEV_INTERNAL_BUCKET }}/${{ env.CI_ARTIFACTS_REPO }}/${{ env.CI_ARTIFACTS_WORKFLOW }}"

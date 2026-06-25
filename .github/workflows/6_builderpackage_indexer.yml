@@ -7,6 +7,7 @@ env:
   CI_ARTIFACTS_WORKFLOW: 6_builderpackage_indexer
 permissions:
   contents: read
+  id-token: write
 
 # This workflow runs when any of the following occur:
 # - Run manually
@@ -99,15 +100,9 @@ on:
         type: string
         default: "6.0.0"
     secrets:
-      CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY:
+      AWS_INDEXER_ACTIONS_ROLE:
         required: true
-        description: "AWS user access key"
-      CI_INTERNAL_DEVELOPMENT_BUCKET_USER_SECRET_KEY:
-        required: true
-        description: "AWS user secret key"
-      CI_AWS_REGION:
-        required: true
-        description: "AWS region"
+        description: "AWS IAM OIDC role for S3 access"
     outputs:
       name:
         description: Name of the package built.
@@ -185,9 +180,8 @@ jobs:
       - name: Set up AWS CLI
         uses: aws-actions/configure-aws-credentials@v6
         with:
-          aws-access-key-id: ${{ secrets.CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY }}
-          aws-secret-access-key: ${{ secrets.CI_INTERNAL_DEVELOPMENT_BUCKET_USER_SECRET_KEY }}
-          aws-region: ${{ secrets.CI_AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_INDEXER_ACTIONS_ROLE }}
+          aws-region: "us-east-1"
 
       - name: Upload artifact to S3
         run: |
@@ -240,9 +234,8 @@ jobs:
       - name: Set up AWS CLI
         uses: aws-actions/configure-aws-credentials@v6
         with:
-          aws-access-key-id: ${{ secrets.CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY }}
-          aws-secret-access-key: ${{ secrets.CI_INTERNAL_DEVELOPMENT_BUCKET_USER_SECRET_KEY }}
-          aws-region: ${{ secrets.CI_AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_INDEXER_ACTIONS_ROLE }}
+          aws-region: "us-east-1"
 
       - name: Upload artifact to S3
         run: |
@@ -360,9 +353,8 @@ jobs:
       - name: Set up AWS CLI
         uses: aws-actions/configure-aws-credentials@v6
         with:
-          aws-access-key-id: ${{ secrets.CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY }}
-          aws-secret-access-key: ${{ secrets.CI_INTERNAL_DEVELOPMENT_BUCKET_USER_SECRET_KEY }}
-          aws-region: ${{ secrets.CI_AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_INDEXER_ACTIONS_ROLE }}
+          aws-region: "us-east-1"
 
       - name: Upload package artifact to S3
         run: |
@@ -404,9 +396,8 @@ jobs:
       - name: Set up AWS CLI
         uses: aws-actions/configure-aws-credentials@v6
         with:
-          aws-access-key-id: ${{ secrets.CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY }}
-          aws-secret-access-key: ${{ secrets.CI_INTERNAL_DEVELOPMENT_BUCKET_USER_SECRET_KEY }}
-          aws-region: ${{ secrets.CI_AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_INDEXER_ACTIONS_ROLE }}
+          aws-region: "us-east-1"
 
       - name: Create and upload consolidated artifact ZIP
         run: |

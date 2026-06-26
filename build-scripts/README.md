@@ -107,3 +107,5 @@ Arguments:
 The script will stop if the credentials are not set, or if the expected tarball is not found.
 
 This script is used in the `5_builderpackage_docker.yml` **GitHub Workflow**, which is used to automate the process even more. When possible, **prefer this method**.
+
+**Note**: all the scripts under the `ci` folder are used in the GitHub workflows and are not intended to be used manually..

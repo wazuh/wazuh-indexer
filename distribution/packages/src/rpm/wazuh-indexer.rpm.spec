@@ -282,6 +282,16 @@ fi
 
 exit 0
 
+%postun
+set -e
+
+if [ $1 -eq 0 ]; then
+    rm -rf %{product_dir}/engine
+    rm -rf %{product_dir}/plugins
+fi
+
+exit 0
+
 %files -f %{_topdir}/filelist.txt
 %defattr(640, %{name}, %{name}, 750)
 

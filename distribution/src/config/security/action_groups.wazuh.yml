@@ -1,0 +1,296 @@
+
+# Content Manager plugin action groups.
+# Each group maps a logical permission name (used in roles.yml) to the
+# actual transport action name(s) registered by the plugin.
+
+plugin:content_manager/integration/create:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:admin/content_manager/integration/create'
+  type: "cluster"
+  description: "Create a content manager integration resource"
+
+plugin:content_manager/integration/update:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:admin/content_manager/integration/update'
+  type: "cluster"
+  description: "Update a content manager integration resource"
+
+plugin:content_manager/integration/delete:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:admin/content_manager/integration/delete'
+  type: "cluster"
+  description: "Delete a content manager integration resource"
+
+plugin:content_manager/integration/*:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'plugin:content_manager/integration/create'
+    - 'plugin:content_manager/integration/update'
+    - 'plugin:content_manager/integration/delete'
+  type: "cluster"
+  description: "Full access to content manager integration resources"
+
+plugin:content_manager/decoder/create:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:admin/content_manager/decoder/create'
+  type: "cluster"
+  description: "Create a content manager decoder resource"
+
+plugin:content_manager/decoder/update:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:admin/content_manager/decoder/update'
+  type: "cluster"
+  description: "Update a content manager decoder resource"
+
+plugin:content_manager/decoder/delete:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:admin/content_manager/decoder/delete'
+  type: "cluster"
+  description: "Delete a content manager decoder resource"
+
+plugin:content_manager/decoder/*:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'plugin:content_manager/decoder/create'
+    - 'plugin:content_manager/decoder/update'
+    - 'plugin:content_manager/decoder/delete'
+  type: "cluster"
+  description: "Full access to content manager decoder resources"
+
+plugin:content_manager/rule/create:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:admin/content_manager/rule/create'
+  type: "cluster"
+  description: "Create a content manager rule resource"
+
+plugin:content_manager/rule/update:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:admin/content_manager/rule/update'
+  type: "cluster"
+  description: "Update a content manager rule resource"
+
+plugin:content_manager/rule/delete:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:admin/content_manager/rule/delete'
+  type: "cluster"
+  description: "Delete a content manager rule resource"
+
+plugin:content_manager/rule/*:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'plugin:content_manager/rule/create'
+    - 'plugin:content_manager/rule/update'
+    - 'plugin:content_manager/rule/delete'
+  type: "cluster"
+  description: "Full access to content manager rule resources"
+
+plugin:content_manager/kvdb/create:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:admin/content_manager/kvdb/create'
+  type: "cluster"
+  description: "Create a content manager KVDB resource"
+
+plugin:content_manager/kvdb/update:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:admin/content_manager/kvdb/update'
+  type: "cluster"
+  description: "Update a content manager KVDB resource"
+
+plugin:content_manager/kvdb/delete:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:admin/content_manager/kvdb/delete'
+  type: "cluster"
+  description: "Delete a content manager KVDB resource"
+
+plugin:content_manager/kvdb/*:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'plugin:content_manager/kvdb/create'
+    - 'plugin:content_manager/kvdb/update'
+    - 'plugin:content_manager/kvdb/delete'
+  type: "cluster"
+  description: "Full access to content manager KVDB resources"
+
+plugin:content_manager/filter/create:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:admin/content_manager/filter/create'
+  type: "cluster"
+  description: "Create a content manager filter resource"
+
+plugin:content_manager/filter/update:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:admin/content_manager/filter/update'
+  type: "cluster"
+  description: "Update a content manager filter resource"
+
+plugin:content_manager/filter/delete:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:admin/content_manager/filter/delete'
+  type: "cluster"
+  description: "Delete a content manager filter resource"
+
+plugin:content_manager/filter/*:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'plugin:content_manager/filter/create'
+    - 'plugin:content_manager/filter/update'
+    - 'plugin:content_manager/filter/delete'
+  type: "cluster"
+  description: "Full access to content manager filter resources"
+
+plugin:content_manager/subscription/get:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:monitor/content_manager/subscription/get'
+  type: "cluster"
+  description: "Get the CTI subscription"
+
+plugin:content_manager/subscription/post:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:admin/content_manager/subscription/create'
+  type: "cluster"
+  description: "Create/update the CTI subscription"
+
+plugin:content_manager/subscription/delete:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:admin/content_manager/subscription/delete'
+  type: "cluster"
+  description: "Delete the CTI subscription"
+
+plugin:content_manager/update:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:admin/content_manager/update/trigger'
+  type: "cluster"
+  description: "Trigger an on-demand CTI catalog sync"
+
+plugin:content_manager/logtest:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:monitor/content_manager/logtest'
+  type: "cluster"
+  description: "Run a log test"
+
+plugin:content_manager/logtest/detection:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:monitor/content_manager/logtest_detection'
+  type: "cluster"
+  description: "Run a logtest detection"
+
+plugin:content_manager/logtest/normalization:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:monitor/content_manager/logtest_normalization'
+  type: "cluster"
+  description: "Run a logtest normalization"
+
+plugin:content_manager/logtest/*:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'plugin:content_manager/logtest/detection'
+    - 'plugin:content_manager/logtest/normalization'
+  type: "cluster"
+  description: "Full access to logtest sub-operations"
+
+plugin:content_manager/promote/get:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:monitor/content_manager/promote/get'
+  type: "cluster"
+  description: "Preview a promotion diff"
+
+plugin:content_manager/promote/post:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:admin/content_manager/promote/create'
+  type: "cluster"
+  description: "Execute a space promotion"
+
+plugin:content_manager/promote/*:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'plugin:content_manager/promote/get'
+    - 'plugin:content_manager/promote/post'
+  type: "cluster"
+  description: "Full access to space promotion"
+
+plugin:content_manager/space/delete:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:admin/content_manager/space/delete'
+  type: "cluster"
+  description: "Delete a content space"
+
+plugin:content_manager/policy/update:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:admin/content_manager/policy/update'
+  type: "cluster"
+  description: "Update the draft policy"
+
+plugin:wazuh/settings/write:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:admin/setup/settings/update'
+  type: "cluster"
+  description: "Write Wazuh settings"
+
+plugin:content_manager/version/check:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:monitor/content_manager/version/check'
+  type: "cluster"
+  description: "Check the CTI catalog version"

@@ -425,12 +425,39 @@ jobs:
       - uses: actions/checkout@v7
 
       # Built by the build-wazuh-engine job
-      - name: Download Wazuh Engine
-        uses: actions/download-artifact@v8
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v6
         with:
-          pattern: wazuh-engine-*-linux-${{ matrix.architecture == 'x64' && 'amd64' || 'arm64' }}
-          merge-multiple: true
-          path: ${{ github.workspace }}/artifacts/engine
+          role-to-assume: ${{ secrets.AWS_INDEXER_ACTIONS_ROLE }}
+          aws-region: "us-east-1"
+
+      # Built by the build-wazuh-engine job
+      - name: Download Wazuh Engine
+        run: |
+          mkdir -p "${{ github.workspace }}/artifacts/engine"
+          arch_suffix="${{ matrix.architecture == 'x64' && 'amd64' || 'arm64' }}"
+          s3_base="${{ env.CI_DEV_INTERNAL_BUCKET }}/${{ env.CI_ENGINE_ARTIFACTS_REPO }}/${{ env.CI_ENGINE_ARTIFACTS_WORKFLOW }}"
+          aws s3 cp "$s3_base/" "${{ github.workspace }}/artifacts/engine/" --recursive \
+            --exclude "*" --include "*linux-${arch_suffix}*/artifacts_${{ github.run_id }}.zip"
+
+          shopt -s nullglob
+          archives=("${{ github.workspace }}/artifacts/engine"/*/artifacts_${{ github.run_id }}.zip)
+          if [ ${#archives[@]} -eq 0 ]; then
+            echo "::error::No Wazuh Engine artifacts found in S3 for run ${{ github.run_id }} (arch ${arch_suffix})"
+            aws s3 ls "$s3_base/" || true
+            exit 1
+          fi
+
+          for z in "${archives[@]}"; do
+            unzip -j -o "$z" -d "${{ github.workspace }}/artifacts/engine"
+          done
+
+          engine_pattern="wazuh-engine-*-linux-${arch_suffix}.tar.gz"
+          if ! find "${{ github.workspace }}/artifacts/engine" -maxdepth 1 -type f -name "$engine_pattern" | grep -q .; then
+            echo "::error::No Wazuh Engine tarball found for pattern $engine_pattern"
+            ls -l "${{ github.workspace }}/artifacts/engine" || true
+            exit 1
+          fi
 
       - name: Prepare workspace for container user
         run: |

@@ -3,6 +3,31 @@
 # Exit immediately if a command exits with a non-zero status.
 set -ex
 
+# Retry a command with exponential backoff.
+# Usage: retry <max_attempts> <initial_delay_seconds> <command...>
+retry() {
+    local max_attempts="$1"
+    local delay="$2"
+    shift 2
+    local attempt=1
+
+    until "$@"; do
+        if (( attempt >= max_attempts )); then
+            echo "ERROR: Command failed after ${max_attempts} attempts: $*" >&2
+            return 1
+        fi
+        echo "Attempt ${attempt}/${max_attempts} failed. Retrying in ${delay}s..." >&2
+        sleep "$delay"
+        delay=$(( delay * 2 ))
+        (( attempt++ ))
+    done
+}
+
+RETRY_ATTEMPTS=${RETRY_ATTEMPTS:-5}
+RETRY_DELAY_GIT=${RETRY_DELAY_GIT:-10}
+RETRY_DELAY_SNAPSHOTS=${RETRY_DELAY_SNAPSHOTS:-15}
+RETRY_DELAY_GRADLE=${RETRY_DELAY_GRADLE:-30}
+
 # Set default values for environment variables
 INDEXER_PLUGINS_BRANCH=${INDEXER_PLUGINS_BRANCH:-main}
 INDEXER_REPORTING_BRANCH=${INDEXER_REPORTING_BRANCH:-main}
@@ -53,10 +78,10 @@ clone_repositories() {
         repo_url="https://github.com/wazuh/$repo_name"
 
         if [ ! -d "$repo_dir/.git" ]; then
-            git clone --depth 1 "$repo_url" "$repo_dir"
+            retry "$RETRY_ATTEMPTS" "$RETRY_DELAY_GIT" git clone --depth 1 "$repo_url" "$repo_dir"
         fi
         # Resolve a branch, tag, or commit SHA (volumes persist across runs).
-        git -C "$repo_dir" fetch --depth 1 origin "$branch"
+        retry "$RETRY_ATTEMPTS" "$RETRY_DELAY_GIT" git -C "$repo_dir" fetch --depth 1 origin "$branch"
         git -C "$repo_dir" checkout --detach FETCH_HEAD
     done
 }
@@ -67,7 +92,7 @@ download_snapshots() {
     echo "Downloading Snapshots"
     echo "----------------------------------------"
 
-    bash ~/build-scripts/download_snapshots.sh \
+    retry "$RETRY_ATTEMPTS" "$RETRY_DELAY_SNAPSHOTS" bash ~/build-scripts/download_snapshots.sh \
         --env "${CTI_API_URL:-https://api.pre.cloud.wazuh.com/api/v1}" \
         --output-dir ~/artifacts/snapshots
 }
@@ -81,7 +106,7 @@ build_plugins() {
     local revision="$2"
     cd ${PLUGINS_REPO_DIR}
     echo "Building setup and content-manager plugins..."
-    ./gradlew publishToMavenLocal -Dversion="$version" -Drevision="$revision" --no-daemon -x check
+    retry "$RETRY_ATTEMPTS" "$RETRY_DELAY_GRADLE" ./gradlew publishToMavenLocal -Dversion="$version" -Drevision="$revision" --no-daemon -x check
 }
 
 # Function to build wazuh-indexer-reporting
@@ -93,7 +118,7 @@ build_reporting() {
     local revision="$2"
     cd ${REPORTING_REPO_DIR}
     echo "Building reporting..."
-    ./gradlew publishToMavenLocal -Dversion="$version" -Drevision="$revision" --no-daemon -x check
+    retry "$RETRY_ATTEMPTS" "$RETRY_DELAY_GRADLE" ./gradlew publishToMavenLocal -Dversion="$version" -Drevision="$revision" --no-daemon -x check
 }
 
 # Function to build wazuh-indexer-security-analytics
@@ -106,10 +131,10 @@ build_security_analytics() {
     cd ${SECURITY_ANALYTICS_REPO_DIR}
 
     echo "Building security analytics commons..."
-    ./gradlew wazuh-indexer-security-analytics-commons:publishToMavenLocal -Dversion="$version" -Drevision="$revision" --no-daemon -x check
+    retry "$RETRY_ATTEMPTS" "$RETRY_DELAY_GRADLE" ./gradlew wazuh-indexer-security-analytics-commons:publishToMavenLocal -Dversion="$version" -Drevision="$revision" --no-daemon -x check
 
     echo "Building security analytics..."
-    ./gradlew publishToMavenLocal -Dversion="$version" -Drevision="$revision" --no-daemon -x check
+    retry "$RETRY_ATTEMPTS" "$RETRY_DELAY_GRADLE" ./gradlew publishToMavenLocal -Dversion="$version" -Drevision="$revision" --no-daemon -x check
 }
 
 # Function to build wazuh-indexer-common-utils
@@ -121,7 +146,7 @@ build_common_utils() {
     local revision="$2"
     cd ${COMMON_UTILS_REPO_DIR}
     echo "Building common-utils..."
-    ./gradlew publishToMavenLocal -Dversion="$version" -Drevision="$revision" --no-daemon -x check
+    retry "$RETRY_ATTEMPTS" "$RETRY_DELAY_GRADLE" ./gradlew publishToMavenLocal -Dversion="$version" -Drevision="$revision" --no-daemon -x check
 }
 
 # Function to build wazuh-indexer-notifications
@@ -133,7 +158,7 @@ build_notifications() {
     local revision="$2"
     cd ${NOTIFICATIONS_REPO_DIR}/notifications
     echo "Building notifications..."
-    ./gradlew publishToMavenLocal -Dversion="$version" -Drevision="$revision" --no-daemon -x check
+    retry "$RETRY_ATTEMPTS" "$RETRY_DELAY_GRADLE" ./gradlew publishToMavenLocal -Dversion="$version" -Drevision="$revision" --no-daemon -x check
 }
 
 # Function to build wazuh-indexer-alerting
@@ -145,7 +170,7 @@ build_alerting() {
     local revision="$2"
     cd ${ALERTING_REPO_DIR}
     echo "Building alerting..."
-    ./gradlew publishToMavenLocal -Dversion="$version" -Drevision="$revision" --no-daemon -x check
+    retry "$RETRY_ATTEMPTS" "$RETRY_DELAY_GRADLE" ./gradlew publishToMavenLocal -Dversion="$version" -Drevision="$revision" --no-daemon -x check
 }
 
 # Function to copy builds

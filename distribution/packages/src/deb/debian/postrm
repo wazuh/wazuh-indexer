@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# Copyright Wazuh Indexer Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# The Wazuh Indexer Contributors require contributions made to
+# this file be licensed under the Apache-2.0 license or a
+# compatible open source license.
+
+# deb wazuh-indexer postrm script
+
+set -e
+
+name="wazuh-indexer"
+product_dir=/usr/share/${name}
+
+case "$1" in
+    remove|purge)
+        rm -rf "${product_dir}/engine"
+        rm -rf "${product_dir}/plugins"
+        ;;
+    upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+        ;;
+    *)
+        echo "postrm called with unknown argument '$1'" >&2
+        exit 1
+        ;;
+esac
+
+exit 0

@@ -1,167 +1,273 @@
-# Wazuh monitoring and statistics index permissions
-manage_wazuh_index:
-  reserved: true
-  hidden: false
-  cluster_permissions: []
-  index_permissions:
-  - index_patterns:
-    - "wazuh-*"
-    # dls: ""
-    # fls: []
-    # masked_fields: []
-    allowed_actions:
-    - "read"
-    - "delete"
-    - "manage"
-    - "index"
-  tenant_permissions: []
-  static: false
 
-# Wazuh roles for security configuration
-
-stateful-read:
-  reserved: true
-  cluster_permissions: []
-  index_permissions:
-    - index_patterns:
-        - "wazuh-states-*"
-      # dls: ""
-      # fls: []
-      # masked_fields: []
-      allowed_actions:
-        - "read"
-  tenant_permissions: []
-  static: true
-
-stateful-write:
-  reserved: true
-  cluster_permissions: []
-  index_permissions:
-    - index_patterns:
-        - "wazuh-states-*"
-      # dls: ""
-      # fls: []
-      # masked_fields: []
-      allowed_actions:
-        - "index"
-  tenant_permissions: []
-  static: true
-
-stateful-delete:
-  reserved: true
-  cluster_permissions: []
-  index_permissions:
-    - index_patterns:
-        - "wazuh-states-*"
-      # dls: ""
-      # fls: []
-      # masked_fields: []
-      allowed_actions:
-        - "delete"
-  tenant_permissions: []
-  static: true
-
-stateless-read:
-  reserved: true
-  cluster_permissions: []
-  index_permissions:
-    - index_patterns:
-        - "wazuh-alerts*"
-        - "wazuh-archives*"
-      # dls: ""
-      # fls: []
-      # masked_fields: []
-      allowed_actions:
-        - "read"
-  tenant_permissions: []
-  static: true
-
-stateless-write:
-  reserved: true
-  cluster_permissions: []
-  index_permissions:
-    - index_patterns:
-        - "wazuh-alerts*"
-        - "wazuh-archives*"
-      # dls: ""
-      # fls: []
-      # masked_fields: []
-      allowed_actions:
-        - "index"
-  tenant_permissions: []
-  static: true
-
-metrics-read:
-  reserved: true
-  cluster_permissions: []
-  index_permissions:
-    - index_patterns:
-        - "wazuh-monitoring*"
-        - "wazuh-statistics*"
-      # dls: ""
-      # fls: []
-      # masked_fields: []
-      allowed_actions:
-        - "read"
-  tenant_permissions: []
-  static: true
-
-metrics-write:
-  reserved: true
-  cluster_permissions: []
-  index_permissions:
-    - index_patterns:
-        - "wazuh-monitoring*"
-        - "wazuh-statistics*"
-      # dls: ""
-      # fls: []
-      # masked_fields: []
-      allowed_actions:
-        - "index"
-  tenant_permissions: []
-  static: true
-
-sample-data-management:
-  reserved: true
-  cluster_permissions: []
-  index_permissions:
-    - index_patterns:
-        - "*-sample-*"
-      # dls: ""
-      # fls: []
-      # masked_fields: []
-      allowed_actions:
-        - "data_access"
-        - "manage"
-  tenant_permissions: []
-  static: true
-
-
-# Roles for Content Manager plugin subscription management
-cm_subscription_read:
+# ---------------------------------------------------------------------#
+# wazuh-admin: full access to all Wazuh features, excluding super-admin
+# features such as security configuration.
+# ---------------------------------------------------------------------#
+wazuh_admin:
   reserved: true
   hidden: false
   cluster_permissions:
-    - "plugin:content_manager/subscription_get"
-  index_permissions: []
+    - 'cluster_composite_ops'
+    - 'cluster_monitor'
+    # Content Manager
+    - 'plugin:wazuh/settings/write'
+    - 'plugin:content_manager/integration/*'
+    - 'plugin:content_manager/decoder/*'
+    - 'plugin:content_manager/rule/*'
+    - 'plugin:content_manager/kvdb/*'
+    - 'plugin:content_manager/filter/*'
+    - 'plugin:content_manager/subscription/get'
+    - 'plugin:content_manager/subscription/post'
+    - 'plugin:content_manager/subscription/delete'
+    - 'plugin:content_manager/update'
+    - 'plugin:content_manager/logtest'
+    - 'plugin:content_manager/logtest/*'
+    - 'plugin:content_manager/promote/*'
+    - 'plugin:content_manager/space/delete'
+    # Security Analytics
+    - 'cluster:admin/wazuh/securityanalytics/rule/custom/*'
+    - 'cluster:admin/wazuh/securityanalytics/logtype/*'
+    - 'cluster:admin/wazuh/securityanalytics/rules/evaluate'
+    - 'cluster:admin/wazuh/securityanalytics/space/delete'
+    # Alerting (full)
+    - 'cluster:admin/opendistro/alerting/*'
+    - 'cluster:admin/opensearch/alerting/*'
+    # Anomaly detection (detector ops)
+    - 'cluster:admin/opendistro/ad/*'
+    # Notifications (full)
+    - 'cluster:admin/opensearch/notifications/*'
+    # Reporting (full)
+    - 'cluster:admin/opendistro/reports/*'
+    # Index management (full): ISM, rollups, transforms
+    - 'cluster:admin/opendistro/ism/*'
+    - 'cluster:admin/opendistro/rollup/*'
+    - 'cluster:admin/opendistro/transform/*'
+    - 'cluster:admin/opensearch/controlcenter/lron/*'
+  index_permissions:
+    - index_patterns:
+        - '*'
+        - '.kibana*'
+      allowed_actions:
+        - 'get'
+        - 'read'
+        - 'indices:admin/opensearch/ism/*'
+        - 'indices:internal/plugins/replication/index/stop'
+    - index_patterns:
+        - '.wazuh-settings'
+      allowed_actions:
+        - 'read'
+        - 'index'
+    - index_patterns:
+        - 'wazuh-events-v5*'
+      allowed_actions:
+        - 'index'
+    - index_patterns:
+        - '.wazuh-internal-state'
+      allowed_actions:
+        - 'read'
+        - 'index'
+        - 'delete'
+    - index_patterns:
+        - 'wazuh-threatintel-*'
+        - '.opensearch-sap-*'
+      allowed_actions:
+        - 'index'
+        - 'delete'
   tenant_permissions: []
   static: true
 
-cm_subscription_write:
+# ---------------------------------------------------------------------#
+# wazuh-demo: default user with regular access. Can visualize data and
+# index/update/delete threatintel resources.
+# ---------------------------------------------------------------------#
+wazuh_demo:
   reserved: true
   hidden: false
   cluster_permissions:
-    - "plugin:content_manager/subscription_post"
-    - "plugin:content_manager/subscription_delete"
-  index_permissions: []
+    - 'cluster_composite_ops'
+    - 'cluster_monitor'
+    # Content Manager
+    - 'plugin:content_manager/integration/*'
+    - 'plugin:content_manager/decoder/*'
+    - 'plugin:content_manager/rule/*'
+    - 'plugin:content_manager/kvdb/*'
+    - 'plugin:content_manager/filter/*'
+    - 'plugin:content_manager/subscription/get'
+    - 'plugin:content_manager/update'
+    - 'plugin:content_manager/logtest'
+    - 'plugin:content_manager/logtest/*'
+    - 'plugin:content_manager/promote/*'
+    - 'plugin:content_manager/space/delete'
+    # Security Analytics
+    - 'cluster:admin/wazuh/securityanalytics/rule/custom/*'
+    - 'cluster:admin/wazuh/securityanalytics/logtype/*'
+    - 'cluster:admin/wazuh/securityanalytics/rules/evaluate'
+    - 'cluster:admin/wazuh/securityanalytics/space/delete'
+    # Alerting (read + acknowledge alerts)
+    - 'cluster:admin/opendistro/alerting/alerts/get'
+    - 'cluster:admin/opendistro/alerting/destination/get'
+    - 'cluster:admin/opendistro/alerting/monitor/get'
+    - 'cluster:admin/opendistro/alerting/monitor/search'
+    - 'cluster:admin/opensearch/alerting/comments/search'
+    - 'cluster:admin/opensearch/alerting/findings/get'
+    - 'cluster:admin/opensearch/alerting/remote/indexes/get'
+    - 'cluster:admin/opensearch/alerting/v2/alerts/get'
+    - 'cluster:admin/opensearch/alerting/v2/monitor/get'
+    - 'cluster:admin/opensearch/alerting/v2/monitor/search'
+    - 'cluster:admin/opensearch/alerting/workflow/get'
+    - 'cluster:admin/opensearch/alerting/workflow_alerts/get'
+    # Anomaly detection (read)
+    - 'cluster:admin/opendistro/ad/detector/info'
+    - 'cluster:admin/opendistro/ad/detector/search'
+    - 'cluster:admin/opendistro/ad/detector/suggest'
+    - 'cluster:admin/opendistro/ad/detector/validate'
+    - 'cluster:admin/opendistro/ad/detectors/get'
+    - 'cluster:admin/opendistro/ad/result/search'
+    - 'cluster:admin/opendistro/ad/result/topAnomalies'
+    - 'cluster:admin/opendistro/ad/tasks/search'
+    # Notifications (read)
+    - 'cluster:admin/opensearch/notifications/channels/get'
+    - 'cluster:admin/opensearch/notifications/configs/get'
+    - 'cluster:admin/opensearch/notifications/features'
+    # Reporting (read + download)
+    - 'cluster:admin/opendistro/reports/definition/get'
+    - 'cluster:admin/opendistro/reports/definition/list'
+    - 'cluster:admin/opendistro/reports/instance/get'
+    - 'cluster:admin/opendistro/reports/instance/list'
+    - 'cluster:admin/opendistro/reports/menu/download'
+    # Index management (read): ISM explain/get, rollup/transform get/search
+    - 'cluster:admin/opendistro/ism/managedindex/explain'
+    - 'cluster:admin/opendistro/ism/policy/get'
+    - 'cluster:admin/opendistro/ism/policy/search'
+    - 'cluster:admin/opendistro/rollup/get'
+    - 'cluster:admin/opendistro/rollup/search'
+    - 'cluster:admin/opendistro/transform/get'
+    - 'cluster:admin/opendistro/transform/search'
+  index_permissions:
+    - index_patterns:
+        - '*'
+        - '.kibana*'
+      allowed_actions:
+        - 'get'
+        - 'read'
+    - index_patterns:
+        - '.wazuh-internal-state'
+      allowed_actions:
+        - 'read'
+    - index_patterns:
+        - 'wazuh-threatintel-*'
+        - '.opensearch-sap-*'
+      allowed_actions:
+        - 'index'
+        - 'delete'
   tenant_permissions: []
   static: true
 
-cm_update:
+# ---------------------------------------------------------------------#
+# wazuh-readonly: read-only user.
+# ---------------------------------------------------------------------#
+wazuh_readonly:
   reserved: true
   hidden: false
   cluster_permissions:
-    - "plugin:content_manager/update"
-  index_permissions: []
+    - 'cluster_composite_ops'
+    - 'cluster_monitor'
+    - 'plugin:content_manager/subscription/get'
+    - 'plugin:content_manager/logtest'
+    - 'plugin:content_manager/logtest/*'
+    - 'cluster:admin/wazuh/securityanalytics/rules/evaluate'
+    # Alerting (read + acknowledge alerts)
+    - 'cluster:admin/opendistro/alerting/alerts/get'
+    - 'cluster:admin/opendistro/alerting/destination/get'
+    - 'cluster:admin/opendistro/alerting/monitor/get'
+    - 'cluster:admin/opendistro/alerting/monitor/search'
+    - 'cluster:admin/opensearch/alerting/comments/search'
+    - 'cluster:admin/opensearch/alerting/findings/get'
+    - 'cluster:admin/opensearch/alerting/remote/indexes/get'
+    - 'cluster:admin/opensearch/alerting/v2/alerts/get'
+    - 'cluster:admin/opensearch/alerting/v2/monitor/get'
+    - 'cluster:admin/opensearch/alerting/v2/monitor/search'
+    - 'cluster:admin/opensearch/alerting/workflow/get'
+    - 'cluster:admin/opensearch/alerting/workflow_alerts/get'
+    # Anomaly detection (read)
+    - 'cluster:admin/opendistro/ad/detector/info'
+    - 'cluster:admin/opendistro/ad/detector/search'
+    - 'cluster:admin/opendistro/ad/detector/suggest'
+    - 'cluster:admin/opendistro/ad/detector/validate'
+    - 'cluster:admin/opendistro/ad/detectors/get'
+    - 'cluster:admin/opendistro/ad/result/search'
+    - 'cluster:admin/opendistro/ad/result/topAnomalies'
+    - 'cluster:admin/opendistro/ad/tasks/search'
+    # Notifications (read)
+    - 'cluster:admin/opensearch/notifications/channels/get'
+    - 'cluster:admin/opensearch/notifications/configs/get'
+    - 'cluster:admin/opensearch/notifications/features'
+    # Reporting (read + download)
+    - 'cluster:admin/opendistro/reports/definition/get'
+    - 'cluster:admin/opendistro/reports/definition/list'
+    - 'cluster:admin/opendistro/reports/instance/get'
+    - 'cluster:admin/opendistro/reports/instance/list'
+    - 'cluster:admin/opendistro/reports/menu/download'
+    # Index management (read): ISM explain/get, rollup/transform get/search
+    - 'cluster:admin/opendistro/ism/managedindex/explain'
+    - 'cluster:admin/opendistro/ism/policy/get'
+    - 'cluster:admin/opendistro/ism/policy/search'
+    - 'cluster:admin/opendistro/rollup/get'
+    - 'cluster:admin/opendistro/rollup/search'
+    - 'cluster:admin/opendistro/transform/get'
+    - 'cluster:admin/opendistro/transform/search'
+  index_permissions:
+    - index_patterns:
+        - '*'
+        - '.kibana*'
+      allowed_actions:
+        - 'get'
+        - 'read'
+    - index_patterns:
+        - '.wazuh-settings'
+      allowed_actions:
+        - 'read'
+    - index_patterns:
+        - '.wazuh-internal-state'
+      allowed_actions:
+        - 'read'
+  tenant_permissions: []
+  static: true
+
+# ---------------------------------------------------------------------#
+# wazuh-server: service account. Reads CTI consumer state, active
+# responses and threat intelligence content; ingests events, metrics
+# and states; manages state documents (index + delete).
+# ---------------------------------------------------------------------#
+wazuh_server:
+  reserved: true
+  hidden: false
+  cluster_permissions:
+    - 'cluster_composite_ops'
+    - 'cluster_monitor'
+  index_permissions:
+    - index_patterns:
+        - '.wazuh-cti-consumers'
+        - 'wazuh-active-responses-*'
+        - 'wazuh-threatintel-*'
+      allowed_actions:
+        - 'read'
+    - index_patterns:
+        - 'wazuh-events-v5-*'
+        - 'wazuh-metrics-*'
+      allowed_actions:
+        - 'read'
+        - 'index'
+    - index_patterns:
+        - 'wazuh-states-*'
+      allowed_actions:
+        - 'read'
+        - 'index'
+        - 'delete'
+    - index_patterns:
+        - '.wazuh-threatintel-vulnerabilities*'
+        - 'wazuh-threatintel-*'
+      allowed_actions:
+        - 'manage_point_in_time'
   tenant_permissions: []
   static: true

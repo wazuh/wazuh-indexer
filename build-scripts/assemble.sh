@@ -182,6 +182,8 @@ function add_configuration_files() {
     cat "$PATH_CONF/security/roles.wazuh.yml" >>"$PATH_CONF/opensearch-security/roles.yml"
     cat "$PATH_CONF/security/roles_mapping.wazuh.yml" >>"$PATH_CONF/opensearch-security/roles_mapping.yml"
     cat "$PATH_CONF/security/internal_users.wazuh.yml" >>"$PATH_CONF/opensearch-security/internal_users.yml"
+    cat "$PATH_CONF/security/action_groups.wazuh.yml" >>"$PATH_CONF/opensearch-security/action_groups.yml"
+    
     # Disable multi-tenancy
     sed -i 's/#kibana:/kibana:/' "$PATH_CONF/opensearch-security/config.yml"
     sed -i 's/#multitenancy_enabled: true/  multitenancy_enabled: false/' "$PATH_CONF/opensearch-security/config.yml"

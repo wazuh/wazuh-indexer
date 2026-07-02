@@ -1,131 +1,38 @@
-# Wazuh monitoring and statistics index permissions
-manage_wazuh_index:
+
+# ---------------------------------------------------------------------#
+# Wazuh Indexer Default Roles Mappings
+# ---------------------------------------------------------------------#
+#
+# One composite role per user.
+
+dashboard_server:
   reserved: true
   hidden: false
-  backend_roles: []
-  hosts: []
   users:
-  - "kibanaserver"
-  and_backend_roles: []
+    - "kibanaserver"
 
-# Wazuh roles mappings for security configuration
-
-stateful-read:
+wazuh_admin:
   reserved: true
   hidden: false
-  backend_roles: [ ]
-  hosts: [ ]
   users:
-    - "wazuh-server"
-    - "wazuh-dashboard"
-  and_backend_roles: [ ]
+    - "wazuh-admin"
+  backend_roles:
+    - "admin"
 
-stateful-write:
+wazuh_demo:
   reserved: true
   hidden: false
-  backend_roles: [ ]
-  hosts: [ ]
   users:
-    - "wazuh-server"
-  and_backend_roles: [ ]
+    - "wazuh-demo"
 
-stateful-delete:
+wazuh_readonly:
   reserved: true
   hidden: false
-  backend_roles: [ ]
-  hosts: [ ]
   users:
-    - "wazuh-server"
-  and_backend_roles: [ ]
+    - "wazuh-readonly"
 
-stateless-write:
+wazuh_server:
   reserved: true
   hidden: false
-  backend_roles: [ ]
-  hosts: [ ]
   users:
     - "wazuh-server"
-  and_backend_roles: [ ]
-
-stateless-read:
-  reserved: true
-  hidden: false
-  backend_roles: [ ]
-  hosts: [ ]
-  users:
-    - "wazuh-dashboard"
-  and_backend_roles: [ ]
-
-metrics-read:
-  reserved: true
-  hidden: false
-  backend_roles: [ ]
-  hosts: [ ]
-  users:
-    - "wazuh-dashboard"
-  and_backend_roles: [ ]
-
-metrics-write:
-  reserved: true
-  hidden: false
-  backend_roles: [ ]
-  hosts: [ ]
-  users:
-    - "wazuh-dashboard"
-  and_backend_roles: [ ]
-
-sample-data-management:
-  reserved: true
-  hidden: false
-  backend_roles: [ ]
-  hosts: [ ]
-  users:
-    - "wazuh-dashboard"
-  and_backend_roles: [ ]
-
-# Allow the dashboard to pre-configure integrations.
-alerting_full_access:
-  reserved: true
-  hidden: false
-  backend_roles: []
-  hosts: []
-  users:
-  - "kibanaserver"
-  and_backend_roles: []
-
-notifications_full_access:
-  reserved: true
-  hidden: false
-  backend_roles: []
-  hosts: []
-  users:
-  - "kibanaserver"
-  and_backend_roles: []
-
-# Roles for Content Manager plugin subscription management
-cm_subscription_read:
-  reserved: true
-  hidden: false
-  backend_roles: [ ]
-  hosts: [ ]
-  users:
-    - "wazuh-server"
-  and_backend_roles: [ ]
-
-cm_subscription_write:
-  reserved: true
-  hidden: false
-  backend_roles: [ ]
-  hosts: [ ]
-  users:
-    - "wazuh-dashboard"
-  and_backend_roles: [ ]
-
-cm_update:
-  reserved: true
-  hidden: false
-  backend_roles: [ ]
-  hosts: [ ]
-  users:
-    - "wazuh-dashboard"
-  and_backend_roles: [ ]

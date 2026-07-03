@@ -8,7 +8,7 @@ jobs:
   verify-changelog:
     if: github.repository == 'wazuh/wazuh-indexer'
     runs-on:
-      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@v5
         with:

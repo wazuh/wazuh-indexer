@@ -32,7 +32,7 @@ jobs:
   bump:
     name: Repository bumper
     runs-on:
-      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
     permissions:
       contents: write
       pull-requests: write

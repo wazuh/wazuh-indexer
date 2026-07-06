@@ -65,15 +65,18 @@ on:
         type: string
         required: false
     secrets:
+      AWS_INDEXER_ACTIONS_ROLE:
+        required: true
+        description: "AWS IAM OIDC role for S3 and infrastructure access"
+      CI_AWS_REGION:
+        required: true
+        description: "AWS region for the internal S3 bucket and final package upload"
       CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY:
         required: true
-        description: "AWS user access key"
+        description: "AWS user access key for the final package upload"
       CI_INTERNAL_DEVELOPMENT_BUCKET_USER_SECRET_KEY:
         required: true
-        description: "AWS user secret key"
-      AWS_IAM_OVA_ROLE:
-        required: true
-        description: "AWS IAM role"
+        description: "AWS user secret key for the final package upload"
 
 permissions:
   id-token: write
@@ -209,8 +212,8 @@ jobs:
         if: ${{ matrix.distribution == 'rpm' }}
         uses: aws-actions/configure-aws-credentials@v5
         with:
-          aws-region: "us-east-1"
-          role-to-assume: ${{ secrets.AWS_IAM_OVA_ROLE }}
+          aws-region: ${{ secrets.CI_AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_INDEXER_ACTIONS_ROLE }}
           role-session-name: "4_package_builder_indexer"
 
       - name: Setup RPM environment
@@ -329,14 +332,7 @@ jobs:
           sudo bash packaging_scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }}
           sudo dpkg -i "artifacts/dist/${{ steps.package.outputs.name }}"
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.package.outputs.name }}
-          path: artifacts/dist/${{ steps.package.outputs.name }}
-          if-no-files-found: error
-
-      - name: Set up AWS CLI
+      - name: Set up AWS CLI for final package upload
         if: ${{ inputs.upload }}
         uses: aws-actions/configure-aws-credentials@v5
         with:

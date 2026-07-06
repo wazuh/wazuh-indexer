@@ -593,12 +593,6 @@ jobs:
             bash /build-scripts/ci/test_upgrade_block.sh
           "
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: ${{ steps.package.outputs.name }}
-          path: artifacts/dist/${{ steps.package.outputs.name }}
-          if-no-files-found: error
 
       - name: Set up AWS CLI
         uses: aws-actions/configure-aws-credentials@v6

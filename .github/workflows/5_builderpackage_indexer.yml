@@ -1,6 +1,12 @@
 run-name: Build ${{ inputs.distribution }} Wazuh Indexer on ${{ inputs.architecture }} | ${{ inputs.id }}
 name: (5.x) Build packages
 
+env:
+  CI_ARTIFACTS_REPO: wazuh-indexer
+  CI_ARTIFACTS_WORKFLOW: 5_builderpackage_indexer
+  CI_ENGINE_ARTIFACTS_REPO: wazuh
+  CI_ENGINE_ARTIFACTS_WORKFLOW: 5_builderpackage_engine-standalone
+
 permissions:
   contents: read
   packages: read
@@ -92,12 +98,21 @@ on:
         default: "main"
         required: false
     secrets:
+      AWS_INDEXER_ACTIONS_ROLE:
+        required: true
+        description: "AWS IAM OIDC role for S3 and infrastructure access"
+      CI_INTERNAL_S3_BUCKET:
+        required: true
+        description: "Internal S3 bucket URI used to stage build artifacts"
+      CI_AWS_REGION:
+        required: true
+        description: "AWS region for the internal S3 bucket and final package upload"
       CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY:
         required: true
-        description: "AWS user access key"
+        description: "AWS user access key for the final package upload"
       CI_INTERNAL_DEVELOPMENT_BUCKET_USER_SECRET_KEY:
         required: true
-        description: "AWS user secret key"
+        description: "AWS user secret key for the final package upload"
 
     outputs:
       name:
@@ -390,6 +405,7 @@ jobs:
       wazuh-branch: ${{ needs.branches.outputs.wazuh_ref }}
       build-type: "release"
       arch: ${{ inputs.architecture }}
+    secrets: inherit
 
   build:
     needs: [setup, branches, build-wazuh-engine]
@@ -405,12 +421,40 @@ jobs:
       - uses: actions/checkout@v7
 
       # Built by the build-wazuh-engine job
-      - name: Download Wazuh Engine
-        uses: actions/download-artifact@v8
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v6
         with:
-          pattern: wazuh-engine-*-linux-${{ matrix.architecture == 'x64' && 'amd64' || 'arm64' }}
-          merge-multiple: true
-          path: ${{ github.workspace }}/artifacts/engine
+          role-to-assume: ${{ secrets.AWS_INDEXER_ACTIONS_ROLE }}
+          aws-region: ${{ secrets.CI_AWS_REGION }}
+
+      # Built by the build-wazuh-engine job
+      - name: Download Wazuh Engine
+        run: |
+          mkdir -p "${{ github.workspace }}/artifacts/engine"
+          arch_suffix="${{ matrix.architecture == 'x64' && 'amd64' || 'arm64' }}"
+          bucket="${{ secrets.CI_INTERNAL_S3_BUCKET }}"
+          s3_base="s3://${bucket#s3://}/${{ env.CI_ARTIFACTS_REPO }}/${{ env.CI_ARTIFACTS_WORKFLOW }}"
+          aws s3 cp "$s3_base/" "${{ github.workspace }}/artifacts/engine/" --recursive \
+            --exclude "*" --include "${{ github.run_id }}/wazuh-engine-*-linux-${arch_suffix}.zip"
+
+          shopt -s nullglob
+          archives=("${{ github.workspace }}/artifacts/engine"/${{ github.run_id }}/wazuh-engine-*-linux-${arch_suffix}.zip)
+          if [ ${#archives[@]} -eq 0 ]; then
+            echo "::error::No Wazuh Engine artifacts found in S3 for run ${{ github.run_id }} (arch ${arch_suffix})"
+            aws s3 ls "$s3_base/" || true
+            exit 1
+          fi
+
+          for z in "${archives[@]}"; do
+            unzip -j -o "$z" -d "${{ github.workspace }}/artifacts/engine"
+          done
+
+          engine_pattern="wazuh-engine-*-linux-${arch_suffix}.tar.gz"
+          if ! find "${{ github.workspace }}/artifacts/engine" -maxdepth 1 -type f -name "$engine_pattern" | grep -q .; then
+            echo "::error::No Wazuh Engine tarball found for pattern $engine_pattern"
+            ls -l "${{ github.workspace }}/artifacts/engine" || true
+            exit 1
+          fi
 
       - name: Prepare workspace
         run: |
@@ -549,14 +593,28 @@ jobs:
             bash /build-scripts/ci/test_upgrade_block.sh
           "
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: ${{ steps.package.outputs.name }}
-          path: artifacts/dist/${{ steps.package.outputs.name }}
-          if-no-files-found: error
 
       - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_INDEXER_ACTIONS_ROLE }}
+          aws-region: ${{ secrets.CI_AWS_REGION }}
+
+      - name: Upload package artifact to S3
+        run: |
+          pkg_name="${{ steps.package.outputs.name }}"
+          pkg_path="artifacts/dist/${pkg_name}"
+          s3_base="${{ secrets.CI_INTERNAL_S3_BUCKET }}/${{ env.CI_ARTIFACTS_REPO }}/${{ env.CI_ARTIFACTS_WORKFLOW }}/${{ github.run_id }}"
+
+          if [ ! -f "$pkg_path" ]; then
+            echo "::error::Package not found at ${pkg_path}"
+            exit 1
+          fi
+
+          aws s3 cp "$pkg_path" "${s3_base}/${pkg_name}"
+          echo "::notice::Uploaded artifact to S3: ${s3_base}/${pkg_name}"
+
+      - name: Set up AWS CLI for final package upload
         if: ${{ inputs.upload }}
         uses: aws-actions/configure-aws-credentials@v6
         with:
@@ -564,7 +622,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.CI_INTERNAL_DEVELOPMENT_BUCKET_USER_SECRET_KEY }}
           aws-region: ${{ secrets.CI_AWS_REGION }}
 
-      - name: Upload package to S3
+      - name: Upload final package to S3
         if: ${{ inputs.upload }}
         run: |
           src="artifacts/dist/${{ steps.package.outputs.name }}"

@@ -622,7 +622,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.CI_INTERNAL_DEVELOPMENT_BUCKET_USER_SECRET_KEY }}
           aws-region: ${{ secrets.CI_AWS_REGION }}
 
-      - name: Upload package to S3
+      - name: Upload final package to S3
         if: ${{ inputs.upload }}
         run: |
           src="artifacts/dist/${{ steps.package.outputs.name }}"

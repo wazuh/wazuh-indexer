@@ -431,7 +431,7 @@ jobs:
           bucket="${{ secrets.CI_INTERNAL_S3_BUCKET }}"
           s3_base="s3://${bucket#s3://}/${{ env.CI_ENGINE_ARTIFACTS_REPO }}/${{ env.CI_ENGINE_ARTIFACTS_WORKFLOW }}"
           aws s3 cp "$s3_base/" "${{ github.workspace }}/artifacts/engine/" --recursive \
-            --exclude "*" --include "*/wazuh-engine-*-linux-${arch_suffix}.zip"
+            --exclude "*" --include "${{ github.run_id }}/wazuh-engine-*-linux-${arch_suffix}.zip"
 
           shopt -s nullglob
           archives=("${{ github.workspace }}/artifacts/engine"/${{ github.run_id }}/wazuh-engine-*-linux-${arch_suffix}.zip)

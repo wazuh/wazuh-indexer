@@ -428,12 +428,13 @@ jobs:
         run: |
           mkdir -p "${{ github.workspace }}/artifacts/engine"
           arch_suffix="${{ matrix.architecture == 'x64' && 'amd64' || 'arm64' }}"
-          s3_base="${{ secrets.CI_INTERNAL_S3_BUCKET }}/${{ env.CI_ENGINE_ARTIFACTS_REPO }}/${{ env.CI_ENGINE_ARTIFACTS_WORKFLOW }}"
+          bucket="${{ secrets.CI_INTERNAL_S3_BUCKET }}"
+          s3_base="s3://${bucket#s3://}/${{ env.CI_ENGINE_ARTIFACTS_REPO }}/${{ env.CI_ENGINE_ARTIFACTS_WORKFLOW }}"
           aws s3 cp "$s3_base/" "${{ github.workspace }}/artifacts/engine/" --recursive \
-            --exclude "*" --include "*linux-${arch_suffix}*/artifacts_${{ github.run_id }}.zip"
+            --exclude "*" --include "*/wazuh-engine-*-linux-${arch_suffix}.zip"
 
           shopt -s nullglob
-          archives=("${{ github.workspace }}/artifacts/engine"/*/artifacts_${{ github.run_id }}.zip)
+          archives=("${{ github.workspace }}/artifacts/engine"/${{ github.run_id }}/wazuh-engine-*-linux-${arch_suffix}.zip)
           if [ ${#archives[@]} -eq 0 ]; then
             echo "::error::No Wazuh Engine artifacts found in S3 for run ${{ github.run_id }} (arch ${arch_suffix})"
             aws s3 ls "$s3_base/" || true

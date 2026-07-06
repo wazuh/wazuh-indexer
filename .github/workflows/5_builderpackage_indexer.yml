@@ -4,6 +4,7 @@ name: (5.x) Build packages
 permissions:
   contents: read
   packages: read
+  id-token: write
 
 # This workflow runs when any of the following occur:
 # - Run manually
@@ -288,7 +289,7 @@ jobs:
         id: common_utils_version
         run: |
           echo "version=$(bash ./tools/product_version.sh)" >> "$GITHUB_OUTPUT"
-           echo "opensearch_version=$(bash ./tools/opensearch_version.sh)" >> "$GITHUB_OUTPUT"
+          echo "opensearch_version=$(bash ./tools/opensearch_version.sh)" >> "$GITHUB_OUTPUT"
 
   get-versions-wazuh-indexer-alerting:
     needs: [ branches ]
@@ -313,7 +314,7 @@ jobs:
         id: alerting_version
         run: |
           echo "version=$(bash ./tools/product_version.sh)" >> "$GITHUB_OUTPUT"
-           echo "opensearch_version=$(bash ./tools/opensearch_version.sh)" >> "$GITHUB_OUTPUT"
+          echo "opensearch_version=$(bash ./tools/opensearch_version.sh)" >> "$GITHUB_OUTPUT"
 
   compatibility-check:
     timeout-minutes: 5
@@ -357,8 +358,8 @@ jobs:
       - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix }}
-      previous_version: ${{ steps.previous_release.outputs.previous_version }}
-      previous_4x_version: ${{ steps.previous_4x.outputs.previous_4x_version }}
+      previous_version: ${{ steps.previous_versions.outputs.previous_version }}
+      previous_4x_version: ${{ steps.previous_versions.outputs.previous_4x_version }}
     steps:
       - id: matrix
         run: |
@@ -369,38 +370,22 @@ jobs:
           )
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
       - uses: actions/checkout@v7
-      - id: previous_release
-        name: Get latest Wazuh release from GitHub
+      - name: Resolve previous release versions
+        id: previous_versions
         run: |
-          set -o pipefail
-          CURRENT="$(bash build-scripts/product_version.sh)"
-          PREVIOUS=$(curl -sfSL --retry 3 --retry-all-errors --retry-delay 5 --connect-timeout 10 --max-time 30 \
-            -H "Authorization: Bearer ${{ github.token }}" \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            https://api.github.com/repos/wazuh/wazuh-indexer/releases | jq -r '.[].tag_name' | grep -vE 'alpha|beta|rc' | sed 's/^v//' | grep -E '^4\.[0-9]+\.[0-9]+$' | \
-          grep -v "^${CURRENT}$" | sort -V | awk -v current="$CURRENT" '$0 < current' | tail -n1)
-
-          echo "Current version: $CURRENT"
-          echo "Latest release detected: $PREVIOUS"
-          echo "previous_version=$PREVIOUS" >> $GITHUB_OUTPUT
-      - id: previous_4x
-        name: Get latest Wazuh 4.x release from GitHub
-        run: |
-          set -o pipefail
-          PREVIOUS_4X=$(curl -sfSL --retry 3 --retry-all-errors --retry-delay 5 --connect-timeout 10 --max-time 30 \
-            -H "Authorization: Bearer ${{ github.token }}" \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            https://api.github.com/repos/wazuh/wazuh-indexer/releases | jq -r '.[].tag_name' | grep -vE 'alpha|beta|rc' | sed 's/^v//' | \
-            grep -E '^4\.[0-9]+\.[0-9]+$' | sort -V | tail -n1)
-
-          echo "Latest 4.x release detected: $PREVIOUS_4X"
-          echo "previous_4x_version=$PREVIOUS_4X" >> $GITHUB_OUTPUT
+          CURRENT_VERSION="$(bash build-scripts/product_version.sh)"
+          while IFS= read -r line; do
+            echo "$line" >> "$GITHUB_OUTPUT"
+          done < <(GITHUB_TOKEN="${{ github.token }}" CURRENT_VERSION="$CURRENT_VERSION" \
+            bash build-scripts/ci/resolve_previous_versions.sh)
 
   build-wazuh-engine:
     needs: [compatibility-check, branches]
-    uses: wazuh/wazuh/.github/workflows/5_builderpackage_engine-standalone.yml@main
+    uses: wazuh/wazuh/.github/workflows/5_builderpackage_engine-standalone.yml@5.0.0
+    permissions:
+      id-token: write
+      contents: read
+      packages: read
     with:
       wazuh-branch: ${{ needs.branches.outputs.wazuh_ref }}
       build-type: "release"
@@ -427,58 +412,18 @@ jobs:
           merge-multiple: true
           path: ${{ github.workspace }}/artifacts/engine
 
-      - name: Prepare workspace for container user
+      - name: Prepare workspace
         run: |
-          mkdir -p artifacts/snapshots artifacts/plugins artifacts/dist
-          chown -R 1000:1000 "${{ github.workspace }}"
-
-      # The ARM runner image currently ships without Docker Compose; install the
-      # v2 plugin so builder.sh can run `docker compose`. No-op when it's already
-      # present (e.g. the amd runner). TODO: remove once baked into the runner.
-      - name: Ensure Docker Compose
-        run: |
-          if docker compose version >/dev/null 2>&1; then
-            echo "Docker Compose already available."; exit 0
-          fi
-          COMPOSE_VERSION=v2.29.7
-          mkdir -p /usr/local/lib/docker/cli-plugins
-          curl -fsSL "https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-linux-$(uname -m)" \
-            -o /usr/local/lib/docker/cli-plugins/docker-compose
-          chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
-          docker compose version
-
-      # The ARM runner is a container whose overlayfs root can't nest overlay
-      # mounts, so Docker/BuildKit must use the vfs storage driver; the ARM image
-      # also doesn't start the daemon. No-op when a daemon is already running
-      # (e.g. the amd runner). TODO: remove once baked into the runner.
-      - name: Ensure Docker daemon
-        run: |
-          if docker info >/dev/null 2>&1; then
-            echo "Docker daemon already running."; exit 0
-          fi
-          echo "Starting Docker daemon with the vfs storage driver..."
-          # vfs + the classic image store avoid overlay mounts, which fail
-          # (overlay-on-overlay) inside the containerized runner.
-          mkdir -p /etc/docker
-          echo '{"storage-driver":"vfs","features":{"containerd-snapshotter":false}}' > /etc/docker/daemon.json
-          if command -v systemctl >/dev/null 2>&1 && systemctl start docker 2>/dev/null; then :; \
-          elif command -v service >/dev/null 2>&1 && service docker start 2>/dev/null; then :; \
-          else dockerd >/tmp/dockerd.log 2>&1 & fi
-          for _ in $(seq 1 30); do docker info >/dev/null 2>&1 && break; sleep 1; done
-          chmod 666 /var/run/docker.sock 2>/dev/null || true
-          docker info
+            WORKSPACE="${{ github.workspace }}" bash build-scripts/ci/prepare_workspace.sh
+            # TODO: remove once Docker daemon and Compose are baked into the runner image.
+            bash build-scripts/ci/ensure_docker.sh
 
       - name: Build package with the Docker builder
         env:
           CTI_API_URL: ${{ vars.CTI_API_URL }}
         run: |
-          ENGINE_TARBALL=$(find "${{ github.workspace }}/artifacts/engine" \
-            -name 'wazuh-engine-*-linux-*.tar.gz' | head -n1)
-          if [ -z "$ENGINE_TARBALL" ]; then
-            echo "::error::Wazuh Engine tarball not found in artifacts/engine"
-            ls -lR "${{ github.workspace }}/artifacts/engine" || true
-            exit 1
-          fi
+          ENGINE_TARBALL=$(ENGINE_DIR="${{ github.workspace }}/artifacts/engine" \
+            bash build-scripts/ci/find_engine_tarball.sh)
           echo "Using engine tarball: $ENGINE_TARBALL"
 
           cd build-scripts/builder
@@ -498,23 +443,8 @@ jobs:
       - name: Resolve built package name
         id: package
         run: |
-          # Exclude min and fail on multiple matches so we never ship the min package.
-          mapfile -t pkgs < <(find "${{ github.workspace }}/artifacts/dist" -maxdepth 1 -type f \
-            -name 'wazuh-indexer*' \
-            ! -name '*.sha512' \
-            ! -name 'wazuh-indexer-min-*' \
-            ! -name 'wazuh-indexer-min_*' | sort)
-          if [ "${#pkgs[@]}" -eq 0 ]; then
-            echo "::error::No assembled wazuh-indexer package found in artifacts/dist"
-            ls -lR "${{ github.workspace }}/artifacts" || true
-            exit 1
-          fi
-          if [ "${#pkgs[@]}" -gt 1 ]; then
-            echo "::error::Multiple candidate packages found in artifacts/dist:"
-            printf '  %s\n' "${pkgs[@]}"
-            exit 1
-          fi
-          name=$(basename "${pkgs[0]}")
+          name=$(DIST_DIR="${{ github.workspace }}/artifacts/dist" \
+            bash build-scripts/ci/resolve_package_name.sh)
           echo "Built package: $name"
           echo "name=$name" >> "$GITHUB_OUTPUT"
 
@@ -570,34 +500,12 @@ jobs:
             redhat/ubi9-init:latest /sbin/init)
           trap 'docker stop "$cid" >/dev/null 2>&1 || true' EXIT
 
-          docker exec "$cid" bash -c '
-            set -e
-            bash /build-scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_4x_version }}
-            installed_before=$(rpm -q wazuh-indexer)
-            echo "Installed before upgrade: $installed_before"
-
-            set +e
-            out=$(yum localinstall "/artifacts/dist/${{ steps.package.outputs.name }}" -y 2>&1)
-            rc=$?
-            set -e
-            echo "$out"
-
-            if [ "$rc" -eq 0 ]; then
-              echo "ERROR: upgrade unexpectedly succeeded"; exit 1
-            fi
-            if ! echo "$out" | grep -qF "Upgrade from indexer versions prior to 5.x is not supported"; then
-              echo "ERROR: expected block banner not found in output"; exit 1
-            fi
-            if ! echo "$out" | grep -qF "Detected installed version:"; then
-              echo "ERROR: expected block banner not found in output"; exit 1
-            fi
-
-            installed_after=$(rpm -q wazuh-indexer)
-            if [ "$installed_before" != "$installed_after" ]; then
-              echo "ERROR: package state changed (before=$installed_before after=$installed_after)"; exit 1
-            fi
-            echo "OK: 5.x package correctly refused upgrade from $installed_after"
-          '
+          docker exec "$cid" bash -c "
+            PACKAGE_MANAGER=rpm \
+            PACKAGE_NAME=${{ steps.package.outputs.name }} \
+            PREVIOUS_VERSION=${{ needs.setup.outputs.previous_4x_version }} \
+            bash /build-scripts/ci/test_upgrade_block.sh
+          "
 
       - name: Test DEB package installation
         if: ${{ matrix.distribution == 'deb' }}
@@ -633,35 +541,13 @@ jobs:
       - name: Test DEB package refuses upgrade from 4.x
         if: ${{ matrix.distribution == 'deb' && needs.setup.outputs.previous_4x_version != '' }}
         run: |
-          bash build-scripts/run_in_systemd_container.sh "${{ github.workspace }}" '
-            set -e
+          bash build-scripts/run_in_systemd_container.sh "${{ github.workspace }}" "
             export DEBIAN_FRONTEND=noninteractive
-            bash /build-scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_4x_version }}
-            installed_before=$(dpkg-query -W -f="\${Version}" wazuh-indexer)
-            echo "Installed before upgrade: wazuh-indexer=$installed_before"
-
-            set +e
-            out=$(dpkg -i --force-confnew "/artifacts/dist/${{ steps.package.outputs.name }}" 2>&1)
-            rc=$?
-            set -e
-            echo "$out"
-
-            if [ "$rc" -eq 0 ]; then
-              echo "ERROR: upgrade unexpectedly succeeded"; exit 1
-            fi
-            if ! echo "$out" | grep -qF "Upgrade from indexer versions prior to 5.x is not supported"; then
-              echo "ERROR: expected block banner not found in output"; exit 1
-            fi
-            if ! echo "$out" | grep -qF "Detected installed version:"; then
-              echo "ERROR: expected block banner not found in output"; exit 1
-            fi
-
-            installed_after=$(dpkg-query -W -f="\${Version}" wazuh-indexer)
-            if [ "$installed_before" != "$installed_after" ]; then
-              echo "ERROR: package state changed (before=$installed_before after=$installed_after)"; exit 1
-            fi
-            echo "OK: 5.x package correctly refused upgrade from wazuh-indexer=$installed_after"
-          '
+            PACKAGE_MANAGER=deb \
+            PACKAGE_NAME=${{ steps.package.outputs.name }} \
+            PREVIOUS_VERSION=${{ needs.setup.outputs.previous_4x_version }} \
+            bash /build-scripts/ci/test_upgrade_block.sh
+          "
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7

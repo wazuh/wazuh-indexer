@@ -38,3 +38,11 @@ plugins.security.restapi.roles_enabled:
 plugins.security.system_indices.enabled: true
 plugins.security.system_indices.indices: [".opendistro-alerting-config", ".opendistro-alerting-alert*", ".opendistro-reports-*", ".opensearch-notifications-*", ".replication-metadata-store", ".wazuh-internal-state"]
 cluster.default_number_of_replicas: 0
+bootstrap.memory_lock: true
+
+# Resilience under heap pressure (small heaps, e.g. 2 GB): shed work — reject (429)
+# and cancel runaway searches instead of letting the JVM heap exhaust and crash.
+search_backpressure.mode: enforced                    # actually cancel heavy search tasks (default only logs)
+indices.breaker.total.use_real_memory: true           # account real heap used, not just reserved bytes
+indices.breaker.total.limit: 80%                      # trip early (default 95%); leaves headroom for Lucene flush/merge
+indexing_pressure.memory.limit: 10%                   # cap in-flight indexing bytes; reject excess bulk

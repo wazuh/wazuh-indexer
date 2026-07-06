@@ -7,7 +7,7 @@
 #   wazuh_admin    - full Wazuh access (no super-admin / security config)
 #   wazuh_demo     - default user: visualize data + manage threatintel content
 #   wazuh_readonly - read-only access
-#   wazuh_server   - service account for the Wazuh server (data ingest + content read)
+#   wazuh_manager  - service account for the Wazuh manager (data ingest + content read)
 #
 # Each role is mapped 1:1 to its user in roles_mapping.wazuh.yml.
 

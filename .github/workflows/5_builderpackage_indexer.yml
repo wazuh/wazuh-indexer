@@ -606,15 +606,15 @@ jobs:
         run: |
           pkg_name="${{ steps.package.outputs.name }}"
           pkg_path="artifacts/dist/${pkg_name}"
-          s3_stage_base="${{ secrets.CI_INTERNAL_S3_BUCKET }}/${{ env.CI_ARTIFACTS_REPO }}/${{ env.CI_ARTIFACTS_WORKFLOW }}/staging_${{ github.run_id }}/${{ matrix.distribution }}_${{ matrix.architecture }}"
+          s3_base="${{ secrets.CI_INTERNAL_S3_BUCKET }}/${{ env.CI_ARTIFACTS_REPO }}/${{ env.CI_ARTIFACTS_WORKFLOW }}/${{ github.run_id }}"
 
           if [ ! -f "$pkg_path" ]; then
             echo "::error::Package not found at ${pkg_path}"
             exit 1
           fi
 
-          aws s3 cp "$pkg_path" "${s3_stage_base}/${pkg_name}"
-          echo "::notice::Staged artifact in S3: ${s3_stage_base}/${pkg_name}"
+          aws s3 cp "$pkg_path" "${s3_base}/${pkg_name}"
+          echo "::notice::Uploaded artifact to S3: ${s3_base}/${pkg_name}"
 
       - name: Set up AWS CLI for final package upload
         if: ${{ inputs.upload }}
@@ -641,33 +641,3 @@ jobs:
           aws s3 cp "$src" "$dest"
           s3uri="${dest}${{ steps.package.outputs.name }}.sha512"
           echo "::notice::S3 sha512 URI: ${s3uri}"
-
-  bundle-artifacts:
-    name: Bundle workflow artifacts
-    needs: [build]
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Set up AWS CLI
-        uses: aws-actions/configure-aws-credentials@v6
-        with:
-          role-to-assume: ${{ secrets.AWS_INDEXER_ACTIONS_ROLE }}
-          aws-region: ${{ secrets.CI_AWS_REGION }}
-
-      - name: Create and upload consolidated artifact ZIP
-        run: |
-          s3_base="${{ secrets.CI_INTERNAL_S3_BUCKET }}/${{ env.CI_ARTIFACTS_REPO }}/${{ env.CI_ARTIFACTS_WORKFLOW }}"
-          s3_stage_base="${s3_base}/staging_${{ github.run_id }}"
-          zip_name="artifacts_${{ github.run_id }}.zip"
-
-          rm -rf artifacts_staging
-          mkdir -p artifacts_staging
-          aws s3 cp "${s3_stage_base}/" artifacts_staging/ --recursive
-
-          if [ -z "$(find artifacts_staging -type f -print -quit)" ]; then
-            echo "::error::No staged artifacts found at ${s3_stage_base}"
-            exit 1
-          fi
-
-          (cd artifacts_staging && zip -r "../${zip_name}" .)
-          aws s3 cp "${zip_name}" "${s3_base}/${zip_name}"
-          echo "::notice::Artifact uploaded to S3: ${s3_base}/${zip_name}"

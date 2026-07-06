@@ -1,6 +1,9 @@
 run-name: Build ${{ inputs.distribution }} Wazuh Indexer on ${{ inputs.architecture }} | ${{ inputs.id }}
 name: Build packages (on demand)
 
+permissions:
+  contents: read
+
 # This workflow runs when any of the following occur:
 # - Run manually
 # - Invoked from another workflow
@@ -65,12 +68,15 @@ on:
         type: string
         required: false
     secrets:
+      CI_AWS_REGION:
+        required: true
+        description: "AWS region for the final package upload"
       CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY:
         required: true
-        description: "AWS user access key"
+        description: "AWS user access key for the final package upload"
       CI_INTERNAL_DEVELOPMENT_BUCKET_USER_SECRET_KEY:
         required: true
-        description: "AWS user secret key"
+        description: "AWS user secret key for the final package upload"
 
 # ==========================
 # Bibliography
@@ -187,14 +193,7 @@ jobs:
           sudo mv /usr/bin/systemctl /usr/bin/systemctl.bak 2>/dev/null || true
           sudo dpkg -i "artifacts/dist/${{ steps.package.outputs.name }}"
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.package.outputs.name }}
-          path: artifacts/dist/${{ steps.package.outputs.name }}
-          if-no-files-found: error
-
-      - name: Set up AWS CLI
+      - name: Set up AWS CLI for final package upload
         if: ${{ inputs.upload }}
         uses: aws-actions/configure-aws-credentials@v4
         with:

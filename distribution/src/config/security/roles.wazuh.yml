@@ -37,6 +37,8 @@ wazuh_admin:
   cluster_permissions:
     - 'cluster_composite_ops'
     - 'cluster_monitor'
+    # Wazuh settings (setup plugin)
+    - 'cluster:admin/setup/settings/update'
     # Content Manager
     - 'plugin:content_manager/integration/*'
     - 'plugin:content_manager/decoder/*'
@@ -209,6 +211,7 @@ wazuh_demo:
         - 'get'
         - 'read'
         - 'indices:admin/aliases/get'
+        - 'indices:monitor/*'
     - index_patterns:
         - '.wazuh-internal-state'
       allowed_actions:
@@ -306,6 +309,7 @@ wazuh_readonly:
         - 'get'
         - 'read'
         - 'indices:admin/aliases/get'
+        - 'indices:monitor/*'
     - index_patterns:
         - '.wazuh-settings'
       allowed_actions:

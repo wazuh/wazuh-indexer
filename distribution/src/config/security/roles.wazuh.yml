@@ -41,7 +41,7 @@ wazuh_admin:
     - 'cluster_composite_ops'
     - 'cluster_monitor'
     # Wazuh settings (setup plugin)
-    - 'cluster:admin/setup/settings/update'
+    - 'plugin:wazuh/settings/write'
     # Content Manager
     - 'plugin:content_manager/integration/*'
     - 'plugin:content_manager/decoder/*'
@@ -57,6 +57,7 @@ wazuh_admin:
     - 'plugin:content_manager/logtest/*'
     - 'plugin:content_manager/promote/*'
     - 'plugin:content_manager/space/delete'
+    - 'plugin:content_manager/version/check'
     # Security Analytics
     - 'cluster:admin/wazuh/securityanalytics/rule/custom/*'
     - 'cluster:admin/wazuh/securityanalytics/logtype/*'
@@ -148,6 +149,7 @@ wazuh_demo:
     - 'plugin:content_manager/logtest/*'
     - 'plugin:content_manager/promote/*'
     - 'plugin:content_manager/space/delete'
+    - 'plugin:content_manager/version/check'
     # Security Analytics
     - 'cluster:admin/wazuh/securityanalytics/rule/custom/*'
     - 'cluster:admin/wazuh/securityanalytics/logtype/*'
@@ -242,6 +244,7 @@ wazuh_readonly:
     - 'plugin:content_manager/subscription/get'
     - 'plugin:content_manager/logtest'
     - 'plugin:content_manager/logtest/*'
+    - 'plugin:content_manager/version/check'
     - 'cluster:admin/wazuh/securityanalytics/rules/evaluate'
     # Security Analytics (OpenSearch plugin, read)
     - 'cluster:admin/opensearch/securityanalytics/alerts/get'

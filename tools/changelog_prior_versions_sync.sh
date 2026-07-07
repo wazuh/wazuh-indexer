@@ -3,13 +3,14 @@
 # =========================
 # Changelog Prior Versions Sync
 # =========================
-# Walks backwards from the given version looking for release branches that
-# exist on the remote but are missing from CHANGELOG.md's "## Prior versions"
-# section, and adds them. Called by repository_bumper.sh after every bump.
+# Fetches every branch on the remote once, then adds to CHANGELOG.md's
+# "## Prior versions" section any version (within the same major as the one
+# just bumped to) that is missing from it. Called by repository_bumper.sh
+# after every bump.
 #
-# Within the current (still open) minor, every earlier existing patch is
-# included. For each earlier, already-closed minor, only its ".0" baseline
-# plus the two highest existing patches above it are included.
+# For every minor found (the one just bumped into included), only its ".0"
+# baseline (if it exists) plus the two highest existing patches above it are
+# added.
 #
 # Arguments:
 # 1. The version just bumped to (e.g., 5.1.1)
@@ -21,7 +22,7 @@ function log() {
 }
 
 # ====
-# Determine the "org/repo" path from the origin remote URL.
+# Determine the repo path from the origin remote URL.
 # ====
 function get_repo_path() {
     local remote_url
@@ -30,17 +31,6 @@ function get_repo_path() {
     remote_url="${remote_url#*github.com/}"
     remote_url="${remote_url#*github.com:}"
     echo "$remote_url"
-}
-
-# ====
-# Check whether a branch named "X.Y.Z" or "vX.Y.Z" exists on the remote.
-# Arguments:
-#   $1 - version (e.g. 5.0.1)
-# ====
-function remote_branch_exists() {
-    local version="$1"
-    git ls-remote --exit-code --heads origin "$version" &>/dev/null ||
-        git ls-remote --exit-code --heads origin "v$version" &>/dev/null
 }
 
 # ====
@@ -94,56 +84,65 @@ function add_prior_version_entry() {
 }
 
 # ====
-# Every existing patch below the given one, within the same (still open)
-# minor. Emitted oldest first.
+# Fetch every branch on the remote once, keep only version-shaped names
+# ("X.Y.Z" or "vX.Y.Z") belonging to the given major, excluding the version
+# just bumped to. Emits "minor<TAB>patch<TAB>name" lines, any order.
 # Arguments:
-#   $1 - major, $2 - minor, $3 - patch (exclusive upper bound)
+#   $1 - major
+#   $2 - version just bumped to, to exclude (e.g. 5.1.1)
 # ====
-function current_minor_candidates() {
-    local major="$1" minor="$2" patch="$3"
-    local p candidate
-    for ((p = 0; p < patch; p++)); do
-        candidate="${major}.${minor}.${p}"
-        if remote_branch_exists "$candidate"; then
-            echo "$candidate"
-        fi
-    done
+function fetch_major_branches() {
+    local major="$1"
+    local exclude="$2"
+
+    local all_branches
+    all_branches=$(git ls-remote --heads origin | sed -E 's#^[0-9a-f]+[[:space:]]+refs/heads/##')
+
+    local versioned
+    versioned=$(printf '%s\n' "$all_branches" | grep -E "^v?[0-9]+\.[0-9]+\.[0-9]+$" || true)
+
+    [[ -z "$versioned" ]] && return 0
+
+    local name stripped b_major rest b_minor b_patch
+    while IFS= read -r name; do
+        stripped="${name#v}"
+        b_major="${stripped%%.*}"
+        [[ "$b_major" != "$major" ]] && continue
+        [[ "$stripped" == "$exclude" ]] && continue
+        rest="${stripped#*.}"
+        b_minor="${rest%%.*}"
+        b_patch="${rest#*.}"
+        printf '%s\t%s\t%s\n' "$b_minor" "$b_patch" "$name"
+    done <<< "$versioned"
 }
 
 # ====
-# For an already-closed minor: its ".0" baseline (if it exists), plus the two
-# highest existing patches above it. Emitted oldest first (baseline, then the
-# kept patches in ascending order).
-# Arguments:
-#   $1 - major, $2 - minor
+# Given "minor<TAB>patch<TAB>name" lines for a SINGLE minor on stdin, emit
+# its ".0" baseline (if present) plus its two highest non-baseline patches.
+# Emitted oldest first.
 # ====
-function closed_minor_candidates() {
-    local major="$1" minor="$2"
-    local baseline="${major}.${minor}.0"
+function minor_entries() {
+    local baseline=""
+    local -a others=()
+    local _ patch name
 
-    local p candidate
-    local -a found=()
-    for ((p = 1; p <= 9; p++)); do
-        candidate="${major}.${minor}.${p}"
-        if remote_branch_exists "$candidate"; then
-            found+=("$candidate")
+    while IFS=$'\t' read -r _ patch name; do
+        if [[ "$patch" == "0" ]]; then
+            baseline="$name"
+        else
+            others+=("$patch $name")
         fi
     done
 
-    if remote_branch_exists "$baseline"; then
+    if [[ -n "$baseline" ]]; then
         echo "$baseline"
     fi
 
-    local count=${#found[@]}
-    local start=0
-    if ((count > 2)); then
-        start=$((count - 2))
+    if ((${#others[@]} > 0)); then
+        printf '%s\n' "${others[@]}" | sort -rn | head -2 | sort -n | while IFS=' ' read -r _ name; do
+            echo "$name"
+        done
     fi
-
-    local i
-    for ((i = start; i < count; i++)); do
-        echo "${found[$i]}"
-    done
 }
 
 # ====
@@ -154,15 +153,17 @@ function closed_minor_candidates() {
 # ====
 function build_candidates() {
     local version="$1"
-    local major minor patch
-    IFS='.' read -r major minor patch <<< "$version"
+    local major="${version%%.*}"
 
-    local y
-    for ((y = 0; y <= minor - 1; y++)); do
-        closed_minor_candidates "$major" "$y"
+    local branches
+    branches=$(fetch_major_branches "$major" "$version")
+
+    [[ -z "$branches" ]] && return 0
+
+    local minor
+    for minor in $(printf '%s\n' "$branches" | cut -f1 | sort -un); do
+        printf '%s\n' "$branches" | awk -F'\t' -v m="$minor" '$1 == m' | minor_entries
     done
-
-    current_minor_candidates "$major" "$minor" "$patch"
 }
 
 # ====

@@ -3,16 +3,19 @@
 # Wazuh Indexer Default Roles
 # ---------------------------------------------------------------------#
 #
-# Four predefined personas, one self-contained role each:
-#   wazuh_admin    - full Wazuh access (no super-admin / security config)
-#   wazuh_demo     - default user: visualize data + manage threatintel content
-#   wazuh_readonly - read-only access
-#   wazuh_manager  - service account for the Wazuh manager (data ingest + content read)
+# Five predefined personas, one self-contained role each:
+#   dashboard_server - internal service account used by the Wazuh Dashboard
+#   wazuh_admin      - full Wazuh access (no super-admin / security config)
+#   wazuh_demo       - default user: visualize data + manage threatintel content
+#   wazuh_readonly   - read-only access
+#   wazuh_manager    - service account for the Wazuh manager (data ingest + content read)
 #
 # Each role is mapped 1:1 to its user in roles_mapping.wazuh.yml.
 
 # ---------------------------------------------------------------------#
-# Internal user of the Wazuh Dashboard.
+# dashboard_server: internal service account used by the Wazuh Dashboard
+# to read notification configs and query Wazuh indices on behalf of
+# dashboard users.
 # ---------------------------------------------------------------------#
 dashboard_server:
   reserved: true

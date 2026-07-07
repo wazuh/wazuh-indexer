@@ -17,6 +17,9 @@
 # and will be formatted as follows:
 #   * [DATE] support <info@wazuh.com> - [VERSION]
 #   - More info: https://documentation.wazuh.com/current/release-notes/release-[VERSION].html
+#
+# It also pins any "@main" workflow/action references to other repos to the
+# current branch (see workflow_refs_sync.sh).
 
 set -euo pipefail
 
@@ -288,6 +291,7 @@ function main() {
     date=$(normalize_date "$date")
     update_version_file "$version" "$stage"
     update_rpm_changelog "$version" "$date"
+    bash "$(dirname "${BASH_SOURCE[0]}")/workflow_refs_sync.sh"
     if [[ "$set_as_main" == "yes" ]]; then
         update_branch_resolver "$version"
     fi

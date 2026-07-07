@@ -1,5 +1,36 @@
 
 # ---------------------------------------------------------------------#
+# Wazuh Indexer Default Roles
+# ---------------------------------------------------------------------#
+#
+# Five predefined personas, one self-contained role each:
+#   dashboard_server - internal service account used by the Wazuh Dashboard
+#   wazuh_admin      - full Wazuh access (no super-admin / security config)
+#   wazuh_demo       - default user: visualize data + manage threatintel content
+#   wazuh_readonly   - read-only access
+#   wazuh_manager    - service account for the Wazuh manager (data ingest + content read)
+#
+# Each role is mapped 1:1 to its user in roles_mapping.wazuh.yml.
+
+# ---------------------------------------------------------------------#
+# dashboard_server: internal service account used by the Wazuh Dashboard
+# to read notification configs and query Wazuh indices on behalf of
+# dashboard users.
+# ---------------------------------------------------------------------#
+dashboard_server:
+  reserved: true
+  hidden: false
+  cluster_permissions:
+    - 'cluster:admin/opensearch/notifications/configs/get'
+  index_permissions:
+    - index_patterns:
+        - 'wazuh-*'
+      allowed_actions:
+        - 'read'
+  tenant_permissions: []
+  static: false
+
+# ---------------------------------------------------------------------#
 # wazuh-admin: full access to all Wazuh features, excluding super-admin
 # features such as security configuration.
 # ---------------------------------------------------------------------#
@@ -9,13 +40,15 @@ wazuh_admin:
   cluster_permissions:
     - 'cluster_composite_ops'
     - 'cluster_monitor'
+    # Wazuh settings (setup plugin)
+    - 'cluster:admin/setup/settings/update'
     # Content Manager
-    - 'plugin:wazuh/settings/write'
     - 'plugin:content_manager/integration/*'
     - 'plugin:content_manager/decoder/*'
     - 'plugin:content_manager/rule/*'
     - 'plugin:content_manager/kvdb/*'
     - 'plugin:content_manager/filter/*'
+    - 'plugin:content_manager/policy/update'
     - 'plugin:content_manager/subscription/get'
     - 'plugin:content_manager/subscription/post'
     - 'plugin:content_manager/subscription/delete'
@@ -29,6 +62,19 @@ wazuh_admin:
     - 'cluster:admin/wazuh/securityanalytics/logtype/*'
     - 'cluster:admin/wazuh/securityanalytics/rules/evaluate'
     - 'cluster:admin/wazuh/securityanalytics/space/delete'
+    # Security Analytics (OpenSearch plugin, full)
+    - 'cluster:admin/opensearch/securityanalytics/alerts/*'
+    - 'cluster:admin/opensearch/securityanalytics/connections/*'
+    - 'cluster:admin/opensearch/securityanalytics/correlationAlerts/*'
+    - 'cluster:admin/opensearch/securityanalytics/correlations/*'
+    - 'cluster:admin/opensearch/securityanalytics/correlation/*'
+    - 'cluster:admin/opensearch/securityanalytics/detector/*'
+    - 'cluster:admin/opensearch/securityanalytics/findings/*'
+    - 'cluster:admin/opensearch/securityanalytics/logtype/*'
+    - 'cluster:admin/opensearch/securityanalytics/mapping/*'
+    - 'cluster:admin/opensearch/securityanalytics/rule/*'
+    - 'cluster:admin/opensearch/securityanalytics/rules/*'
+    - 'cluster:admin/opensearch/securityanalytics/threatintel/*'
     # Alerting (full)
     - 'cluster:admin/opendistro/alerting/*'
     - 'cluster:admin/opensearch/alerting/*'
@@ -50,8 +96,10 @@ wazuh_admin:
       allowed_actions:
         - 'get'
         - 'read'
+        - 'indices:admin/aliases/get'
         - 'indices:admin/opensearch/ism/*'
         - 'indices:internal/plugins/replication/index/stop'
+        - 'indices:monitor/*'
     - index_patterns:
         - '.wazuh-settings'
       allowed_actions:
@@ -73,6 +121,8 @@ wazuh_admin:
       allowed_actions:
         - 'index'
         - 'delete'
+        - 'indices:admin/exists'
+        - 'indices:admin/refresh'
   tenant_permissions: []
   static: true
 
@@ -103,6 +153,19 @@ wazuh_demo:
     - 'cluster:admin/wazuh/securityanalytics/logtype/*'
     - 'cluster:admin/wazuh/securityanalytics/rules/evaluate'
     - 'cluster:admin/wazuh/securityanalytics/space/delete'
+    # Security Analytics (OpenSearch plugin, full)
+    - 'cluster:admin/opensearch/securityanalytics/alerts/*'
+    - 'cluster:admin/opensearch/securityanalytics/connections/*'
+    - 'cluster:admin/opensearch/securityanalytics/correlationAlerts/*'
+    - 'cluster:admin/opensearch/securityanalytics/correlations/*'
+    - 'cluster:admin/opensearch/securityanalytics/correlation/*'
+    - 'cluster:admin/opensearch/securityanalytics/detector/*'
+    - 'cluster:admin/opensearch/securityanalytics/findings/*'
+    - 'cluster:admin/opensearch/securityanalytics/logtype/*'
+    - 'cluster:admin/opensearch/securityanalytics/mapping/*'
+    - 'cluster:admin/opensearch/securityanalytics/rule/*'
+    - 'cluster:admin/opensearch/securityanalytics/rules/*'
+    - 'cluster:admin/opensearch/securityanalytics/threatintel/*'
     # Alerting (read + acknowledge alerts)
     - 'cluster:admin/opendistro/alerting/alerts/get'
     - 'cluster:admin/opendistro/alerting/destination/get'
@@ -150,6 +213,8 @@ wazuh_demo:
       allowed_actions:
         - 'get'
         - 'read'
+        - 'indices:admin/aliases/get'
+        - 'indices:monitor/*'
     - index_patterns:
         - '.wazuh-internal-state'
       allowed_actions:
@@ -160,6 +225,8 @@ wazuh_demo:
       allowed_actions:
         - 'index'
         - 'delete'
+        - 'indices:admin/exists'
+        - 'indices:admin/refresh'
   tenant_permissions: []
   static: true
 
@@ -176,6 +243,27 @@ wazuh_readonly:
     - 'plugin:content_manager/logtest'
     - 'plugin:content_manager/logtest/*'
     - 'cluster:admin/wazuh/securityanalytics/rules/evaluate'
+    # Security Analytics (OpenSearch plugin, read)
+    - 'cluster:admin/opensearch/securityanalytics/alerts/get'
+    - 'cluster:admin/opensearch/securityanalytics/correlationAlerts/get'
+    - 'cluster:admin/opensearch/securityanalytics/correlations/findings'
+    - 'cluster:admin/opensearch/securityanalytics/correlations/list'
+    - 'cluster:admin/opensearch/securityanalytics/correlation/rule/search'
+    - 'cluster:admin/opensearch/securityanalytics/detector/get'
+    - 'cluster:admin/opensearch/securityanalytics/detector/search'
+    - 'cluster:admin/opensearch/securityanalytics/findings/get'
+    - 'cluster:admin/opensearch/securityanalytics/logtype/search'
+    - 'cluster:admin/opensearch/securityanalytics/mapping/get'
+    - 'cluster:admin/opensearch/securityanalytics/mapping/view/get'
+    - 'cluster:admin/opensearch/securityanalytics/rule/get'
+    - 'cluster:admin/opensearch/securityanalytics/rule/search'
+    - 'cluster:admin/opensearch/securityanalytics/rules/categories'
+    - 'cluster:admin/opensearch/securityanalytics/threatintel/alerts/get'
+    - 'cluster:admin/opensearch/securityanalytics/threatintel/iocs/findings/get'
+    - 'cluster:admin/opensearch/securityanalytics/threatintel/iocs/list'
+    - 'cluster:admin/opensearch/securityanalytics/threatintel/monitors/search'
+    - 'cluster:admin/opensearch/securityanalytics/threatintel/sources/get'
+    - 'cluster:admin/opensearch/securityanalytics/threatintel/sources/search'
     # Alerting (read + acknowledge alerts)
     - 'cluster:admin/opendistro/alerting/alerts/get'
     - 'cluster:admin/opendistro/alerting/destination/get'
@@ -223,6 +311,8 @@ wazuh_readonly:
       allowed_actions:
         - 'get'
         - 'read'
+        - 'indices:admin/aliases/get'
+        - 'indices:monitor/*'
     - index_patterns:
         - '.wazuh-settings'
       allowed_actions:
@@ -235,11 +325,11 @@ wazuh_readonly:
   static: true
 
 # ---------------------------------------------------------------------#
-# wazuh-server: service account. Reads CTI consumer state, active
+# wazuh-manager: service account. Reads CTI consumer state, active
 # responses and threat intelligence content; ingests events, metrics
 # and states; manages state documents (index + delete).
 # ---------------------------------------------------------------------#
-wazuh_server:
+wazuh_manager:
   reserved: true
   hidden: false
   cluster_permissions:
@@ -248,7 +338,7 @@ wazuh_server:
   index_permissions:
     - index_patterns:
         - '.wazuh-cti-consumers'
-        - 'wazuh-active-responses-*'
+        - 'wazuh-active-responses*'
         - 'wazuh-threatintel-*'
       allowed_actions:
         - 'read'

@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased 4.14.x]
 ### Added
-- Add custom tags to allocator usage [(#1539)](https://github.com/wazuh/wazuh-indexer/pull/1539)
+- 
 
 ### Dependencies
 -
@@ -25,4 +25,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Security
 - 
 
-[Unreleased 4.14.x]: https://github.com/wazuh/wazuh-indexer/compare/4.14.5...4.14.6
+[Unreleased 4.14.x]: https://github.com/wazuh/wazuh-indexer/compare/4.14.6...4.14.7

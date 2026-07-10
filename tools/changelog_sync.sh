@@ -39,8 +39,6 @@ function fetch_stable_tags() {
 function build_prior_versions() {
     local version="$1"
     local major="${version%%.*}"
-    local target_rest="${version#*.}"
-    local target_minor="${target_rest%%.*}"
 
     local tags
     tags="$(fetch_stable_tags)"
@@ -54,7 +52,7 @@ function build_prior_versions() {
         [[ "$t_major" != "$major" ]] && continue
         rest="${stripped#*.}"
         t_minor="${rest%%.*}"
-        [[ "$t_minor" == "$target_minor" ]] && continue
+        [[ "$stripped" == "$version" ]] && continue
         t_patch="${rest#*.}"
         grouped+="${t_minor}\t${t_patch}\t${name}\n"
     done <<< "$tags"

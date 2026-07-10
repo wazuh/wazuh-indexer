@@ -340,6 +340,10 @@ wazuh_manager:
     - 'cluster_monitor'
   index_permissions:
     - index_patterns:
+        - '.wazuh-settings'
+      allowed_actions:
+        - 'read'
+    - index_patterns:
         - '.wazuh-cti-consumers'
         - 'wazuh-active-responses*'
         - 'wazuh-threatintel-*'

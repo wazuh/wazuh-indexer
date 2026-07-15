@@ -23,16 +23,6 @@
 - Add nightly Docker image build workflow [(#1442)](https://github.com/wazuh/wazuh-indexer/pull/1442)
 - Bundle the `opensearch-custom-codecs` plugin to provide the zstd index codec [(#1636)](https://github.com/wazuh/wazuh-indexer/issues/1636)
 
-### Fixed
-- Set secure permissions (750) for engine sockets directory [(#1330)](https://github.com/wazuh/wazuh-indexer/pull/1330)
-- Resolve dependency mismatch between Alerting and Notifications plugins [(#1379)](https://github.com/wazuh/wazuh-indexer/pull/1379)
-- Fix `/etc/default/wazuh-indexer` ownership and permissions in deb [(#1533)](https://github.com/wazuh/wazuh-indexer/pull/1533)
-- Fix Java warnings by updating JVM options for native access [(#1574)](https://github.com/wazuh/wazuh-indexer/pull/1574)
-- Fix SLF4J startup warning in reindex module by adding Log4j2 provider [(#1650)](https://github.com/wazuh/wazuh-indexer/pull/1650)
-
-### Dependencies
--
-
 ### Changed
 - Migrate issue templates to 5.0.0 [(#855)](https://github.com/wazuh/wazuh-indexer/pull/855)
 - Migrate workflows and scripts from 6.0.0 [(861)](https://github.com/wazuh/wazuh-indexer/pull/861)
@@ -49,7 +39,9 @@
 - Add version to the GH Workflow names [(#1124)](https://github.com/wazuh/wazuh-indexer/pull/1124)
 - Update GitHub Actions versions in main branch [(#1131)](https://github.com/wazuh/wazuh-indexer/pull/1131)
 - Refactor GH workflow to build packages to use a single branch input [(#1145)](https://github.com/wazuh/wazuh-indexer/pull/1145) [(#1169)](https://github.com/wazuh/wazuh-indexer/pull/1169)
+- Use the latest Amazon Linux 2023 Docker image [(#1182)](https://github.com/wazuh/wazuh-indexer/pull/1182)
 - Enhance maintenance workflows [(#1192)](https://github.com/wazuh/wazuh-indexer/pull/1192)
+- Update CodeQL configuration [(#1220)](https://github.com/wazuh/wazuh-indexer/pull/1220)
 - Change `transport.port` to `http.port` in indexer-security-init [(#1233)](https://github.com/wazuh/wazuh-indexer/pull/1233)
 - Update builder script to detect SAP branch [(#1271)](https://github.com/wazuh/wazuh-indexer/pull/1271)
 - Build SAP in CM workflow [(#1272)](https://github.com/wazuh/wazuh-indexer/pull/1272)
@@ -63,9 +55,6 @@
 - Bundle missing workload-management dependency in the distribution package [(#1597)](https://github.com/wazuh/wazuh-indexer/pull/1597)
 - Unify indexer upgrade block message [(#1655)](https://github.com/wazuh/wazuh-indexer/pull/1655)
 
-### Deprecated
--
-
 ### Removed
 - Remove extra files [(#866)](https://github.com/wazuh/wazuh-indexer/pull/866) [(#1074)](https://github.com/wazuh/wazuh-indexer/pull/1074)
 - Remove references to legacy VERSION file [(#908)](https://github.com/wazuh/wazuh-indexer/pull/908)
@@ -78,6 +67,7 @@
 ### Fixed
 - Fix package upload to bucket subfolder 5.x [(#846)](https://github.com/wazuh/wazuh-indexer/pull/846)
 - Fix seccomp error on `wazuh-indexer.service` [(#912)](https://github.com/wazuh/wazuh-indexer/pull/912)
+- Reduce risk of `GITHUB_TOKEN` exposure [(#960)](https://github.com/wazuh/wazuh-indexer/pull/960)
 - Fix CodeQL workflow [(#963)](https://github.com/wazuh/wazuh-indexer/pull/963)
 - Fix auto-generated demo certificates naming [(#1010)](https://github.com/wazuh/wazuh-indexer/pull/1010)
 - Fix service status preservation during upgrade in RPM packages [(#1031)](https://github.com/wazuh/wazuh-indexer/pull/1031)
@@ -85,14 +75,14 @@
 - Fix SysV service script permissions [(#1139)](https://github.com/wazuh/wazuh-indexer/pull/1139)
 - Fix unescaped commands in indexer-security-init.sh [(#1196)](https://github.com/wazuh/wazuh-indexer/pull/1196)
 - Fix broken link generation from the repository bumper script [(#1206)](https://github.com/wazuh/wazuh-indexer/pull/1206)
-- Fix demo certificates generation triggered by default [(#1235)](https://github.com/wazuh/wazuh-indexer/pull/1235)
-- Fix link-checker workflow [(#1344)](https://github.com/wazuh/wazuh-indexer/pull/1344)
-
-### Security
-- Reduce risk of `GITHUB_TOKEN` exposure [(#960)](https://github.com/wazuh/wazuh-indexer/pull/960)
-- Use the latest Amazon Linux 2023 Docker image [(#1182)](https://github.com/wazuh/wazuh-indexer/pull/1182)
-- Update CodeQL configuration [(#1220)](https://github.com/wazuh/wazuh-indexer/pull/1220)
 - Potential fix for code scanning alerts: Workflow does not contain permissions [(#1234)](https://github.com/wazuh/wazuh-indexer/pull/1234)
+- Fix demo certificates generation triggered by default [(#1235)](https://github.com/wazuh/wazuh-indexer/pull/1235)
+- Set secure permissions (750) for engine sockets directory [(#1330)](https://github.com/wazuh/wazuh-indexer/pull/1330)
+- Fix link-checker workflow [(#1344)](https://github.com/wazuh/wazuh-indexer/pull/1344)
+- Resolve dependency mismatch between Alerting and Notifications plugins [(#1379)](https://github.com/wazuh/wazuh-indexer/pull/1379)
+- Fix `/etc/default/wazuh-indexer` ownership and permissions in deb [(#1533)](https://github.com/wazuh/wazuh-indexer/pull/1533)
+- Fix Java warnings by updating JVM options for native access [(#1574)](https://github.com/wazuh/wazuh-indexer/pull/1574)
+- Fix SLF4J startup warning in reindex module by adding Log4j2 provider [(#1650)](https://github.com/wazuh/wazuh-indexer/pull/1650)
 
 ## Prior versions
 - []()

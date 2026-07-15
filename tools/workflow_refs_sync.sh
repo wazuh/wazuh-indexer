@@ -36,7 +36,7 @@ function find_referenced_repos() {
 
     [[ -z "$matches" ]] && return 0
 
-    printf '%s\n' "$matches" | sed -E 's#.*wazuh/([^/]+)/.*#\1#' | sort -u
+    printf '%s\n' "$matches" | sed -E 's#^uses:[[:space:]]*wazuh/([^/]+)/.*#\1#' | sort -u
 }
 
 function pin_repo_references() {

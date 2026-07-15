@@ -83,6 +83,7 @@
 - Fix `/etc/default/wazuh-indexer` ownership and permissions in deb [(#1533)](https://github.com/wazuh/wazuh-indexer/pull/1533)
 - Fix Java warnings by updating JVM options for native access [(#1574)](https://github.com/wazuh/wazuh-indexer/pull/1574)
 - Fix SLF4J startup warning in reindex module by adding Log4j2 provider [(#1650)](https://github.com/wazuh/wazuh-indexer/pull/1650)
+- Fix missing index permissions for the Content Manager resource-lock index [(#1747)](https://github.com/wazuh/wazuh-indexer/pull/1747)
 
 ## Prior versions
 - []()

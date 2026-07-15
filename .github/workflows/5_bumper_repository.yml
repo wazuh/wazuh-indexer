@@ -21,7 +21,7 @@ on:
         type: string
       tag:
         description: 'Set to true when this bump is preparing a tag release'
-        default: false
+        default: true
         required: false
         type: boolean
       issue-link:

@@ -119,6 +119,7 @@ wazuh_admin:
     - index_patterns:
         - 'wazuh-threatintel-*'
         - '.opensearch-sap-*'
+        - '.wazuh-content-manager-resource-locks'
       allowed_actions:
         - 'index'
         - 'delete'
@@ -224,6 +225,7 @@ wazuh_demo:
     - index_patterns:
         - 'wazuh-threatintel-*'
         - '.opensearch-sap-*'
+        - '.wazuh-content-manager-resource-locks'
       allowed_actions:
         - 'index'
         - 'delete'

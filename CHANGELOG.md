@@ -26,7 +26,7 @@
 - Migrate smoke tests to 5.0.0 [(#862)](https://github.com/wazuh/wazuh-indexer/issues/862)
 - Replace and remove deprecated settings [(#893)](https://github.com/wazuh/wazuh-indexer/issues/893)
 - Backport packaging improvements [(#904)](https://github.com/wazuh/wazuh-indexer/issues/904)
-- Apply Lintian overrides [(#905)](https://github.com/wazuh/wazuh-indexer/issues/905)
+- Apply Lintian overrides [(#907)](https://github.com/wazuh/wazuh-indexer/issues/907)
 - Add non-interactive option for DEB packages testing [(#913)](https://github.com/wazuh/wazuh-indexer/issues/913)
 - Migrate smoke tests from Allocator to docker [(#928)](https://github.com/wazuh/wazuh-indexer/issues/928)
 - Migrate builder workflows from [(#895)](https://github.com/wazuh/wazuh-indexer/issues/895)

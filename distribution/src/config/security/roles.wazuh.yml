@@ -125,7 +125,7 @@ wazuh_admin:
         - 'indices:admin/exists'
         - 'indices:admin/refresh'
   tenant_permissions: []
-  static: true
+  static: false
 
 # ---------------------------------------------------------------------#
 # wazuh-demo: default user with regular access. Can visualize data and
@@ -230,7 +230,7 @@ wazuh_demo:
         - 'indices:admin/exists'
         - 'indices:admin/refresh'
   tenant_permissions: []
-  static: true
+  static: false
 
 # ---------------------------------------------------------------------#
 # wazuh-readonly: read-only user.
@@ -325,7 +325,7 @@ wazuh_readonly:
       allowed_actions:
         - 'read'
   tenant_permissions: []
-  static: true
+  static: false
 
 # ---------------------------------------------------------------------#
 # wazuh-manager: service account. Reads CTI consumer state, active
@@ -367,4 +367,4 @@ wazuh_manager:
       allowed_actions:
         - 'manage_point_in_time'
   tenant_permissions: []
-  static: true
+  static: false

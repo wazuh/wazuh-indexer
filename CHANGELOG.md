@@ -85,6 +85,7 @@
 - Fix SLF4J startup warning in reindex module by adding Log4j2 provider [(#1650)](https://github.com/wazuh/wazuh-indexer/pull/1650)
 - Fix missing index permissions for the Content Manager resource-lock index [(#1747)](https://github.com/wazuh/wazuh-indexer/pull/1747)
 - Fix custom roles being deleted on any Security role API write [(#1753)](https://github.com/wazuh/wazuh-indexer/pull/1753)
+- Fix wazuh-readonly missing promotion and mapping permissions [(#1752)](https://github.com/wazuh/wazuh-indexer/issues/1752)
 
 ## Prior versions
 - []()

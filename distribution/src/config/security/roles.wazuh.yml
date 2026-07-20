@@ -246,6 +246,7 @@ wazuh_readonly:
     - 'plugin:content_manager/subscription/get'
     - 'plugin:content_manager/logtest'
     - 'plugin:content_manager/logtest/*'
+    - 'plugin:content_manager/promote/get'
     - 'plugin:content_manager/version/check'
     - 'cluster:admin/wazuh/securityanalytics/rules/evaluate'
     # Security Analytics (OpenSearch plugin, read)
@@ -317,6 +318,7 @@ wazuh_readonly:
         - 'get'
         - 'read'
         - 'indices:admin/aliases/get'
+        - 'indices:admin/mappings/get'
         - 'indices:monitor/*'
     - index_patterns:
         - '.wazuh-settings'
@@ -326,6 +328,13 @@ wazuh_readonly:
         - '.wazuh-internal-state'
       allowed_actions:
         - 'read'
+    # Content Manager promote preview issues an existence check per
+    # threatintel resource index (indices:admin/exists); read is already
+    # granted via the '*' pattern above.
+    - index_patterns:
+        - 'wazuh-threatintel-*'
+      allowed_actions:
+        - 'indices:admin/exists'
   tenant_permissions: []
   static: false
 

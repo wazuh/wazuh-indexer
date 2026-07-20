@@ -74,6 +74,7 @@
 - Warning messages running systemctl status [(#1573)](https://github.com/wazuh/wazuh-indexer/issues/1573)
 - Default zstd index codec [(#1271)](https://github.com/wazuh/wazuh-indexer-plugins/issues/1271)
 - Update the Content Manager OpenAPI (`openapi.yml`) to match the current API [(#1353)](https://github.com/wazuh/wazuh-indexer-plugins/issues/1353)
+- [BUG] wazuh-readonly missing promotion and mapping permissions [(#1752)](https://github.com/wazuh/wazuh-indexer/issues/1752)
 
 ## Prior versions
 - []()

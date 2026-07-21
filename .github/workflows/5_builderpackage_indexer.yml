@@ -396,7 +396,7 @@ jobs:
 
   build-wazuh-engine:
     needs: [compatibility-check, branches]
-    uses: wazuh/wazuh/.github/workflows/5_builderpackage_engine-standalone.yml@5.0.0
+    uses: wazuh/wazuh/.github/workflows/5_builderpackage_engine-standalone.yml@v5.0.0-beta4
     permissions:
       id-token: write
       contents: read

@@ -362,6 +362,7 @@ wazuh_manager:
         - 'read'
     - index_patterns:
         - 'wazuh-events-v5-*'
+        - 'wazuh-events-raw-v5*'
         - 'wazuh-metrics-*'
       allowed_actions:
         - 'read'

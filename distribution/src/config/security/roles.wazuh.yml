@@ -358,6 +358,7 @@ wazuh_manager:
         - '.wazuh-cti-consumers'
         - 'wazuh-active-responses*'
         - 'wazuh-threatintel-*'
+        - 'wazuh-findings-v5-*'
       allowed_actions:
         - 'read'
     - index_patterns:

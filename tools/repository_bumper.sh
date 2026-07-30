@@ -4,14 +4,11 @@
 # Repository Bumper Script
 # =========================
 # This script updates the VERSION.json file and the changelog section of the
-# RPM spec file for a new version release.
+# RPM spec file for a new version release, then (depending on flags)
+# reinitializes CHANGELOG.md and pins workflow references to the right
+# branch/tag.
 #
-# It takes three required arguments and one optional flag:
-# 1. The new version to set (e.g., 4.5.0)
-# 2. The new stage to set (alpha, beta, rc, stable)
-# 3. The date to set in the changelog (e.g., '2025-04-13')
-# 4. [--set-as-main] Enable main branch mode: bump version values only,
-#    keep branch references pointing to main
+# Usage: repository_bumper.sh --version VERSION --stage STAGE --date DATE [--tag] [--set-as-main]
 #
 # The changelog entry will be added to the %changelog section of the RPM spec file,
 # and will be formatted as follows:
@@ -24,11 +21,14 @@ set -euo pipefail
 # Print usage instructions
 # ====
 function usage() {
-    echo "Usage: $0 <version> <stage> <date> [--set-as-main]"
-    echo "  version:       The new version to set in VERSION.json (e.g., 4.5.0)"
-    echo "  stage:         The new stage to set in VERSION.json (alpha, beta, rc, stable)"
-    echo "  date:          The date to set in the changelog (e.g., '2025-04-13')"
-    echo "  --set-as-main  Enable main branch mode: bump version values only, keep branch references pointing to main"
+    echo "Usage: $0 --version VERSION --stage STAGE --date DATE [--tag] [--set-as-main]"
+    echo "  --version VERSION   The new version to set in VERSION.json (e.g., 4.5.0)"
+    echo "  --stage STAGE       The new stage to set in VERSION.json (alpha0, beta1, rc1, stable...)"
+    echo "  --date DATE         The date to set in the RPM changelog (e.g., '2025-04-13')"
+    echo "  --tag               Pin workflow references using tag format (v{version}-{stage})"
+    echo "                      instead of branch format ({version})"
+    echo "  --set-as-main       Enable main branch mode: bump version values only, keep"
+    echo "                      workflow references pointing to main"
     exit 1
 }
 
@@ -135,6 +135,13 @@ function check_jq_installed() {
         log "Error: 'jq' is not installed. Please install it to use this script."
         exit 1
     fi
+}
+
+# ====
+# Print the version currently set in VERSION.json
+# ====
+function current_version() {
+    jq -r '.version' VERSION.json
 }
 
 # ====
@@ -249,27 +256,37 @@ function update_branch_resolver() {
 }
 
 # ====
-# Main logic
+# Parse command-line arguments
+# Globals:
+#   arg_version, arg_stage, arg_date, arg_tag, arg_set_as_main
 # ====
-function main() {
-    if [[ $# -lt 3 ]]; then
-        log "Error: Invalid number of arguments. Expected at least 3, got $#."
-        usage
-    fi
-    if [[ $# -gt 4 ]]; then
-        log "Error: Too many arguments. Expected at most 4, got $#."
-        usage
-    fi
+function parse_args() {
+    declare -g arg_version=""
+    declare -g arg_stage=""
+    declare -g arg_date=""
+    declare -g arg_tag=""
+    declare -g arg_set_as_main=""
 
-    local version="$1"
-    local stage="$2"
-    local date="$3"
-    local set_as_main=""
-    shift 3
     while [[ $# -gt 0 ]]; do
         case "$1" in
+            --version)
+                arg_version="$2"
+                shift 2
+                ;;
+            --stage)
+                arg_stage="$2"
+                shift 2
+                ;;
+            --date)
+                arg_date="$2"
+                shift 2
+                ;;
+            --tag)
+                arg_tag="yes"
+                shift 1
+                ;;
             --set-as-main)
-                set_as_main="yes"
+                arg_set_as_main="yes"
                 shift 1
                 ;;
             *)
@@ -279,18 +296,57 @@ function main() {
         esac
     done
 
+    if [[ -z "$arg_version" || -z "$arg_stage" || -z "$arg_date" ]]; then
+        log "Error: --version, --stage and --date are all required."
+        usage
+    fi
+
+    if [[ -n "$arg_tag" && -n "$arg_set_as_main" ]]; then
+        log "Error: --set-as-main cannot be used with --tag. --set-as-main keeps workflow" \
+             "references pointing to main; --tag exists to convert them to a tag reference," \
+             "which is never done on main."
+        exit 1
+    fi
+}
+
+# ====
+# Main logic
+# ====
+function main() {
+    parse_args "$@"
+
     init_logging
-    log "Starting update for VERSION.json with version=$version, stage=$stage"
+    log "Starting update for VERSION.json with version=$arg_version, stage=$arg_stage"
 
     navigate_to_project_root
     check_jq_installed
-    validate_inputs "$version" "$stage" "$date"
-    date=$(normalize_date "$date")
-    update_version_file "$version" "$stage"
-    update_rpm_changelog "$version" "$date"
-    if [[ "$set_as_main" == "yes" ]]; then
-        update_branch_resolver "$version"
+    validate_inputs "$arg_version" "$arg_stage" "$arg_date"
+
+    local old_version
+    old_version="$(current_version)"
+
+    local normalized_date
+    normalized_date=$(normalize_date "$arg_date")
+
+    update_version_file "$arg_version" "$arg_stage"
+    update_rpm_changelog "$arg_version" "$normalized_date"
+
+    if [[ "$arg_version" != "$old_version" ]]; then
+        log "Version changed: $old_version -> $arg_version"
+        bash "$(dirname "${BASH_SOURCE[0]}")/changelog_sync.sh" "$arg_version"
+    else
+        log "Version unchanged ($arg_version); stage-only bump."
     fi
+
+    if [[ -n "$arg_set_as_main" ]]; then
+        update_branch_resolver "$arg_version"
+        log "Main branch mode enabled: workflow references left pointing to main."
+    else
+        local refs_args=("$arg_version" "$arg_stage")
+        [[ -n "$arg_tag" ]] && refs_args+=("--tag")
+        bash "$(dirname "${BASH_SOURCE[0]}")/workflow_refs_sync.sh" "${refs_args[@]}"
+    fi
+
     log "Update complete."
 }
 

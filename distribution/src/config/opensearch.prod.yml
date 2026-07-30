@@ -46,3 +46,6 @@ search_backpressure.mode: enforced                    # actually cancel heavy se
 indices.breaker.total.use_real_memory: true           # account real heap used, not just reserved bytes
 indices.breaker.total.limit: 80%                      # trip early (default 95%); leaves headroom for Lucene flush/merge
 indexing_pressure.memory.limit: 10%                   # cap in-flight indexing bytes; reject excess bulk
+
+# Use no replicas by default on ISM internal indices
+plugins.index_state_management.history.number_of_replicas: 0

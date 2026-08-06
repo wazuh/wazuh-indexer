@@ -347,6 +347,8 @@ exit 0
 %changelog
 * Tue Aug 19 2026 support <info@wazuh.com> - 5.0.0
 - More info: https://documentation.wazuh.com/current/release-notes/release-5-0-0.html
+* Wed Sep 16 2026 support <info@wazuh.com> - 4.14.9
+- More info: https://documentation.wazuh.com/current/release-notes/release-4-14-9.html
 * Wed Sep 02 2026 support <info@wazuh.com> - 4.14.8
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-14-8.html
 * Wed Jul 29 2026 support <info@wazuh.com> - 4.14.7
@@ -365,7 +367,7 @@ exit 0
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-14-1.html
 * Wed Oct 22 2025 support <info@wazuh.com> - 4.14.0
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-14-0.html
-* Wed Sep 24 2025 support <info@wazuh.com> - 4.13.1
+* Wed Sep 24 2025 support <info@wazuh.com> - 4.13.1b1ac734ef9c340c9feb87a597959500b9d409a9f
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-13-1.html
 * Thu Sep 18 2025 support <info@wazuh.com> - 4.13.0
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-13-0.html

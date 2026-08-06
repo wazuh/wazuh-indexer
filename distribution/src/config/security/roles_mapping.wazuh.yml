@@ -36,3 +36,21 @@ wazuh_manager:
   hidden: false
   users:
     - "wazuh-manager"
+
+# Mapped to every authenticated user: the DLS query in the role scopes each
+# user down to their own AI assistant conversations.
+wazuh_ai_assistant:
+  reserved: true
+  hidden: false
+  users:
+    - "*"
+
+# Mapped to every authenticated user so that its DLS query is attached to
+# '.wazuh-ai-assistant-settings' for all of them, including the holders of
+# roles that grant 'read' over '*'. Only the holders of the backend roles
+# listed in each document's 'visible_to' field get to see it.
+wazuh_ai_assistant_settings:
+  reserved: true
+  hidden: false
+  users:
+    - "*"

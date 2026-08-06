@@ -428,11 +428,10 @@ wazuh_ai_assistant:
 #
 # OpenSearch Security has no deny rules, so the exclusion is expressed as a
 # Document Level Security query instead: every document is written with a
-# 'visible_to' field listing the backend roles allowed to read it (see the
-# 'wazuh-ai-assistant-settings-visibility' ingest pipeline installed by the
-# setup plugin, which is the index's default_pipeline), and ${user.roles} is
-# substituted with the reader's own backend roles. A user holding none of the
-# listed backend roles matches no document.
+# 'visible_to' field listing the backend roles allowed to read it (set by the
+# setup plugin's action filter, which intercepts every write to the index),
+# and ${user.roles} is substituted with the reader's own backend roles. A user
+# holding none of the listed backend roles matches no document.
 #
 # ${user.roles} expands to the BACKEND roles of the reader, not to its mapped
 # security roles, so the documents list 'admin' (the backend role behind

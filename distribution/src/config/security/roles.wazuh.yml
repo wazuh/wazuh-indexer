@@ -426,25 +426,11 @@ wazuh_ai_assistant:
 # grant 'read' over the '*' index pattern (wazuh_demo, wazuh_readonly, any
 # custom role doing the same).
 #
-# OpenSearch Security has no deny rules, so the exclusion is expressed as a
-# Document Level Security query instead: every document is written with a
-# 'visible_to' field listing the backend roles allowed to read it (set by the
-# setup plugin's action filter, which intercepts every write to the index),
-# and ${user.roles} is substituted with the reader's own backend roles. A user
-# holding none of the listed backend roles matches no document.
-#
 # ${user.roles} expands to the BACKEND roles of the reader, not to its mapped
 # security roles, so the documents list 'admin' (the backend role behind
 # all_access and wazuh_admin) and 'wazuh-admin' (carried by the wazuh-admin
 # internal user, which is mapped by username). Any additional administrator
 # must hold one of those two backend roles to read the index.
-#
-# This role is mapped to every authenticated user on purpose: with
-# plugins.security.dfm_empty_overrides_all left at its default of false, a
-# DLS query defined for an index wins over any other role granting
-# unrestricted read on it, so mapping it everywhere is what makes the
-# restriction inescapable. The 'read' action granted here is harmless on its
-# own — it returns an empty result set unless the DLS query matches.
 # ---------------------------------------------------------------------#
 wazuh_ai_assistant_settings:
   reserved: true

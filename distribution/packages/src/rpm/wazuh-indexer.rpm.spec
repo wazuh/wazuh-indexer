@@ -349,6 +349,8 @@ exit 0
 - More info: https://documentation.wazuh.com/current/release-notes/release-5-0-1.html
 * Tue Aug 19 2026 support <info@wazuh.com> - 5.0.0
 - More info: https://documentation.wazuh.com/current/release-notes/release-5-0-0.html
+* Wed Sep 16 2026 support <info@wazuh.com> - 4.14.9
+- More info: https://documentation.wazuh.com/current/release-notes/release-4-14-9.html
 * Wed Sep 02 2026 support <info@wazuh.com> - 4.14.8
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-14-8.html
 * Wed Jul 29 2026 support <info@wazuh.com> - 4.14.7

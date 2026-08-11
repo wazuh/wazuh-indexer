@@ -157,7 +157,7 @@ jobs:
           java-version: 21
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6.2.0
+        uses: gradle/actions/setup-gradle@v6.3.0
 
       - name: Get version
         id: version
@@ -200,7 +200,7 @@ jobs:
           java-version: 21
 
       - name: Setup Gradle # Used for caching
-        uses: gradle/actions/setup-gradle@v6.2.0
+        uses: gradle/actions/setup-gradle@v6.3.0
 
       - name: Get version
         id: version
@@ -251,7 +251,7 @@ jobs:
           java-version: 21
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6.2.0
+        uses: gradle/actions/setup-gradle@v6.3.0
 
       - name: Provision
         if: ${{ matrix.distribution == 'deb' }}

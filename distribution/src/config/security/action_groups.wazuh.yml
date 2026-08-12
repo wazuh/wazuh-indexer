@@ -294,3 +294,35 @@ plugin:content_manager/version/check:
     - 'cluster:monitor/content_manager/version/check'
   type: "cluster"
   description: "Check the CTI catalog version"
+
+plugin:wazuh/ai_assistant/sessions/read:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:admin/ai_assistant/sessions/read'
+  type: "cluster"
+  description: "Read any user's AI assistant conversations"
+
+plugin:wazuh/ai_assistant/sessions/write:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:admin/ai_assistant/sessions/write'
+  type: "cluster"
+  description: "Create, update or delete any user's AI assistant conversations"
+
+plugin:wazuh/ai_assistant/settings/read:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:admin/ai_assistant/settings/read'
+  type: "cluster"
+  description: "Read the AI assistant's providers, settings and field policy"
+
+plugin:wazuh/ai_assistant/settings/write:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:admin/ai_assistant/settings/write'
+  type: "cluster"
+  description: "Write the AI assistant's providers, settings and field policy"

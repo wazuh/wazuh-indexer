@@ -42,6 +42,12 @@ wazuh_admin:
     - 'cluster_monitor'
     # Wazuh settings (setup plugin)
     - 'plugin:wazuh/settings/write'
+    # AI assistant sessions (setup plugin)
+    - 'plugin:wazuh/ai_assistant/sessions/read'
+    - 'plugin:wazuh/ai_assistant/sessions/write'
+    # AI assistant settings (setup plugin)
+    - 'plugin:wazuh/ai_assistant/settings/read'
+    - 'plugin:wazuh/ai_assistant/settings/write'
     # Content Manager
     - 'plugin:content_manager/integration/*'
     - 'plugin:content_manager/decoder/*'
@@ -125,12 +131,6 @@ wazuh_admin:
         - 'delete'
         - 'indices:admin/exists'
         - 'indices:admin/refresh'
-    - index_patterns:
-        - '.wazuh-ai-assistant-settings'
-      allowed_actions:
-        - 'read'
-        - 'index'
-        - 'delete'
   tenant_permissions: []
   static: false
 
@@ -144,6 +144,10 @@ wazuh_demo:
   cluster_permissions:
     - 'cluster_composite_ops'
     - 'cluster_monitor'
+    # AI assistant sessions (setup plugin)
+    - 'plugin:wazuh/ai_assistant/sessions/read'
+    # AI assistant settings (setup plugin)
+    - 'plugin:wazuh/ai_assistant/settings/read'
     # Content Manager
     - 'plugin:content_manager/integration/*'
     - 'plugin:content_manager/decoder/*'
@@ -249,6 +253,10 @@ wazuh_readonly:
   cluster_permissions:
     - 'cluster_composite_ops'
     - 'cluster_monitor'
+    # AI assistant sessions (setup plugin)
+    - 'plugin:wazuh/ai_assistant/sessions/read'
+    # AI assistant settings (setup plugin)
+    - 'plugin:wazuh/ai_assistant/settings/read'
     - 'plugin:content_manager/subscription/get'
     - 'plugin:content_manager/logtest'
     - 'plugin:content_manager/logtest/*'
@@ -416,33 +424,5 @@ wazuh_ai_assistant:
       masked_fields: []
       allowed_actions:
         - 'write'
-  tenant_permissions: []
-  static: false
-
-# ---------------------------------------------------------------------#
-# wazuh-ai-assistant-settings: hides the AI provider credentials and the
-# assistant-wide settings from everyone but the administrators. The index
-# holds sensitive information, so it must stay unreadable for the roles that
-# grant 'read' over the '*' index pattern (wazuh_demo, wazuh_readonly, any
-# custom role doing the same).
-#
-# ${user.roles} expands to the BACKEND roles of the reader, not to its mapped
-# security roles, so the documents list 'admin' (the backend role behind
-# all_access and wazuh_admin) and 'wazuh-admin' (carried by the wazuh-admin
-# internal user, which is mapped by username). Any additional administrator
-# must hold one of those two backend roles to read the index.
-# ---------------------------------------------------------------------#
-wazuh_ai_assistant_settings:
-  reserved: true
-  hidden: false
-  cluster_permissions: []
-  index_permissions:
-    - index_patterns:
-        - '.wazuh-ai-assistant-settings'
-      dls: '{"terms": {"visible_to": [${user.roles}]}}'
-      fls: []
-      masked_fields: []
-      allowed_actions:
-        - 'read'
   tenant_permissions: []
   static: false

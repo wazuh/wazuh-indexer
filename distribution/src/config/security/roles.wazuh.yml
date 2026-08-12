@@ -389,6 +389,11 @@ wazuh_manager:
         - 'index'
         - 'delete'
     - index_patterns:
+        - 'wazuh-agent-*'
+      allowed_actions:
+        - 'read'
+        - 'index'
+    - index_patterns:
         - '.wazuh-threatintel-vulnerabilities*'
         - 'wazuh-threatintel-*'
       allowed_actions:

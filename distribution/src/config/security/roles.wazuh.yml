@@ -42,9 +42,6 @@ wazuh_admin:
     - 'cluster_monitor'
     # Wazuh settings (setup plugin)
     - 'plugin:wazuh/settings/write'
-    # AI assistant sessions (setup plugin)
-    - 'plugin:wazuh/ai_assistant/sessions/read'
-    - 'plugin:wazuh/ai_assistant/sessions/write'
     # AI assistant settings (setup plugin)
     - 'plugin:wazuh/ai_assistant/settings/read'
     - 'plugin:wazuh/ai_assistant/settings/write'
@@ -144,8 +141,6 @@ wazuh_demo:
   cluster_permissions:
     - 'cluster_composite_ops'
     - 'cluster_monitor'
-    # AI assistant sessions (setup plugin)
-    - 'plugin:wazuh/ai_assistant/sessions/read'
     # AI assistant settings (setup plugin)
     - 'plugin:wazuh/ai_assistant/settings/read'
     # Content Manager
@@ -253,8 +248,6 @@ wazuh_readonly:
   cluster_permissions:
     - 'cluster_composite_ops'
     - 'cluster_monitor'
-    # AI assistant sessions (setup plugin)
-    - 'plugin:wazuh/ai_assistant/sessions/read'
     # AI assistant settings (setup plugin)
     - 'plugin:wazuh/ai_assistant/settings/read'
     - 'plugin:content_manager/subscription/get'

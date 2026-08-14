@@ -42,6 +42,9 @@ wazuh_admin:
     - 'cluster_monitor'
     # Wazuh settings (setup plugin)
     - 'plugin:wazuh/settings/write'
+    # AI assistant settings (setup plugin)
+    - 'plugin:wazuh/ai_assistant/settings/read'
+    - 'plugin:wazuh/ai_assistant/settings/write'
     # Content Manager
     - 'plugin:content_manager/integration/*'
     - 'plugin:content_manager/decoder/*'
@@ -138,6 +141,8 @@ wazuh_demo:
   cluster_permissions:
     - 'cluster_composite_ops'
     - 'cluster_monitor'
+    # AI assistant settings (setup plugin)
+    - 'plugin:wazuh/ai_assistant/settings/read'
     # Content Manager
     - 'plugin:content_manager/integration/*'
     - 'plugin:content_manager/decoder/*'
@@ -243,6 +248,8 @@ wazuh_readonly:
   cluster_permissions:
     - 'cluster_composite_ops'
     - 'cluster_monitor'
+    # AI assistant settings (setup plugin)
+    - 'plugin:wazuh/ai_assistant/settings/read'
     - 'plugin:content_manager/subscription/get'
     - 'plugin:content_manager/logtest'
     - 'plugin:content_manager/logtest/*'
@@ -385,5 +392,36 @@ wazuh_manager:
         - 'wazuh-threatintel-*'
       allowed_actions:
         - 'manage_point_in_time'
+  tenant_permissions: []
+  static: false
+
+# ---------------------------------------------------------------------#
+# wazuh-ai-assistant: grants every authenticated user access to their own
+# AI assistant conversations, and only to those. Reads are restricted with
+# Document Level Security parameter substitution: ${user.name} is replaced
+# with the name of the authenticated user, so only the documents whose
+# 'user' field matches it are visible.
+# ---------------------------------------------------------------------#
+wazuh_ai_assistant:
+  reserved: true
+  hidden: false
+  cluster_permissions: []
+  index_permissions:
+    - index_patterns:
+        - 'wazuh-ai-assistant-sessions*'
+        - '.ds-wazuh-ai-assistant-sessions-*'
+      dls: '{"term": {"user": "${user.name}"}}'
+      fls: []
+      masked_fields: []
+      allowed_actions:
+        - 'read'
+    - index_patterns:
+        - 'wazuh-ai-assistant-sessions*'
+        - '.ds-wazuh-ai-assistant-sessions-*'
+      dls: ''
+      fls: []
+      masked_fields: []
+      allowed_actions:
+        - 'write'
   tenant_permissions: []
   static: false

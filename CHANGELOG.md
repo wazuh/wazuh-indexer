@@ -19,6 +19,7 @@
 - Initialize `wazuh-indexer-alerting` repository [(#1)](https://github.com/wazuh/wazuh-indexer-alerting/issues/1)
 - Wazuh Indexer nightly Docker images [(#1433)](https://github.com/wazuh/wazuh-indexer/issues/1433)
 - Performance improvements & default configurations [(#1636)](https://github.com/wazuh/wazuh-indexer/issues/1636)
+- AI assistant support [(#1422)](https://github.com/wazuh/wazuh-indexer-plugins/issues/1422)
 
 ### Changed
 - Migrate issue templates from `6.0.0` [(#853)](https://github.com/wazuh/wazuh-indexer/issues/853)

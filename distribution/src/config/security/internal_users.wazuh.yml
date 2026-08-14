@@ -15,8 +15,7 @@ wazuh-admin:
   # The hash is the hash of the password "wazuh-admin"
   hash: "$2y$12$of2izMMGqP3x4WWtijoq2.MtM1VgpoDc4RgP8AAQD/8tEbo1ftxru"
   reserved: true
-  backend_roles:
-    - "wazuh-admin"
+  backend_roles: []
   description: "Wazuh Administrator user with read access to Wazuh indexes, write access to Wazuh settings, Content Manager management endpoints, and full access to Security Analytics plugin endpoints."
 
 wazuh-demo:

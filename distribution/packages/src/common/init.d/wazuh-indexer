@@ -69,6 +69,7 @@ export WI_JAVA_OPTS
 export JAVA_HOME
 export OPENSEARCH_PATH_CONF
 export WI_STARTUP_SLEEP_TIME
+export MALLOC_ARENA_MAX
 
 lockfile=/var/lock/subsys/$prog
 

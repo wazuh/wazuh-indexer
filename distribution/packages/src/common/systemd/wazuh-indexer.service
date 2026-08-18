@@ -22,6 +22,7 @@ Environment=OPENSEARCH_HOME=/usr/share/wazuh-indexer
 Environment=OPENSEARCH_PATH_CONF=${path.conf}
 Environment=PID_DIR=/run/wazuh-indexer
 Environment=OPENSEARCH_SD_NOTIFY=true
+Environment=MALLOC_ARENA_MAX=2
 EnvironmentFile=-${path.env}
 
 WorkingDirectory=/usr/share/wazuh-indexer

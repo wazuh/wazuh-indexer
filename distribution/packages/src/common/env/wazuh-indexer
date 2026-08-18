@@ -57,3 +57,9 @@ OPENSEARCH_SD_NOTIFY=true
 # When using Systemd, this setting is ignored and the 'vm.max_map_count'
 # property is set at boot time in /usr/lib/sysctl.d/wazuh-indexer.conf
 #MAX_MAP_COUNT=262144
+
+# Caps glibc's per-thread malloc arenas, bounding native/RSS memory overhead
+# on this multi-threaded process independent of JVM heap. When using Systemd,
+# this setting is ignored and the Environment= directive in
+# /usr/lib/systemd/system/wazuh-indexer.service takes precedence.
+MALLOC_ARENA_MAX=2

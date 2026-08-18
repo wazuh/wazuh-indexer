@@ -47,5 +47,50 @@ indices.breaker.total.use_real_memory: true           # account real heap used, 
 indices.breaker.total.limit: 80%                      # trip early (default 95%); leaves headroom for Lucene flush/merge
 indexing_pressure.memory.limit: 10%                   # cap in-flight indexing bytes; reject excess bulk
 
+# Content Manager — CTI catalog sync bulk/concurrency (static; restart required
+# to change).
+plugins.content_manager.max_items_per_bulk: 200       # default 999; smaller bulk requests during sync
+plugins.content_manager.max_bulk_bytes: 2097152       # default 5242880 (5MB); now 2MB, in raw bytes (Long setting, not a size-suffixed string)
+plugins.content_manager.max_concurrent_bulks: 2       # default 5; worst-case in-flight payload = concurrent x bytes
+plugins.content_manager.catalog.sync_interval: 240    # minutes; default 60 — quarters the sync-driven bulk-load spike frequency (also delays CTI content freshness up to 4h; confirm acceptable)
+plugins.content_manager.pit_keepalive: 60             # seconds; default 120 (the allowed floor)
+
+# Security Analytics — enrichment pipeline (blast-radius + retained-state).
+# enriched_findings_max_in_flight caveat: the findings queue feeding these
+# chains is unbounded in code — this narrows concurrent processing width, not
+# total backlog. Watch queue depth under real load, not just heap.
+plugins.security_analytics.enriched_findings_bulk_size: 25          # default 100; paired with flush_interval below (shared flush trigger)
+plugins.security_analytics.enriched_findings_flush_interval: 2      # seconds; default 5
+plugins.security_analytics.enriched_findings_enrich_batch_size: 25  # default 100
+plugins.security_analytics.enriched_findings_max_in_flight: 2       # default 5
+plugins.security_analytics.enriched_findings_rule_cache_max_size: 1000  # default 10000; static, restart required — LRU of full rule docs incl. compliance/MITRE maps
+
+# Security Analytics — correlation backlog/backpressure (blast-radius).
+# events_backpressure.enabled must stay true: silent finding-shedding via
+# max_pending_findings only happens when it's disabled. Do not tune it away.
+plugins.security_analytics.correlation.max_in_flight_findings: 10   # default 50; VM has 2 vCPUs, 50 concurrent pipelines can't parallelize
+plugins.security_analytics.correlation.max_pending_findings: 2000   # default 10000
+plugins.security_analytics.correlation.events_backpressure.enabled: true
+plugins.security_analytics.correlation.events_backpressure.high_watermark_percent: 80  # default 100; pause ingestion before findings get shed
+plugins.security_analytics.correlation.events_backpressure.low_watermark_percent: 40   # default 60
+# Counter-intuitive, deliberate: these cache small ID->object lookups, not
+# documents. Raised, not lowered — zeroing them mainly adds a search query per
+# finding, trading heap for CPU load on an already CPU-constrained box.
+plugins.security_analytics.correlation.detector_cache_ttl: 10m      # default 5m
+plugins.security_analytics.correlation.metadata_cache_ttl: 10m      # default 5m
+
+# Security Analytics — structural (zero-cost guardrail).
+plugins.security_analytics.enable_detectors_with_dedicated_query_indices: false
+
+# Alerting — doc-level-monitor / percolate-query memory bounds (blast-radius).
+# This is the mechanism every Security Analytics detector's evaluation runs
+# through, so it is the most direct lever on the detector-fan-out regression.
+plugins.alerting.monitor.percolate_query_max_num_docs_in_memory: 5000            # default 50000
+plugins.alerting.monitor.percolate_query_docs_size_memory_percentage_limit: 4    # default 10 (% of heap)
+plugins.alerting.monitor.doc_level_monitor_shard_fetch_size: 2000                # default 10000
+plugins.alerting.monitor.doc_level_monitor_fanout_max_duration: 1m               # default 3m
+plugins.alerting.monitor.doc_level_monitor_execution_max_duration: 2m            # default 4m
+plugins.alerting.alert_findings_indexing_batch_size: 500                         # default 1000
+
 # Use no replicas by default on ISM internal indices
 plugins.index_state_management.history.number_of_replicas: 0

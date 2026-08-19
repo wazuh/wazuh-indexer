@@ -418,7 +418,6 @@ wazuh_ai_assistant:
     - index_patterns:
         - 'wazuh-ai-assistant-sessions*'
         - '.ds-wazuh-ai-assistant-sessions-*'
-      dls: ''
       fls: []
       masked_fields: []
       allowed_actions:

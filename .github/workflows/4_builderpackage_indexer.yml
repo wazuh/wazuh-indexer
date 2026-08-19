@@ -68,6 +68,9 @@ on:
       AWS_INDEXER_ACTIONS_ROLE:
         required: true
         description: "AWS IAM OIDC role for S3 and infrastructure access"
+      CI_INTERNAL_S3_BUCKET:
+        required: true
+        description: "Internal S3 bucket URI used to stage build artifacts"
       CI_AWS_REGION:
         required: true
         description: "AWS region for the internal S3 bucket and final package upload"
@@ -83,11 +86,9 @@ permissions:
   contents: read
 
 env:
-  # Bucket + prefix consumed by the "Generate artifact URL" workflow.
-  # It reads s3://<CI_DEV_INTERNAL_BUCKET>/<REPO_NAME>/<WORKFLOW_FILE>/<RUN_ID>/,
-  # so packages must be mirrored here (as the dashboard build already does).
-  CI_DEV_INTERNAL_BUCKET: "s3://xdrsiem-ci-dev-internal"
-  EXECUTION_REPOSITORY: "wazuh-indexer/4_builderpackage_indexer"
+  CI_ARTIFACTS_REPO: wazuh-indexer
+  CI_ARTIFACTS_WORKFLOW: 4_builderpackage_indexer
+
 # ==========================
 # Bibliography
 # ==========================
@@ -228,9 +229,9 @@ jobs:
         run: |
           bash packaging_scripts/rpm_setup_environment.sh ${{ matrix.architecture }} ${{ github.run_id }}
 
-          ansible_host=$(grep 'ansible_host:' /tmp/inventory.yaml | sed 's/.*: *//') 
-          ansible_port=$(grep 'ansible_port:' /tmp/inventory.yaml | sed 's/.*: *//') 
-          ansible_user=$(grep 'ansible_user:' /tmp/inventory.yaml | sed 's/.*: *//') 
+          ansible_host=$(grep 'ansible_host:' /tmp/inventory.yaml | sed 's/.*: *//')
+          ansible_port=$(grep 'ansible_port:' /tmp/inventory.yaml | sed 's/.*: *//')
+          ansible_user=$(grep 'ansible_user:' /tmp/inventory.yaml | sed 's/.*: *//')
           ansible_ssh_private_key_file=$(grep 'ansible_ssh_private_key_file:' /tmp/inventory.yaml | sed 's/.*: *//')
           ssh_command="ssh -o StrictHostKeyChecking=no -i $ansible_ssh_private_key_file -p $ansible_port $ansible_user@$ansible_host"
           scp_command="scp -o StrictHostKeyChecking=no -i $ansible_ssh_private_key_file -P $ansible_port"
@@ -249,7 +250,7 @@ jobs:
           # This step sends the package to the Allocator machine and installs it
 
           # echo "hello" is needed to create the SSH connection
-          ${{ steps.setup_rpm_env.outputs.ssh_command }} 'echo "hello"' 
+          ${{ steps.setup_rpm_env.outputs.ssh_command }} 'echo "hello"'
           ${{ steps.setup_rpm_env.outputs.scp_command }} artifacts/dist/${{ steps.package.outputs.name }} ${{ steps.setup_rpm_env.outputs.ansible_user }}@${{ steps.setup_rpm_env.outputs.ansible_host }}:/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/
           ${{ steps.setup_rpm_env.outputs.ssh_command }} 'sudo yum localinstall -y /home/${{ steps.setup_rpm_env.outputs.ansible_user }}/${{ steps.package.outputs.name }}'
 
@@ -365,20 +366,25 @@ jobs:
           s3uri="${dest}${{ steps.package.outputs.name }}.sha512"
           echo "::notice::S3 sha512 URI: ${s3uri}"
 
-      - name: Mirror package to CI internal bucket
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_INDEXER_ACTIONS_ROLE }}
+          aws-region: ${{ secrets.CI_AWS_REGION }}
+
+      - name: Upload package to CI internal bucket
         if: ${{ inputs.upload }}
         run: |
-          # Mirror the built package to the CI internal bucket under the
-          # <repo>/<workflow_file>/<run_id>/ layout that the
-          # "Generate artifact URL" workflow reads. Matches the dashboard build.
-          dest="${{ env.CI_DEV_INTERNAL_BUCKET }}/${{ env.EXECUTION_REPOSITORY }}/${{ github.run_id }}/"
+          dest="${{ secrets.CI_INTERNAL_S3_BUCKET }}/${{ env.CI_ARTIFACTS_REPO }}/${{ env.CI_ARTIFACTS_WORKFLOW }}/${{ github.run_id }}"
+
           aws s3 cp "artifacts/dist/${{ steps.package.outputs.name }}" "$dest"
           echo "::notice::CI internal S3 URI: ${dest}${{ steps.package.outputs.name }}"
 
-      - name: Mirror checksum to CI internal bucket
+      - name: Upload checksum to CI internal bucket
         if: ${{ inputs.upload && inputs.checksum }}
         run: |
-          dest="${{ env.CI_DEV_INTERNAL_BUCKET }}/${{ env.EXECUTION_REPOSITORY }}/${{ github.run_id }}/"
+          dest="${{ secrets.CI_INTERNAL_S3_BUCKET }}/${{ env.CI_ARTIFACTS_REPO }}/${{ env.CI_ARTIFACTS_WORKFLOW }}/${{ github.run_id }}/"
+
           aws s3 cp "artifacts/dist/${{ steps.package.outputs.name }}.sha512" "$dest"
           echo "::notice::CI internal S3 sha512 URI: ${dest}${{ steps.package.outputs.name }}.sha512"
 

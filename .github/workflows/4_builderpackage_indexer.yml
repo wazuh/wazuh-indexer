@@ -68,6 +68,12 @@ on:
         type: string
         required: false
     secrets:
+      AWS_INDEXER_ACTIONS_ROLE:
+        required: true
+        description: "AWS IAM OIDC role for S3 and infrastructure access"
+      CI_INTERNAL_S3_BUCKET:
+        required: true
+        description: "Internal S3 bucket URI used to stage build artifacts"
       CI_AWS_REGION:
         required: true
         description: "AWS region for the final package upload"
@@ -77,6 +83,10 @@ on:
       CI_INTERNAL_DEVELOPMENT_BUCKET_USER_SECRET_KEY:
         required: true
         description: "AWS user secret key for the final package upload"
+
+env:
+  CI_ARTIFACTS_REPO: wazuh-indexer
+  CI_ARTIFACTS_WORKFLOW: 4_builderpackage_indexer
 
 # ==========================
 # Bibliography
@@ -218,3 +228,25 @@ jobs:
           aws s3 cp "$src" "$dest"
           s3uri="${dest}${{ steps.package.outputs.name }}.sha512"
           echo "::notice::S3 sha512 URI: ${s3uri}"
+
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_INDEXER_ACTIONS_ROLE }}
+          aws-region: ${{ secrets.CI_AWS_REGION }}
+
+      - name: Upload package to CI internal bucket
+        if: ${{ inputs.upload }}
+        run: |
+          dest="${{ secrets.CI_INTERNAL_S3_BUCKET }}/${{ env.CI_ARTIFACTS_REPO }}/${{ env.CI_ARTIFACTS_WORKFLOW }}/${{ github.run_id }}/"
+
+          aws s3 cp "artifacts/dist/${{ steps.package.outputs.name }}" "$dest"
+          echo "::notice::CI internal S3 URI: ${dest}${{ steps.package.outputs.name }}"
+
+      - name: Upload checksum to CI internal bucket
+        if: ${{ inputs.upload && inputs.checksum }}
+        run: |
+          dest="${{ secrets.CI_INTERNAL_S3_BUCKET }}/${{ env.CI_ARTIFACTS_REPO }}/${{ env.CI_ARTIFACTS_WORKFLOW }}/${{ github.run_id }}/"
+
+          aws s3 cp "artifacts/dist/${{ steps.package.outputs.name }}.sha512" "$dest"
+          echo "::notice::CI internal S3 sha512 URI: ${dest}${{ steps.package.outputs.name }}.sha512"

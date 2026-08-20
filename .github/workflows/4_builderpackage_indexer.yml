@@ -2,6 +2,7 @@ run-name: Build ${{ inputs.distribution }} Wazuh Indexer on ${{ inputs.architect
 name: Build packages (on demand)
 
 permissions:
+  id-token: write
   contents: read
 
 # This workflow runs when any of the following occur:

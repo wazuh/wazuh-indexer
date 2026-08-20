@@ -68,6 +68,9 @@ on:
       AWS_INDEXER_ACTIONS_ROLE:
         required: true
         description: "AWS IAM OIDC role for S3 and infrastructure access"
+      CI_INTERNAL_S3_BUCKET:
+        required: true
+        description: "Internal S3 bucket URI used to stage build artifacts"
       CI_AWS_REGION:
         required: true
         description: "AWS region for the internal S3 bucket and final package upload"
@@ -81,6 +84,11 @@ on:
 permissions:
   id-token: write
   contents: read
+
+env:
+  CI_ARTIFACTS_REPO: wazuh-indexer
+  CI_ARTIFACTS_WORKFLOW: 4_builderpackage_indexer
+
 # ==========================
 # Bibliography
 # ==========================
@@ -140,7 +148,7 @@ jobs:
           java-version: 21
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
 
       - name: Provision
         if: ${{ matrix.distribution == 'deb' }}
@@ -210,7 +218,7 @@ jobs:
 
       - name: Configure AWS credentials
         if: ${{ matrix.distribution == 'rpm' }}
-        uses: aws-actions/configure-aws-credentials@v5
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-region: ${{ secrets.CI_AWS_REGION }}
           role-to-assume: ${{ secrets.AWS_INDEXER_ACTIONS_ROLE }}
@@ -221,9 +229,9 @@ jobs:
         run: |
           bash packaging_scripts/rpm_setup_environment.sh ${{ matrix.architecture }} ${{ github.run_id }}
 
-          ansible_host=$(grep 'ansible_host:' /tmp/inventory.yaml | sed 's/.*: *//') 
-          ansible_port=$(grep 'ansible_port:' /tmp/inventory.yaml | sed 's/.*: *//') 
-          ansible_user=$(grep 'ansible_user:' /tmp/inventory.yaml | sed 's/.*: *//') 
+          ansible_host=$(grep 'ansible_host:' /tmp/inventory.yaml | sed 's/.*: *//')
+          ansible_port=$(grep 'ansible_port:' /tmp/inventory.yaml | sed 's/.*: *//')
+          ansible_user=$(grep 'ansible_user:' /tmp/inventory.yaml | sed 's/.*: *//')
           ansible_ssh_private_key_file=$(grep 'ansible_ssh_private_key_file:' /tmp/inventory.yaml | sed 's/.*: *//')
           ssh_command="ssh -o StrictHostKeyChecking=no -i $ansible_ssh_private_key_file -p $ansible_port $ansible_user@$ansible_host"
           scp_command="scp -o StrictHostKeyChecking=no -i $ansible_ssh_private_key_file -P $ansible_port"
@@ -242,7 +250,7 @@ jobs:
           # This step sends the package to the Allocator machine and installs it
 
           # echo "hello" is needed to create the SSH connection
-          ${{ steps.setup_rpm_env.outputs.ssh_command }} 'echo "hello"' 
+          ${{ steps.setup_rpm_env.outputs.ssh_command }} 'echo "hello"'
           ${{ steps.setup_rpm_env.outputs.scp_command }} artifacts/dist/${{ steps.package.outputs.name }} ${{ steps.setup_rpm_env.outputs.ansible_user }}@${{ steps.setup_rpm_env.outputs.ansible_host }}:/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/
           ${{ steps.setup_rpm_env.outputs.ssh_command }} 'sudo yum localinstall -y /home/${{ steps.setup_rpm_env.outputs.ansible_user }}/${{ steps.package.outputs.name }}'
 
@@ -334,7 +342,7 @@ jobs:
 
       - name: Set up AWS CLI for final package upload
         if: ${{ inputs.upload }}
-        uses: aws-actions/configure-aws-credentials@v5
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY }}
           aws-secret-access-key: ${{ secrets.CI_INTERNAL_DEVELOPMENT_BUCKET_USER_SECRET_KEY }}
@@ -357,6 +365,28 @@ jobs:
           aws s3 cp "$src" "$dest"
           s3uri="${dest}${{ steps.package.outputs.name }}.sha512"
           echo "::notice::S3 sha512 URI: ${s3uri}"
+
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_INDEXER_ACTIONS_ROLE }}
+          aws-region: ${{ secrets.CI_AWS_REGION }}
+
+      - name: Upload package to CI internal bucket
+        if: ${{ inputs.upload }}
+        run: |
+          dest="${{ secrets.CI_INTERNAL_S3_BUCKET }}/${{ env.CI_ARTIFACTS_REPO }}/${{ env.CI_ARTIFACTS_WORKFLOW }}/${{ github.run_id }}/"
+
+          aws s3 cp "artifacts/dist/${{ steps.package.outputs.name }}" "$dest"
+          echo "::notice::CI internal S3 URI: ${dest}${{ steps.package.outputs.name }}"
+
+      - name: Upload checksum to CI internal bucket
+        if: ${{ inputs.upload && inputs.checksum }}
+        run: |
+          dest="${{ secrets.CI_INTERNAL_S3_BUCKET }}/${{ env.CI_ARTIFACTS_REPO }}/${{ env.CI_ARTIFACTS_WORKFLOW }}/${{ github.run_id }}/"
+
+          aws s3 cp "artifacts/dist/${{ steps.package.outputs.name }}.sha512" "$dest"
+          echo "::notice::CI internal S3 sha512 URI: ${dest}${{ steps.package.outputs.name }}.sha512"
 
       - name: On failure delete Allocator Machine
         if: ${{ matrix.distribution == 'rpm' && (failure() || cancelled()) }}

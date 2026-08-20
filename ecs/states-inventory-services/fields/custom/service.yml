@@ -1,0 +1,94 @@
+---
+- name: service
+  title: service
+  description: >
+    The service for or from which the data was collected
+  fields:
+    - name: description
+      type: keyword
+      level: custom
+      description: >
+        Description of the service.
+      example: 'Apache HTTP Server'
+    - name: sub_state
+      type: keyword
+      level: custom
+      description: >
+        The low-level unit activation state, values depend on unit type.
+      example: 'running'
+    - name: start_type
+      type: keyword
+      level: custom
+      description: >
+        Service start type: BOOT_START, SYSTEM_START, AUTO_START, DEMAND_START, DISABLED.
+      example: 'AUTO_START'
+    - name: exit_code
+      type: integer
+      level: custom
+      description: >
+        Service-specific exit code on failure.
+      example: 0
+    - name: win32_exit_code
+      type: integer
+      level: custom
+      description: >
+        Win32 exit code on start/stop.
+      example: 0
+    - name: enabled
+      type: keyword
+      level: custom
+      description: >
+        Whether the unit file is enabled, e.g. `enabled`, `masked`, `disabled`, etc.
+      example: 'enabled'
+    - name: following
+      type: keyword
+      level: custom
+      description: >
+        The name of another unit that this unit follows in state.
+      example: 'apache2.service'
+    - name: object_path
+      type: keyword
+      level: custom
+      description: >
+        D-Bus object path of the service.
+      example: '/org/freedesktop/systemd1/unit/apache2_2eservice'
+    - name: restart
+      type: keyword
+      level: custom
+      description: >
+        Restart policy for the service, e.g. `always`, `on-failure`, `never`.
+      example: 'on-failure'
+    - name: frequency
+      type: long
+      level: custom
+      description: >
+        Frequency in seconds at which the service is run.
+      example: 3600
+    - name: starts.on_mount
+      type: boolean
+      level: custom
+      description: >
+        Launches every time a filesystem is mounted.
+      example: true
+    - name: starts.on_path_modified
+      type: keyword
+      level: custom
+      description: >
+        Launches on path modification.
+      normalize:
+        - array
+      example: "['/var/log', '/etc/config']"
+    - name: starts.on_not_empty_directory
+      type: keyword
+      level: custom
+      description: >
+        Launches when directories become non-empty.
+      normalize:
+        - array
+      example: "['/var/spool/mail', '/tmp/uploads']"
+    - name: inetd_compatibility
+      type: boolean
+      level: custom
+      description: >
+        Run job as if launched from inetd.
+      example: false

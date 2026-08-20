@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# Copyright Wazuh Indexer Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# The Wazuh Indexer Contributors require contributions made to
+# this file be licensed under the Apache-2.0 license or a
+# compatible open source license.
+
+# deb wazuh-indexer preinst script
+
+set -e
+
+name="wazuh-indexer"
+config_dir=/etc/${name}
+state_file=${config_dir}/.was_active
+
+echo "Running Wazuh Indexer Pre-Installation Script"
+
+# Stop existing service
+if command -v systemctl >/dev/null && systemctl is-active ${name}.service >/dev/null; then
+    echo "Stop existing ${name}.service"
+    systemctl --no-reload stop ${name}.service
+    touch ${state_file}
+fi
+if command -v systemctl >/dev/null && systemctl is-active ${name}-performance-analyzer.service >/dev/null; then
+    echo "Stop existing ${name}-performance-analyzer.service"
+    systemctl --no-reload stop ${name}-performance-analyzer.service
+fi
+
+# Create user and group if they do not already exist.
+getent group ${name} > /dev/null 2>&1 || groupadd -r ${name}
+getent passwd ${name} > /dev/null 2>&1 || \
+    useradd -r -g ${name} -M -s /sbin/nologin \
+        -c "${name} user/group" ${name}
+exit 0

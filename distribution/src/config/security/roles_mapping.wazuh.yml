@@ -36,3 +36,11 @@ wazuh_manager:
   hidden: false
   users:
     - "wazuh-manager"
+
+# Mapped to every authenticated user: the DLS query in the role scopes each
+# user down to their own AI assistant conversations.
+wazuh_ai_assistant:
+  reserved: true
+  hidden: false
+  users:
+    - "*"

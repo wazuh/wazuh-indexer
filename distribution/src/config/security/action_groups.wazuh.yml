@@ -294,3 +294,19 @@ plugin:content_manager/version/check:
     - 'cluster:monitor/content_manager/version/check'
   type: "cluster"
   description: "Check the CTI catalog version"
+
+plugin:wazuh/ai_assistant/settings/read:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:admin/ai_assistant/settings/read'
+  type: "cluster"
+  description: "Read the AI assistant's providers, settings and field policy"
+
+plugin:wazuh/ai_assistant/settings/write:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:admin/ai_assistant/settings/write'
+  type: "cluster"
+  description: "Write the AI assistant's providers, settings and field policy"

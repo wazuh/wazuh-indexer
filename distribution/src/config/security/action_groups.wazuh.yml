@@ -217,7 +217,7 @@ plugin:content_manager/logtest/detection:
   reserved: true
   hidden: false
   allowed_actions:
-    - 'cluster:monitor/content_manager/logtest_detection'
+    - 'cluster:monitor/content_manager/logtest/detection'
   type: "cluster"
   description: "Run a logtest detection"
 
@@ -225,7 +225,7 @@ plugin:content_manager/logtest/normalization:
   reserved: true
   hidden: false
   allowed_actions:
-    - 'cluster:monitor/content_manager/logtest_normalization'
+    - 'cluster:monitor/content_manager/logtest/normalization'
   type: "cluster"
   description: "Run a logtest normalization"
 

@@ -27,6 +27,7 @@ dashboard_server:
         - 'wazuh-*'
       allowed_actions:
         - 'read'
+        - 'indices:admin/mappings/get'
   tenant_permissions: []
   static: false
 

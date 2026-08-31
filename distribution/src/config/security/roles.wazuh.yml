@@ -27,6 +27,7 @@ dashboard_server:
         - 'wazuh-*'
       allowed_actions:
         - 'read'
+        - 'indices:admin/mappings/get'
   tenant_permissions: []
   static: false
 
@@ -198,7 +199,6 @@ wazuh_demo:
     - 'cluster:admin/opendistro/ad/tasks/search'
     # Notifications (read)
     - 'cluster:admin/opensearch/notifications/channels/get'
-    - 'cluster:admin/opensearch/notifications/configs/get'
     - 'cluster:admin/opensearch/notifications/features'
     # Reporting (read + download)
     - 'cluster:admin/opendistro/reports/definition/get'
@@ -301,7 +301,6 @@ wazuh_readonly:
     - 'cluster:admin/opendistro/ad/tasks/search'
     # Notifications (read)
     - 'cluster:admin/opensearch/notifications/channels/get'
-    - 'cluster:admin/opensearch/notifications/configs/get'
     - 'cluster:admin/opensearch/notifications/features'
     # Reporting (read + download)
     - 'cluster:admin/opendistro/reports/definition/get'

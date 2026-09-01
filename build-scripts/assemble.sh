@@ -175,6 +175,28 @@ function parse_args() {
 }
 
 # ====
+# Remove a top-level entry from a security configuration file
+#
+# The entry spans from its key down to (but not including) the next line that
+# starts at column zero, which is either the next key or a comment.
+# ====
+function remove_security_entry() {
+    local key="$1"
+    local file="$2"
+
+    awk -v key="^${key}:" '
+        $0 ~ key { skip = 1; next }
+        /^[^[:space:]]/ { skip = 0 }
+        !skip
+    ' "$file" >"${file}.tmp" && mv "${file}.tmp" "$file"
+
+    if grep -q "^${key}:" "$file"; then
+        echo "ERROR: failed to remove the '${key}' entry from ${file}"
+        exit 1
+    fi
+}
+
+# ====
 # Set up configuration files
 # ====
 function add_configuration_files() {
@@ -183,7 +205,15 @@ function add_configuration_files() {
     cat "$PATH_CONF/security/roles_mapping.wazuh.yml" >>"$PATH_CONF/opensearch-security/roles_mapping.yml"
     cat "$PATH_CONF/security/internal_users.wazuh.yml" >>"$PATH_CONF/opensearch-security/internal_users.yml"
     cat "$PATH_CONF/security/action_groups.wazuh.yml" >>"$PATH_CONF/opensearch-security/action_groups.yml"
-    
+
+    # The demo configuration shipped by the security plugin maps the built-in
+    # "own_index" role to every user ("*"). That role grants indices_all over an
+    # index named after the user, so any account -- read-only ones included --
+    # can create and fill an index, change its settings and attach aliases that
+    # fall inside the product's own index patterns. A security cluster has no
+    # use for per-user scratch indices, so drop the mapping.
+    remove_security_entry "own_index" "$PATH_CONF/opensearch-security/roles_mapping.yml"
+
     # Disable multi-tenancy
     sed -i 's/#kibana:/kibana:/' "$PATH_CONF/opensearch-security/config.yml"
     sed -i 's/#multitenancy_enabled: true/  multitenancy_enabled: false/' "$PATH_CONF/opensearch-security/config.yml"

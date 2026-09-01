@@ -370,6 +370,59 @@ public class RestControllerTests extends OpenSearchTestCase {
         assertEquals(0, inFlightRequestsBreaker.getUsed());
     }
 
+    public void testDispatchRejectsOversizedRequestBeforeChargingBreaker() {
+        // A handler that caps its request body at 8 bytes.
+        restController.registerHandler(RestRequest.Method.GET, "/limited", new RestHandler() {
+            @Override
+            public void handleRequest(RestRequest request, RestChannel channel, NodeClient client) {
+                channel.sendResponse(new BytesRestResponse(RestStatus.OK, BytesRestResponse.TEXT_CONTENT_TYPE, BytesArray.EMPTY));
+            }
+
+            @Override
+            public java.util.OptionalLong maxContentLength() {
+                return java.util.OptionalLong.of(8L);
+            }
+        });
+
+        // Body larger than the handler limit (8) but well under the breaker limit, so any rejection is
+        // attributable to the size cap and not to the breaker.
+        String content = randomAlphaOfLength(64);
+        RestRequest request = testRestRequest("/limited", content, MediaTypeRegistry.JSON);
+        AssertingChannel channel = new AssertingChannel(request, true, RestStatus.REQUEST_ENTITY_TOO_LARGE);
+
+        restController.dispatchRequest(request, channel, client.threadPool().getThreadContext());
+
+        assertTrue(channel.getSendResponseCalled());
+        // The oversized request was rejected before the in-flight-requests breaker was ever charged.
+        assertEquals(0, inFlightRequestsBreaker.getTrippedCount());
+        assertEquals(0, inFlightRequestsBreaker.getUsed());
+    }
+
+    public void testDispatchAllowsRequestWithinHandlerContentLimit() {
+        restController.registerHandler(RestRequest.Method.GET, "/limited-ok", new RestHandler() {
+            @Override
+            public void handleRequest(RestRequest request, RestChannel channel, NodeClient client) {
+                channel.sendResponse(new BytesRestResponse(RestStatus.OK, BytesRestResponse.TEXT_CONTENT_TYPE, BytesArray.EMPTY));
+            }
+
+            @Override
+            public java.util.OptionalLong maxContentLength() {
+                return java.util.OptionalLong.of(1024L);
+            }
+        });
+
+        // Sized to the breaker limit so a within-cap request is not rejected by the breaker either.
+        String content = randomAlphaOfLength((int) Math.round(BREAKER_LIMIT.bytesAsInt() / inFlightRequestsBreaker.getOverhead()));
+        RestRequest request = testRestRequest("/limited-ok", content, MediaTypeRegistry.JSON);
+        AssertingChannel channel = new AssertingChannel(request, true, RestStatus.OK);
+
+        restController.dispatchRequest(request, channel, client.threadPool().getThreadContext());
+
+        assertTrue(channel.getSendResponseCalled());
+        assertEquals(0, inFlightRequestsBreaker.getTrippedCount());
+        assertEquals(0, inFlightRequestsBreaker.getUsed());
+    }
+
     public void testDispatchRequiresContentTypeForRequestsWithContent() {
         String content = randomAlphaOfLength((int) Math.round(BREAKER_LIMIT.getBytes() / inFlightRequestsBreaker.getOverhead()));
         RestRequest request = testRestRequest("/", content, null);

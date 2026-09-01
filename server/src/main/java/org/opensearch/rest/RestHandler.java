@@ -40,6 +40,7 @@ import org.opensearch.transport.client.node.NodeClient;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.OptionalLong;
 import java.util.stream.Collectors;
 
 /**
@@ -61,6 +62,23 @@ public interface RestHandler {
 
     default boolean canTripCircuitBreaker() {
         return true;
+    }
+
+    /**
+     * The maximum allowed size, in bytes, of the request body this handler will accept. When present,
+     * {@link RestController} rejects a request whose content length exceeds this value with {@code 413
+     * REQUEST_ENTITY_TOO_LARGE} <em>before</em> the request is charged to the in-flight-requests
+     * circuit breaker and before {@link #handleRequest} runs, so an oversized body on this route
+     * cannot be turned into heap pressure. Return {@link OptionalLong#empty()} (the default) to apply
+     * no per-handler limit beyond the global {@code http.max_content_length}.
+     *
+     * <p>The value is read on every request, so a handler backed by a dynamic setting reflects setting
+     * changes without re-registration.
+     *
+     * @return the maximum request body size in bytes, or empty for no per-handler limit.
+     */
+    default OptionalLong maxContentLength() {
+        return OptionalLong.empty();
     }
 
     /**

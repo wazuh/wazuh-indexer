@@ -70,9 +70,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
@@ -87,6 +90,7 @@ import static org.opensearch.core.rest.RestStatus.INTERNAL_SERVER_ERROR;
 import static org.opensearch.core.rest.RestStatus.METHOD_NOT_ALLOWED;
 import static org.opensearch.core.rest.RestStatus.NOT_ACCEPTABLE;
 import static org.opensearch.core.rest.RestStatus.OK;
+import static org.opensearch.core.rest.RestStatus.REQUEST_ENTITY_TOO_LARGE;
 import static org.opensearch.rest.BytesRestResponse.TEXT_CONTENT_TYPE;
 
 /**
@@ -115,6 +119,16 @@ public class RestController implements HttpServerTransport.Dispatcher {
     }
 
     private final PathTrie<RestMethodHandlers> handlers = new PathTrie<>(RestUtils.REST_DECODER);
+
+    /**
+     * Maps a registered (possibly wrapped) handler instance to the original, unwrapped handler that
+     * declares a {@link RestHandler#maxContentLength()} limit. Populated at registration time, when
+     * the unwrapped handler is still visible; consulted at dispatch time — where only the wrapped
+     * handler is available — so a per-handler request-size limit survives handler wrapping (e.g. the
+     * security plugin's REST filter) instead of being masked by it. Only handlers that declare a limit
+     * are recorded, so the common no-limit path adds no lookup cost.
+     */
+    private final Map<RestHandler, RestHandler> contentLengthLimitedHandlers = new ConcurrentHashMap<>();
 
     private final UnaryOperator<RestHandler> handlerWrapper;
 
@@ -234,7 +248,13 @@ public class RestController implements HttpServerTransport.Dispatcher {
         if (handler instanceof BaseRestHandler baseRestHandler) {
             usageService.addRestHandler(baseRestHandler);
         }
-        registerHandlerNoWrap(method, path, handlerWrapper.apply(handler));
+        final RestHandler wrappedHandler = handlerWrapper.apply(handler);
+        // Record the unwrapped handler while it is still visible, keyed by the wrapped instance that
+        // dispatch will see, so a per-handler max content length survives handler wrapping.
+        if (handler.maxContentLength().isPresent()) {
+            contentLengthLimitedHandlers.put(wrappedHandler, handler);
+        }
+        registerHandlerNoWrap(method, path, wrappedHandler);
     }
 
     private void registerHandlerNoWrap(RestRequest.Method method, String path, RestHandler maybeWrappedHandler) {
@@ -328,6 +348,37 @@ public class RestController implements HttpServerTransport.Dispatcher {
 
     private void dispatchRequest(RestRequest request, RestChannel channel, RestHandler handler) throws Exception {
         final int contentLength = request.content().length();
+
+        // Enforce any per-handler request-size limit before the request is charged to the
+        // in-flight-requests circuit breaker (below) and before the handler runs, so an oversized body
+        // on this route cannot be turned into heap pressure or trip the shared breaker. The limit is
+        // read from the original (unwrapped) handler recorded at registration time.
+        final RestHandler limitSource = contentLengthLimitedHandlers.get(handler);
+        if (limitSource != null) {
+            final OptionalLong maxContentLength = limitSource.maxContentLength();
+            if (maxContentLength.isPresent() && contentLength > maxContentLength.getAsLong()) {
+                logger.warn(
+                    "Rejected oversized request for [{}]: {} bytes exceeds the per-handler limit of {} bytes.",
+                    request.path(),
+                    contentLength,
+                    maxContentLength.getAsLong()
+                );
+                channel.sendResponse(
+                    BytesRestResponse.createSimpleErrorResponse(
+                        channel,
+                        REQUEST_ENTITY_TOO_LARGE,
+                        String.format(
+                            Locale.ROOT,
+                            "Request body for [%s] exceeds the maximum allowed size of %d bytes.",
+                            request.path(),
+                            maxContentLength.getAsLong()
+                        )
+                    )
+                );
+                return;
+            }
+        }
+
         final MediaType mediaType = request.getMediaType();
         if (contentLength > 0) {
             if (mediaType == null) {

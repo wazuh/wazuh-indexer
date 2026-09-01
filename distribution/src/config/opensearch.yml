@@ -87,6 +87,12 @@ ${path.logs}
 #
 #action.destructive_requires_name: true
 #
+# ---------------------------------- Search -----------------------------------
+#
+# Lower than the OpenSearch default (24h) to bound how long a scroll context can hold the shared pool:
+#
+search.max_keep_alive: "4h"
+#
 # ---------------------------------- Remote Store -----------------------------------
 # Controls whether cluster imposes index creation only with remote store enabled
 # cluster.remote_store.enabled: true

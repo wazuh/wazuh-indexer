@@ -1,0 +1,28 @@
+name: "(5.x) Check security roles"
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+    paths:
+      - "distribution/src/config/security/roles.wazuh.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  check-scroll-clear-permissions:
+    if: ${{ !github.event.pull_request.draft && github.repository == 'wazuh/wazuh-indexer' }}
+    runs-on:
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Install yq
+        run: |
+          sudo curl -sL -o /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: No role can open a scroll it cannot clear
+        run: bash build-scripts/check-scroll-clear-permissions.sh

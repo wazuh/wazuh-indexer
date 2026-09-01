@@ -151,7 +151,7 @@ jobs:
           repository: wazuh/wazuh-indexer-plugins
           ref: ${{ inputs.wazuh_plugins_ref }}
 
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: 21
@@ -194,7 +194,7 @@ jobs:
           repository: wazuh/wazuh-indexer-reporting
           ref: ${{ inputs.reporting_plugin_ref }}
 
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: 21
@@ -245,7 +245,7 @@ jobs:
         if: ${{ inputs.wazuh_plugins_ref != '' || inputs.reporting_plugin_ref != '' }}
         run: ls -lR ./artifacts/plugins
 
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: 21

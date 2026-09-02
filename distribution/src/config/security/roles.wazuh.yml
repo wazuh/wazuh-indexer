@@ -347,7 +347,7 @@ wazuh_readonly:
 # ---------------------------------------------------------------------#
 # wazuh-manager: service account. Reads CTI consumer state, active
 # responses and threat intelligence content; ingests events, metrics
-# and states; manages state documents (index + delete).
+# and states; manages state documents (index + delete + refresh).
 # ---------------------------------------------------------------------#
 wazuh_manager:
   reserved: true
@@ -374,18 +374,26 @@ wazuh_manager:
       allowed_actions:
         - 'read'
         - 'index'
+    # Agent removal opens a point in time over the target indices and then
+    # runs a _delete_by_query against it. A PIT pins the searcher as it is at
+    # creation time and never picks up later refreshes, so documents written
+    # inside the refresh interval would stay invisible to the deletion and
+    # survive it. 'indices:admin/refresh' lets the manager refresh each target
+    # index first; it is not implied by 'read', 'index' or 'delete'.
     - index_patterns:
         - 'wazuh-states-*'
       allowed_actions:
         - 'read'
         - 'index'
         - 'delete'
+        - 'indices:admin/refresh'
     - index_patterns:
         - 'wazuh-agent-*'
       allowed_actions:
         - 'read'
         - 'index'
         - 'delete'
+        - 'indices:admin/refresh'
     - index_patterns:
         - '.wazuh-threatintel-vulnerabilities*'
         - 'wazuh-threatintel-*'

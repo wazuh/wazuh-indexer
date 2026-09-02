@@ -20,9 +20,29 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Install yq
+        env:
+          YQ_VERSION: v4.44.3
         run: |
-          sudo curl -sL -o /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64
-          sudo chmod +x /usr/local/bin/yq
+          set -euo pipefail
+          base_url="https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}"
+          curl -sL -o /tmp/yq_linux_amd64 "${base_url}/yq_linux_amd64"
+          curl -sL -o /tmp/yq_checksums "${base_url}/checksums"
+          curl -sL -o /tmp/yq_checksums_order "${base_url}/checksums_hashes_order"
+
+          # checksums lists one hash per algorithm, in the order given by checksums_hashes_order
+          # (column 1 is the filename), so locate SHA-256's column instead of hardcoding it.
+          sha256_line="$(grep -nx 'SHA-256' /tmp/yq_checksums_order | cut -d: -f1)"
+          sha256_col="$((sha256_line + 1))"
+
+          expected="$(awk -v f=yq_linux_amd64 -v c="$sha256_col" '$1==f {print $c}' /tmp/yq_checksums)"
+          actual="$(sha256sum /tmp/yq_linux_amd64 | cut -d' ' -f1)"
+
+          if [ -z "$expected" ] || [ "$expected" != "$actual" ]; then
+            echo "yq checksum mismatch: expected ${expected:-<not found>}, got ${actual}" >&2
+            exit 1
+          fi
+
+          sudo install -m 0755 /tmp/yq_linux_amd64 /usr/local/bin/yq
 
       - name: No role can open a scroll it cannot clear
         run: bash build-scripts/check-scroll-clear-permissions.sh

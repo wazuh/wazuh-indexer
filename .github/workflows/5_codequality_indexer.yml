@@ -1,0 +1,80 @@
+name: (5.x) Check indexer code quality
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+    branches:
+      - "5.[0-9].[0-9]"
+
+permissions:
+  contents: read
+
+jobs:
+  # Guards the 5.x branches against code that must not be propagated by an upward merge.
+  # Upward merge branches must be named `merge-<ORIGIN_BRANCH>-into-<DESTINATION_BRANCH>`,
+  # where DESTINATION_BRANCH is the 5.X.Y branch the pull request targets.
+  verify-upward-merge:
+    if: ${{ !github.event.pull_request.draft && github.repository == 'wazuh/wazuh-indexer' }}
+    runs-on:
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@v7
+
+      # Only branches prefixed with `merge-` are treated as upward merges. Enforcing the
+      # convention keeps the origin and destination branches unambiguous in the logs below.
+      - name: Check upward merge branch name
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+
+          if [[ "${HEAD_REF}" != merge-* ]]; then
+            echo "'${HEAD_REF}' is not an upward merge branch. Skipping branch name check."
+            exit 0
+          fi
+
+          if [[ ! "${HEAD_REF}" =~ ^merge-(.+)-into-(5\.[0-9]\.[0-9])$ ]]; then
+            echo "::error::Invalid upward merge branch name '${HEAD_REF}'. Expected 'merge-<ORIGIN_BRANCH>-into-<DESTINATION_BRANCH>', with DESTINATION_BRANCH matching 5.X.Y."
+            exit 1
+          fi
+
+          ORIGIN_BRANCH="${BASH_REMATCH[1]}"
+          DESTINATION_BRANCH="${BASH_REMATCH[2]}"
+
+          if [[ "${DESTINATION_BRANCH}" != "${BASE_REF}" ]]; then
+            echo "::error::Upward merge branch '${HEAD_REF}' declares destination '${DESTINATION_BRANCH}' but targets '${BASE_REF}'. Rename the branch or retarget the pull request."
+            exit 1
+          fi
+
+          echo "Upward merge from '${ORIGIN_BRANCH}' into '${DESTINATION_BRANCH}'."
+
+      # The docker environments and the package build tooling live in `build-scripts` since
+      # 5.0.0. The `docker` folder is outdated code that 4.x still carries, so it silently
+      # comes back on every upward merge unless it is dropped from the merge resolution.
+      - name: Check the docker folder is absent
+        run: |
+          set -euo pipefail
+
+          # HEAD is the pull request merge commit, so this reports the post-merge state.
+          RESTORED_FILES="$(git ls-tree -r --name-only HEAD -- docker)"
+
+          if [[ -n "${RESTORED_FILES}" ]]; then
+            echo "::error::The 'docker' folder was reintroduced. It was removed from the 5.x branches and its contents now live in 'build-scripts'. Run 'git rm -r docker' on this branch and push the result."
+            {
+              echo "### Reintroduced \`docker\` folder"
+              echo
+              echo "The \`docker\` folder is outdated 4.x code. Its replacement lives in \`build-scripts\`."
+              echo "Drop it from the merge resolution with \`git rm -r docker\`."
+              echo
+              echo "<details><summary>Offending files</summary>"
+              echo
+              echo '```'
+              echo "${RESTORED_FILES}"
+              echo '```'
+              echo
+              echo "</details>"
+            } >> "${GITHUB_STEP_SUMMARY}"
+            exit 1
+          fi
+
+          echo "The 'docker' folder is absent."

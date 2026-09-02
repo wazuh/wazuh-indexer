@@ -5,20 +5,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased 4.10.x]
 ### Added
+-
 
 ### Dependencies
+- Migrate to OpenSearch 2.19.5. [(#1821)](https://github.com/wazuh/wazuh-indexer/pull/1821)
 
 ### Changed
+-
 
 ### Deprecated
+-
 
 ### Removed
-- 
+-
 
 ### Fixed
-- 
+-
 
 ### Security
-- 
+-
 
-[Unreleased 4.10.x]: https://github.com/wazuh/wazuh-indexer/compare/v4.10.4...4.10.5
+[Unreleased 4.10.x]: https://github.com/wazuh/wazuh-indexer/compare/c43d318552d877e83d99006c6765d41e06d4b452...4.10.5

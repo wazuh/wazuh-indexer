@@ -76,6 +76,7 @@
 - Default zstd index codec [(#1271)](https://github.com/wazuh/wazuh-indexer-plugins/issues/1271)
 - Update the Content Manager OpenAPI (`openapi.yml`) to match the current API [(#1353)](https://github.com/wazuh/wazuh-indexer-plugins/issues/1353)
 - [BUG] wazuh-readonly missing promotion and mapping permissions [(#1752)](https://github.com/wazuh/wazuh-indexer/issues/1752)
+- [BUG] The `own_index` demo role is mapped to every user [(#6030)](https://github.com/wazuh/internal-devel-requests/issues/6030)
 
 ## Prior versions
 - []()

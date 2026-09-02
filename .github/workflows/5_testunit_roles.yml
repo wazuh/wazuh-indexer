@@ -45,4 +45,4 @@ jobs:
           sudo install -m 0755 /tmp/yq_linux_amd64 /usr/local/bin/yq
 
       - name: No role can open a scroll it cannot clear
-        run: bash build-scripts/check-scroll-clear-permissions.sh
+        run: bash tools/check_scroll_clear_permissions.sh

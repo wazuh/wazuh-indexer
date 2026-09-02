@@ -49,3 +49,6 @@ indexing_pressure.memory.limit: 10%                   # cap in-flight indexing b
 
 # Use no replicas by default on ISM internal indices
 plugins.index_state_management.history.number_of_replicas: 0
+
+# Default max scroll context keep alive
+search.max_keep_alive: "4h"

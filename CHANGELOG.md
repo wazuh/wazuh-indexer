@@ -57,6 +57,7 @@
 - `StreamTransportService` not available warnings [(#1582)](https://github.com/wazuh/wazuh-indexer/issues/1582)
 - SLF4J "no provider" warnings during startup [(#1577)](https://github.com/wazuh/wazuh-indexer/issues/1577)
 - Remove non-essential plugins [(#1272)](https://github.com/wazuh/wazuh-indexer-plugins/issues/1272)
+- Remove the outdated `docker` folder and guard 5.x upward merges against its reintroduction [(#683)](https://github.com/wazuh/wazuh-indexer/issues/683)
 
 ### Fixed
 - Indexer 6.0.0 packages are being uploaded in 5.x path [(#844)](https://github.com/wazuh/wazuh-indexer/issues/844)

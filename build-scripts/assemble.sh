@@ -239,14 +239,16 @@ function remove_unneeded_files() {
 # Add additional tools into packages
 # ====
 function add_wazuh_tools() {
-    local version=${1%%.[[:digit:]]}
+    local version=${1}
 
     local download_url
-    download_url="https://packages-dev.wazuh.com/${version}"
+    download_url="https://packages-staging.xdrsiem.wazuh.info/nightly/${version}/installation-assistant"
 
-    retry 3 5 curl -sL --connect-timeout 10 --max-time 60 "${download_url}/config.yml" -o "$PATH_PLUGINS"/opensearch-security/tools/config.yml
-    retry 3 5 curl -sL --connect-timeout 10 --max-time 60 "${download_url}/wazuh-passwords-tool.sh" -o "$PATH_PLUGINS"/opensearch-security/tools/wazuh-passwords-tool.sh
-    retry 3 5 curl -sL --connect-timeout 10 --max-time 60 "${download_url}/wazuh-certs-tool.sh" -o "$PATH_PLUGINS"/opensearch-security/tools/wazuh-certs-tool.sh
+    local tools_dir="$PATH_PLUGINS"/opensearch-security/tools
+
+    retry 3 5 curl -sL --connect-timeout 10 --max-time 60 --fail "${download_url}/config-${version}-latest.yml" -o "${tools_dir}"/config.yml
+    retry 3 5 curl -sL --connect-timeout 10 --max-time 60 --fail "${download_url}/wazuh-passwords-tool-${version}-latest.sh" -o "${tools_dir}"/wazuh-passwords-tool.sh
+    retry 3 5 curl -sL --connect-timeout 10 --max-time 60 --fail "${download_url}/wazuh-certs-tool-${version}-latest.sh" -o "${tools_dir}"/wazuh-certs-tool.sh
 }
 
 # ====

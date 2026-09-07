@@ -40,6 +40,7 @@ wazuh_admin:
   hidden: false
   cluster_permissions:
     - 'cluster_composite_ops'
+    - 'indices:data/read/scroll/clear'
     - 'cluster_monitor'
     # Wazuh settings (setup plugin)
     - 'plugin:wazuh/settings/write'
@@ -141,6 +142,7 @@ wazuh_demo:
   hidden: false
   cluster_permissions:
     - 'cluster_composite_ops'
+    - 'indices:data/read/scroll/clear'
     - 'cluster_monitor'
     # AI assistant settings (setup plugin)
     - 'plugin:wazuh/ai_assistant/settings/read'
@@ -246,7 +248,8 @@ wazuh_readonly:
   reserved: true
   hidden: false
   cluster_permissions:
-    - 'cluster_composite_ops'
+    - 'cluster_composite_ops_ro'
+    - 'indices:data/read/scroll/clear'
     - 'cluster_monitor'
     # AI assistant settings (setup plugin)
     - 'plugin:wazuh/ai_assistant/settings/read'
@@ -354,6 +357,7 @@ wazuh_manager:
   hidden: false
   cluster_permissions:
     - 'cluster_composite_ops'
+    - 'indices:data/read/scroll/clear'
     - 'cluster_monitor'
   index_permissions:
     - index_patterns:

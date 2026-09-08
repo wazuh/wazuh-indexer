@@ -18,7 +18,7 @@ The names of the packages are managed by the `baptizer.sh` script.
 
 ## Build
 
-For local package generation, use the `build.sh` script. Take a look at the `build.yml` 
+For local package generation, use the `build.sh` script. Take a look at the `build.yml`
 workflow file for an example of usage.
 
 ```bash
@@ -68,8 +68,8 @@ For DEB packages, the `assemble.sh` script will perform the following operations
 
 1. Extract the deb package using `ar` and `tar` tools.
 
-    > By default, `ar` and `tar` tools expect the package to be in `wazuh-indexer/artifacts/tmp/deb`. 
-    > The script takes care of creating the required folder structure, copying also the min package 
+    > By default, `ar` and `tar` tools expect the package to be in `wazuh-indexer/artifacts/tmp/deb`.
+    > The script takes care of creating the required folder structure, copying also the min package
     > and the Makefile.
 
     Current folder loadout at this stage:
@@ -77,7 +77,7 @@ For DEB packages, the `assemble.sh` script will perform the following operations
     ```
     artifacts/
     |-- dist
-    |   |-- wazuh-indexer-min_4.10.5_amd64.deb
+    |   |-- wazuh-indexer-min_4.10.6_amd64.deb
     `-- tmp
         `-- deb
             |-- Makefile
@@ -86,7 +86,7 @@ For DEB packages, the `assemble.sh` script will perform the following operations
             |-- etc
             |-- usr
             |-- var
-            `-- wazuh-indexer-min_4.10.5_amd64.deb
+            `-- wazuh-indexer-min_4.10.6_amd64.deb
     ```
 
     `usr`, `etc` and `var` folders contain `wazuh-indexer` files, extracted from `wazuh-indexer-min-*.deb`.
@@ -109,8 +109,8 @@ For DEB packages, the `assemble.sh` script will perform the following operations
     artifacts/
     |-- artifact_name.txt
     |-- dist
-    |   |-- wazuh-indexer-min_4.10.5_amd64.deb
-    |   `-- wazuh-indexer_4.10.5_amd64.deb
+    |   |-- wazuh-indexer-min_4.10.6_amd64.deb
+    |   `-- wazuh-indexer_4.10.6_amd64.deb
     `-- tmp
         `-- deb
             |-- Makefile
@@ -119,7 +119,7 @@ For DEB packages, the `assemble.sh` script will perform the following operations
             |-- etc
             |-- usr
             |-- var
-            |-- wazuh-indexer-min_4.10.5_amd64.deb
+            |-- wazuh-indexer-min_4.10.6_amd64.deb
             `-- debian/
                 | -- control
                 | -- copyright
@@ -228,7 +228,7 @@ them, as well as their inputs and outputs.
 scripts:
   - file: build.sh
     description: |
-      generates a distribution package by running the appropiate Gradle task 
+      generates a distribution package by running the appropiate Gradle task
       depending on the parameters.
     inputs:
       architecture: [x64, arm64] # Note: we only build x86_64 packages
@@ -236,10 +236,10 @@ scripts:
       name: the name of the package to be generated.
     outputs:
       package: minimal wazuh-indexer package for the required distribution.
-  
+
   - file: assemble.sh
     description: |
-      bundles the wazuh-indexer package generated in by build.sh with plugins, 
+      bundles the wazuh-indexer package generated in by build.sh with plugins,
       configuration files and demo certificates (certificates yet to come).
     inputs:
       architecture: [x64, arm64] # Note: we only build x86_64 packages
@@ -247,10 +247,10 @@ scripts:
       revision: revision number. 0 by default.
     outputs:
       package: wazuh-indexer package.
-  
+
   - file: provision.sh
     description: Provision script for the assembly of DEB packages.
-  
+
   - file: baptizer.sh
     description: generate the wazuh-indexer package name depending on the parameters.
     inputs:

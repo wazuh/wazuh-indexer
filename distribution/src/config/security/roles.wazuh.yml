@@ -135,7 +135,9 @@ wazuh_admin:
 
 # ---------------------------------------------------------------------#
 # wazuh-demo: default user with regular access. Can visualize data and
-# index/update/delete threatintel resources.
+# index/update/delete threatintel resources. Threat detectors are read-only:
+# creating, updating (including enabling/disabling) and deleting them is
+# reserved to wazuh_admin.
 # ---------------------------------------------------------------------#
 wazuh_demo:
   reserved: true
@@ -164,13 +166,16 @@ wazuh_demo:
     - 'cluster:admin/wazuh/securityanalytics/logtype/*'
     - 'cluster:admin/wazuh/securityanalytics/rules/evaluate'
     - 'cluster:admin/wazuh/securityanalytics/space/delete'
-    # Security Analytics (OpenSearch plugin, full)
+    # Security Analytics (OpenSearch plugin)
     - 'cluster:admin/opensearch/securityanalytics/alerts/*'
     - 'cluster:admin/opensearch/securityanalytics/connections/*'
     - 'cluster:admin/opensearch/securityanalytics/correlationAlerts/*'
     - 'cluster:admin/opensearch/securityanalytics/correlations/*'
     - 'cluster:admin/opensearch/securityanalytics/correlation/*'
-    - 'cluster:admin/opensearch/securityanalytics/detector/*'
+    # Detectors are read-only: standard detectors are provisioned from the CTI
+    # catalog, and disabling one silently stops detection for its integration.
+    - 'cluster:admin/opensearch/securityanalytics/detector/get'
+    - 'cluster:admin/opensearch/securityanalytics/detector/search'
     - 'cluster:admin/opensearch/securityanalytics/findings/*'
     - 'cluster:admin/opensearch/securityanalytics/logtype/*'
     - 'cluster:admin/opensearch/securityanalytics/mapping/*'

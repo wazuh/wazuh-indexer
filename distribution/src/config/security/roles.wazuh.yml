@@ -405,15 +405,33 @@ wazuh_manager:
 
 # ---------------------------------------------------------------------#
 # wazuh-ai-assistant: grants every authenticated user access to their own
-# AI assistant conversations, and only to those. Reads are restricted with
-# Document Level Security parameter substitution: ${user.name} is replaced
-# with the name of the authenticated user, so only the documents whose
-# 'user' field matches it are visible.
+# AI assistant conversations, and only to those.
+#
+# Reads and writes are scoped by two different mechanisms, and the
+# asymmetry is deliberate. Reads are restricted with Document Level
+# Security parameter substitution: ${user.name} is replaced with the name
+# of the authenticated user, so only the documents whose 'user' field
+# matches it are visible.
+#
+# DLS cannot do the same for writes -- it is a read-path filter -- and no
+# role syntax can express "this document's 'user' must equal your name".
+# So writes are mediated by the setup plugin instead, through the cluster
+# permission below: it derives 'user' from the authenticated principal and
+# discards whatever the request body sent. See
+# /_plugins/_setup/ai_assistant/sessions in the setup plugin's API
+# reference.
+#
+# The index-level 'write' block is still granted for now, so that clients
+# writing directly to the data stream keep working until they migrate to
+# the endpoints. Removing it is what closes
+# wazuh/internal-devel-requests#6111, and it must be gated on the Wazuh
+# Dashboard having migrated, or sessions stop persisting silently.
 # ---------------------------------------------------------------------#
 wazuh_ai_assistant:
   reserved: true
   hidden: false
-  cluster_permissions: []
+  cluster_permissions:
+    - 'plugin:wazuh/ai_assistant/session/write'
   index_permissions:
     - index_patterns:
         - 'wazuh-ai-assistant-sessions*'

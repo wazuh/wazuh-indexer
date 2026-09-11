@@ -37,8 +37,11 @@ wazuh_manager:
   users:
     - "wazuh-manager"
 
-# Mapped to every authenticated user: the DLS query in the role scopes each
-# user down to their own AI assistant conversations.
+# Mapped to every authenticated user. The role's DLS query scopes each user's
+# READS down to their own AI assistant conversations; their writes are scoped
+# instead by the setup plugin, which stamps the owner server-side. Granting
+# this role to everyone is therefore safe: it confers access to the caller's
+# own conversations and nothing else. See the comment above the role itself.
 wazuh_ai_assistant:
   reserved: true
   hidden: false

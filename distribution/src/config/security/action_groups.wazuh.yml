@@ -312,3 +312,11 @@ plugin:wazuh/ai_assistant/settings/write:
     - 'cluster:admin/ai_assistant/settings/write'
   type: "cluster"
   description: "Write the AI assistant's providers, settings and field policy"
+
+plugin:wazuh/ai_assistant/session/write:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:admin/ai_assistant/session/write'
+  type: "cluster"
+  description: "Create, update and delete the caller's own AI assistant sessions"

@@ -179,10 +179,22 @@ function parse_args() {
 #
 # The entry spans from its key down to (but not including) the next line that
 # starts at column zero, which is either the next key or a comment.
+#
+# The entry is required to be there. Every call removes a grant we have decided
+# the product must not ship, so an entry that has already vanished is not a
+# no-op to shrug at: upstream renamed or restructured it, and the grant may now
+# live under a key this function no longer looks for. Fail the build instead of
+# silently producing a package that still carries it.
 # ====
 function remove_security_entry() {
     local key="$1"
     local file="$2"
+
+    if ! grep -q "^${key}:" "$file"; then
+        echo "ERROR: no '${key}' entry found in ${file}."
+        echo "       Upstream changed this file. Re-check where the grant went before releasing."
+        exit 1
+    fi
 
     awk -v key="^${key}:" '
         $0 ~ key { skip = 1; next }
@@ -213,6 +225,59 @@ function add_configuration_files() {
     # fall inside the product's own index patterns. A security cluster has no
     # use for per-user scratch indices, so drop the mapping.
     remove_security_entry "own_index" "$PATH_CONF/opensearch-security/roles_mapping.yml"
+
+    # That same demo configuration ships seven internal users, every one of them
+    # enabled with its password equal to its username. Only two have a job here:
+    # "admin", which the installer and the passwords tool expect, and
+    # "kibanaserver", the service account the dashboard authenticates with. The
+    # rest are upstream's demonstration accounts and are removed:
+    #
+    #   anomalyadmin    - anomaly_full_access, assigned directly on the account
+    #   kibanaro        - kibanauser + readall, i.e. write access to the saved
+    #                     objects (see the roles_mapping block below)
+    #   logstash        - create indices and write to logstash-* and *beat*
+    #   readall         - read every index in the cluster
+    #   snapshotrestore - manage_snapshots
+    #
+    for user in anomalyadmin kibanaro logstash readall snapshotrestore; do
+        remove_security_entry "$user" "$PATH_CONF/opensearch-security/internal_users.yml"
+    done
+
+    # Deleting the accounts is only half of it. Four of them held no privilege
+    # directly: they carried a backend role, and the mappings below are what
+    # turn that name into a role. A backend role comes from whatever
+    # authenticates the user -- an LDAP or AD group, a JWT claim -- so while
+    # these mappings stand, a directory group that merely happens to be named
+    # "readall" or "kibanauser" is granted the privilege with no account of
+    # ours involved and nobody assigning anything. Those names are the ones
+    # upstream's own documentation uses, so the coincidence is likely.
+    #
+    #   kibana_user      <- "kibanauser": delete, index and manage over
+    #                       .kibana*, that is, write access to the index
+    #                       patterns, visualizations and dashboards the product
+    #                       ships. Multi-tenancy is disabled a few lines down,
+    #                       so there is no per-user tenant for such a write to
+    #                       land in: it reaches what every analyst sees. None of
+    #                       the Wazuh personas needs this role -- they are all
+    #                       read-only over .kibana* (see roles.wazuh.yml) and
+    #                       saved objects are managed by admin.
+    #   readall          <- "readall": read every index in the cluster
+    #   logstash         <- "logstash": create indices, write logstash-*/*beat*
+    #   manage_snapshots <- "snapshotrestore": snapshot and restore
+    #
+    # "all_access" and "kibana_server" are deliberately left in place: they are
+    # how admin and kibanaserver get their privileges.
+    #
+    # Note that this removes the paths to those roles, not the roles. They are
+    # static -- bundled in the plugin jar under static_config/static_roles.yml
+    # -- so they cannot be deleted from a configuration file, and they cannot be
+    # weakened by redefining them either: on an overlap the plugin discards the
+    # dynamic definition and keeps the static one. An operator who maps a user
+    # to one of these roles by hand still gets it; what is removed here is every
+    # path the product ships.
+    for mapping in kibana_user readall logstash manage_snapshots; do
+        remove_security_entry "$mapping" "$PATH_CONF/opensearch-security/roles_mapping.yml"
+    done
 
     # Disable multi-tenancy
     sed -i 's/#kibana:/kibana:/' "$PATH_CONF/opensearch-security/config.yml"

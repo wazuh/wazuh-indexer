@@ -421,11 +421,11 @@ wazuh_manager:
 # /_plugins/_setup/ai_assistant/sessions in the setup plugin's API
 # reference.
 #
-# The index-level 'write' block is still granted for now, so that clients
-# writing directly to the data stream keep working until they migrate to
-# the endpoints. Removing it is what closes
-# wazuh/internal-devel-requests#6111, and it must be gated on the Wazuh
-# Dashboard having migrated, or sessions stop persisting silently.
+# There is deliberately NO index-level 'write' block. Granting one would
+# reopen the gap this role once had: DLS would leave it unscoped, and any
+# holder -- which is every authenticated user -- could store a session
+# naming somebody else in 'user'. Clients must write through the endpoints
+# above; a direct write to the data stream is refused with 403.
 # ---------------------------------------------------------------------#
 wazuh_ai_assistant:
   reserved: true
@@ -441,12 +441,5 @@ wazuh_ai_assistant:
       masked_fields: []
       allowed_actions:
         - 'read'
-    - index_patterns:
-        - 'wazuh-ai-assistant-sessions*'
-        - '.ds-wazuh-ai-assistant-sessions-*'
-      fls: []
-      masked_fields: []
-      allowed_actions:
-        - 'write'
   tenant_permissions: []
   static: false

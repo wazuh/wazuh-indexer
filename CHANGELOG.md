@@ -5,24 +5,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased 4.14.x]
 ### Added
-- 
+-
 
 ### Dependencies
 -
 
 ### Changed
-- 
+-
 
 ### Deprecated
-- 
+-
 
 ### Removed
-- 
+-
 
 ### Fixed
-- 
+-
 
 ### Security
-- 
+-
 
-[Unreleased 4.14.x]: https://github.com/wazuh/wazuh-indexer/compare/4.14.6...4.14.7
+[Unreleased 4.14.x]: https://github.com/wazuh/wazuh-indexer/compare/4.14.8...4.14.9

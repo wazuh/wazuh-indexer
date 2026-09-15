@@ -405,27 +405,16 @@ wazuh_manager:
 
 # ---------------------------------------------------------------------#
 # wazuh-ai-assistant: grants every authenticated user access to their own
-# AI assistant conversations, and only to those.
+# AI assistant conversations, and only to those. Reads are restricted with
+# Document Level Security parameter substitution: ${user.name} is replaced
+# with the name of the authenticated user, so only the documents whose
+# 'user' field matches it are visible.
 #
-# Reads and writes are scoped by two different mechanisms, and the
-# asymmetry is deliberate. Reads are restricted with Document Level
-# Security parameter substitution: ${user.name} is replaced with the name
-# of the authenticated user, so only the documents whose 'user' field
-# matches it are visible.
-#
-# DLS cannot do the same for writes -- it is a read-path filter -- and no
-# role syntax can express "this document's 'user' must equal your name".
-# So writes are mediated by the setup plugin instead, through the cluster
-# permission below: it derives 'user' from the authenticated principal and
-# discards whatever the request body sent. See
-# /_plugins/_setup/ai_assistant/sessions in the setup plugin's API
-# reference.
-#
-# There is deliberately NO index-level 'write' block. Granting one would
-# reopen the gap this role once had: DLS would leave it unscoped, and any
-# holder -- which is every authenticated user -- could store a session
-# naming somebody else in 'user'. Clients must write through the endpoints
-# above; a direct write to the data stream is refused with 403.
+# Writes are not granted at index level. They go through the setup plugin's
+# /_plugins/_setup/ai_assistant/sessions API, which sets 'user' from the
+# authenticated principal; the cluster permission below is what allows a
+# user to call it. Document Level Security applies to reads only, so this
+# is what keeps a session bound to its owner on the write path.
 # ---------------------------------------------------------------------#
 wazuh_ai_assistant:
   reserved: true

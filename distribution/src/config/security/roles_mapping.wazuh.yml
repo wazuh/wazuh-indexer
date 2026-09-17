@@ -37,8 +37,9 @@ wazuh_manager:
   users:
     - "wazuh-manager"
 
-# Mapped to every authenticated user: the DLS query in the role scopes each
-# user down to their own AI assistant conversations.
+# Mapped to every authenticated user: the role confines each user to their own
+# AI assistant conversations, on both the read and the write path. See the
+# comment above the role definition.
 wazuh_ai_assistant:
   reserved: true
   hidden: false

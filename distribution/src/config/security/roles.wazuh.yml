@@ -409,11 +409,18 @@ wazuh_manager:
 # Document Level Security parameter substitution: ${user.name} is replaced
 # with the name of the authenticated user, so only the documents whose
 # 'user' field matches it are visible.
+#
+# Writes are not granted at index level. They go through the setup plugin's
+# /_plugins/_setup/ai_assistant/sessions API, which sets 'user' from the
+# authenticated principal; the cluster permission below is what allows a
+# user to call it. Document Level Security applies to reads only, so this
+# is what keeps a session bound to its owner on the write path.
 # ---------------------------------------------------------------------#
 wazuh_ai_assistant:
   reserved: true
   hidden: false
-  cluster_permissions: []
+  cluster_permissions:
+    - 'plugin:wazuh/ai_assistant/session/write'
   index_permissions:
     - index_patterns:
         - 'wazuh-ai-assistant-sessions*'
@@ -423,12 +430,5 @@ wazuh_ai_assistant:
       masked_fields: []
       allowed_actions:
         - 'read'
-    - index_patterns:
-        - 'wazuh-ai-assistant-sessions*'
-        - '.ds-wazuh-ai-assistant-sessions-*'
-      fls: []
-      masked_fields: []
-      allowed_actions:
-        - 'write'
   tenant_permissions: []
   static: false

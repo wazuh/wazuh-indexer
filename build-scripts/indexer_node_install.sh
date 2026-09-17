@@ -103,8 +103,9 @@ plugins.security.ssl.transport.pemcert_filepath: /etc/wazuh-indexer/certs/indexe
 plugins.security.ssl.transport.pemkey_filepath: /etc/wazuh-indexer/certs/indexer-key.pem
 plugins.security.ssl.transport.pemtrustedcas_filepath: /etc/wazuh-indexer/certs/root-ca.pem
 plugins.security.ssl.http.enabled: true
-plugins.security.ssl.transport.enforce_hostname_verification: true
-plugins.security.ssl.transport.resolve_hostname: false
+# resolve_hostname stays false on purpose: with true the certificate is verified against the reverse DNS name.
+transport.ssl.enforce_hostname_verification: true
+transport.ssl.resolve_hostname: false
 
 plugins.security.authcz.admin_dn:
 - "CN=admin,OU=Wazuh,O=Wazuh,L=California,C=US"

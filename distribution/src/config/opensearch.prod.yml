@@ -20,10 +20,6 @@ plugins.security.ssl.transport.pemcert_filepath: /etc/wazuh-indexer/certs/indexe
 plugins.security.ssl.transport.pemkey_filepath: /etc/wazuh-indexer/certs/indexer-key.pem
 plugins.security.ssl.transport.pemtrustedcas_filepath: /etc/wazuh-indexer/certs/root-ca.pem
 plugins.security.ssl.http.enabled: true
-# Each node verifies that a peer's transport certificate matches the address that peer
-# publishes, so network.host must match the address used to generate the certificate.
-# resolve_hostname stays false on purpose: with true the certificate is verified against
-# the reverse DNS name instead, which is never present in the certificates we generate.
 transport.ssl.enforce_hostname_verification: true
 transport.ssl.resolve_hostname: false
 

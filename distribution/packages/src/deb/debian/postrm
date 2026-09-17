@@ -18,6 +18,11 @@ case "$1" in
     remove|purge)
         rm -rf "${product_dir}/engine"
         rm -rf "${product_dir}/plugins"
+
+        # Make systemd forget the unit, now that its file is gone
+        if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
+            systemctl daemon-reload > /dev/null 2>&1 || true
+        fi
         ;;
     upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
         ;;

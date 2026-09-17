@@ -11,20 +11,6 @@ dashboard_server:
   users:
     - "kibanaserver"
 
-wazuh_admin:
-  reserved: true
-  hidden: false
-  users:
-    - "wazuh-admin"
-  backend_roles:
-    - "admin"
-
-wazuh_demo:
-  reserved: true
-  hidden: false
-  users:
-    - "wazuh-demo"
-
 wazuh_readonly:
   reserved: true
   hidden: false

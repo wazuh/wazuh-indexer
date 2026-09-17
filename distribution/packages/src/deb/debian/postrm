@@ -23,6 +23,16 @@ case "$1" in
         if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
             systemctl daemon-reload > /dev/null 2>&1 || true
         fi
+
+        # On purge the SysV init script goes away too, so drop the runlevel
+        # links it left in /etc/rc?.d, which would otherwise dangle. Neither
+        # `systemctl enable` nor `disable` removes them: both delegate to
+        # update-rc.d, which only flips S links into K links. `remove` is the
+        # only subcommand that deletes them, and it needs -f because by now the
+        # init script is already gone.
+        if [ "$1" = "purge" ] && command -v update-rc.d > /dev/null 2>&1; then
+            update-rc.d -f ${name} remove > /dev/null 2>&1 || true
+        fi
         ;;
     upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
         ;;

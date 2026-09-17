@@ -286,10 +286,15 @@ if [ $1 = 0 ]; then
     # section to know which symlinks to remove.
     if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
         systemctl --no-reload disable %{name}.service > /dev/null 2>&1 || true
-    elif command -v chkconfig > /dev/null 2>&1; then
-        chkconfig --del %{name} > /dev/null 2>&1 || true
     elif command -v update-rc.d > /dev/null 2>&1; then
         update-rc.d -f %{name} remove > /dev/null 2>&1 || true
+    fi
+
+    # Where chkconfig drives the SysV runlevel links, `disable` only flips them
+    # instead of deleting them, so they are left dangling once the init script
+    # is removed. A no-op on RHEL 9 and AL2023, which ship no chkconfig.
+    if command -v chkconfig > /dev/null 2>&1; then
+        chkconfig --del %{name} > /dev/null 2>&1 || true
     fi
 fi
 

@@ -248,6 +248,40 @@ if command -v systemctl >/dev/null && systemctl is-active %{name}-performance-an
     systemctl --no-reload stop %{name}-performance-analyzer.service
 fi
 
+# Only on uninstall, never on upgrade: $1 is the number of instances that will
+# remain installed once this transaction is done.
+if [ $1 = 0 ]; then
+    # Disable the services. The enablement symlinks are created at runtime by
+    # `systemctl enable`, so they are not part of the package manifest and rpm
+    # will never remove them. This has to run here and not in %postun: the unit
+    # files are still on disk, and `systemctl disable` needs their [Install]
+    # section to know which symlinks to remove.
+    if command -v systemctl >/dev/null && systemctl >/dev/null 2>&1; then
+        echo "Disable existing %{name}.service"
+        systemctl --no-reload disable %{name}.service >/dev/null 2>&1 || true
+        systemctl --no-reload disable %{name}-performance-analyzer.service >/dev/null 2>&1 || true
+    fi
+
+    # Where chkconfig drives the SysV runlevel links, `disable` only flips them
+    # instead of deleting them, so they are left dangling once the init script
+    # is removed. A no-op on RHEL 9 and AL2023, which ship no chkconfig.
+    if command -v chkconfig >/dev/null; then
+        chkconfig --del %{name} >/dev/null 2>&1 || true
+    fi
+fi
+
+exit 0
+
+%postun
+set -e
+
+if [ $1 -eq 0 ]; then
+    # Make systemd forget the units, now that their files are gone
+    if command -v systemctl >/dev/null && systemctl >/dev/null 2>&1; then
+        systemctl daemon-reload >/dev/null 2>&1 || true
+    fi
+fi
+
 exit 0
 
 %files -f %{_topdir}/filelist.txt
@@ -297,7 +331,7 @@ exit 0
 %changelog
 * Wed Sep 16 2026 support <info@wazuh.com> - 4.14.9
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-14-9.html
-* Wed Sep 02 2026 support <info@wazuh.com> - 4.14.8
+* Wed Sep 23 2026 support <info@wazuh.com> - 4.14.8
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-14-8.html
 * Thu Jul 09 2026 support <info@wazuh.com> - 4.14.7
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-14-7.html

@@ -79,6 +79,7 @@
 - [BUG] wazuh-readonly missing promotion and mapping permissions [(#1752)](https://github.com/wazuh/wazuh-indexer/issues/1752)
 - [BUG] The `own_index` demo role is mapped to every user [(#6030)](https://github.com/wazuh/internal-devel-requests/issues/6030)
 - [BUG] Restrict the `wazuh_demo` role to read-only access on threat detectors [(#1531)](https://github.com/wazuh/wazuh-indexer-plugins/issues/1531)
+- [BUG] Uninstalling wazuh-indexer leaves a dangling systemd symlink in multi-user.target.wants [(#1918)](https://github.com/wazuh/wazuh-indexer/issues/1918)
 
 ## Prior versions
 - []()

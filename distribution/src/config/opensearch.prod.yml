@@ -20,8 +20,8 @@ plugins.security.ssl.transport.pemcert_filepath: /etc/wazuh-indexer/certs/indexe
 plugins.security.ssl.transport.pemkey_filepath: /etc/wazuh-indexer/certs/indexer-key.pem
 plugins.security.ssl.transport.pemtrustedcas_filepath: /etc/wazuh-indexer/certs/root-ca.pem
 plugins.security.ssl.http.enabled: true
-plugins.security.ssl.transport.enforce_hostname_verification: false
-plugins.security.ssl.transport.resolve_hostname: false
+transport.ssl.enforce_hostname_verification: true
+transport.ssl.resolve_hostname: false
 
 plugins.security.authcz.admin_dn:
 - "CN=admin,OU=Wazuh,O=Wazuh,L=California,C=US"

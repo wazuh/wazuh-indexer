@@ -5,28 +5,12 @@
 # WARNING: Change these default passwords immediately after installation.
 
 wazuh-manager:
-  # The hash is the hash of the password "wazuh-manager"
   hash: "$2y$12$wiNDDyE7q9ZoS.QSdCx8KuQb3gMAoZMuHf2WzNeCIrciE1JMN6kv2"
   reserved: true
   backend_roles: []
   description: "Wazuh Manager user with write-only access to stateless (events) indexes, read/write/delete access to stateful (states) indexes, and read access to consumers, threat intelligence content, and active-responses indexes."
 
-wazuh-admin:
-  # The hash is the hash of the password "wazuh-admin"
-  hash: "$2y$12$of2izMMGqP3x4WWtijoq2.MtM1VgpoDc4RgP8AAQD/8tEbo1ftxru"
-  reserved: true
-  backend_roles: []
-  description: "Wazuh Administrator user with read access to Wazuh indexes, write access to Wazuh settings, Content Manager management endpoints, and full access to Security Analytics plugin endpoints."
-
-wazuh-demo:
-  # The hash is the hash of the password "wazuh-demo"
-  hash: "$2y$12$AT8tsUCOG/aFMr2hwQS6xuUkIfFj1rO2VxHUIsRRtPV3utzLgdVbW"
-  reserved: true
-  backend_roles: []
-  description: "Wazuh user with read access to consumers and threat intelligence content, read access to Content Manager subscription details, and write access to Content Manager endpoints (updates, kvdbs, decoders, filters, rules, integrations, logtest, promotions, policies, and spaces), plus full access to Security Analytics plugin endpoints."
-
 wazuh-readonly:
-  # The hash is the hash of the password "wazuh-readonly"
   hash: "$2y$12$jxMGvesP0pdvs0uzoWsvYOFysWZujpEcSL5PQmkVuifR8izAO2i5q"
   reserved: true
   backend_roles: []

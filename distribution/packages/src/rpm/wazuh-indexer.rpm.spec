@@ -278,6 +278,24 @@ if [ $1 = 0 ]; then
         echo "Stop existing %{name} service"
         /etc/init.d/%{name} stop > /dev/null 2>&1
     fi
+
+    # Disable the service. The enablement symlinks are created at runtime by
+    # `systemctl enable`, so they are not part of the package manifest and rpm
+    # will never remove them. This has to run here and not in %postun: the unit
+    # file is still on disk, and `systemctl disable` needs to read its [Install]
+    # section to know which symlinks to remove.
+    if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
+        systemctl --no-reload disable %{name}.service > /dev/null 2>&1 || true
+    elif command -v update-rc.d > /dev/null 2>&1; then
+        update-rc.d -f %{name} remove > /dev/null 2>&1 || true
+    fi
+
+    # Where chkconfig drives the SysV runlevel links, `disable` only flips them
+    # instead of deleting them, so they are left dangling once the init script
+    # is removed. A no-op on RHEL 9 and AL2023, which ship no chkconfig.
+    if command -v chkconfig > /dev/null 2>&1; then
+        chkconfig --del %{name} > /dev/null 2>&1 || true
+    fi
 fi
 
 exit 0
@@ -288,6 +306,11 @@ set -e
 if [ $1 -eq 0 ]; then
     rm -rf %{product_dir}/engine
     rm -rf %{product_dir}/plugins
+
+    # Make systemd forget the unit, now that its file is gone
+    if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
+        systemctl daemon-reload > /dev/null 2>&1 || true
+    fi
 fi
 
 exit 0
@@ -351,7 +374,7 @@ exit 0
 - More info: https://documentation.wazuh.com/current/release-notes/release-5-0-0.html
 * Wed Sep 16 2026 support <info@wazuh.com> - 4.14.9
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-14-9.html
-* Wed Sep 02 2026 support <info@wazuh.com> - 4.14.8
+* Wed Sep 23 2026 support <info@wazuh.com> - 4.14.8
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-14-8.html
 * Wed Jul 29 2026 support <info@wazuh.com> - 4.14.7
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-14-7.html

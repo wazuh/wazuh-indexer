@@ -27,6 +27,20 @@ case "$1" in
         elif command -v /etc/init.d/${name} > /dev/null 2>&1 && /etc/init.d/${name} status > /dev/null 2>&1; then
             /etc/init.d/${name} stop > /dev/null 2>&1
         fi
+
+        # Disable the service. The enablement symlinks are created at runtime by
+        # `systemctl enable`, so they are not part of the package manifest and
+        # dpkg will never remove them. This has to run here and not in postrm:
+        # the unit file is still on disk, and `systemctl disable` needs to read
+        # its [Install] section to know which symlinks to remove.
+        if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
+            echo "Disable existing ${name}.service"
+            systemctl --no-reload disable ${name}.service > /dev/null 2>&1 || true
+        elif command -v update-rc.d > /dev/null 2>&1; then
+            update-rc.d -f ${name} remove > /dev/null 2>&1 || true
+        elif command -v chkconfig > /dev/null 2>&1; then
+            chkconfig --del ${name} > /dev/null 2>&1 || true
+        fi
     ;;
     failed-upgrade)
     ;;

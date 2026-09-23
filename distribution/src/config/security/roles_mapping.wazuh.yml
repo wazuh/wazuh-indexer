@@ -11,12 +11,6 @@ dashboard_server:
   users:
     - "kibanaserver"
 
-wazuh_readonly:
-  reserved: true
-  hidden: false
-  users:
-    - "wazuh-readonly"
-
 wazuh_manager:
   reserved: true
   hidden: false

@@ -9,9 +9,3 @@ wazuh-manager:
   reserved: true
   backend_roles: []
   description: "Wazuh Manager user with write-only access to stateless (events) indexes, read/write/delete access to stateful (states) indexes, and read access to consumers, threat intelligence content, and active-responses indexes."
-
-wazuh-readonly:
-  hash: "$2y$12$jxMGvesP0pdvs0uzoWsvYOFysWZujpEcSL5PQmkVuifR8izAO2i5q"
-  reserved: true
-  backend_roles: []
-  description: "Wazuh Read-Only user with read access to settings, consumers, threat intelligence content, subscriptions, and Security Analytics plugin (SAP) detectors."

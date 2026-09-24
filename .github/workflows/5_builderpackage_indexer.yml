@@ -375,6 +375,7 @@ jobs:
       matrix: ${{ steps.matrix.outputs.matrix }}
       previous_version: ${{ steps.previous_versions.outputs.previous_version }}
       previous_4x_version: ${{ steps.previous_versions.outputs.previous_4x_version }}
+      update_tests: ${{ steps.previous_versions.outputs.update_tests }}
     steps:
       - id: matrix
         run: |
@@ -389,10 +390,11 @@ jobs:
         id: previous_versions
         run: |
           CURRENT_VERSION="$(bash build-scripts/product_version.sh)"
-          while IFS= read -r line; do
-            echo "$line" >> "$GITHUB_OUTPUT"
-          done < <(GITHUB_TOKEN="${{ github.token }}" CURRENT_VERSION="$CURRENT_VERSION" \
+          # Capture the output first: a failure inside `< <(...)` would be ignored and leave the outputs empty.
+          versions=$(GITHUB_TOKEN="${{ github.token }}" CURRENT_VERSION="$CURRENT_VERSION" \
             bash build-scripts/ci/resolve_previous_versions.sh)
+          echo "$versions"
+          echo "$versions" >> "$GITHUB_OUTPUT"
 
   build-wazuh-engine:
     needs: [compatibility-check, branches]
@@ -510,7 +512,7 @@ jobs:
             bash -c "yum localinstall '/artifacts/dist/${{ steps.package.outputs.name }}' -y && yum remove wazuh-indexer -y"
 
       - name: Test RPM package update stopping the indexer
-        if: ${{ matrix.distribution == 'rpm' && needs.setup.outputs.previous_version >= '5.0' }}
+        if: ${{ matrix.distribution == 'rpm' && needs.setup.outputs.update_tests == 'true' }}
         run: |
           docker run --rm --privileged \
             -v "${{ github.workspace }}/artifacts/dist:/artifacts/dist" \
@@ -522,7 +524,7 @@ jobs:
                      if systemctl is-active --quiet wazuh-indexer; then echo 'Indexer running (unexpected)'; exit 1; else echo 'Indexer stopped (expected)'; fi"
 
       - name: Test RPM package update without stopping the indexer
-        if: ${{ matrix.distribution == 'rpm' && needs.setup.outputs.previous_version >= '5.0' }}
+        if: ${{ matrix.distribution == 'rpm' && needs.setup.outputs.update_tests == 'true' }}
         run: |
           docker run --rm --privileged \
             -v "${{ github.workspace }}/artifacts/dist:/artifacts/dist" \
@@ -562,7 +564,7 @@ jobs:
           '
 
       - name: Test DEB package update stopping the indexer
-        if: ${{ matrix.distribution == 'deb' && needs.setup.outputs.previous_version >= '5.0' }}
+        if: ${{ matrix.distribution == 'deb' && needs.setup.outputs.update_tests == 'true' }}
         run: |
           bash build-scripts/run_in_systemd_container.sh "${{ github.workspace }}" '
             set -e
@@ -573,7 +575,7 @@ jobs:
           '
 
       - name: Test DEB package update without stopping the indexer
-        if: ${{ matrix.distribution == 'deb' && needs.setup.outputs.previous_version >= '5.0' }}
+        if: ${{ matrix.distribution == 'deb' && needs.setup.outputs.update_tests == 'true' }}
         run: |
           bash build-scripts/run_in_systemd_container.sh "${{ github.workspace }}" '
             set -e

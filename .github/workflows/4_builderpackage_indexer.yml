@@ -103,6 +103,7 @@ jobs:
       matrix: ${{ steps.matrix.outputs.matrix }}
       previous_version: ${{ steps.product_versions.outputs.previous_version }}
       current_version: ${{ steps.product_versions.outputs.current_version }}
+      arm64_update_tests: ${{ steps.product_versions.outputs.arm64_update_tests }}
     steps:
       - id: matrix
         run: |
@@ -115,15 +116,40 @@ jobs:
       - uses: actions/checkout@v7
       - id: product_versions
         name: Get current version and latest Wazuh release from GitHub
+        env:
+          # Authenticated requests avoid the per-IP rate limit shared by the CodeBuild runners.
+          GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
           CURRENT="$(bash packaging_scripts/product_version.sh)"
-          PREVIOUS=$(curl -s https://api.github.com/repos/wazuh/wazuh/releases | jq -r '.[].tag_name' | grep -vE 'alpha|beta|rc' | sed 's/^v//' | grep -E '^4\.[0-9]+\.[0-9]+$' | \
-          grep -v "^${CURRENT}$" | sort -V | awk -v current="$CURRENT" '$0 < current' | tail -n1)
+
+          # -f makes HTTP errors (e.g. rate limiting) fail the step instead of feeding an error object to jq.
+          RESPONSE=$(curl -fsSL \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/wazuh/wazuh/releases?per_page=100")
+          RELEASES=$(jq -r '.[].tag_name' <<< "$RESPONSE" | sed 's/^v//' | grep -E '^4\.[0-9]+\.[0-9]+$' || true)
+
+          # Highest stable release strictly lower than the current version, compared as versions.
+          PREVIOUS=$(printf '%s\n' "${RELEASES}" "${CURRENT}" | sort -Vu | grep -x -B1 -F "${CURRENT}" | grep -vx -F "${CURRENT}" || true)
 
           echo "Current version: $CURRENT"
           echo "Latest release detected: $PREVIOUS"
+          if [[ -z "$PREVIOUS" ]]; then
+            echo "::error::Could not detect a Wazuh release older than ${CURRENT}. The package update tests need it."
+            exit 1
+          fi
+
+          # The arm64 update tests only run when the previous version is 4.12.0 or later.
+          if [[ "$(printf '%s\n' 4.12.0 "$PREVIOUS" | sort -V | head -n1)" == "4.12.0" ]]; then
+            ARM64_UPDATE_TESTS=true
+          else
+            ARM64_UPDATE_TESTS=false
+          fi
+
           echo "previous_version=$PREVIOUS" >> $GITHUB_OUTPUT
           echo "current_version=$CURRENT" >> $GITHUB_OUTPUT
+          echo "arm64_update_tests=$ARM64_UPDATE_TESTS" >> $GITHUB_OUTPUT
 
   build:
     needs: [setup]
@@ -198,8 +224,14 @@ jobs:
             -d ${{ matrix.distribution }} \
             -r ${{ inputs.revision }}
 
+      - name: Provision (allocator)
+        if: ${{ matrix.distribution == 'deb' }}
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y python3-pip openssh-client
+
       - name: Clone Wazuh Automation repository and install dependencies
-        if: ${{ matrix.distribution == 'rpm' }}
+        if: ${{ matrix.distribution == 'rpm' || matrix.distribution == 'deb' }}
         env:
           username: "wazuh-devel-xdrsiem-indexer"
         run: |
@@ -208,17 +240,19 @@ jobs:
           python3 -m pip install -r deployability/deps/requirements.txt
 
       - name: Configure AWS credentials
-        if: ${{ matrix.distribution == 'rpm' }}
+        if: ${{ matrix.distribution == 'rpm' || matrix.distribution == 'deb' }}
         uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-region: ${{ secrets.CI_AWS_REGION }}
           role-to-assume: ${{ secrets.AWS_INDEXER_ACTIONS_ROLE }}
           role-session-name: "4_package_builder_indexer"
 
-      - name: Setup RPM environment
-        if: ${{ matrix.distribution == 'rpm' }}
+      # The package tests run on an Allocator machine: they need a real systemd to start the
+      # wazuh-indexer service, which the CodeBuild runners don't provide.
+      - name: Setup Allocator environment
+        if: ${{ matrix.distribution == 'rpm' || matrix.distribution == 'deb' }}
         run: |
-          bash packaging_scripts/rpm_setup_environment.sh ${{ matrix.architecture }} ${{ github.run_id }}
+          bash packaging_scripts/allocator_setup_environment.sh ${{ matrix.distribution }} ${{ matrix.architecture }} ${{ github.run_id }}
 
           ansible_host=$(grep 'ansible_host:' /tmp/inventory.yaml | sed 's/.*: *//')
           ansible_port=$(grep 'ansible_port:' /tmp/inventory.yaml | sed 's/.*: *//')
@@ -227,47 +261,76 @@ jobs:
           ssh_command="ssh -o StrictHostKeyChecking=no -i $ansible_ssh_private_key_file -p $ansible_port $ansible_user@$ansible_host"
           scp_command="scp -o StrictHostKeyChecking=no -i $ansible_ssh_private_key_file -P $ansible_port"
 
+          # Package manager commands, run on the Allocator machine
+          if [[ "${{ matrix.distribution }}" == "rpm" ]]; then
+            pkg_install="sudo yum localinstall -y"
+            pkg_remove="sudo yum remove -y wazuh-indexer"
+            pkg_version="rpm -q --qf '%{VERSION}' wazuh-indexer"
+          else
+            pkg_install="sudo env DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install -y"
+            pkg_remove="sudo env DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get remove --purge -y wazuh-indexer"
+            pkg_version="dpkg-query -W -f='\${Version}' wazuh-indexer | cut -d- -f1"
+          fi
+
           echo "ansible_host=$ansible_host" >> $GITHUB_OUTPUT
           echo "ansible_port=$ansible_port" >> $GITHUB_OUTPUT
           echo "ansible_user=$ansible_user" >> $GITHUB_OUTPUT
           echo "ansible_ssh_private_key_file=$ansible_ssh_private_key_file" >> $GITHUB_OUTPUT
           echo "ssh_command=$ssh_command" >> $GITHUB_OUTPUT
           echo "scp_command=$scp_command" >> $GITHUB_OUTPUT
-        id: setup_rpm_env
+          echo "pkg_install=$pkg_install" >> $GITHUB_OUTPUT
+          echo "pkg_remove=$pkg_remove" >> $GITHUB_OUTPUT
+          echo "pkg_version=$pkg_version" >> $GITHUB_OUTPUT
+        id: allocator
 
-      - name: Test RPM package installation
-        if: ${{ matrix.distribution == 'rpm' }}
+      - name: Test package installation
+        if: ${{ matrix.distribution == 'rpm' || matrix.distribution == 'deb' }}
         run: |
           # This step sends the package to the Allocator machine and installs it
 
           # echo "hello" is needed to create the SSH connection
-          ${{ steps.setup_rpm_env.outputs.ssh_command }} 'echo "hello"'
-          ${{ steps.setup_rpm_env.outputs.scp_command }} artifacts/dist/${{ steps.package.outputs.name }} ${{ steps.setup_rpm_env.outputs.ansible_user }}@${{ steps.setup_rpm_env.outputs.ansible_host }}:/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/
-          ${{ steps.setup_rpm_env.outputs.ssh_command }} 'sudo yum localinstall -y /home/${{ steps.setup_rpm_env.outputs.ansible_user }}/${{ steps.package.outputs.name }}'
+          ${{ steps.allocator.outputs.ssh_command }} 'echo "hello"'
+          # Wait for the first boot to finish, so it doesn't hold the package manager lock
+          ${{ steps.allocator.outputs.ssh_command }} 'bash -se' << 'EOF'
+          set -euo pipefail
+          if command -v cloud-init >/dev/null; then sudo cloud-init status --wait >/dev/null || true; fi
+          if command -v apt-get >/dev/null; then echo 'DPkg::Lock::Timeout "600";' | sudo tee /etc/apt/apt.conf.d/99-lock-timeout >/dev/null; fi
+          EOF
+          ${{ steps.allocator.outputs.scp_command }} artifacts/dist/${{ steps.package.outputs.name }} ${{ steps.allocator.outputs.ansible_user }}@${{ steps.allocator.outputs.ansible_host }}:/home/${{ steps.allocator.outputs.ansible_user }}/
+          ${{ steps.allocator.outputs.ssh_command }} 'bash -se' << 'EOF'
+          set -euo pipefail
+          ${{ steps.allocator.outputs.pkg_install }} "/home/${{ steps.allocator.outputs.ansible_user }}/${{ steps.package.outputs.name }}"
+          test "$(${{ steps.allocator.outputs.pkg_version }})" = "${{ needs.setup.outputs.current_version }}"
+          EOF
 
-      - name: Test RPM package uninstallation
-        if: ${{ matrix.distribution == 'rpm' }}
+      - name: Test package uninstallation
+        if: ${{ matrix.distribution == 'rpm' || matrix.distribution == 'deb' }}
         run: |
           # This step uninstalls the package from the Allocator machine
 
-          ${{ steps.setup_rpm_env.outputs.ssh_command }} 'sudo yum remove wazuh-indexer -y'
+          ${{ steps.allocator.outputs.ssh_command }} '${{ steps.allocator.outputs.pkg_remove }}'
 
-      - name: Test RPM package update stopping the indexer
-        if: ${{ matrix.distribution == 'rpm' && (matrix.architecture == 'x64' || (needs.setup.outputs.previous_version >= '4.12' && matrix.architecture == 'arm64'))}}
+      - name: Test package update stopping the indexer
+        if: ${{ (matrix.distribution == 'rpm' || matrix.distribution == 'deb') && (matrix.architecture == 'x64' || (needs.setup.outputs.arm64_update_tests == 'true' && matrix.architecture == 'arm64'))}}
         run: |
           # This step sends the package to the Allocator machine and the script to install a previous version
           # Then installs the previous version, stops the indexer and installs the new version
 
-          ${{ steps.setup_rpm_env.outputs.scp_command }} artifacts/dist/${{ steps.package.outputs.name }} ${{ steps.setup_rpm_env.outputs.ansible_user }}@${{ steps.setup_rpm_env.outputs.ansible_host }}:/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/
-          ${{ steps.setup_rpm_env.outputs.scp_command }} packaging_scripts/indexer_node_install.sh ${{ steps.setup_rpm_env.outputs.ansible_user }}@${{ steps.setup_rpm_env.outputs.ansible_host }}:/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/
-          ${{ steps.setup_rpm_env.outputs.ssh_command }} << EOF
-          sudo bash /home/${{ steps.setup_rpm_env.outputs.ansible_user }}/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }}
+          ${{ steps.allocator.outputs.scp_command }} artifacts/dist/${{ steps.package.outputs.name }} ${{ steps.allocator.outputs.ansible_user }}@${{ steps.allocator.outputs.ansible_host }}:/home/${{ steps.allocator.outputs.ansible_user }}/
+          ${{ steps.allocator.outputs.scp_command }} packaging_scripts/indexer_node_install.sh ${{ steps.allocator.outputs.ansible_user }}@${{ steps.allocator.outputs.ansible_host }}:/home/${{ steps.allocator.outputs.ansible_user }}/
+          # Run remotely with `set -e` so a failed install of the previous version fails the step
+          # instead of falling through to a fresh install of the new package.
+          ${{ steps.allocator.outputs.ssh_command }} 'bash -se' << 'EOF'
+          set -euo pipefail
+          sudo env DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a bash /home/${{ steps.allocator.outputs.ansible_user }}/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }}
+          test "$(${{ steps.allocator.outputs.pkg_version }})" = "${{ needs.setup.outputs.previous_version }}"
           sudo systemctl stop wazuh-indexer
-          sudo yum localinstall "/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/${{ steps.package.outputs.name }}" -y
+          ${{ steps.allocator.outputs.pkg_install }} "/home/${{ steps.allocator.outputs.ansible_user }}/${{ steps.package.outputs.name }}"
+          test "$(${{ steps.allocator.outputs.pkg_version }})" = "${{ needs.setup.outputs.current_version }}"
           EOF
 
           # Check if the indexer is running
-          indexer_running=$(${{ steps.setup_rpm_env.outputs.ssh_command }} 'systemctl is-active --quiet wazuh-indexer && echo 1 || echo 0')
+          indexer_running=$(${{ steps.allocator.outputs.ssh_command }} 'systemctl is-active --quiet wazuh-indexer && echo 1 || echo 0')
           if [[ "$indexer_running" == "1" ]]; then
             echo "The indexer is running after the update, but it should not be."
             exit 1
@@ -275,22 +338,28 @@ jobs:
             echo "The indexer is not running after the update, as expected."
           fi
 
-      - name: Test RPM package update without stopping the indexer
-        if: ${{ matrix.distribution == 'rpm' && (matrix.architecture == 'x64' || (needs.setup.outputs.previous_version >= '4.12' && matrix.architecture == 'arm64'))}}
+      - name: Test package update without stopping the indexer
+        if: ${{ (matrix.distribution == 'rpm' || matrix.distribution == 'deb') && (matrix.architecture == 'x64' || (needs.setup.outputs.arm64_update_tests == 'true' && matrix.architecture == 'arm64'))}}
         run: |
           # This step sends the package to the Allocator machine and the script to install a previous version
           # Then installs the previous version and installs the new version without stopping the indexer
 
-          ${{ steps.setup_rpm_env.outputs.ssh_command }} 'sudo yum remove wazuh-indexer -y'
-          ${{ steps.setup_rpm_env.outputs.scp_command }} artifacts/dist/${{ steps.package.outputs.name }} ${{ steps.setup_rpm_env.outputs.ansible_user }}@${{ steps.setup_rpm_env.outputs.ansible_host }}:/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/
-          ${{ steps.setup_rpm_env.outputs.scp_command }} packaging_scripts/indexer_node_install.sh ${{ steps.setup_rpm_env.outputs.ansible_user }}@${{ steps.setup_rpm_env.outputs.ansible_host }}:/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/
-          ${{ steps.setup_rpm_env.outputs.ssh_command }} << EOF
-          sudo bash /home/${{ steps.setup_rpm_env.outputs.ansible_user }}/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }}
-          sudo yum localinstall "/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/${{ steps.package.outputs.name }}" -y
+          ${{ steps.allocator.outputs.ssh_command }} '${{ steps.allocator.outputs.pkg_remove }}'
+          ${{ steps.allocator.outputs.scp_command }} artifacts/dist/${{ steps.package.outputs.name }} ${{ steps.allocator.outputs.ansible_user }}@${{ steps.allocator.outputs.ansible_host }}:/home/${{ steps.allocator.outputs.ansible_user }}/
+          ${{ steps.allocator.outputs.scp_command }} packaging_scripts/indexer_node_install.sh ${{ steps.allocator.outputs.ansible_user }}@${{ steps.allocator.outputs.ansible_host }}:/home/${{ steps.allocator.outputs.ansible_user }}/
+          # Run remotely with `set -e` so a failed install of the previous version fails the step
+          # instead of falling through to a fresh install of the new package.
+          ${{ steps.allocator.outputs.ssh_command }} 'bash -se' << 'EOF'
+          set -euo pipefail
+          sudo env DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a bash /home/${{ steps.allocator.outputs.ansible_user }}/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }}
+          test "$(${{ steps.allocator.outputs.pkg_version }})" = "${{ needs.setup.outputs.previous_version }}"
+          systemctl is-active --quiet wazuh-indexer
+          ${{ steps.allocator.outputs.pkg_install }} "/home/${{ steps.allocator.outputs.ansible_user }}/${{ steps.package.outputs.name }}"
+          test "$(${{ steps.allocator.outputs.pkg_version }})" = "${{ needs.setup.outputs.current_version }}"
           EOF
 
           # Check if the indexer is running
-          indexer_running=$(${{ steps.setup_rpm_env.outputs.ssh_command }} 'systemctl is-active --quiet wazuh-indexer && echo 1 || echo 0')
+          indexer_running=$(${{ steps.allocator.outputs.ssh_command }} 'systemctl is-active --quiet wazuh-indexer && echo 1 || echo 0')
           if [[ "$indexer_running" == "0" ]]; then
             echo "The indexer is not running after the update, but it should be."
             exit 1
@@ -299,37 +368,10 @@ jobs:
           fi
 
       - name: Destroy Allocator Machine
-        if: ${{ matrix.distribution == 'rpm' }}
+        if: ${{ matrix.distribution == 'rpm' || matrix.distribution == 'deb' }}
         run: |
           cd wazuh-automation/deployability
           python3 modules/allocation/main.py --action delete --track-output "/tmp/track.yaml"
-
-      - name: Test DEB package installation
-        if: ${{ matrix.distribution == 'deb' }}
-        run: |
-          sudo mv /usr/bin/systemctl /usr/bin/systemctl.bak 2>/dev/null || true
-          sudo dpkg -i "artifacts/dist/${{ steps.package.outputs.name }}"
-          sudo apt-get remove --purge wazuh-indexer -y
-
-      # TODO: once the runners are fixed we must revert this.
-      # Disabled because this test needs to start a real wazuh-indexer service via systemctl so
-      # securityadmin.sh can connect to it on 127.0.0.1:9200 - CodeBuild runners don't have a real
-      # systemd PID 1, so the service never actually starts and this always fails.
-      - name: Test DEB package update stopping the indexer
-        if: ${{ false && matrix.distribution == 'deb' && (matrix.architecture == 'x64' || (needs.setup.outputs.previous_version >= '4.12' && matrix.architecture == 'arm64'))}}
-        run: |
-          sudo bash packaging_scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }}
-          sudo systemctl stop wazuh-indexer || true
-          sudo dpkg -i "artifacts/dist/${{ steps.package.outputs.name }}"
-          sudo apt-get remove --purge wazuh-indexer -y
-
-      # TODO: once the runners are fixed we must revert this.
-      # Same reason as "Test DEB package update stopping the indexer" above.
-      - name: Test DEB package update without stopping the indexer
-        if: ${{ false && matrix.distribution == 'deb' && (matrix.architecture == 'x64' || (needs.setup.outputs.previous_version >= '4.12' && matrix.architecture == 'arm64'))}}
-        run: |
-          sudo bash packaging_scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }}
-          sudo dpkg -i "artifacts/dist/${{ steps.package.outputs.name }}"
 
       - name: Set up AWS CLI for final package upload
         if: ${{ inputs.upload }}
@@ -358,7 +400,7 @@ jobs:
           echo "::notice::S3 sha512 URI: ${s3uri}"
 
       - name: On failure delete Allocator Machine
-        if: ${{ matrix.distribution == 'rpm' && (failure() || cancelled()) }}
+        if: ${{ (matrix.distribution == 'rpm' || matrix.distribution == 'deb') && (failure() || cancelled()) }}
         run: |
           cd wazuh-automation/deployability
           python3 modules/allocation/main.py --action delete --track-output /tmp/track.yaml

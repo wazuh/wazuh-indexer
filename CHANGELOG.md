@@ -20,7 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 -
 
 ### Fixed
--
+- Fix RPM update tests installing the current version when the previous release cannot be detected [(#1942)](https://github.com/wazuh/wazuh-indexer/issues/1942)
 
 ### Security
 -

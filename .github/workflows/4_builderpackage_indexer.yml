@@ -111,6 +111,7 @@ jobs:
       matrix: ${{ steps.matrix.outputs.matrix }}
       previous_version: ${{ steps.product_versions.outputs.previous_version }}
       current_version: ${{ steps.product_versions.outputs.current_version }}
+      arm64_update_tests: ${{ steps.product_versions.outputs.arm64_update_tests }}
     steps:
       - id: matrix
         run: |
@@ -123,15 +124,40 @@ jobs:
       - uses: actions/checkout@v5
       - id: product_versions
         name: Get current version and latest Wazuh release from GitHub
+        env:
+          # Authenticated requests avoid the per-IP rate limit shared by the CodeBuild runners.
+          GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
           CURRENT="$(bash packaging_scripts/product_version.sh)"
-          PREVIOUS=$(curl -s https://api.github.com/repos/wazuh/wazuh/releases | jq -r '.[].tag_name' | grep -vE 'alpha|beta|rc' | sed 's/^v//' | grep -E '^4\.[0-9]+\.[0-9]+$' | \
-          grep -v "^${CURRENT}$" | sort -V | awk -v current="$CURRENT" '$0 < current' | tail -n1)
+
+          # -f makes HTTP errors (e.g. rate limiting) fail the step instead of feeding an error object to jq.
+          RESPONSE=$(curl -fsSL \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/wazuh/wazuh/releases?per_page=100")
+          RELEASES=$(jq -r '.[].tag_name' <<< "$RESPONSE" | sed 's/^v//' | grep -E '^4\.[0-9]+\.[0-9]+$' || true)
+
+          # Highest stable release strictly lower than the current version, compared as versions.
+          PREVIOUS=$(printf '%s\n' "${RELEASES}" "${CURRENT}" | sort -Vu | grep -x -B1 -F "${CURRENT}" | grep -vx -F "${CURRENT}" || true)
 
           echo "Current version: $CURRENT"
           echo "Latest release detected: $PREVIOUS"
+          if [[ -z "$PREVIOUS" ]]; then
+            echo "::error::Could not detect a Wazuh release older than ${CURRENT}. The package update tests need it."
+            exit 1
+          fi
+
+          # The arm64 update tests only run when the previous version is 4.12.0 or later.
+          if [[ "$(printf '%s\n' 4.12.0 "$PREVIOUS" | sort -V | head -n1)" == "4.12.0" ]]; then
+            ARM64_UPDATE_TESTS=true
+          else
+            ARM64_UPDATE_TESTS=false
+          fi
+
           echo "previous_version=$PREVIOUS" >> $GITHUB_OUTPUT
           echo "current_version=$CURRENT" >> $GITHUB_OUTPUT
+          echo "arm64_update_tests=$ARM64_UPDATE_TESTS" >> $GITHUB_OUTPUT
 
   build:
     needs: [setup]
@@ -262,17 +288,22 @@ jobs:
           ${{ steps.setup_rpm_env.outputs.ssh_command }} 'sudo yum remove wazuh-indexer -y'
 
       - name: Test RPM package update stopping the indexer
-        if: ${{ matrix.distribution == 'rpm' && (matrix.architecture == 'x64' || (needs.setup.outputs.previous_version >= '4.12' && matrix.architecture == 'arm64'))}}
+        if: ${{ matrix.distribution == 'rpm' && (matrix.architecture == 'x64' || (needs.setup.outputs.arm64_update_tests == 'true' && matrix.architecture == 'arm64'))}}
         run: |
           # This step sends the package to the Allocator machine and the script to install a previous version
           # Then installs the previous version, stops the indexer and installs the new version
 
           ${{ steps.setup_rpm_env.outputs.scp_command }} artifacts/dist/${{ steps.package.outputs.name }} ${{ steps.setup_rpm_env.outputs.ansible_user }}@${{ steps.setup_rpm_env.outputs.ansible_host }}:/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/
           ${{ steps.setup_rpm_env.outputs.scp_command }} packaging_scripts/indexer_node_install.sh ${{ steps.setup_rpm_env.outputs.ansible_user }}@${{ steps.setup_rpm_env.outputs.ansible_host }}:/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/
-          ${{ steps.setup_rpm_env.outputs.ssh_command }} << EOF
+          # Run remotely with `set -e` so a failed install of the previous version fails the step
+          # instead of falling through to a fresh install of the new package.
+          ${{ steps.setup_rpm_env.outputs.ssh_command }} 'bash -se' << 'EOF'
+          set -euo pipefail
           sudo bash /home/${{ steps.setup_rpm_env.outputs.ansible_user }}/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }}
+          test "$(rpm -q --qf '%{VERSION}' wazuh-indexer)" = "${{ needs.setup.outputs.previous_version }}"
           sudo systemctl stop wazuh-indexer
           sudo yum localinstall "/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/${{ steps.package.outputs.name }}" -y
+          test "$(rpm -q --qf '%{VERSION}' wazuh-indexer)" = "${{ needs.setup.outputs.current_version }}"
           EOF
 
           # Check if the indexer is running
@@ -285,7 +316,7 @@ jobs:
           fi
 
       - name: Test RPM package update without stopping the indexer
-        if: ${{ matrix.distribution == 'rpm' && (matrix.architecture == 'x64' || (needs.setup.outputs.previous_version >= '4.12' && matrix.architecture == 'arm64'))}}
+        if: ${{ matrix.distribution == 'rpm' && (matrix.architecture == 'x64' || (needs.setup.outputs.arm64_update_tests == 'true' && matrix.architecture == 'arm64'))}}
         run: |
           # This step sends the package to the Allocator machine and the script to install a previous version
           # Then installs the previous version and installs the new version without stopping the indexer
@@ -293,9 +324,15 @@ jobs:
           ${{ steps.setup_rpm_env.outputs.ssh_command }} 'sudo yum remove wazuh-indexer -y'
           ${{ steps.setup_rpm_env.outputs.scp_command }} artifacts/dist/${{ steps.package.outputs.name }} ${{ steps.setup_rpm_env.outputs.ansible_user }}@${{ steps.setup_rpm_env.outputs.ansible_host }}:/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/
           ${{ steps.setup_rpm_env.outputs.scp_command }} packaging_scripts/indexer_node_install.sh ${{ steps.setup_rpm_env.outputs.ansible_user }}@${{ steps.setup_rpm_env.outputs.ansible_host }}:/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/
-          ${{ steps.setup_rpm_env.outputs.ssh_command }} << EOF
+          # Run remotely with `set -e` so a failed install of the previous version fails the step
+          # instead of falling through to a fresh install of the new package.
+          ${{ steps.setup_rpm_env.outputs.ssh_command }} 'bash -se' << 'EOF'
+          set -euo pipefail
           sudo bash /home/${{ steps.setup_rpm_env.outputs.ansible_user }}/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }}
+          test "$(rpm -q --qf '%{VERSION}' wazuh-indexer)" = "${{ needs.setup.outputs.previous_version }}"
+          systemctl is-active --quiet wazuh-indexer
           sudo yum localinstall "/home/${{ steps.setup_rpm_env.outputs.ansible_user }}/${{ steps.package.outputs.name }}" -y
+          test "$(rpm -q --qf '%{VERSION}' wazuh-indexer)" = "${{ needs.setup.outputs.current_version }}"
           EOF
 
           # Check if the indexer is running
@@ -325,7 +362,7 @@ jobs:
       # securityadmin.sh can connect to it on 127.0.0.1:9200 - CodeBuild runners don't have a real
       # systemd PID 1, so the service never actually starts and this always fails.
       - name: Test DEB package update stopping the indexer
-        if: ${{ false && matrix.distribution == 'deb' && (matrix.architecture == 'x64' || (needs.setup.outputs.previous_version >= '4.12' && matrix.architecture == 'arm64'))}}
+        if: ${{ false && matrix.distribution == 'deb' && (matrix.architecture == 'x64' || (needs.setup.outputs.arm64_update_tests == 'true' && matrix.architecture == 'arm64'))}}
         run: |
           sudo bash packaging_scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }}
           sudo systemctl stop wazuh-indexer || true
@@ -335,7 +372,7 @@ jobs:
       # TODO: once the runners are fixed we must revert this.
       # Same reason as "Test DEB package update stopping the indexer" above.
       - name: Test DEB package update without stopping the indexer
-        if: ${{ false && matrix.distribution == 'deb' && (matrix.architecture == 'x64' || (needs.setup.outputs.previous_version >= '4.12' && matrix.architecture == 'arm64'))}}
+        if: ${{ false && matrix.distribution == 'deb' && (matrix.architecture == 'x64' || (needs.setup.outputs.arm64_update_tests == 'true' && matrix.architecture == 'arm64'))}}
         run: |
           sudo bash packaging_scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }}
           sudo dpkg -i "artifacts/dist/${{ steps.package.outputs.name }}"

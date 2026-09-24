@@ -1,12 +1,13 @@
 #!/bin/bash
 
-# rpm_setup_environment.sh
-# This script sets up the environment to perform smoke tests for the RPM distribution.
+# allocator_setup_environment.sh
+# This script allocates a machine to perform smoke tests for the RPM and DEB distributions.
 #
 # Usage:
-#   rpm_setup_environment.sh [--dry-run] <architecture> <run_id>
+#   allocator_setup_environment.sh [--dry-run] <distribution> <architecture> <run_id>
 #
 # Arguments:
+#   distribution    [required] Target distribution: rpm or deb.
 #   architecture    [required] Target architecture: x64 or arm64.
 #   run_id          [required] Unique run ID used for naming the instance.
 # Options:
@@ -38,9 +39,10 @@ for arg in "$@"; do
       DRY_RUN=true
       ;;
     -h|--help)
-      echo "Usage: $0 [--dry-run] <architecture> <run_id>"
+      echo "Usage: $0 [--dry-run] <distribution> <architecture> <run_id>"
       echo
       echo "Arguments:"
+      echo "  distribution    Target distribution: rpm or deb"
       echo "  architecture    Target architecture: x64 or arm64"
       echo "  run_id          Unique identifier to be used in the instance name"
       echo
@@ -61,15 +63,16 @@ done
 # Restore positional arguments
 set -- "${POSITIONAL_ARGS[@]}"
 
-# Check that we have exactly two arguments left
-if [[ $# -ne 2 ]]; then
-    echo "❌ Error: Architecture and run_id are required."
+# Check that we have exactly three arguments left
+if [[ $# -ne 3 ]]; then
+    echo "❌ Error: Distribution, architecture and run_id are required."
     echo "Try '$0 --help' for usage."
     exit 1
 fi
 
-ARCH="$1"
-RUN_ID="$2"
+DISTRIBUTION="$1"
+ARCH="$2"
+RUN_ID="$3"
 
 # Constants
 INVENTORY_OUTPUT="/tmp/inventory.yaml"
@@ -79,23 +82,31 @@ LABEL_TEAM="indexer"
 TERMINATION_DATE="1d"
 ALLOCATOR_SCRIPT="wazuh-automation/deployability/modules/allocation/main.py"
 
-# Architecture-based settings
-case "$ARCH" in
-    x64)
+# Distribution and architecture based settings
+case "${DISTRIBUTION}-${ARCH}" in
+    rpm-x64)
         COMPOSITE_NAME="linux-centos-9-amd64"
         INSTANCE_NAME="indexer_amd_${RUN_ID}"
         ;;
-    arm64)
+    rpm-arm64)
         COMPOSITE_NAME="linux-centos-8-arm64"
         INSTANCE_NAME="indexer_arm_${RUN_ID}"
         ;;
+    deb-x64)
+        COMPOSITE_NAME="linux-ubuntu-24.04-amd64"
+        INSTANCE_NAME="indexer_deb_amd_${RUN_ID}"
+        ;;
+    deb-arm64)
+        COMPOSITE_NAME="linux-ubuntu-24.04-arm64"
+        INSTANCE_NAME="indexer_deb_arm_${RUN_ID}"
+        ;;
     *)
-        echo "❌ Error: Invalid architecture '$ARCH'. Valid options are: x64, arm64."
+        echo "❌ Error: Invalid distribution '$DISTRIBUTION' or architecture '$ARCH'. Valid options are: rpm, deb and x64, arm64."
         exit 1
         ;;
 esac
 
-echo "🚀 Starting deployment for architecture: $ARCH, run_id: $RUN_ID"
+echo "🚀 Starting deployment for distribution: $DISTRIBUTION, architecture: $ARCH, run_id: $RUN_ID"
 echo "🔧 Instance name: $INSTANCE_NAME"
 echo "📦 Composite name: $COMPOSITE_NAME"
 

@@ -1,7 +1,7 @@
 ## [v5.0.0]
 
 ### Added
-- Create Wazuh Indexer users and roles [(#462)](https://github.com/wazuh/wazuh-indexer-plugins/issues/462)
+- Create Wazuh Indexer users and roles [(#462)](https://github.com/wazuh/wazuh-indexer-plugins/issues/462) [(#1538)](https://github.com/wazuh/wazuh-indexer/issues/1538) [(#1719)](https://github.com/wazuh/wazuh-indexer/issues/1719)
 - Add custom GitHub Action to validate commiter's emails by domain [(#884)](https://github.com/wazuh/wazuh-indexer/issues/884)
 - wazuh-indexer fails to start on OpenSearch 3.0.0 [(#902)](https://github.com/wazuh/wazuh-indexer/issues/902)
 - Improve workflow to build Wazuh Indexer packages [(#934)](https://github.com/wazuh/wazuh-indexer/issues/934)
@@ -22,6 +22,7 @@
 - AI assistant support [(#1422)](https://github.com/wazuh/wazuh-indexer-plugins/issues/1422)
 
 ### Changed
+- Generate indexer credentials and TLS material at install time instead of shipping defaults [(#1927)](https://github.com/wazuh/wazuh-indexer/issues/1927)
 - Migrate issue templates from `6.0.0` [(#853)](https://github.com/wazuh/wazuh-indexer/issues/853)
 - Migrate workflows from `6.0.0` and tools [(#857)](https://github.com/wazuh/wazuh-indexer/issues/857)
 - Migrate packages smoke tests to 5.x. [(#862)](https://github.com/wazuh/wazuh-indexer/issues/862)
@@ -45,11 +46,12 @@
 - Dedicated runners for the package builder workflow [(#1339)](https://github.com/wazuh/wazuh-indexer/issues/1339)
 - Duplicated CodeQL configurations [(#1340)](https://github.com/wazuh/wazuh-indexer/issues/1340)
 - 5.0.0-beta2 ruleset consumer [(#1067)](https://github.com/wazuh/wazuh-indexer-plugins/issues/1067)
-- Create Wazuh Indexer users and roles (T2) [(#1538)](https://github.com/wazuh/wazuh-indexer/issues/1538) [(#1719)](https://github.com/wazuh/wazuh-indexer/issues/1719)
 - Missing plugin `workload-management` warning from `opensearch-security` [(#1576)](https://github.com/wazuh/wazuh-indexer/issues/1576)
 - Unify indexer upgrade block message [(#1653)](https://github.com/wazuh/wazuh-indexer/issues/1653)
 
 ### Removed
+- Every shipped password hash: `admin`, `kibanaserver` and `wazuh-manager` now ship with no usable credential [(#1927)](https://github.com/wazuh/wazuh-indexer/issues/1927)
+- `install-demo-certificates.sh` and the `GENERATE_CERTS` gate, superseded by `resolve-credentials.sh` [(#1927)](https://github.com/wazuh/wazuh-indexer/issues/1927)
 - 5.x repo clean-up [(#865)](https://github.com/wazuh/wazuh-indexer/issues/865) [(#1068)](https://github.com/wazuh/wazuh-indexer/issues/1068)
 - Delete VERSION file code [(#905)](https://github.com/wazuh/wazuh-indexer/issues/905)
 - Remove `performance-analyzer` from indexer packages [(#891)](https://github.com/wazuh/wazuh-indexer/issues/891)
@@ -63,20 +65,17 @@
 - Indexer 6.0.0 packages are being uploaded in 5.x path [(#844)](https://github.com/wazuh/wazuh-indexer/issues/844)
 - wazuh-indexer fails to start due to seccomp error [(#911)](https://github.com/wazuh/wazuh-indexer/issues/911)
 - CodeQL workflow fails [(#961)](https://github.com/wazuh/wazuh-indexer/issues/961)
-- Outdated naming on auto-generated demo certificates [(#1011)](https://github.com/wazuh/wazuh-indexer/issues/1011)
 - Wazuh Indexer RPM package fails to preserve the previous service state [(#1027)](https://github.com/wazuh/wazuh-indexer/issues/1027)
 - Deprecation warning on the email checker action [(#1110)](https://github.com/wazuh/wazuh-indexer/issues/1110)
 - [BUG] `SysV` service script permissions [(#1135)](https://github.com/wazuh/wazuh-indexer/issues/1135)
 - [BUG] Invalid command output in distribution/src/bin/indexer-security-init.sh [(#1189)](https://github.com/wazuh/wazuh-indexer/issues/1189)
 - [BUG] repository_bumper.sh builds broken links [(#1205)](https://github.com/wazuh/wazuh-indexer/issues/1205)
-- [BUG] Demo certificates downloaded by default in 5.0 rpm package [(#1223)](https://github.com/wazuh/wazuh-indexer/issues/1223)
 - `linkchecker` failures [(#867)](https://github.com/wazuh/wazuh-indexer-plugins/issues/867)
 - IOException: Unknown ConfigType ordinal [11]` in `opensearch-alerting` [(#1379)](https://github.com/wazuh/wazuh-indexer/issues/1379)
 - Wrong permissions for `/etc/default/wazuh-indexer` [(#1532)](https://github.com/wazuh/wazuh-indexer/issues/1532)
 - Warning messages running systemctl status [(#1573)](https://github.com/wazuh/wazuh-indexer/issues/1573)
 - Default zstd index codec [(#1271)](https://github.com/wazuh/wazuh-indexer-plugins/issues/1271)
 - Update the Content Manager OpenAPI (`openapi.yml`) to match the current API [(#1353)](https://github.com/wazuh/wazuh-indexer-plugins/issues/1353)
-- [BUG] wazuh-readonly missing promotion and mapping permissions [(#1752)](https://github.com/wazuh/wazuh-indexer/issues/1752)
 - [BUG] The `own_index` demo role is mapped to every user [(#6030)](https://github.com/wazuh/internal-devel-requests/issues/6030)
 - [BUG] Uninstalling wazuh-indexer leaves a dangling systemd symlink in multi-user.target.wants [(#1918)](https://github.com/wazuh/wazuh-indexer/issues/1918)
 

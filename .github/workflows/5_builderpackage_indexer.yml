@@ -511,6 +511,21 @@ jobs:
             redhat/ubi9:latest \
             bash -c "yum localinstall '/artifacts/dist/${{ steps.package.outputs.name }}' -y && yum remove wazuh-indexer -y"
 
+      - name: Test RPM credential and TLS resolution
+        if: ${{ matrix.distribution == 'rpm' }}
+        run: |
+          SYSTEMD_IMAGE=redhat/ubi9-init:latest \
+          bash build-scripts/run_in_systemd_container.sh "${{ github.workspace }}" '
+            set -e
+            # ubi9-init ships neither curl nor a bcrypt module. curl is required;
+            # bcrypt only enables the digest-vs-password check, which otherwise
+            # skips, so its install is allowed to fail on an offline runner.
+            command -v curl >/dev/null || dnf install -y -q curl
+            (dnf install -y -q python3-pip && pip3 install -q bcrypt) || true
+            PACKAGE="/artifacts/dist/${{ steps.package.outputs.name }}" \
+              bash /build-scripts/ci/test_credentials.sh
+          '
+
       - name: Test RPM package update stopping the indexer
         if: ${{ matrix.distribution == 'rpm' && needs.setup.outputs.update_tests == 'true' }}
         run: |
@@ -561,6 +576,20 @@ jobs:
             export DEBIAN_FRONTEND=noninteractive
             dpkg -i "/artifacts/dist/${{ steps.package.outputs.name }}"
             apt-get remove --purge wazuh-indexer -y
+          '
+
+      - name: Test DEB credential and TLS resolution
+        if: ${{ matrix.distribution == 'deb' }}
+        run: |
+          bash build-scripts/run_in_systemd_container.sh "${{ github.workspace }}" '
+            set -e
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get update -qq
+            # python3-bcrypt lets the suite verify each digest against the
+            # password that was published; without it that check is skipped.
+            apt-get install -y -qq python3-bcrypt || true
+            PACKAGE="/artifacts/dist/${{ steps.package.outputs.name }}" \
+              bash /build-scripts/ci/test_credentials.sh
           '
 
       - name: Test DEB package update stopping the indexer

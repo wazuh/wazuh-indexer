@@ -209,6 +209,50 @@ function remove_security_entry() {
 }
 
 # ====
+# Replace an internal user's bcrypt hash with a credential placeholder
+#
+# ${NAME} names the environment variable that carries the password. It is not a
+# valid bcrypt digest, which is what keeps the package free of a usable
+# credential: until resolve-credentials.sh substitutes the digest, the account cannot be
+# authenticated as, whatever is presented.
+# ====
+function set_security_hash_placeholder() {
+    local key="$1"
+    local var="$2"
+    local file="$3"
+
+    if ! grep -q "^${key}:" "$file"; then
+        echo "ERROR: no '${key}' entry found in ${file}."
+        echo "       Upstream changed this file. Re-check where the account went before releasing."
+        exit 1
+    fi
+
+    awk -v key="^${key}:" -v var="$var" '
+        $0 ~ key { inblock = 1; print; next }
+        /^[^[:space:]]/ { inblock = 0 }
+        inblock && /^[[:space:]]*hash:[[:space:]]/ {
+            match($0, /^[[:space:]]*/)
+            print substr($0, 1, RLENGTH) "hash: \"${" var "}\""
+            replaced = 1
+            next
+        }
+        { print }
+        END { if (!replaced) exit 1 }
+    ' "$file" >"${file}.tmp" || {
+        rm -f "${file}.tmp"
+        echo "ERROR: no 'hash' field found in the '${key}' entry of ${file}."
+        echo "       Upstream changed this file. Re-check before releasing."
+        exit 1
+    }
+    mv "${file}.tmp" "$file"
+
+    if ! grep -qF "hash: \"\${${var}}\"" "$file"; then
+        echo "ERROR: failed to set the hash placeholder for '${key}' in ${file}"
+        exit 1
+    fi
+}
+
+# ====
 # Set up configuration files
 # ====
 function add_configuration_files() {
@@ -242,6 +286,12 @@ function add_configuration_files() {
     for user in anomalyadmin kibanaro logstash readall snapshotrestore; do
         remove_security_entry "$user" "$PATH_CONF/opensearch-security/internal_users.yml"
     done
+
+    # internal_users.wazuh.yml already declares a hash placeholder for "wazuh-manager".
+    set_security_hash_placeholder "admin" "WAZUH_INDEXER_ADMIN_PASSWORD" \
+        "$PATH_CONF/opensearch-security/internal_users.yml"
+    set_security_hash_placeholder "kibanaserver" "WAZUH_INDEXER_KIBANASERVER_PASSWORD" \
+        "$PATH_CONF/opensearch-security/internal_users.yml"
 
     # Deleting the accounts is only half of it. Four of them held no privilege
     # directly: they carried a backend role, and the mappings below are what
@@ -314,13 +364,16 @@ function add_wazuh_tools() {
     retry 3 5 curl -sL --connect-timeout 10 --max-time 60 --fail "${download_url}/config-${version}-latest.yml" -o "${tools_dir}"/config.yml
     retry 3 5 curl -sL --connect-timeout 10 --max-time 60 --fail "${download_url}/wazuh-passwords-tool-${version}-latest.sh" -o "${tools_dir}"/wazuh-passwords-tool.sh
     retry 3 5 curl -sL --connect-timeout 10 --max-time 60 --fail "${download_url}/wazuh-certs-tool-${version}-latest.sh" -o "${tools_dir}"/wazuh-certs-tool.sh
-}
 
-# ====
-# Add demo certificates installer
-# ====
-function add_demo_certs_installer() {
-    cp install-demo-certificates.sh "$PATH_PLUGINS"/opensearch-security/tools/
+    # TODO double-check path. I think it should go into the tools/ folder, not the lib/ folder. The tools are executable, the lib is not.
+    # The shared credential library. It is sourced -- by resolve-credentials.sh
+    # -- so it lands in lib/ rather than in the
+    # security plugin's tools/, and is not executable. Every component on a host
+    # must carry the same version: they share one credentials.env and one lock.
+    local lib_dir="${PATH_PLUGINS%/plugins}/lib"
+    mkdir -p "${lib_dir}"
+    retry 3 5 curl -sL --connect-timeout 10 --max-time 60 --fail "${download_url}/wazuh-credentials-${version}-latest.sh" -o "${lib_dir}"/wazuh-credentials.sh
+    chmod 644 "${lib_dir}"/wazuh-credentials.sh
 }
 
 # ====
@@ -481,7 +534,6 @@ function assemble_tar() {
     # Install Wazuh Engine
     install_wazuh_engine "${decompressed_tar_dir}"
 
-    add_demo_certs_installer
     # Swap configuration files
     add_configuration_files
     remove_unneeded_files
@@ -522,7 +574,6 @@ function assemble_rpm() {
     # Install Wazuh Engine
     install_wazuh_engine "${src_path}"
 
-    add_demo_certs_installer
     # Swap configuration files
     add_configuration_files
     remove_unneeded_files
@@ -577,7 +628,6 @@ function assemble_deb() {
     # Install Wazuh Engine
     install_wazuh_engine "${src_path}"
 
-    add_demo_certs_installer
     # Swap configuration files
     add_configuration_files
     remove_unneeded_files
@@ -628,8 +678,6 @@ function main() {
     TMP_DIR="${OUTPUT}/tmp/${TARGET}"
     mkdir -p "$TMP_DIR"
     cp "${OUTPUT}/dist/$ARTIFACT_BUILD_NAME" "${TMP_DIR}"
-    # Copy the demo certificates generator
-    cp distribution/packages/src/common/scripts/install-demo-certificates.sh "$TMP_DIR"
 
     case $PACKAGE in
     tar)

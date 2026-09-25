@@ -19,6 +19,52 @@ case "$1" in
         rm -rf "${product_dir}/engine"
         rm -rf "${product_dir}/plugins"
 
+        # On purge, take back only what this package owns: its own keys inside
+        # the credentials.env.
+        if [ "$1" = "purge" ]; then
+            # prerm stashed this, because the packaged copy is already gone.
+            lib="/var/lib/${name}/.wazuh-credentials.sh"
+            [ -f "${lib}" ] || lib="${product_dir}/lib/wazuh-credentials.sh"
+            if [ -f "${lib}" ]; then
+                # shellcheck source=/dev/null
+                . "${lib}"
+                for key in WAZUH_INDEXER_ADMIN_PASSWORD \
+                           WAZUH_INDEXER_KIBANASERVER_PASSWORD \
+                           WAZUH_INDEXER_MANAGER_PASSWORD; do
+                    wazuh_env_unset "${key}" > /dev/null 2>&1 || true
+                done
+
+                creds="$(wazuh_env_get_file 2>/dev/null)" || creds=""
+                if [ -n "${creds}" ] && [ -f "${creds}" ]; then
+                # Remove the /etc/wazuh directory if this is the LAST component
+                # being purged.
+                if ! grep -qE '^[[:space:]]*[A-Za-z_][A-Za-z0-9_]*=' "${creds}" 2>/dev/null; then
+                    ca_dir="$(wazuh_ca_get_dir 2>/dev/null)" || ca_dir=""
+                    if [ -n "${ca_dir}" ] && [ -d "${ca_dir}" ]; then
+                        rm -f "${ca_dir}/root-ca.pem" "${ca_dir}/root-ca.key" "${ca_dir}/root-ca.srl"
+                        rmdir "${ca_dir}" > /dev/null 2>&1 || true
+                    fi
+                    # The shared lock file lives in this directory and is recreated on every
+                    # write, so it would keep the tree non-empty for ever. With no keys left
+                    # there is no component to serialize against, so it goes too.
+                    base="$(wazuh_base_get_dir 2>/dev/null)" || base=""
+                    if [ -n "${base}" ]; then
+                        rm -f "${base}/.credentials.lock"
+                        # rmdir refuses a non-empty directory, which is exactly the check
+                        # wanted here: it succeeds only once credentials.env itself is gone.
+                        rmdir "${base}" > /dev/null 2>&1 || true
+                    fi
+                fi
+                fi
+            fi
+            rm -f /var/lib/${name}/.initialized
+
+            # Only here. dpkg calls postrm twice on a purge -- once with
+            # "remove", then again with "purge" -- so cleaning the stash in the
+            # outer case would delete it before the branch that needs it runs.
+            rm -f /var/lib/${name}/.wazuh-credentials.sh
+        fi
+
         # Make systemd forget the unit, now that its file is gone
         if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
             systemctl daemon-reload > /dev/null 2>&1 || true

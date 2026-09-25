@@ -14,6 +14,13 @@ Documentation=https://documentation.wazuh.com
 Wants=network-online.target
 After=network-online.target
 
+# A failing pre-start step under a restart policy retries forever and floods the
+# journal. Three attempts in a minute, then systemd gives up and leaves the unit
+# failed -- a state an operator can see and query. On systemd 230 and later
+# these belong in [Unit], not [Service].
+StartLimitBurst=3
+StartLimitIntervalSec=60
+
 [Service]
 Type=notify
 RuntimeDirectory=wazuh-indexer
@@ -28,6 +35,11 @@ WorkingDirectory=/usr/share/wazuh-indexer
 
 User=wazuh-indexer
 Group=wazuh-indexer
+
+# Resolve credentials and TLS material before the node starts, and refuse to
+# start without them. The '+' prefix is required: without it the step inherits
+# User=wazuh-indexer and cannot read root-only credentials or write the CA.
+ExecStartPre=+/usr/share/wazuh-indexer/bin/resolve-credentials.sh --prestart
 
 ExecStart=/usr/share/wazuh-indexer/bin/systemd-entrypoint -p ${PID_DIR}/wazuh-indexer.pid --quiet
 
@@ -140,6 +152,11 @@ ReadWritePaths=/usr/share/wazuh-indexer/engine
 ReadWritePaths= /usr/share/wazuh-indexer/plugins/wazuh-indexer-content-manager/snapshots
 ReadWritePaths=-/etc/wazuh-indexer
 ReadWritePaths=-/mnt/snapshots
+
+## ProtectSystem=full makes /etc read-only for this unit, and the '+' prefix on
+## ExecStartPre lifts User= but not the mount namespace. Without these the
+## resolver cannot write credentials.env or the CA, and fails silently.
+ReadWritePaths=-/etc/wazuh
 
 ## Allow read access to system files
 ReadOnlyPaths=-/etc/os-release -/usr/lib/os-release -/etc/system-release

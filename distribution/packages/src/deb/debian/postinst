@@ -121,12 +121,25 @@ else
             echo " sudo /etc/init.d/${name} start"
         fi
     fi
-    # Create the certs directory and if required, install demo certificates.
-    if [ "$GENERATE_CERTS" = "true" ] && [ -f "${product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh" ]; then
-        echo "### Installing ${name} demo certificates in ${certs_dir}"
-        echo " See demo certs creation log at ${log_dir}/install_demo_certificates.log"
-        bash "${product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh" >"${log_dir}/install_demo_certificates.log" 2>&1
-        yes | ${product_dir}/jdk/bin/keytool -trustcacerts -keystore ${product_dir}/jdk/lib/security/cacerts -importcert -alias wazuh-root-ca -file ${certs_dir}/root-ca.pem > /dev/null 2>&1
+fi
+
+# Resolve credentials and TLS material, in whichever mode this invocation is.
+# The installer creates; it never checks and never starts, and it never fails:
+# aborting here would leave the package half-configured and break
+# `apt install -f`. Unresolved material is not reported either -- the answer
+# changes between install and start, and only the answer at start matters.
+#
+# --upgrade is not --install: it fills in values this host never had, but it
+# does not re-examine or reissue certificates, because an operator who replaced
+# the shipped pair with their own PKI must not find it touched by an upgrade.
+if [ -x "${product_dir}/bin/resolve-credentials.sh" ]; then
+    if [ -n "$2" ]; then
+        "${product_dir}/bin/resolve-credentials.sh" --upgrade || true
+    else
+        "${product_dir}/bin/resolve-credentials.sh" --install || true
+        if [ -f "${certs_dir}/root-ca.pem" ]; then
+            yes | ${product_dir}/jdk/bin/keytool -trustcacerts -keystore ${product_dir}/jdk/lib/security/cacerts -importcert -alias wazuh-root-ca -file ${certs_dir}/root-ca.pem > /dev/null 2>&1
+        fi
     fi
 fi
 

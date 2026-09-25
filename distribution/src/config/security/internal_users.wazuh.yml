@@ -2,16 +2,31 @@
 # ---------------------------------------------------------------------#
 # Wazuh Indexer Default Users
 # ---------------------------------------------------------------------#
-# WARNING: Change these default passwords immediately after installation.
+# TODO keep clear and move to documentation.
+# No account ships with a password. Every "hash" below is a ${NAME} placeholder
+# naming the environment variable that carries the password, and a placeholder is
+# not a valid bcrypt digest -- so until it is resolved the account cannot be
+# authenticated as, whatever is presented.
+#
+# resolve-credentials.sh resolves them at install time: it reads
+# /etc/wazuh/credentials.env (or the environment, which wins), bcrypts each password
+# with the security plugin's hash.sh and writes the digest here, once. Loading the
+# result into the cluster is a separate, manual step -- indexer-security-init.sh --
+# because a package cannot know whether other nodes of the same cluster are still to
+# be installed on other machines.
+#
+# The bare form is deliberate. The security plugin substitutes ${env.X},
+# ${envbc.X} and ${envbase64.X} itself, node-side, at every config load -- which
+# would tie each account to a variable that has to stay in the service
+# environment for the life of the deployment. A placeholder with no such prefix
+# is left untouched by the plugin and is resolved only by us.
+#
+# The same placeholder is substituted into the "admin" and "kibanaserver"
+# entries at build time -- see add_configuration_files() in
+# build-scripts/assemble.sh.
 
 wazuh-manager:
-  hash: "$2y$12$wiNDDyE7q9ZoS.QSdCx8KuQb3gMAoZMuHf2WzNeCIrciE1JMN6kv2"
+  hash: "${WAZUH_INDEXER_MANAGER_PASSWORD}"
   reserved: true
   backend_roles: []
   description: "Wazuh Manager user with write-only access to stateless (events) indexes, read/write/delete access to stateful (states) indexes, and read access to consumers, threat intelligence content, and active-responses indexes."
-
-wazuh-readonly:
-  hash: "$2y$12$jxMGvesP0pdvs0uzoWsvYOFysWZujpEcSL5PQmkVuifR8izAO2i5q"
-  reserved: true
-  backend_roles: []
-  description: "Wazuh Read-Only user with read access to settings, consumers, threat intelligence content, subscriptions, and Security Analytics plugin (SAP) detectors."

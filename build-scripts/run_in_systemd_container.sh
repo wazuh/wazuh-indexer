@@ -23,16 +23,24 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Built locally (from ECR Public) on first call and reused via the layer cache.
-# Override SYSTEMD_IMAGE with a prebuilt image to skip the build.
-SYSTEMD_IMAGE="${SYSTEMD_IMAGE:-wazuh-indexer-systemd-test:jammy}"
+# The Debian-family image is built locally (from ECR Public) on first call and
+# reused via the layer cache. Set SYSTEMD_IMAGE to any other systemd-enabled
+# image -- redhat/ubi9-init for the RPM tests, say -- and it is pulled instead
+# of built, so the same harness drives both package formats.
+DEFAULT_SYSTEMD_IMAGE="wazuh-indexer-systemd-test:jammy"
+SYSTEMD_IMAGE="${SYSTEMD_IMAGE:-$DEFAULT_SYSTEMD_IMAGE}"
 
 if ! docker image inspect "$SYSTEMD_IMAGE" >/dev/null 2>&1; then
-    echo "Building systemd test image ${SYSTEMD_IMAGE}..."
-    # The Dockerfile has no COPY/ADD, so an empty build context keeps it fast.
-    docker build -t "$SYSTEMD_IMAGE" \
-        -f "${SCRIPT_DIR}/builder/systemd-test.Dockerfile" \
-        "${SCRIPT_DIR}/builder"
+    if [ "$SYSTEMD_IMAGE" = "$DEFAULT_SYSTEMD_IMAGE" ]; then
+        echo "Building systemd test image ${SYSTEMD_IMAGE}..."
+        # The Dockerfile has no COPY/ADD, so an empty build context keeps it fast.
+        docker build -t "$SYSTEMD_IMAGE" \
+            -f "${SCRIPT_DIR}/builder/systemd-test.Dockerfile" \
+            "${SCRIPT_DIR}/builder"
+    else
+        echo "Pulling systemd test image ${SYSTEMD_IMAGE}..."
+        docker pull "$SYSTEMD_IMAGE"
+    fi
 fi
 
 cid=$(docker run -d --rm \

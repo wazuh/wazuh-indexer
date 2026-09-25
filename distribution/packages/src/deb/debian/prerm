@@ -18,6 +18,20 @@ case "$1" in
     ;;
     remove)
         echo "Running Wazuh Indexer Pre-Removal Script"
+
+        # Stash the shared credential helper where the package manager will not
+        # reach it. postrm runs AFTER the package's files have been deleted, so
+        # /usr/share/wazuh-indexer/lib/wazuh-credentials.sh is already gone by
+        # the time the purge path wants to take this component's keys out of
+        # credentials.env -- the guard there would silently do nothing, and the
+        # keys and the CA would be left behind. This copy is created here, not
+        # packaged, so nothing removes it but us.
+        if [ -f /usr/share/${name}/lib/wazuh-credentials.sh ]; then
+            mkdir -p /var/lib/${name}
+            cp /usr/share/${name}/lib/wazuh-credentials.sh \
+               /var/lib/${name}/.wazuh-credentials.sh 2>/dev/null || true
+            chmod 600 /var/lib/${name}/.wazuh-credentials.sh 2>/dev/null || true
+        fi
         # Stop existing service
         if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1 && systemctl is-active ${name}.service > /dev/null 2>&1; then
             echo "Stop existing ${name}.service"

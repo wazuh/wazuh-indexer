@@ -44,6 +44,25 @@ Group: Application/Internet
 ExclusiveArch: %{_architecture}
 AutoReqProv: no
 
+# Runtime dependencies of the credential and TLS resolution that runs from %post and from the
+# unit's ExecStartPre. AutoReqProv is off, so nothing is inferred and every one of these has to be
+# stated. Without them the package installs cleanly and then produces no credentials, which is the
+# failure mode this whole mechanism exists to prevent.
+#   openssl    mints the bootstrap CA and issues this node's certificate pair
+#   diffutils  cmp(1), which matches the CA private key against its trust anchor
+#   iproute    ip(1), which derives the certificate's Subject Alternative Names
+#   hostname   the certificate's common name and its first SAN
+#   util-linux flock(1) for the shared credentials file, runuser(1) for securityadmin.sh
+#   procps-ng  pgrep(1), used by indexer-security-init.sh when an operator runs it
+#   coreutils  stat(1) and install(1), for the ownership and mode checks
+Requires: coreutils
+Requires: diffutils
+Requires: hostname
+Requires: iproute
+Requires: openssl
+Requires: procps-ng
+Requires: util-linux
+
 %description
 Wazuh indexer is a near real-time full-text search and analytics engine that
 gathers security-related data into one platform. This Wazuh central component
@@ -201,6 +220,27 @@ chown %{name}:%{name} %{data_dir}/tmp
 chown -R %{name}:%{name} %{config_dir}
 chown -R %{name}:%{name} %{log_dir}
 
+# Resolve credentials and TLS material. The installer creates; it never checks
+# and never starts, and it never fails: aborting here would leave the package
+# half-configured and fail image builds. Unresolved material is not reported
+# either -- the answer changes between install and start, and only the answer at
+# start matters.
+#
+# $1 is 1 on a fresh install and greater on an upgrade. --upgrade is not
+# --install: it fills in values this host never had, but it does not re-examine
+# or reissue certificates, because an operator who replaced the shipped pair
+# with their own PKI must not find it touched by an upgrade.
+if [ -x %{product_dir}/bin/resolve-credentials.sh ]; then
+    if [ $1 -gt 1 ]; then
+        %{product_dir}/bin/resolve-credentials.sh --upgrade || true
+    else
+        %{product_dir}/bin/resolve-credentials.sh --install || true
+        if [ -f %{certs_dir}/root-ca.pem ]; then
+            yes | /usr/share/%{name}/jdk/bin/keytool -trustcacerts -keystore /usr/share/%{name}/jdk/lib/security/cacerts -importcert -alias wazuh-root-ca -file %{certs_dir}/root-ca.pem > /dev/null 2>&1
+        fi
+    fi
+fi
+
 exit 0
 
 %posttrans
@@ -253,12 +293,6 @@ else
             echo " sudo /etc/init.d/%{name} start"
         fi
     fi
-    if [ "$GENERATE_CERTS" = "true" ] && [ -f %{product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh ]; then
-        echo "### Installing %{name} demo certificates in %{certs_dir}"
-        echo " See demo certs creation log at ${log_dir}/install_demo_certificates.log"
-        bash %{product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh > %{log_dir}/install_demo_certificates.log 2>&1
-        yes | /usr/share/%{name}/jdk/bin/keytool -trustcacerts -keystore /usr/share/%{name}/jdk/lib/security/cacerts -importcert -alias wazuh-root-ca -file %{certs_dir}/root-ca.pem > /dev/null 2>&1
-    fi
 fi
 exit 0
 
@@ -267,6 +301,19 @@ set -e
 
 # Stop the services to remove the package
 if [ $1 = 0 ]; then
+    # Stash the shared credential helper where the package manager will not
+    # reach it. postrm runs AFTER the package's files have been deleted, so
+    # /usr/share/wazuh-indexer/lib/wazuh-credentials.sh is already gone by
+    # the time the purge path wants to take this component's keys out of
+    # credentials.env -- the guard there would silently do nothing, and the
+    # keys and the CA would be left behind. This copy is created here, not
+    # packaged, so nothing removes it but us.
+    if [ -f %{product_dir}/lib/wazuh-credentials.sh ]; then
+        mkdir -p %{data_dir}
+        cp %{product_dir}/lib/wazuh-credentials.sh %{data_dir}/.wazuh-credentials.sh 2>/dev/null || true
+        chmod 600 %{data_dir}/.wazuh-credentials.sh 2>/dev/null || true
+    fi
+
     # Stop wazuh-indexer service
     if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1 && systemctl is-active %{name}.service > /dev/null 2>&1; then
         echo "Stop existing %{name}.service"
@@ -306,6 +353,53 @@ set -e
 if [ $1 -eq 0 ]; then
     rm -rf %{product_dir}/engine
     rm -rf %{product_dir}/plugins
+
+    # Take back only what this package owns: its own keys inside
+    # the credentials.env.
+    # %preun stashed this, because the packaged copy is already gone.
+    _wazuh_lib=%{data_dir}/.wazuh-credentials.sh
+    [ -f "${_wazuh_lib}" ] || _wazuh_lib=%{product_dir}/lib/wazuh-credentials.sh
+    if [ -f "${_wazuh_lib}" ]; then
+        . "${_wazuh_lib}"
+        for key in WAZUH_INDEXER_ADMIN_PASSWORD \
+                   WAZUH_INDEXER_KIBANASERVER_PASSWORD \
+                   WAZUH_INDEXER_MANAGER_PASSWORD; do
+            wazuh_env_unset "${key}" > /dev/null 2>&1 || true
+        done
+
+        creds="$(wazuh_env_get_file 2>/dev/null)" || creds=""
+        if [ -n "${creds}" ] && [ -f "${creds}" ]; then
+            # Remove the /etc/wazuh directory if this is the LAST component
+            # being purged.
+            if ! grep -qE '^[[:space:]]*[A-Za-z_][A-Za-z0-9_]*=' "${creds}" 2>/dev/null; then
+                ca_dir="$(wazuh_ca_get_dir 2>/dev/null)" || ca_dir=""
+                if [ -n "${ca_dir}" ] && [ -d "${ca_dir}" ]; then
+                    rm -f "${ca_dir}/root-ca.pem" "${ca_dir}/root-ca.key" "${ca_dir}/root-ca.srl"
+                    rmdir "${ca_dir}" > /dev/null 2>&1 || true
+                fi
+                # The shared lock file lives in this directory and is recreated on every
+                # write, so it would keep the tree non-empty for ever. With no keys left there
+                # is no component to serialize against, so it goes too.
+                base="$(wazuh_base_get_dir 2>/dev/null)" || base=""
+                if [ -n "${base}" ]; then
+                    rm -f "${base}/.credentials.lock"
+                    # rmdir refuses a non-empty directory, which is exactly the check wanted
+                    # here: it succeeds only once credentials.env itself is gone.
+                    rmdir "${base}" > /dev/null 2>&1 || true
+                fi
+            fi
+        fi
+    fi
+    rm -f %{data_dir}/.initialized %{data_dir}/.wazuh-credentials.sh
+
+    # rpm saves a modified %config file as *.rpmsave when the package goes away.
+    # Both of these are modified by resolve-credentials.sh -- one gains the three
+    # bcrypt digests, the other the node and admin DNs -- so the saved copies
+    # carry credential material for a package that is no longer installed. There
+    # is nothing to recover from them: the digests are meaningless without the
+    # cluster they were uploaded to.
+    rm -f %{config_dir}/opensearch-security/internal_users.yml.rpmsave \
+          %{config_dir}/opensearch.yml.rpmsave
 
     # Make systemd forget the unit, now that its file is gone
     if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then

@@ -262,27 +262,7 @@ function add_configuration_files() {
     cat "$PATH_CONF/security/internal_users.wazuh.yml" >>"$PATH_CONF/opensearch-security/internal_users.yml"
     cat "$PATH_CONF/security/action_groups.wazuh.yml" >>"$PATH_CONF/opensearch-security/action_groups.yml"
 
-    # The demo configuration shipped by the security plugin maps the built-in
-    # "own_index" role to every user ("*"). That role grants indices_all over an
-    # index named after the user, so any account -- read-only ones included --
-    # can create and fill an index, change its settings and attach aliases that
-    # fall inside the product's own index patterns. A security cluster has no
-    # use for per-user scratch indices, so drop the mapping.
-    remove_security_entry "own_index" "$PATH_CONF/opensearch-security/roles_mapping.yml"
-
-    # That same demo configuration ships seven internal users, every one of them
-    # enabled with its password equal to its username. Only two have a job here:
-    # "admin", which the installer and the passwords tool expect, and
-    # "kibanaserver", the service account the dashboard authenticates with. The
-    # rest are upstream's demonstration accounts and are removed:
-    #
-    #   anomalyadmin    - anomaly_full_access, assigned directly on the account
-    #   kibanaro        - kibanauser + readall, i.e. write access to the saved
-    #                     objects (see the roles_mapping block below)
-    #   logstash        - create indices and write to logstash-* and *beat*
-    #   readall         - read every index in the cluster
-    #   snapshotrestore - manage_snapshots
-    #
+    # Deleting unused users.
     for user in anomalyadmin kibanaro logstash readall snapshotrestore; do
         remove_security_entry "$user" "$PATH_CONF/opensearch-security/internal_users.yml"
     done
@@ -293,39 +273,8 @@ function add_configuration_files() {
     set_security_hash_placeholder "kibanaserver" "WAZUH_INDEXER_KIBANASERVER_PASSWORD" \
         "$PATH_CONF/opensearch-security/internal_users.yml"
 
-    # Deleting the accounts is only half of it. Four of them held no privilege
-    # directly: they carried a backend role, and the mappings below are what
-    # turn that name into a role. A backend role comes from whatever
-    # authenticates the user -- an LDAP or AD group, a JWT claim -- so while
-    # these mappings stand, a directory group that merely happens to be named
-    # "readall" or "kibanauser" is granted the privilege with no account of
-    # ours involved and nobody assigning anything. Those names are the ones
-    # upstream's own documentation uses, so the coincidence is likely.
-    #
-    #   kibana_user      <- "kibanauser": delete, index and manage over
-    #                       .kibana*, that is, write access to the index
-    #                       patterns, visualizations and dashboards the product
-    #                       ships. Multi-tenancy is disabled a few lines down,
-    #                       so there is no per-user tenant for such a write to
-    #                       land in: it reaches what every analyst sees. None of
-    #                       the Wazuh personas needs this role -- they are all
-    #                       read-only over .kibana* (see roles.wazuh.yml) and
-    #                       saved objects are managed by admin.
-    #   readall          <- "readall": read every index in the cluster
-    #   logstash         <- "logstash": create indices, write logstash-*/*beat*
-    #   manage_snapshots <- "snapshotrestore": snapshot and restore
-    #
-    # "all_access" and "kibana_server" are deliberately left in place: they are
-    # how admin and kibanaserver get their privileges.
-    #
-    # Note that this removes the paths to those roles, not the roles. They are
-    # static -- bundled in the plugin jar under static_config/static_roles.yml
-    # -- so they cannot be deleted from a configuration file, and they cannot be
-    # weakened by redefining them either: on an overlap the plugin discards the
-    # dynamic definition and keeps the static one. An operator who maps a user
-    # to one of these roles by hand still gets it; what is removed here is every
-    # path the product ships.
-    for mapping in kibana_user readall logstash manage_snapshots; do
+    # Deleting unused role mappings
+    for mapping in kibana_user readall logstash manage_snapshots own_index; do
         remove_security_entry "$mapping" "$PATH_CONF/opensearch-security/roles_mapping.yml"
     done
 
@@ -359,18 +308,17 @@ function add_wazuh_tools() {
     local download_url
     download_url="https://packages-staging.xdrsiem.wazuh.info/nightly/${version}/installation-assistant"
 
-    local tools_dir="$PATH_PLUGINS"/opensearch-security/tools
+    # tools folder
+    local tools_dir="${PATH_PRODUCT}/tools"
+    mkdir -p "${tools_dir}"
 
     retry 3 5 curl -sL --connect-timeout 10 --max-time 60 --fail "${download_url}/config-${version}-latest.yml" -o "${tools_dir}"/config.yml
     retry 3 5 curl -sL --connect-timeout 10 --max-time 60 --fail "${download_url}/wazuh-passwords-tool-${version}-latest.sh" -o "${tools_dir}"/wazuh-passwords-tool.sh
     retry 3 5 curl -sL --connect-timeout 10 --max-time 60 --fail "${download_url}/wazuh-certs-tool-${version}-latest.sh" -o "${tools_dir}"/wazuh-certs-tool.sh
 
-    # TODO double-check path. I think it should go into the tools/ folder, not the lib/ folder. The tools are executable, the lib is not.
-    # The shared credential library. It is sourced -- by resolve-credentials.sh
-    # -- so it lands in lib/ rather than in the
-    # security plugin's tools/, and is not executable. Every component on a host
-    # must carry the same version: they share one credentials.env and one lock.
-    local lib_dir="${PATH_PLUGINS%/plugins}/lib"
+    # The shared credential library belongs in lib/, not tools/: it is sourced,
+    # never executed, and ships non-executable.
+    local lib_dir="${PATH_PRODUCT}/lib"
     mkdir -p "${lib_dir}"
     retry 3 5 curl -sL --connect-timeout 10 --max-time 60 --fail "${download_url}/wazuh-credentials-${version}-latest.sh" -o "${lib_dir}"/wazuh-credentials.sh
     chmod 644 "${lib_dir}"/wazuh-credentials.sh
@@ -523,6 +471,7 @@ function assemble_tar() {
 
     generate_installer_version_file "${decompressed_tar_dir}"
 
+    PATH_PRODUCT="${decompressed_tar_dir}"
     PATH_CONF="${decompressed_tar_dir}/config"
     PATH_BIN="${decompressed_tar_dir}/bin"
     PATH_PLUGINS="${decompressed_tar_dir}/plugins"
@@ -557,6 +506,7 @@ function assemble_rpm() {
 
     cd "${TMP_DIR}"
     local src_path="./usr/share/wazuh-indexer"
+    PATH_PRODUCT="${src_path}"
     PATH_CONF="./etc/wazuh-indexer"
     PATH_BIN="${src_path}/bin"
     PATH_PLUGINS="${src_path}/plugins"
@@ -610,6 +560,7 @@ function assemble_deb() {
 
     cd "${TMP_DIR}"
     local src_path="./usr/share/wazuh-indexer"
+    PATH_PRODUCT="${src_path}"
     PATH_CONF="./etc/wazuh-indexer"
     PATH_BIN="${src_path}/bin"
     PATH_PLUGINS="${src_path}/plugins"

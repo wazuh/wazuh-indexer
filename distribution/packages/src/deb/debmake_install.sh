@@ -75,6 +75,9 @@ fi
 
 binary_files=()
 binary_files+=("${buildroot}${product_dir}"/bin/*)
+if [ -d "${buildroot}${product_dir}/tools" ]; then
+	binary_files+=("${buildroot}${product_dir}"/tools/*.sh)
+fi
 binary_files+=("${buildroot}/etc/init.d/${name}")
 binary_files+=("${buildroot}${product_dir}"/jdk/bin/*)
 binary_files+=("${buildroot}${product_dir}"/jdk/lib/jspawnhelper)

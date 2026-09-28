@@ -327,6 +327,18 @@ for writable in "${PRODUCT_DIR}/engine" \
     fi
 done
 
+# The service-owned trees. %defattr / the product-tree chown are package-wide, so
+# these have to be handed back explicitly; a root-owned DATA_DIR stops the node
+# creating nodes/ and it dies in NodeEnvironment before anything else runs.
+for owned in "${DATA_DIR}" "${CONFIG_DIR}" /var/log/wazuh-indexer; do
+    [ -d "${owned}" ] || continue
+    if runuser -u wazuh-indexer -- test -w "${owned}" 2>/dev/null; then
+        ok "${owned} is writable by the service account"
+    else
+        fail "${owned} is not writable by the service account (the node will not start)"
+    fi
+done
+
 # securityadmin.sh is executed via `runuser wazuh-indexer`, so group execute has
 # to survive the owner change.
 sa="${SECURITY_TOOLS}/securityadmin.sh"

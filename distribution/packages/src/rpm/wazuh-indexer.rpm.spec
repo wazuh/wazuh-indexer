@@ -217,9 +217,10 @@ set -e
 mkdir -p %{data_dir}/tmp
 chown %{name}:%{name} %{data_dir}/tmp
 
-# Fix ownership and permissions
+# Fix ownership and permissions.
 chown -R %{name}:%{name} %{config_dir}
 chown -R %{name}:%{name} %{log_dir}
+chown -R %{name}:%{name} %{data_dir}
 
 # Resolve credentials and TLS material.
 #

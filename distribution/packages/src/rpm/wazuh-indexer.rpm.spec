@@ -396,6 +396,20 @@ if [ $1 -eq 0 ]; then
     rm -f %{config_dir}/opensearch-security/internal_users.yml.rpmsave \
           %{config_dir}/opensearch.yml.rpmsave
 
+    # %post delete the tmp directory, indexed data is never deleted.
+    rm -rf %{data_dir}/tmp
+    rmdir %{data_dir} > /dev/null 2>&1 || true
+
+    # %pre creates the service account, so it is ours to take back. userdel
+    # may already have dropped the group along with the user (USERGROUPS_ENAB),
+    # hence the second lookup.
+    if getent passwd %{name} > /dev/null 2>&1; then
+        userdel %{name} > /dev/null 2>&1 || true
+    fi
+    if getent group %{name} > /dev/null 2>&1; then
+        groupdel %{name} > /dev/null 2>&1 || true
+    fi
+
     # Make systemd forget the unit, now that its file is gone
     if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
         systemctl daemon-reload > /dev/null 2>&1 || true

@@ -13,6 +13,7 @@ set -e
 
 name="wazuh-indexer"
 product_dir=/usr/share/${name}
+data_dir=/var/lib/${name}
 
 case "$1" in
     remove|purge)
@@ -63,6 +64,20 @@ case "$1" in
             # "remove", then again with "purge" -- so cleaning the stash in the
             # outer case would delete it before the branch that needs it runs.
             rm -f /var/lib/${name}/.wazuh-credentials.sh
+
+            # delete the tmp directory, indexed data is never deleted here.
+            rm -rf "${data_dir}/tmp"
+            rmdir "${data_dir}" > /dev/null 2>&1 || true
+
+            # preinst creates the service account, so it is ours to take back.
+            # userdel may already have dropped the group along with the user
+            # (USERGROUPS_ENAB), hence the second lookup.
+            if getent passwd ${name} > /dev/null 2>&1; then
+                userdel ${name} > /dev/null 2>&1 || true
+            fi
+            if getent group ${name} > /dev/null 2>&1; then
+                groupdel ${name} > /dev/null 2>&1 || true
+            fi
         fi
 
         # Make systemd forget the unit, now that its file is gone

@@ -574,6 +574,8 @@ jobs:
           bash build-scripts/run_in_systemd_container.sh "${{ github.workspace }}" '
             set -e
             export DEBIAN_FRONTEND=noninteractive
+            bash /build-scripts/ci/install_package_dependencies.sh \
+              "/artifacts/dist/${{ steps.package.outputs.name }}"
             dpkg -i "/artifacts/dist/${{ steps.package.outputs.name }}"
             apt-get remove --purge wazuh-indexer -y
           '
@@ -600,6 +602,8 @@ jobs:
             export DEBIAN_FRONTEND=noninteractive
             bash /build-scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }}
             systemctl stop wazuh-indexer
+            bash /build-scripts/ci/install_package_dependencies.sh \
+              "/artifacts/dist/${{ steps.package.outputs.name }}"
             dpkg -i --force-confnew "/artifacts/dist/${{ steps.package.outputs.name }}"
           '
 
@@ -610,6 +614,8 @@ jobs:
             set -e
             export DEBIAN_FRONTEND=noninteractive
             bash /build-scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }}
+            bash /build-scripts/ci/install_package_dependencies.sh \
+              "/artifacts/dist/${{ steps.package.outputs.name }}"
             dpkg -i --force-confnew "/artifacts/dist/${{ steps.package.outputs.name }}"
           '
 

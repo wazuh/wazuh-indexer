@@ -151,6 +151,29 @@ wait_for_cluster() {
     return 1
 }
 
+# OpenSearch refuses to start below 262144 and the node dies in bootstrap
+# checks. The package ships a sysctl.d drop-in and postinst restarts
+# systemd-sysctl, but that does not reliably take effect inside a container, and
+# CI runners default to 65530. This is a global kernel setting, not a namespaced
+# one, so in a privileged container the write lands on the host -- which is what
+# makes it work here and why it is raised rather than lowered.
+ensure_max_map_count() {
+    _want=262144
+    _have=$(cat /proc/sys/vm/max_map_count 2>/dev/null || echo 0)
+    if [ "${_have}" -ge "${_want}" ]; then
+        info "vm.max_map_count=${_have}"
+        return 0
+    fi
+    if sysctl -w vm.max_map_count="${_want}" >/dev/null 2>&1; then
+        info "raised vm.max_map_count from ${_have} to ${_want}"
+        return 0
+    fi
+    echo "FATAL: vm.max_map_count is ${_have} and could not be raised to ${_want}." >&2
+    echo "       The node will fail its bootstrap checks. Run the container with" >&2
+    echo "       --privileged, or set the value on the host before starting." >&2
+    exit 125
+}
+
 mode_of() { stat -c '%a' "$1" 2>/dev/null; }
 owner_of() { stat -c '%U:%G' "$1" 2>/dev/null; }
 
@@ -201,6 +224,7 @@ if [ -e "${WAZUH_DIR}" ] || [ -e "${MARKER}" ]; then
     echo "FATAL: ${WAZUH_DIR} or ${MARKER} already exists; use a clean host" >&2
     exit 125
 fi
+ensure_max_map_count
 ok "clean host, package present, systemd running"
 
 # ---------------------------------------------------------------------------
@@ -209,14 +233,24 @@ ok "clean host, package present, systemd running"
 
 section "1. Installing wazuh-indexer"
 
-# Installed through the package manager rather than with `dpkg -i`, so the
-# Depends/Requires this feature added are resolved rather than assumed. On a
-# minimal image none of openssl, diffutils, iproute2 or procps is present, and
-# an unresolved dependency here is itself a failure worth catching.
+# `dpkg -i` on purpose: that is how the maintainer scripts are exercised the way
+# an operator's own `dpkg -i` would exercise them, and routing the install
+# through apt would hide unpack-time behaviour behind dependency resolution.
+#
+# dpkg resolves nothing, so the declared dependencies go on the host first --
+# read out of the package by the helper beside this script, never hard-coded, so
+# they cannot drift when Depends changes. yum localinstall resolves its own.
 if [ "${PKG_KIND}" = "deb" ]; then
-    DEBIAN_FRONTEND=noninteractive apt-get install -y "${PACKAGE}" >/tmp/install.log 2>&1
+    HERE="$(cd "$(dirname "$0")" && pwd)"
+    if [ -f "${HERE}/install_package_dependencies.sh" ]; then
+        bash "${HERE}/install_package_dependencies.sh" "${PACKAGE}" >/tmp/deps.log 2>&1 \
+            || { fail "could not install the declared dependencies"; tail -5 /tmp/deps.log | sed 's/^/        /'; }
+    else
+        skip "dependency pre-install (install_package_dependencies.sh not beside this script)"
+    fi
+    DEBIAN_FRONTEND=noninteractive dpkg -i "${PACKAGE}" >/tmp/install.log 2>&1
 else
-    yum install -y "${PACKAGE}" >/tmp/install.log 2>&1
+    yum localinstall -y "${PACKAGE}" >/tmp/install.log 2>&1
 fi
 INSTALL_RC=$?
 check_eq "package installs cleanly" "0" "${INSTALL_RC}"
@@ -233,7 +267,9 @@ else
     ok "installer printed no secret"
 fi
 
-# 1.a2 The declared dependencies must actually be on the host now.
+# 1.a2 Everything the resolver needs must be on the host. Since the list came
+# out of the package's own Depends, a miss here means the package under-declares
+# what it needs, not that the test forgot to install something.
 for tool in openssl cmp ip hostname pgrep flock; do
     if command -v "${tool}" >/dev/null 2>&1; then
         ok "dependency provides ${tool}"

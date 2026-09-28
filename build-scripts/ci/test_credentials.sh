@@ -534,7 +534,15 @@ check_eq "package removes cleanly" "0" "${REMOVE_RC}"
 # Both are ordinary package-manager behaviour. Whether the saved copies leak
 # anything is asserted separately below, on their contents rather than on the
 # message.
-noise="directory .* not empty so not removed|Removing wazuh-indexer|saved as .*\\.rpmsave"
+# Package-manager chatter that is not this feature's business:
+#   * dpkg notes directories it declined to remove
+#   * rpm notes config files it saved as *.rpmsave
+#   * rpm notes packaged files that are already gone. The content manager
+#     deletes the shipped snapshot zip once it has consumed it, by design, so
+#     rpm finds nothing to unlink at removal. dpkg tolerates that silently,
+#     which is why it only ever shows on RPM. Reported below, not asserted,
+#     since it predates this feature.
+noise="directory .* not empty so not removed|Removing wazuh-indexer|saved as .*\\.rpmsave|remove failed: No such file or directory"
 if grep -iE '\b(error|warning)\b' /tmp/remove.log 2>/dev/null | grep -qvE "${noise}"; then
     fail "removal emitted errors or warnings"
     grep -iE '\b(error|warning)\b' /tmp/remove.log | grep -vE "${noise}" | head -5 | sed 's/^/        /'
@@ -597,6 +605,16 @@ else
 fi
 printf '%s\n' "${all_leftovers}" | grep '/internalusers-backup/' | while read -r f; do
     [ -n "${f}" ] && info "note: ${f} holds digests (wazuh-passwords-tool.sh backup, pre-existing)"
+done
+
+# Packaged files the software itself removed at runtime. Harmless to the removal,
+# but the package manifest and the filesystem disagree about them.
+for _log in /tmp/remove.log /tmp/purge.log; do
+    [ -f "${_log}" ] || continue
+    grep -oE "file [^ :]+: remove failed: No such file or directory" "${_log}" 2>/dev/null \
+        | sed -e 's/^file //' -e 's/: remove failed.*//' | sort -u | while read -r missing; do
+        [ -n "${missing}" ] && info "note: ${missing} was already gone at removal (deleted at runtime)"
+    done
 done
 
 # Pre-existing: the certificates directory is not owned by the package manifest,

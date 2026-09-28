@@ -3,9 +3,8 @@
 # Wazuh Indexer Default Roles
 # ---------------------------------------------------------------------#
 #
-# Three predefined personas, one self-contained role each:
+# Two predefined personas, one self-contained role each:
 #   dashboard_server - internal service account used by the Wazuh Dashboard
-#   wazuh_readonly   - read-only access
 #   wazuh_manager    - service account for the Wazuh manager (data ingest + content read)
 #
 # Each one is mapped 1:1 to its user in roles_mapping.wazuh.yml. No
@@ -31,112 +30,6 @@ dashboard_server:
       allowed_actions:
         - 'read'
         - 'indices:admin/mappings/get'
-  tenant_permissions: []
-  static: false
-
-# ---------------------------------------------------------------------#
-# wazuh-readonly: read-only user.
-# ---------------------------------------------------------------------#
-wazuh_readonly:
-  reserved: true
-  hidden: false
-  cluster_permissions:
-    - 'cluster_composite_ops_ro'
-    - 'indices:data/read/scroll/clear'
-    - 'cluster_monitor'
-    # AI assistant settings (setup plugin)
-    - 'plugin:wazuh/ai_assistant/settings/read'
-    - 'plugin:content_manager/subscription/get'
-    - 'plugin:content_manager/logtest'
-    - 'plugin:content_manager/logtest/*'
-    - 'plugin:content_manager/promote/get'
-    - 'plugin:content_manager/version/check'
-    - 'cluster:admin/wazuh/securityanalytics/rules/evaluate'
-    # Security Analytics (OpenSearch plugin, read)
-    - 'cluster:admin/opensearch/securityanalytics/alerts/get'
-    - 'cluster:admin/opensearch/securityanalytics/correlationAlerts/get'
-    - 'cluster:admin/opensearch/securityanalytics/correlations/findings'
-    - 'cluster:admin/opensearch/securityanalytics/correlations/list'
-    - 'cluster:admin/opensearch/securityanalytics/correlation/rule/search'
-    - 'cluster:admin/opensearch/securityanalytics/detector/get'
-    - 'cluster:admin/opensearch/securityanalytics/detector/search'
-    - 'cluster:admin/opensearch/securityanalytics/findings/get'
-    - 'cluster:admin/opensearch/securityanalytics/logtype/search'
-    - 'cluster:admin/opensearch/securityanalytics/mapping/get'
-    - 'cluster:admin/opensearch/securityanalytics/mapping/view/get'
-    - 'cluster:admin/opensearch/securityanalytics/rule/get'
-    - 'cluster:admin/opensearch/securityanalytics/rule/search'
-    - 'cluster:admin/opensearch/securityanalytics/rules/categories'
-    - 'cluster:admin/opensearch/securityanalytics/threatintel/alerts/get'
-    - 'cluster:admin/opensearch/securityanalytics/threatintel/iocs/findings/get'
-    - 'cluster:admin/opensearch/securityanalytics/threatintel/iocs/list'
-    - 'cluster:admin/opensearch/securityanalytics/threatintel/monitors/search'
-    - 'cluster:admin/opensearch/securityanalytics/threatintel/sources/get'
-    - 'cluster:admin/opensearch/securityanalytics/threatintel/sources/search'
-    # Alerting (read + acknowledge alerts)
-    - 'cluster:admin/opendistro/alerting/alerts/get'
-    - 'cluster:admin/opendistro/alerting/destination/get'
-    - 'cluster:admin/opendistro/alerting/monitor/get'
-    - 'cluster:admin/opendistro/alerting/monitor/search'
-    - 'cluster:admin/opensearch/alerting/comments/search'
-    - 'cluster:admin/opensearch/alerting/findings/get'
-    - 'cluster:admin/opensearch/alerting/remote/indexes/get'
-    - 'cluster:admin/opensearch/alerting/v2/alerts/get'
-    - 'cluster:admin/opensearch/alerting/v2/monitor/get'
-    - 'cluster:admin/opensearch/alerting/v2/monitor/search'
-    - 'cluster:admin/opensearch/alerting/workflow/get'
-    - 'cluster:admin/opensearch/alerting/workflow_alerts/get'
-    # Anomaly detection (read)
-    - 'cluster:admin/opendistro/ad/detector/info'
-    - 'cluster:admin/opendistro/ad/detector/search'
-    - 'cluster:admin/opendistro/ad/detector/suggest'
-    - 'cluster:admin/opendistro/ad/detector/validate'
-    - 'cluster:admin/opendistro/ad/detectors/get'
-    - 'cluster:admin/opendistro/ad/result/search'
-    - 'cluster:admin/opendistro/ad/result/topAnomalies'
-    - 'cluster:admin/opendistro/ad/tasks/search'
-    # Notifications (read)
-    - 'cluster:admin/opensearch/notifications/channels/get'
-    - 'cluster:admin/opensearch/notifications/features'
-    # Reporting (read + download)
-    - 'cluster:admin/opendistro/reports/definition/get'
-    - 'cluster:admin/opendistro/reports/definition/list'
-    - 'cluster:admin/opendistro/reports/instance/get'
-    - 'cluster:admin/opendistro/reports/instance/list'
-    - 'cluster:admin/opendistro/reports/menu/download'
-    # Index management (read): ISM explain/get, rollup/transform get/search
-    - 'cluster:admin/opendistro/ism/managedindex/explain'
-    - 'cluster:admin/opendistro/ism/policy/get'
-    - 'cluster:admin/opendistro/ism/policy/search'
-    - 'cluster:admin/opendistro/rollup/get'
-    - 'cluster:admin/opendistro/rollup/search'
-    - 'cluster:admin/opendistro/transform/get'
-    - 'cluster:admin/opendistro/transform/search'
-  index_permissions:
-    - index_patterns:
-        - '*'
-        - '.kibana*'
-      allowed_actions:
-        - 'get'
-        - 'read'
-        - 'indices:admin/aliases/get'
-        - 'indices:admin/mappings/get'
-        - 'indices:monitor/*'
-    - index_patterns:
-        - '.wazuh-settings'
-      allowed_actions:
-        - 'read'
-    - index_patterns:
-        - '.wazuh-internal-state'
-      allowed_actions:
-        - 'read'
-    # Content Manager promote preview issues an existence check per
-    # threatintel resource index (indices:admin/exists); read is already
-    # granted via the '*' pattern above.
-    - index_patterns:
-        - 'wazuh-threatintel-*'
-      allowed_actions:
-        - 'indices:admin/exists'
   tenant_permissions: []
   static: false
 

@@ -36,13 +36,32 @@ tmp_dir=${data_dir}/tmp
 mkdir -p ${tmp_dir}
 
 # Set owner
-chown -R ${name}:${name} ${product_dir}
+#
+# The product tree stays root-owned. Root runs bin/resolve-credentials.sh from
+# this script and from the unit's ExecStartPre, and that script sources
+# lib/wazuh-credentials.sh. Group ${name} keeps read and execute -- the
+# tree ships 750/640 -- so the service reads everything and writes nothing.
+chown -R root:${name} ${product_dir}
+
+# Exceptions: the service genuinely writes these at runtime. Everything else
+# under the product tree is read-only to it.
+chown -R ${name}:${name} ${product_dir}/engine
+if [ -d ${product_dir}/plugins/wazuh-indexer-content-manager/snapshots ]; then
+    chown -R ${name}:${name} ${product_dir}/plugins/wazuh-indexer-content-manager/snapshots
+fi
+
 chown -R ${name}:${name} ${config_dir}
 chown -R ${name}:${name} ${log_dir}
 chown -R ${name}:${name} ${data_dir}
 mkdir -p ${pid_dir}
 chown -R ${name}:${name} ${pid_dir}
-chown ${name}:${name} ${defaults_file}
+
+# systemd reads the EnvironmentFile as root, so a service-writable copy lets the
+# service account set variables for the root pre-start step. It carries no
+# secret, so group read is enough.
+chown root:${name} ${defaults_file}
+chmod 0640 ${defaults_file}
+
 chown ${name}:${name} ${tmp_dir}
 
 # Change permissions for Wazuh Engine
@@ -121,12 +140,17 @@ else
             echo " sudo /etc/init.d/${name} start"
         fi
     fi
-    # Create the certs directory and if required, install demo certificates.
-    if [ "$GENERATE_CERTS" = "true" ] && [ -f "${product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh" ]; then
-        echo "### Installing ${name} demo certificates in ${certs_dir}"
-        echo " See demo certs creation log at ${log_dir}/install_demo_certificates.log"
-        bash "${product_dir}/plugins/opensearch-security/tools/install-demo-certificates.sh" >"${log_dir}/install_demo_certificates.log" 2>&1
-        yes | ${product_dir}/jdk/bin/keytool -trustcacerts -keystore ${product_dir}/jdk/lib/security/cacerts -importcert -alias wazuh-root-ca -file ${certs_dir}/root-ca.pem > /dev/null 2>&1
+fi
+
+# Resolve credentials and TLS material.
+if [ -x "${product_dir}/bin/resolve-credentials.sh" ]; then
+    if [ -n "$2" ]; then
+        "${product_dir}/bin/resolve-credentials.sh" --upgrade || true
+    else
+        "${product_dir}/bin/resolve-credentials.sh" --install || true
+        if [ -f "${certs_dir}/root-ca.pem" ]; then
+            yes | ${product_dir}/jdk/bin/keytool -trustcacerts -keystore ${product_dir}/jdk/lib/security/cacerts -importcert -alias wazuh-root-ca -file ${certs_dir}/root-ca.pem > /dev/null 2>&1
+        fi
     fi
 fi
 

@@ -286,6 +286,58 @@ check_eq "service not started by the installer" "inactive" \
 check_eq "service not enabled by the installer" "disabled" \
     "$(systemctl is-enabled wazuh-indexer 2>/dev/null | head -1)"
 
+section "1.0 Ownership: the service account cannot rewrite what root runs"
+
+# Root executes bin/resolve-credentials.sh and sources lib/wazuh-credentials.sh.
+# If the service account owned either, it could have root run its own code.
+for f in "${PRODUCT_DIR}/bin/resolve-credentials.sh" "${PRODUCT_DIR}/lib/wazuh-credentials.sh"; do
+    check_eq "$(basename "${f}") is root-owned" "root:wazuh-indexer" "$(owner_of "${f}")"
+    mode="$(mode_of "${f}")"
+    case "${mode}" in
+        ?[0-7][0-7]) group_digit=$(printf '%s' "${mode}" | cut -c2) ;;
+        *) group_digit="" ;;
+    esac
+    case "${group_digit}" in
+        2|3|6|7) fail "$(basename "${f}") is group-writable (mode ${mode})" ;;
+        "")      fail "$(basename "${f}") has an unreadable mode (${mode})" ;;
+        *)       ok "$(basename "${f}") is not group-writable (mode ${mode})" ;;
+    esac
+done
+
+# systemd reads the EnvironmentFile as root; a service-writable copy would let
+# the service account set variables for the root pre-start step.
+for envfile in /etc/default/wazuh-indexer /etc/sysconfig/wazuh-indexer; do
+    [ -f "${envfile}" ] || continue
+    check_eq "${envfile} is root-owned" "root" "$(stat -c '%U' "${envfile}" 2>/dev/null)"
+    check_eq "${envfile} is 0640" "640" "$(mode_of "${envfile}")"
+done
+
+# Carve-outs: the service genuinely writes these, and the ownership change must
+# not have taken them away.
+for writable in "${PRODUCT_DIR}/engine" \
+                "${PRODUCT_DIR}/plugins/wazuh-indexer-content-manager/snapshots"; do
+    if [ ! -d "${writable}" ]; then
+        skip "$(basename "${writable}") not present in this build"
+        continue
+    fi
+    if runuser -u wazuh-indexer -- test -w "${writable}" 2>/dev/null; then
+        ok "$(basename "${writable}") is still writable by the service account"
+    else
+        fail "$(basename "${writable}") is no longer writable by the service account"
+    fi
+done
+
+# securityadmin.sh is executed via `runuser wazuh-indexer`, so group execute has
+# to survive the owner change.
+sa="${SECURITY_TOOLS}/securityadmin.sh"
+if [ -f "${sa}" ]; then
+    if runuser -u wazuh-indexer -- test -x "${sa}" 2>/dev/null; then
+        ok "securityadmin.sh is executable by the service account"
+    else
+        fail "securityadmin.sh is not executable by the service account (indexer-security-init.sh would fail)"
+    fi
+fi
+
 section "1.1 Auto-generated passwords for the three internal users"
 
 check_eq "credentials.env holds 3 indexer keys" "3" "$(cred_count)"
@@ -481,6 +533,34 @@ mv "${WAZUH_DIR}.moved" "${WAZUH_DIR}"
 admin_pw="$(cred_get WAZUH_INDEXER_ADMIN_PASSWORD)"
 wait_for_cluster admin "${admin_pw}"
 check_eq "admin still authenticates after the restart" "200" "$(api_status admin "${admin_pw}")"
+
+section "1.8b Symlink clobber: a planted .tmp must not redirect a root write"
+
+# /etc/wazuh-indexer and its opensearch-security/ subdir stay service-owned, so
+# the service account can pre-create files there. The resolver runs as root; a
+# fixed, guessable scratch name would let it be pointed at any file on the host.
+SENTINEL=/root/.credentials-sentinel
+printf 'untouched\n' > "${SENTINEL}"
+chmod 600 "${SENTINEL}"
+
+runuser -u wazuh-indexer -- ln -sf "${SENTINEL}" "${INTERNAL_USERS}.tmp" 2>/dev/null
+runuser -u wazuh-indexer -- ln -sf "${SENTINEL}" "${OPENSEARCH_YML}.tmp" 2>/dev/null
+
+if [ -L "${INTERNAL_USERS}.tmp" ] || [ -L "${OPENSEARCH_YML}.tmp" ]; then
+    # Force a full re-resolution so both write paths run.
+    rm -f "${MARKER}"
+    "${PRODUCT_DIR}/bin/resolve-credentials.sh" --prestart >/tmp/symlink.log 2>&1 || true
+
+    if [ "$(cat "${SENTINEL}" 2>/dev/null)" = "untouched" ]; then
+        ok "a planted .tmp symlink did not redirect the resolver's write"
+    else
+        fail "the resolver followed a symlink and overwrote ${SENTINEL}"
+    fi
+    rm -f "${INTERNAL_USERS}.tmp" "${OPENSEARCH_YML}.tmp"
+else
+    skip "symlink clobber (could not pre-create the .tmp paths as the service account)"
+fi
+rm -f "${SENTINEL}"
 
 section "1.9 Rotation with wazuh-passwords-tool.sh"
 

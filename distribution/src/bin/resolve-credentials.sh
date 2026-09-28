@@ -297,6 +297,15 @@ substitute_placeholder() {
     _sp_var="$1"
     _sp_file="$3"
 
+    # This runs as root over a directory the service account owns, so the target
+    # must be a regular file.
+    if [ -L "${_sp_file}" ] || [ ! -f "${_sp_file}" ]; then
+        err "refusing to write ${_sp_file}: not a regular file"
+        return 1
+    fi
+
+    _sp_tmp=$(mktemp "${_sp_file}.XXXXXX") || return 1
+
     WAZUH_INDEXER_DIGEST="$2" awk -v var="${_sp_var}" '
         {
             placeholder = "${" var "}"
@@ -308,10 +317,12 @@ substitute_placeholder() {
             }
             print
         }
-    ' "${_sp_file}" > "${_sp_file}.tmp" || { rm -f "${_sp_file}.tmp"; return 1; }
+    ' "${_sp_file}" > "${_sp_tmp}" || { rm -f "${_sp_tmp}"; return 1; }
 
-    cat "${_sp_file}.tmp" > "${_sp_file}" || { rm -f "${_sp_file}.tmp"; return 1; }
-    rm -f "${_sp_file}.tmp"
+    # cat, not mv: writing through the existing file keeps its inode, ownership
+    # and mode. A mv would hand it mktemp's 0600 and this script's ownership.
+    cat "${_sp_tmp}" > "${_sp_file}" || { rm -f "${_sp_tmp}"; return 1; }
+    rm -f "${_sp_tmp}"
 }
 
 # Writing the digest into internal_users.yml is what "the internal users are initialised" means:
@@ -494,6 +505,13 @@ write_distinguished_names() {
         _wdn_admin=$(openssl x509 -in "${CERTS_DIR}/admin.pem" -noout -subject -nameopt RFC2253 2>/dev/null | sed 's/^subject= *//')
     fi
 
+    if [ -L "${CONFIG_FILE}" ] || [ ! -f "${CONFIG_FILE}" ]; then
+        err "refusing to write ${CONFIG_FILE}: not a regular file"
+        return 1
+    fi
+
+    _wdn_tmp=$(mktemp "${CONFIG_FILE}.XXXXXX") || return 1
+
     WAZUH_NODE_DN="${_wdn_node}" WAZUH_ADMIN_DN="${_wdn_admin}" awk '
         BEGIN { skip = 0 }
         /^plugins\.security\.nodes_dn[[:space:]]*:/ {
@@ -510,7 +528,12 @@ write_distinguished_names() {
         }
         skip && /^[[:space:]]*#?[[:space:]]*-[[:space:]]/ { next }
         { skip = 0; print }
-    ' "${CONFIG_FILE}" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "${CONFIG_FILE}"
+    ' "${CONFIG_FILE}" > "${_wdn_tmp}" || { rm -f "${_wdn_tmp}"; return 1; }
+
+    # Written back through the original file rather than moved over it, so the
+    # mode and ownership the package set survive.
+    cat "${_wdn_tmp}" > "${CONFIG_FILE}" || { rm -f "${_wdn_tmp}"; return 1; }
+    rm -f "${_wdn_tmp}"
 
     chown wazuh-indexer:wazuh-indexer "${CONFIG_FILE}" 2>/dev/null || true
     log "node DN ${_wdn_node}"

@@ -100,7 +100,7 @@ fi
 mkdir -p %{buildroot}%{config_dir}/opensearch-reports-scheduler
 
 # Build a filelist to be included in the %files section
-echo '%defattr(640, %{name}, %{name}, 750)' > filelist.txt
+echo '%defattr(640, root, %{name}, 750)' > filelist.txt
 find %{buildroot} -type d >> filelist.txt
 sed -i 's|%{buildroot}|%%dir |' filelist.txt
 find %{buildroot} -type f >> filelist.txt
@@ -404,7 +404,7 @@ fi
 exit 0
 
 %files -f %{_topdir}/filelist.txt
-%defattr(640, %{name}, %{name}, 750)
+%defattr(640, root, %{name}, 750)
 
 %doc %{product_dir}/NOTICE.txt
 %doc %{product_dir}/README.md
@@ -417,7 +417,7 @@ exit 0
 %attr(0644, root, root) %config(noreplace) %{_prefix}/lib/tmpfiles.d/%{name}.conf
 
 # Configuration files
-%config(noreplace) %attr(0660, root, %{name}) "%{_sysconfdir}/sysconfig/%{name}"
+%config(noreplace) %attr(0640, root, %{name}) "%{_sysconfdir}/sysconfig/%{name}"
 %config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/log4j2.properties
 %config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/jvm.options
 %config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/opensearch.yml
@@ -426,6 +426,11 @@ exit 0
 %if %reportsscheduler_plugin
 %config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/opensearch-reports-scheduler/reports-scheduler.yml
 %endif
+
+# Carve-out: the content manager deletes the shipped snapshot once it has
+# consumed it, which needs write on this directory. Everything else under the
+# product tree is read-only to the service account.
+%dir %attr(750, %{name}, %{name}) %{product_dir}/plugins/wazuh-indexer-content-manager/snapshots
 
 # Wazuh Engine
 %dir %attr(750, %{name}, %{name}) %{product_dir}/engine
@@ -442,13 +447,13 @@ exit 0
 %attr(-, %{name}, %{name}) %{product_dir}/engine/README.md
 
 # Files that need other permissions
-%attr(440, %{name}, %{name}) %{product_dir}/VERSION.json
-%attr(740, %{name}, %{name}) %{product_dir}/plugins/opensearch-security/tools/*.sh
-%attr(750, %{name}, %{name}) %{product_dir}/tools/*.sh
-%attr(750, %{name}, %{name}) %{product_dir}/bin/*
-%attr(750, %{name}, %{name}) %{product_dir}/jdk/bin/*
-%attr(750, %{name}, %{name}) %{product_dir}/jdk/lib/jspawnhelper
-%attr(750, %{name}, %{name}) %{product_dir}/jdk/lib/modules
+%attr(440, root, %{name}) %{product_dir}/VERSION.json
+%attr(750, root, %{name}) %{product_dir}/plugins/opensearch-security/tools/*.sh
+%attr(750, root, %{name}) %{product_dir}/tools/*.sh
+%attr(750, root, %{name}) %{product_dir}/bin/*
+%attr(750, root, %{name}) %{product_dir}/jdk/bin/*
+%attr(750, root, %{name}) %{product_dir}/jdk/lib/jspawnhelper
+%attr(750, root, %{name}) %{product_dir}/jdk/lib/modules
 
 # Preserve service state flag across upgrade
 %ghost %attr(440, %{name}, %{name}) %{config_dir}/.was_active

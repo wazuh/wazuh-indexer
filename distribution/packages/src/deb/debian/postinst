@@ -36,13 +36,32 @@ tmp_dir=${data_dir}/tmp
 mkdir -p ${tmp_dir}
 
 # Set owner
-chown -R ${name}:${name} ${product_dir}
+#
+# The product tree stays root-owned. Root runs bin/resolve-credentials.sh from
+# this script and from the unit's ExecStartPre, and that script sources
+# lib/wazuh-credentials.sh. Group ${name} keeps read and execute -- the
+# tree ships 750/640 -- so the service reads everything and writes nothing.
+chown -R root:${name} ${product_dir}
+
+# Exceptions: the service genuinely writes these at runtime. Everything else
+# under the product tree is read-only to it.
+chown -R ${name}:${name} ${product_dir}/engine
+if [ -d ${product_dir}/plugins/wazuh-indexer-content-manager/snapshots ]; then
+    chown -R ${name}:${name} ${product_dir}/plugins/wazuh-indexer-content-manager/snapshots
+fi
+
 chown -R ${name}:${name} ${config_dir}
 chown -R ${name}:${name} ${log_dir}
 chown -R ${name}:${name} ${data_dir}
 mkdir -p ${pid_dir}
 chown -R ${name}:${name} ${pid_dir}
-chown ${name}:${name} ${defaults_file}
+
+# systemd reads the EnvironmentFile as root, so a service-writable copy lets the
+# service account set variables for the root pre-start step. It carries no
+# secret, so group read is enough.
+chown root:${name} ${defaults_file}
+chmod 0640 ${defaults_file}
+
 chown ${name}:${name} ${tmp_dir}
 
 # Change permissions for Wazuh Engine

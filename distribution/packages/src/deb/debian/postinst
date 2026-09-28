@@ -123,15 +123,7 @@ else
     fi
 fi
 
-# Resolve credentials and TLS material, in whichever mode this invocation is.
-# The installer creates; it never checks and never starts, and it never fails:
-# aborting here would leave the package half-configured and break
-# `apt install -f`. Unresolved material is not reported either -- the answer
-# changes between install and start, and only the answer at start matters.
-#
-# --upgrade is not --install: it fills in values this host never had, but it
-# does not re-examine or reissue certificates, because an operator who replaced
-# the shipped pair with their own PKI must not find it touched by an upgrade.
+# Resolve credentials and TLS material.
 if [ -x "${product_dir}/bin/resolve-credentials.sh" ]; then
     if [ -n "$2" ]; then
         "${product_dir}/bin/resolve-credentials.sh" --upgrade || true

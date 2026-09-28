@@ -23,15 +23,11 @@ plugins.security.ssl.http.enabled: true
 transport.ssl.enforce_hostname_verification: true
 transport.ssl.resolve_hostname: false
 
-# TODO keep clear and move to documentation.
-# Filled in by resolve-credentials.sh with the DN of the admin certificate it issues. No DN
-# is shipped: a distinguished name every installation carries is a name any node under a shared CA
-# could present, which is the same defect as the wildcard SAN this replaces.
+# Filled in by resolve-credentials.sh with the DN of the admin certificate.
 plugins.security.authcz.admin_dn:
 plugins.security.check_snapshot_restore_write_privileges: true
 plugins.security.enable_snapshot_restore_privilege: true
-# Filled in with the DN of this node's own certificate, for the same reason. Add the other nodes'
-# DNs here when forming a cluster.
+# Filled in by resolve-credentials.sh with the DN of this node's own certificate.
 plugins.security.nodes_dn:
 plugins.security.restapi.roles_enabled:
 - "all_access"

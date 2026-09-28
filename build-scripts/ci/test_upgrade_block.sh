@@ -27,10 +27,7 @@ case "$PACKAGE_MANAGER" in
         set -e
         ;;
     deb)
-        # The assertion is on the preinst's version banner, which fires at
-        # unpack. Put the declared dependencies on the host first so a missing
-        # one cannot fail the install for the wrong reason and still look like
-        # a pass.
+        # Install declared dependencies on the host first.
         bash "$(dirname "$0")/install_package_dependencies.sh" \
             "/artifacts/dist/${PACKAGE_NAME}" || true
 

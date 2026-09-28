@@ -221,16 +221,9 @@ chown %{name}:%{name} %{data_dir}/tmp
 chown -R %{name}:%{name} %{config_dir}
 chown -R %{name}:%{name} %{log_dir}
 
-# Resolve credentials and TLS material. The installer creates; it never checks
-# and never starts, and it never fails: aborting here would leave the package
-# half-configured and fail image builds. Unresolved material is not reported
-# either -- the answer changes between install and start, and only the answer at
-# start matters.
+# Resolve credentials and TLS material.
 #
-# $1 is 1 on a fresh install and greater on an upgrade. --upgrade is not
-# --install: it fills in values this host never had, but it does not re-examine
-# or reissue certificates, because an operator who replaced the shipped pair
-# with their own PKI must not find it touched by an upgrade.
+# $1 is 1 on a fresh install and greater on an upgrade.
 if [ -x %{product_dir}/bin/resolve-credentials.sh ]; then
     if [ $1 -gt 1 ]; then
         %{product_dir}/bin/resolve-credentials.sh --upgrade || true

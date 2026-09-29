@@ -268,6 +268,26 @@ mark_complete() {
 # Nothing here is consumed, so nothing here can reach step 3.
 # -----------------------------------------------------------------------------------------
 
+# Which account in internal_users.yml each key is the password for. The mapping is fixed at build
+# time: add_configuration_files() in build-scripts/assemble.sh writes these same placeholders into
+# the file the package ships.
+account_for() {
+    case "$1" in
+        WAZUH_INDEXER_ADMIN_PASSWORD)        printf '%s' "admin" ;;
+        WAZUH_INDEXER_KIBANASERVER_PASSWORD) printf '%s' "kibanaserver" ;;
+        WAZUH_INDEXER_MANAGER_PASSWORD)      printf '%s' "wazuh-manager" ;;
+        *) return 1 ;;
+    esac
+}
+
+# True while the account is still waiting for its digest -- or is not in this build's file at all,
+# which is nothing to wait for and nothing to contradict.
+placeholder_is_pending() {
+    _pip_account=$(account_for "$1") || return 0
+    grep -q "^${_pip_account}:" "${INTERNAL_USERS}" 2>/dev/null || return 0
+    grep -qF "\${${1}}" "${INTERNAL_USERS}" 2>/dev/null
+}
+
 # Bcrypt one password with the security plugin's own tool, so the digest matches what the plugin
 # expects without this script knowing anything about cost factors or formats.
 #
@@ -325,6 +345,57 @@ substitute_placeholder() {
     rm -f "${_sp_tmp}"
 }
 
+# The inverse of substitute_placeholder: put ${NAME} back where a digest was written, so the entry
+# is once again the one the package shipped. Only --clear does this.
+#
+# It rewrites the whole hash line inside the account's block rather than searching for the digest,
+# because by then the digest is the one thing we cannot name: it was derived from a password the
+# credentials file no longer holds. Same guards as the forward direction -- a regular file only,
+# written through the original inode so the ownership and mode the package set survive.
+restore_placeholder() {
+    _rp_account="$1"
+    _rp_var="$2"
+    _rp_file="$3"
+
+    if [ -L "${_rp_file}" ] || [ ! -f "${_rp_file}" ]; then
+        err "refusing to write ${_rp_file}: not a regular file"
+        return 1
+    fi
+
+    # Already the shipped form: never resolved, or cleared before.
+    grep -qF "hash: \"\${${_rp_var}}\"" "${_rp_file}" && return 0
+
+    _rp_tmp=$(mktemp "${_rp_file}.XXXXXX") || return 1
+
+    awk -v key="${_rp_account}" -v var="${_rp_var}" '
+        substr($0, 1, length(key) + 1) == key ":" { inblock = 1; seen = 1; print; next }
+        /^[^[:space:]]/ { inblock = 0 }
+        inblock && /^[[:space:]]*hash:[[:space:]]/ {
+            match($0, /^[[:space:]]*/)
+            print substr($0, 1, RLENGTH) "hash: \"${" var "}\""
+            restored = 1
+            next
+        }
+        { print }
+        END { if (!seen) exit 3; if (!restored) exit 1 }
+    ' "${_rp_file}" > "${_rp_tmp}"
+    _rp_status=$?
+
+    # 3: no such account in this build. Nothing was ever resolved into it, so nothing to undo.
+    if [ "${_rp_status}" -eq 3 ]; then
+        rm -f "${_rp_tmp}"
+        return 0
+    fi
+    if [ "${_rp_status}" -ne 0 ]; then
+        rm -f "${_rp_tmp}"
+        err "could not rewrite the ${_rp_account} entry of ${_rp_file}"
+        return 1
+    fi
+
+    cat "${_rp_tmp}" > "${_rp_file}" || { rm -f "${_rp_tmp}"; return 1; }
+    rm -f "${_rp_tmp}"
+}
+
 # Writing the digest into internal_users.yml is what "the internal users are initialised" means:
 # the accounts exist in this node's own security configuration, with passwords only this
 # installation has.
@@ -342,7 +413,10 @@ write_user_hash() {
         return 1
     fi
 
-    # Already substituted on an earlier run, or an account this build does not ship.
+    # Already substituted on an earlier run of this same installation -- in which case the value
+    # being written is the one that run published, so the digest already in the file is its digest
+    # -- or an account this build does not ship. The third way to get here, a digest with nothing
+    # supplying its password any more, is caught by the caller before anything is generated.
     grep -q "\${${_wuh_key}}" "${INTERNAL_USERS}" || return 0
 
     _wuh_digest=$(hash_password "$2") || {
@@ -381,7 +455,28 @@ resolve_internal_users() {
             fi
             log "using the supplied ${_riu_key}"
         else
-            # We own the account, so generating the value makes it true.
+            # We own the account, so generating the value makes it true -- but only while the digest
+            # side can still be written. A digest already sitting where the placeholder was, with
+            # nothing supplying the password any more, is a node whose two halves have been
+            # separated: something took the marker away and left the digests behind. Generating
+            # here would publish a password that authenticates against nothing while the entry kept
+            # a digest nobody holds, and the two would only be seen to disagree much later, as a
+            # 401 with nothing to connect it to.
+            #
+            # So the key is skipped rather than failed. The digest in the file is a working
+            # credential for whoever set it -- an upgrade from a version that predates this
+            # mechanism arrives exactly like this -- and refusing to start a node over it would
+            # take away more than it protects. Nothing is written, nothing is published, and the
+            # operator is told which one tool puts the two halves back together.
+            if ! placeholder_is_pending "${_riu_key}"; then
+                err "${_riu_key}: internal_users.yml already holds a digest and nothing supplies the password"
+                err "        leaving both alone. This node keeps the credential it has; nothing is published"
+                err "        for the other components. To resolve it from nothing, stop the service and run"
+                err "        ${DIR}/bin/resolve-credentials.sh --clear; to set a password, use"
+                err "        ${SECURITY_TOOLS}/wazuh-passwords-tool.sh"
+                continue
+            fi
+
             _riu_value=$(wazuh_password_generate) || {
                 err "could not generate ${_riu_key}"
                 mark_unresolved "${_riu_key}"
@@ -632,10 +727,44 @@ indexer_is_running() {
     return 1
 }
 
+# A digest in internal_users.yml and the password in the credentials file are one credential in two
+# halves. Taking back only the published half is what leaves a node holding new passwords and the
+# old digests: the next resolution generates, publishes, finds no placeholder to write into, and
+# says nothing, because a missing placeholder is also how an account this build does not ship looks.
+restore_internal_users() {
+    if [ ! -f "${INTERNAL_USERS}" ]; then
+        log "no ${INTERNAL_USERS}; no digests to take back"
+        return 0
+    fi
+
+    _ciu_failed=""
+    for _ciu_key in ${OWNED_KEYS}; do
+        _ciu_account=$(account_for "${_ciu_key}") || continue
+        restore_placeholder "${_ciu_account}" "${_ciu_key}" "${INTERNAL_USERS}" \
+            || _ciu_failed="${_ciu_failed} ${_ciu_account}"
+    done
+
+    if [ -n "${_ciu_failed}" ]; then
+        err "could not restore the placeholders for:${_ciu_failed}"
+        return 1
+    fi
+
+    log "restored the password placeholders in internal_users.yml"
+}
+
 clear_credentials() {
     if indexer_is_running; then
         err "refusing to clear credentials while the indexer is running"
         err "        stop it first: systemctl stop wazuh-indexer"
+        return 1
+    fi
+
+    # First, and fatal. Everything else here is a removal, and a removal that half-completed can
+    # simply be run again; this cannot. Once the published passwords are gone, nothing is left to
+    # say which passwords the digests belong to. So if the digests cannot be taken back, nothing
+    # else is touched either.
+    if ! restore_internal_users; then
+        err "        nothing was cleared; fix the file above and run --clear again"
         return 1
     fi
 
@@ -665,7 +794,15 @@ clear_credentials() {
     done
     log "removed the indexer's published keys from the credentials file"
 
-    log "cleared; the next start resolves from nothing"
+    # Passwords come back on their own; certificates do not. Issuing them is the one thing only
+    # --install does, so say so here rather than let it surface as a node that will not start.
+    log "cleared; the next start resolves the passwords again"
+    log "        certificates are issued by --install only: reinstall the package, stage a pair in"
+    log "        ${CERTS_DIR}, or run this script with --install before starting the service"
+    # The cluster keeps the configuration it was last given, so on a node that has already been
+    # initialised the new digests are only local until someone uploads them.
+    log "        a cluster already holding the previous configuration takes the new passwords from"
+    log "        ${DIR}/bin/indexer-security-init.sh, once the node is up"
     return 0
 }
 

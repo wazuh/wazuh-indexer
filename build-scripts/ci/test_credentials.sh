@@ -174,6 +174,33 @@ ensure_max_map_count() {
     exit 125
 }
 
+# What internal_users.yml currently holds for one account: a bcrypt digest once
+# it is resolved, the ${NAME} placeholder before that and after --clear.
+hash_of() {
+    awk -v u="$1" '
+        substr($0, 1, length(u) + 1) == u ":" { f = 1; next }
+        /^[^[:space:]]/ { f = 0 }
+        f && /hash:/ {
+            sub(/^[[:space:]]*hash:[[:space:]]*"?/, "")
+            sub(/"$/, "")
+            print
+            exit
+        }
+    ' "${INTERNAL_USERS}"
+}
+
+have_bcrypt() { command -v python3 >/dev/null 2>&1 && python3 -c 'import bcrypt' 2>/dev/null; }
+
+# digest_verifies <digest> <password>. $2y$ is bcrypt's PHP variant tag; the
+# algorithm is the one python-bcrypt calls $2b$, and it refuses the tag it does
+# not know rather than the hash.
+digest_verifies() {
+    HS="$1" PW="$2" python3 -c 'import bcrypt,os,sys; sys.exit(0 if bcrypt.checkpw(os.environ["PW"].encode(), os.environ["HS"].replace("$2y$","$2b$").encode()) else 1)' 2>/dev/null
+}
+
+# The account/key pairs this package owns, as "<account>:<KEY>".
+OWNED_PAIRS="admin:WAZUH_INDEXER_ADMIN_PASSWORD kibanaserver:WAZUH_INDEXER_KIBANASERVER_PASSWORD wazuh-manager:WAZUH_INDEXER_MANAGER_PASSWORD"
+
 mode_of() { stat -c '%a' "$1" 2>/dev/null; }
 owner_of() { stat -c '%U:%G' "$1" 2>/dev/null; }
 
@@ -435,14 +462,10 @@ done
 check "wazuh-readonly is gone" bash -c "! grep -q '^wazuh-readonly:' '${INTERNAL_USERS}'"
 
 # Each digest must actually verify against the password that was published.
-if command -v python3 >/dev/null 2>&1 && python3 -c 'import bcrypt' 2>/dev/null; then
-    for pair in "admin:WAZUH_INDEXER_ADMIN_PASSWORD" \
-                "kibanaserver:WAZUH_INDEXER_KIBANASERVER_PASSWORD" \
-                "wazuh-manager:WAZUH_INDEXER_MANAGER_PASSWORD"; do
+if have_bcrypt; then
+    for pair in ${OWNED_PAIRS}; do
         u="${pair%%:*}"; k="${pair##*:}"
-        h=$(awk -v u="^${u}:" '$0 ~ u {f=1; next} /^[^[:space:]]/ {f=0} f && /hash:/ {gsub(/.*hash: *"|"$/,""); print; exit}' "${INTERNAL_USERS}")
-        p="$(cred_get "${k}")"
-        if PW="$p" HS="$h" python3 -c 'import bcrypt,os,sys; sys.exit(0 if bcrypt.checkpw(os.environ["PW"].encode(), os.environ["HS"].replace("$2y$","$2b$").encode()) else 1)' 2>/dev/null; then
+        if digest_verifies "$(hash_of "${u}")" "$(cred_get "${k}")"; then
             ok "${u} digest verifies against its published password"
         else
             fail "${u} digest does NOT match its published password"
@@ -598,6 +621,105 @@ else
     wait_for_cluster admin "${NEW_PW}"
     got=$(api_status admin "${NEW_PW}")
     check_eq "the rotated password survives a restart" "200" "${got}"
+fi
+
+section "1.10 --clear takes back both halves of every credential"
+
+# A password lives in two places at once: published in credentials.env for the
+# sibling components, and bcrypted into internal_users.yml for the node itself.
+# They only mean anything together. --clear taking back the published half while
+# leaving the digest behind is silent: the next resolution generates a new
+# password, publishes it, then finds no ${NAME} placeholder to write the digest
+# into -- which is also how an account the build does not ship looks -- and says
+# so in neither log. The node ends up advertising passwords that authenticate
+# against nothing.
+#
+# This phase leaves the node unable to start: --clear removes the certificates
+# and only --install issues them, so it is placed last, after every check that
+# needs a running node. It hands the host back fully resolved for the removal
+# phase that follows.
+
+systemctl stop wazuh-indexer >/dev/null 2>&1
+
+RESOLVER="${PRODUCT_DIR}/bin/resolve-credentials.sh"
+
+if [ ! -x "${RESOLVER}" ]; then
+    skip "resolve-credentials.sh is not shipped in this package"
+else
+    "${RESOLVER}" --clear >/tmp/clear.log 2>&1
+    check_eq "--clear succeeds" "0" "$?"
+
+    for pair in ${OWNED_PAIRS}; do
+        u="${pair%%:*}"; k="${pair##*:}"
+        check_eq "${u} is back to its \${NAME} placeholder" "\${${k}}" "$(hash_of "${u}")"
+    done
+
+    check_eq "the indexer's published passwords are gone" "0" "$(cred_count)"
+    check "the state file is gone" bash -c "[ ! -e '${MARKER}' ]"
+    check "the certificates are gone" bash -c "[ ! -e '${CERTS_DIR}/indexer.pem' ]"
+    check "the bootstrap CA is gone" bash -c "[ ! -e '${CA_DIR}/root-ca.key' ]"
+
+    if command -v python3 >/dev/null 2>&1 && python3 -c 'import yaml' 2>/dev/null; then
+        check "internal_users.yml is still valid YAML" \
+            python3 -c "import yaml; yaml.safe_load(open('${INTERNAL_USERS}'))"
+    else
+        skip "YAML validation of internal_users.yml (python3-yaml not installed)"
+    fi
+    check "the other entries are untouched" grep -q '^_meta:' "${INTERNAL_USERS}"
+
+    # The defect as reported: passwords are generated and published, but never
+    # reach internal_users.yml.
+    "${RESOLVER}" --prestart >/tmp/reresolve.log 2>&1
+    check_eq "--prestart after --clear succeeds" "0" "$?"
+    check_eq "three passwords published again" "3" "$(cred_count)"
+
+    digests=$(grep -cE 'hash: "\$2[aby]\$[0-9]{2}\$' "${INTERNAL_USERS}" 2>/dev/null | head -1)
+    check_eq "three digests written again" "3" "${digests:-0}"
+
+    if have_bcrypt; then
+        for pair in ${OWNED_PAIRS}; do
+            u="${pair%%:*}"; k="${pair##*:}"
+            if digest_verifies "$(hash_of "${u}")" "$(cred_get "${k}")"; then
+                ok "${u} digest matches the password published after --clear"
+            else
+                fail "${u} digest does NOT match the password published after --clear"
+            fi
+        done
+    else
+        skip "bcrypt verification after --clear (python3-bcrypt not installed)"
+    fi
+
+    # A digest with nothing left to supply its password is the state --clear used
+    # to produce, and it is also how an upgrade from a version that predates this
+    # mechanism arrives. Resolution must not publish a new password over it: the
+    # two halves would disagree, and the operator would meet it as a 401 months
+    # later with nothing to connect it to. It must not refuse to start the node
+    # either -- the digest is a working credential for whoever set it.
+    rm -f "${MARKER}"
+    kept=$(hash_of admin)
+    cp -a "${CREDENTIALS}" /tmp/credentials.env.saved
+    rm -f "${CREDENTIALS}"
+    for mode in --upgrade --prestart; do
+        out=$("${RESOLVER}" "${mode}" 2>&1); rc=$?
+        check_eq "${mode} succeeds over a digest nothing supplies any more" "0" "${rc}"
+        check_eq "${mode} leaves the digest alone" "${kept}" "$(hash_of admin)"
+        check_eq "${mode} publishes nothing over it" "0" "$(cred_count)"
+        case "${out}" in
+            *--clear*) ok "${mode} names the way out" ;;
+            *) fail "${mode} does not say how to recover" ;;
+        esac
+        rm -f "${MARKER}"
+    done
+    cp -a /tmp/credentials.env.saved "${CREDENTIALS}"
+
+    # Hand the host back fully resolved: the removal phase asserts on the CA and
+    # on the published keys, and --install is the only mode that issues
+    # certificates.
+    "${RESOLVER}" --clear >/dev/null 2>&1
+    "${RESOLVER}" --install >/dev/null 2>&1
+    check "certificates are reissued by --install" test -f "${CERTS_DIR}/indexer.pem"
+    check "the CA is back" test -f "${CA_DIR}/root-ca.pem"
+    check_eq "three passwords published" "3" "$(cred_count)"
 fi
 
 # ---------------------------------------------------------------------------

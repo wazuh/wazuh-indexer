@@ -405,6 +405,18 @@ section "1.2 Auto-generated certificates"
 for f in root-ca.pem indexer.pem indexer-key.pem admin.pem admin-key.pem; do
     check "certs/${f} exists" test -f "${CERTS_DIR}/${f}"
 done
+
+# Assert certificates permissions.
+for f in root-ca.pem indexer.pem indexer-key.pem admin.pem admin-key.pem; do
+    [ -f "${CERTS_DIR}/${f}" ] || continue
+    _m=$(mode_of "${CERTS_DIR}/${f}")
+    case "${_m}" in
+        ?00) ok "certs/${f} is owner-only (mode ${_m})" ;;
+        *)   fail "certs/${f} is readable by group or others (mode ${_m}); the plugin warns on every start" ;;
+    esac
+    check_eq "certs/${f} is owned by the service account" "wazuh-indexer:wazuh-indexer" \
+        "$(owner_of "${CERTS_DIR}/${f}")"
+done
 check "indexer.pem chains to the CA" \
     openssl verify -CAfile "${CA_DIR}/root-ca.pem" "${CERTS_DIR}/indexer.pem"
 check "admin.pem chains to the CA" \

@@ -655,8 +655,10 @@ resolve_certificates() {
 
     mkdir -p "${CERTS_DIR}"
 
+    # root-ca.pem mode is 0400 and service-owned.
     if [ -f "${_rc_ca}/root-ca.pem" ]; then
-        install -m 0444 "${_rc_ca}/root-ca.pem" "${CERTS_DIR}/root-ca.pem"
+        install -m 0400 "${_rc_ca}/root-ca.pem" "${CERTS_DIR}/root-ca.pem"
+        chown wazuh-indexer:wazuh-indexer "${CERTS_DIR}/root-ca.pem" 2>/dev/null || true
     fi
 
     # C: an operator staged an issued pair before installing. That is step 0, which is why there is

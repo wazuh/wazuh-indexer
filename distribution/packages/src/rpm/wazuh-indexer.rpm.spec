@@ -309,6 +309,20 @@ if [ $1 = 0 ]; then
         chmod 600 %{data_dir}/.wazuh-credentials.sh 2>/dev/null || true
     fi
 
+    # Record the directories opensearch.yml points the node at. %postun hands
+    # the files the service account owns in them over to root before it deletes
+    # the account, and by then opensearch.yml is gone or saved as .rpmsave.
+    # bin/ListDataPaths.java reads it with OpenSearch's own settings loader. When
+    # it cannot say for certain, the record says so, and %postun keeps the
+    # account rather than guess.
+    mkdir -p %{data_dir}
+    if ! timeout 120 %{product_dir}/jdk/bin/java -Xmx128m -XX:+UseSerialGC \
+            -cp "%{product_dir}/lib/*" %{product_dir}/bin/ListDataPaths.java \
+            %{config_dir}/opensearch.yml > %{data_dir}/.data-paths 2>/dev/null; then
+        echo "unknown" > %{data_dir}/.data-paths
+    fi
+    chmod 600 %{data_dir}/.data-paths 2>/dev/null || true
+
     # Stop wazuh-indexer service
     if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1 && systemctl is-active %{name}.service > /dev/null 2>&1; then
         echo "Stop existing %{name}.service"
@@ -396,19 +410,80 @@ if [ $1 -eq 0 ]; then
     rm -f %{config_dir}/opensearch-security/internal_users.yml.rpmsave \
           %{config_dir}/opensearch.yml.rpmsave
 
-    # %post delete the tmp directory, indexed data is never deleted.
+    # The default directories, plus the ones %preun read from opensearch.yml. A
+    # missing record, or one %preun could not complete, means %postun cannot tell
+    # where the node kept its files.
+    record=%{data_dir}/.data-paths
+    paths_known=false
+    if [ -f "${record}" ] && ! grep -qv '^/' "${record}"; then
+        paths_known=true
+    fi
+    dirs=$(printf '%%s\n' %{config_dir} %{data_dir} %{log_dir} %{product_dir} %{pid_dir}
+           grep '^/' "${record}" 2>/dev/null || true)
+    dirs=$(printf '%%s\n' "${dirs}" | awk '!seen[$0]++')
+    rm -f "${record}"
+
+    # %post creates the tmp directory, so it is not in the file list and rpm
+    # would leave it. The data directory itself only goes if nothing else is
+    # left in it: indexed data is never deleted here.
     rm -rf %{data_dir}/tmp
     rmdir %{data_dir} > /dev/null 2>&1 || true
 
-    # %pre creates the service account, so it is ours to take back. userdel
-    # may already have dropped the group along with the user (USERGROUPS_ENAB),
-    # hence the second lookup.
+    # Hand every file the service account owns over to root, with group and
+    # other access stripped, before the account goes. userdel frees the UID, and
+    # the next system account created would inherit it -- and with it the
+    # certificates, the keystore, the logs and the indexed data left behind.
+    # Nothing is deleted: %post takes the default directories back with chown -R
+    # on a reinstall. find -P and chown -h act on links themselves and chmod
+    # never sees one, so a link the account planted cannot aim any of this at
+    # another file.
+    not_handed_over=""
     if getent passwd %{name} > /dev/null 2>&1; then
-        userdel %{name} > /dev/null 2>&1 || true
+        while IFS= read -r dir; do
+            case "${dir}" in /?*) ;; *) continue ;; esac
+            [ -d "${dir}" ] || continue
+            dir_ok=true
+            find -P "${dir}" -user %{name} \
+                \( -type l -o -exec chmod go-rwx {} + \) \
+                -exec chown -h root:root {} + 2>/dev/null || dir_ok=false
+            find -P "${dir}" -group %{name} \
+                \( -type l -o -exec chmod g-rwx {} + \) \
+                -exec chgrp -h root {} + 2>/dev/null || dir_ok=false
+            if [ "${dir_ok}" = false ]; then
+                not_handed_over="${not_handed_over} ${dir}"
+                continue
+            fi
+            case "${dir}" in
+                %{config_dir}|%{data_dir}|%{log_dir}|%{product_dir}|%{pid_dir}) ;;
+                *) echo "${dir} now belongs to root. Before a new %{name} installation uses it, run: chown -R %{name}:%{name} ${dir}" ;;
+            esac
+        done <<EOF
+${dirs}
+EOF
     fi
-    if getent group %{name} > /dev/null 2>&1; then
-        groupdel %{name} > /dev/null 2>&1 || true
+
+    # %pre creates the service account, so it is ours to take back -- but only
+    # once nothing on disk still carries its UID. userdel may already have
+    # dropped the group along with the user (USERGROUPS_ENAB), hence the second
+    # lookup.
+    if [ "${paths_known}" = false ]; then
+        echo "Could not read where opensearch.yml kept data, logs and snapshots; keeping the %{name} user and group so their IDs are not reused." >&2
+    elif [ -n "${not_handed_over}" ]; then
+        echo "Some files owned by %{name} under${not_handed_over} could not be handed over to root; keeping the %{name} user and group so their IDs are not reused." >&2
+    else
+        if getent passwd %{name} > /dev/null 2>&1; then
+            userdel %{name} > /dev/null 2>&1 || true
+        fi
+        if getent group %{name} > /dev/null 2>&1; then
+            groupdel %{name} > /dev/null 2>&1 || true
+        fi
     fi
+
+    for dir in %{config_dir} %{data_dir} %{log_dir}; do
+        if [ -d "${dir}" ]; then
+            echo "Kept ${dir}, now owned by root. Reinstalling %{name} takes it back."
+        fi
+    done
 
     # Make systemd forget the unit, now that its file is gone
     if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then

@@ -13,7 +13,10 @@ set -e
 
 name="wazuh-indexer"
 product_dir=/usr/share/${name}
+config_dir=/etc/${name}
 data_dir=/var/lib/${name}
+log_dir=/var/log/${name}
+pid_dir=/run/${name}
 
 case "$1" in
     remove|purge)
@@ -65,19 +68,81 @@ case "$1" in
             # outer case would delete it before the branch that needs it runs.
             rm -f /var/lib/${name}/.wazuh-credentials.sh
 
-            # delete the tmp directory, indexed data is never deleted here.
+            # The default directories, plus the ones prerm read from opensearch.yml
+            # before dpkg deleted it. A missing record, or one prerm could not
+            # complete, means the purge cannot tell where the node kept its files.
+            record="${data_dir}/.data-paths"
+            paths_known=false
+            if [ -f "${record}" ] && ! grep -qv '^/' "${record}"; then
+                paths_known=true
+            fi
+            dirs=$(printf '%s\n' "${config_dir}" "${data_dir}" "${log_dir}" \
+                       "${product_dir}" "${pid_dir}"
+                   grep '^/' "${record}" 2>/dev/null || true)
+            dirs=$(printf '%s\n' "${dirs}" | awk '!seen[$0]++')
+            rm -f "${record}"
+
+            # postinst creates the tmp directory, so it is not in the dpkg file
+            # list and dpkg would leave it. The data directory itself only goes
+            # if nothing else is left in it: indexed data is never deleted here.
             rm -rf "${data_dir}/tmp"
             rmdir "${data_dir}" > /dev/null 2>&1 || true
 
-            # preinst creates the service account, so it is ours to take back.
-            # userdel may already have dropped the group along with the user
-            # (USERGROUPS_ENAB), hence the second lookup.
+            # Hand every file the service account owns over to root, with group
+            # and other access stripped, before the account goes. userdel frees
+            # the UID, and the next system account created would inherit it --
+            # and with it the certificates, the keystore, the logs and the
+            # indexed data left behind. Nothing is deleted: postinst takes the
+            # default directories back with chown -R on a reinstall. find -P and
+            # chown -h act on links themselves and chmod never sees one, so a
+            # link the account planted cannot aim any of this at another file.
+            not_handed_over=""
             if getent passwd ${name} > /dev/null 2>&1; then
-                userdel ${name} > /dev/null 2>&1 || true
+                while IFS= read -r dir; do
+                    case "${dir}" in /?*) ;; *) continue ;; esac
+                    [ -d "${dir}" ] || continue
+                    dir_ok=true
+                    find -P "${dir}" -user ${name} \
+                        \( -type l -o -exec chmod go-rwx {} + \) \
+                        -exec chown -h root:root {} + 2>/dev/null || dir_ok=false
+                    find -P "${dir}" -group ${name} \
+                        \( -type l -o -exec chmod g-rwx {} + \) \
+                        -exec chgrp -h root {} + 2>/dev/null || dir_ok=false
+                    if [ "${dir_ok}" = false ]; then
+                        not_handed_over="${not_handed_over} ${dir}"
+                        continue
+                    fi
+                    case "${dir}" in
+                        "${config_dir}"|"${data_dir}"|"${log_dir}"|"${product_dir}"|"${pid_dir}") ;;
+                        *) echo "${dir} now belongs to root. Before a new ${name} installation uses it, run: chown -R ${name}:${name} ${dir}" ;;
+                    esac
+                done <<EOF
+${dirs}
+EOF
             fi
-            if getent group ${name} > /dev/null 2>&1; then
-                groupdel ${name} > /dev/null 2>&1 || true
+
+            # preinst creates the service account, so it is ours to take back --
+            # but only once nothing on disk still carries its UID. userdel may
+            # already have dropped the group along with the user
+            # (USERGROUPS_ENAB), hence the second lookup.
+            if [ "${paths_known}" = false ]; then
+                echo "Could not read where opensearch.yml kept data, logs and snapshots; keeping the ${name} user and group so their IDs are not reused." >&2
+            elif [ -n "${not_handed_over}" ]; then
+                echo "Some files owned by ${name} under${not_handed_over} could not be handed over to root; keeping the ${name} user and group so their IDs are not reused." >&2
+            else
+                if getent passwd ${name} > /dev/null 2>&1; then
+                    userdel ${name} > /dev/null 2>&1 || true
+                fi
+                if getent group ${name} > /dev/null 2>&1; then
+                    groupdel ${name} > /dev/null 2>&1 || true
+                fi
             fi
+
+            for dir in "${config_dir}" "${data_dir}" "${log_dir}"; do
+                if [ -d "${dir}" ]; then
+                    echo "Kept ${dir}, now owned by root. Reinstalling ${name} takes it back."
+                fi
+            done
         fi
 
         # Make systemd forget the unit, now that its file is gone

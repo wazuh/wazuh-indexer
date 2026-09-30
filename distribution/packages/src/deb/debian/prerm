@@ -19,19 +19,6 @@ case "$1" in
     remove)
         echo "Running Wazuh Indexer Pre-Removal Script"
 
-        # Stash the shared credential helper where the package manager will not
-        # reach it. postrm runs AFTER the package's files have been deleted, so
-        # /usr/share/wazuh-indexer/lib/wazuh-credentials.sh is already gone by
-        # the time the purge path wants to take this component's keys out of
-        # credentials.env -- the guard there would silently do nothing, and the
-        # keys and the CA would be left behind. This copy is created here, not
-        # packaged, so nothing removes it but us.
-        if [ -f /usr/share/${name}/lib/wazuh-credentials.sh ]; then
-            mkdir -p /var/lib/${name}
-            cp /usr/share/${name}/lib/wazuh-credentials.sh \
-               /var/lib/${name}/.wazuh-credentials.sh 2>/dev/null || true
-            chmod 600 /var/lib/${name}/.wazuh-credentials.sh 2>/dev/null || true
-        fi
         # Stop existing service
         if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1 && systemctl is-active ${name}.service > /dev/null 2>&1; then
             echo "Stop existing ${name}.service"
@@ -40,6 +27,18 @@ case "$1" in
             service ${name} stop > /dev/null 2>&1
         elif command -v /etc/init.d/${name} > /dev/null 2>&1 && /etc/init.d/${name} status > /dev/null 2>&1; then
             /etc/init.d/${name} stop > /dev/null 2>&1
+        fi
+
+        # postrm runs after dpkg has deleted the package's files, so the purge path needs its own
+        # copy of the shared helper to take this component's keys out of credentials.env. It is
+        # stashed beside that file, in a directory only root can write -- postrm sources it as
+        # root, so it must never sit anywhere the service account can reach. The service is
+        # already stopped above.
+        lib="/usr/share/${name}/lib/wazuh-credentials.sh"
+        if [ -f "${lib}" ] && [ -d /etc/wazuh ] && [ ! -L /etc/wazuh ] \
+           && [ "$(stat -c '%u %a' /etc/wazuh 2>/dev/null)" = "0 700" ]; then
+            rm -f /etc/wazuh/.${name}-credentials.sh
+            install -m 600 -o root -g root "${lib}" /etc/wazuh/.${name}-credentials.sh 2>/dev/null || true
         fi
 
         # Disable the service. The enablement symlinks are created at runtime by

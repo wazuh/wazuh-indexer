@@ -9,65 +9,35 @@
 #
 # The indexer's half of the credential resolution ladder.
 #
-# The shared half -- the credentials file, its locking convention, password generation and
-# validation, and the CA -- lives in wazuh-credentials.sh, which the manager, the indexer and the
-# dashboard must agree on exactly. It is owned by wazuh-installation-assistant and is downloaded
-# into lib/ by build-scripts/assemble.sh; it is NOT in this repository.
+# The shared half -- the credentials file, its locking, password generation and validation, and the
+# CA -- lives in lib/wazuh-credentials.sh, which the manager, the indexer and the dashboard must
+# agree on exactly. It is owned by wazuh-installation-assistant and downloaded by
+# build-scripts/assemble.sh; it is NOT in this repository.
 #
-# This file adds only what is specific to the indexer: which keys it owns, which it consumes, and
-# where each resolved value is stored. The interface is the one every component shares, so an
-# operator, an image build or a playbook drives all three the same way.
+# The indexer owns all three of its accounts and consumes none, so a password is never unresolved:
+# generating it is what makes it true. Only a certificate can be, and only when the host was handed
+# a trust anchor with no signing key and no issued pair.
 #
-# The indexer is the simplest of the three: it OWNS all three of its accounts and CONSUMES none.
-# A password can therefore never be unresolved here -- generating it is what makes it true. Only a
-# certificate can be unresolved, and only in the one case where a host was handed a trust anchor
-# but no signing key and no issued pair, so it has no way to obtain an identity.
+# Resolution happens once. A run that resolves everything it was responsible for records the fact
+# in a marker file, and every later run exits immediately -- which is what lets an operator rotate
+# a password or stage their own certificates and keep them across restarts and upgrades. --clear is
+# the way back. Modes:
 #
-# RESOLUTION HAPPENS ONCE. A run that resolves everything it was responsible for records the fact
-# in a marker file, and every later run exits immediately without reading a key, a certificate or
-# the credentials file. This is not an optimisation: a password an operator rotated, or a
-# certificate pair they replaced with their own, must survive a service restart and a package
-# upgrade, and the only way to guarantee that is to stop looking. --clear is the one way back.
+#   --install    From a fresh postinst / %post. Never fails: a maintainer script that aborts leaves
+#                the package half-configured. It is the only mode that replaces DN settings that
+#                already have a value.
+#   --upgrade    From postinst / %post over a previous version.
+#   --prestart   From the unit's ExecStartPre and the SysV start. Exits non-zero naming whatever it
+#                could not resolve, so the service does not start on a half-resolved node.
+#   --clear      Takes back everything this component resolved, for images built by installing the
+#                package. Nothing in the product calls it.
 #
-# The same script runs at four moments:
+# Every mode resolves passwords, certificates and the JDK truststore entry while the marker is
+# absent; the marker, not the mode, is what stops it happening twice. Nothing here opens a network
+# connection: presence and format only.
 #
-#   --install    From a FRESH postinst / %post -- never from an upgrade. Creates what it can, and
-#                has no opinion about whether the indexer can run. Never fails: a maintainer script
-#                that aborts leaves the package half-configured, breaks `apt install -f` and fails
-#                image builds. Exits 0 whatever it could not resolve. This is the only moment that
-#                issues TLS certificates.
-#
-#   --upgrade    From postinst / %post when a previous version was already installed. A no-op on
-#                any host that has already completed resolution; on one upgrading from a version
-#                that predates this mechanism it fills in the passwords that host never had. It
-#                does NOT touch the certificates in either case.
-#
-#   --prestart   From the unit's ExecStartPre. A no-op on any host that has already completed
-#                resolution. Otherwise it runs the ladder again, not merely a check, so a node
-#                installed before anything else picks up what became available since, and exits
-#                non-zero naming every key it could not resolve. Like --upgrade it does not touch
-#                the certificates.
-#
-#   --clear      Removes every credential this indexer owns or stores, so the next --install or
-#                --prestart resolves from nothing. Nothing in the product calls it: it exists for
-#                an image built by installing the package, whose postinst therefore published this
-#                host's passwords, minted a bootstrap CA and issued certificates into the image
-#                layer. Every container started from such an image would otherwise share one CA
-#                private key and one set of passwords -- worse than the defect this mechanism
-#                closes, because it looks random. Run it at the end of the Dockerfile, or once from
-#                an entrypoint before the first start.
-#
-# Certificates are issued at install and never looked at again, for the same reason they are in the
-# manager: resolving them is not a lookup but a signature, so every later run would have to
-# re-derive the trust chain and would turn the shared CA directory into a standing dependency. A
-# deployment that brings its own PKI stages a pair and keeps no copy of its root CA on every node
-# forever. What the node will actually accept is decided by the security plugin against the files
-# as they are at start, which is the only state that matters.
-#
-# The step never opens a network connection. It validates presence and format only -- making a
-# service's start depend on reaching its peer would break boot ordering and cluster restarts.
-# A credential that is present but wrong still fails as a 401 at runtime.
-#
+# The design behind all of this is documented in the development guide, "Credential and TLS
+# resolution".
 
 MODE="prestart"
 DIR=""
@@ -133,18 +103,10 @@ CERTS_DIR="${CONFIG_DIR}/certs"
 DATA_DIR="${WAZUH_INDEXER_DATA_DIR-/var/lib/wazuh-indexer}"
 PID_DIR="${WAZUH_INDEXER_PID_DIR-/run/wazuh-indexer}"
 
-# Step 0 for the whole run, and the single thing that makes this tool safe to leave wired into a
-# service start. It records that this installation has resolved its credentials and its TLS
-# material, and once it exists nothing is resolved again -- not on a restart, not on an upgrade,
-# not on a reinstall of the same version.
-#
-# That is what protects an operator who changed a password or staged their own certificate pair
-# after installation: without the marker the next service start would resolve from whatever the
-# credentials file says now, and a file that has since been deleted -- which is the documented last
-# step of an installation -- would mean generating a fresh password the cluster does not know.
-#
-# It holds no secret. internal_users.yml cannot be the test -- it ships with the package, so every
-# upgrade and every restart would be a coin toss.
+# Records that this installation resolved its credentials and its TLS material. Once it exists
+# nothing is resolved again, which is what protects an operator who rotated a password or staged
+# their own certificates. It holds no secret, and internal_users.yml cannot take its place: that
+# file ships with the package.
 MARKER="${DATA_DIR}/.initialized"
 
 OWNED_KEYS="WAZUH_INDEXER_ADMIN_PASSWORD WAZUH_INDEXER_KIBANASERVER_PASSWORD WAZUH_INDEXER_MANAGER_PASSWORD"
@@ -173,19 +135,12 @@ mark_invalid() {
     INVALID="${INVALID} $1"
 }
 
-# Process environment, then the credentials file. The environment wins because it is the more
-# deliberate and more immediate input, and because an orchestrator setting a value should not be
-# silently overridden by a file left behind from an earlier install.
-#
-# An explicitly empty value is treated as absent rather than as a policy failure: for a password
-# that is what an operator who cleared a line means.
-#
+# Process environment first, then the credentials file: an orchestrator setting a value should not
+# be overridden by a file left behind from an earlier install. An empty value counts as absent.
 # Prints the value and returns 0 when set, 1 when absent, 2 when the file itself is unusable.
-# The wazuh-docker names that predate the scoped ones, accepted from the ENVIRONMENT ONLY.
-# Renaming them would break existing compose files. They cannot be read from the credentials file:
-# an unscoped DASHBOARD_PASSWORD is workable as a per-process variable but meaningless as a line in
-# a file three components read, and the ambiguity never arises in a container because a container
-# reads only its own environment.
+
+# The wazuh-docker names that predate the scoped ones, accepted from the environment only:
+# an unscoped DASHBOARD_PASSWORD is meaningless in a file three components share.
 alias_for() {
     case "$1" in
         WAZUH_INDEXER_KIBANASERVER_PASSWORD) printf '%s' "DASHBOARD_PASSWORD" ;;
@@ -260,13 +215,30 @@ mark_complete() {
 # -----------------------------------------------------------------------------------------
 # Owned: the three internal users
 #
-# admin, kibanaserver and wazuh-manager all live in internal_users.yml, whose shipped hashes are
-# ${NAME} placeholders. Each value is resolved, published to the credentials file so the manager
-# and the dashboard find it, and written here as a bcrypt digest. Loading the result into the
-# cluster is the operator's separate, manual step.
-#
-# Nothing here is consumed, so nothing here can reach step 3.
+# admin, kibanaserver and wazuh-manager ship with a ${NAME} placeholder for a hash. Each value is
+# resolved, published to the credentials file for the manager and the dashboard, and written here
+# as a bcrypt digest. Loading it into the cluster is the operator's separate, manual step.
 # -----------------------------------------------------------------------------------------
+
+# Which account in internal_users.yml each key is the password for. The mapping is fixed at build
+# time: add_configuration_files() in build-scripts/assemble.sh writes these same placeholders into
+# the file the package ships.
+account_for() {
+    case "$1" in
+        WAZUH_INDEXER_ADMIN_PASSWORD)        printf '%s' "admin" ;;
+        WAZUH_INDEXER_KIBANASERVER_PASSWORD) printf '%s' "kibanaserver" ;;
+        WAZUH_INDEXER_MANAGER_PASSWORD)      printf '%s' "wazuh-manager" ;;
+        *) return 1 ;;
+    esac
+}
+
+# True while the account is still waiting for its digest -- or is not in this build's file at all,
+# which is nothing to wait for and nothing to contradict.
+placeholder_is_pending() {
+    _pip_account=$(account_for "$1") || return 0
+    grep -q "^${_pip_account}:" "${INTERNAL_USERS}" 2>/dev/null || return 0
+    grep -qF "\${${1}}" "${INTERNAL_USERS}" 2>/dev/null
+}
 
 # Bcrypt one password with the security plugin's own tool, so the digest matches what the plugin
 # expects without this script knowing anything about cost factors or formats.
@@ -325,6 +297,57 @@ substitute_placeholder() {
     rm -f "${_sp_tmp}"
 }
 
+# The inverse of substitute_placeholder: put ${NAME} back where a digest was written, so the entry
+# is once again the one the package shipped. Only --clear does this.
+#
+# It rewrites the whole hash line inside the account's block rather than searching for the digest,
+# because by then the digest is the one thing we cannot name: it was derived from a password the
+# credentials file no longer holds. Same guards as the forward direction -- a regular file only,
+# written through the original inode so the ownership and mode the package set survive.
+restore_placeholder() {
+    _rp_account="$1"
+    _rp_var="$2"
+    _rp_file="$3"
+
+    if [ -L "${_rp_file}" ] || [ ! -f "${_rp_file}" ]; then
+        err "refusing to write ${_rp_file}: not a regular file"
+        return 1
+    fi
+
+    # Already the shipped form: never resolved, or cleared before.
+    grep -qF "hash: \"\${${_rp_var}}\"" "${_rp_file}" && return 0
+
+    _rp_tmp=$(mktemp "${_rp_file}.XXXXXX") || return 1
+
+    awk -v key="${_rp_account}" -v var="${_rp_var}" '
+        substr($0, 1, length(key) + 1) == key ":" { inblock = 1; seen = 1; print; next }
+        /^[^[:space:]]/ { inblock = 0 }
+        inblock && /^[[:space:]]*hash:[[:space:]]/ {
+            match($0, /^[[:space:]]*/)
+            print substr($0, 1, RLENGTH) "hash: \"${" var "}\""
+            restored = 1
+            next
+        }
+        { print }
+        END { if (!seen) exit 3; if (!restored) exit 1 }
+    ' "${_rp_file}" > "${_rp_tmp}"
+    _rp_status=$?
+
+    # 3: no such account in this build. Nothing was ever resolved into it, so nothing to undo.
+    if [ "${_rp_status}" -eq 3 ]; then
+        rm -f "${_rp_tmp}"
+        return 0
+    fi
+    if [ "${_rp_status}" -ne 0 ]; then
+        rm -f "${_rp_tmp}"
+        err "could not rewrite the ${_rp_account} entry of ${_rp_file}"
+        return 1
+    fi
+
+    cat "${_rp_tmp}" > "${_rp_file}" || { rm -f "${_rp_tmp}"; return 1; }
+    rm -f "${_rp_tmp}"
+}
+
 # Writing the digest into internal_users.yml is what "the internal users are initialised" means:
 # the accounts exist in this node's own security configuration, with passwords only this
 # installation has.
@@ -342,7 +365,10 @@ write_user_hash() {
         return 1
     fi
 
-    # Already substituted on an earlier run, or an account this build does not ship.
+    # Already substituted on an earlier run of this same installation -- in which case the value
+    # being written is the one that run published, so the digest already in the file is its digest
+    # -- or an account this build does not ship. The third way to get here, a digest with nothing
+    # supplying its password any more, is caught by the caller before anything is generated.
     grep -q "\${${_wuh_key}}" "${INTERNAL_USERS}" || return 0
 
     _wuh_digest=$(hash_password "$2") || {
@@ -381,7 +407,22 @@ resolve_internal_users() {
             fi
             log "using the supplied ${_riu_key}"
         else
-            # We own the account, so generating the value makes it true.
+            # We own the account, so generating the value makes it true -- but only while the
+            # digest side can still be written. A digest with nothing supplying its password is a
+            # credential whose two halves were separated; generating here would publish a password
+            # that authenticates against nothing. The key is skipped rather than failed, because
+            # that digest still works for whoever set it: an upgrade from a version predating this
+            # mechanism arrives exactly like this.
+            if ! placeholder_is_pending "${_riu_key}"; then
+                err "${_riu_key}: internal_users.yml already holds a digest and nothing supplies the password"
+                err "        leaving both alone: this node keeps the credential it has, nothing is published"
+                err "        for the other components, and this run still records the installation as"
+                err "        resolved, so the warning is not repeated. To resolve it from nothing, stop the"
+                err "        service and run ${DIR}/bin/resolve-credentials.sh --clear; to set a password,"
+                err "        use ${DIR}/tools/wazuh-passwords-tool.sh"
+                continue
+            fi
+
             _riu_value=$(wazuh_password_generate) || {
                 err "could not generate ${_riu_key}"
                 mark_unresolved "${_riu_key}"
@@ -486,57 +527,139 @@ issue_certificate() {
     return ${_ic_status}
 }
 
-# A node whose DN is not listed is rejected by the cluster, so the DN of the certificate just
-# minted has to reach the configuration in the same step that mints it.
-#
-# Both keys are rewritten wholesale: the key line is reprinted without whatever followed it and the
-# new entry written underneath. That covers the block style opensearch.prod.yml ships and the
-# inline ['CN=...'] flow style the upstream demo configuration uses -- appending to the latter
-# would produce a root-level sequence item after a mapping, which is not valid YAML.
-write_distinguished_names() {
-    [ -f "${CERTS_DIR}/indexer.pem" ] || return 0
+# The certificate's subject in the form the security plugin compares against.
+subject_of() {
+    [ -f "$1" ] || return 0
+    openssl x509 -in "$1" -noout -subject -nameopt RFC2253 2>/dev/null | sed 's/^subject= *//'
+}
+
+# The DN settings in opensearch.yml, one of three actions per key: "set" writes the value, "clear"
+# leaves the key with no value, "keep" leaves it exactly as it is. Each key is reprinted without
+# whatever followed it, which handles both the block style opensearch.prod.yml ships and the inline
+# flow style of the upstream demo configuration.
+set_distinguished_names() {
+    _sdn_node_action="$1"
+    _sdn_node="$2"
+    _sdn_admin_action="$3"
+    _sdn_admin="$4"
+
     [ -f "${CONFIG_FILE}" ] || return 0
-
-    _wdn_node=$(openssl x509 -in "${CERTS_DIR}/indexer.pem" -noout -subject -nameopt RFC2253 2>/dev/null | sed 's/^subject= *//')
-    [ -n "${_wdn_node}" ] || return 0
-
-    _wdn_admin=""
-    if [ -f "${CERTS_DIR}/admin.pem" ]; then
-        _wdn_admin=$(openssl x509 -in "${CERTS_DIR}/admin.pem" -noout -subject -nameopt RFC2253 2>/dev/null | sed 's/^subject= *//')
-    fi
-
-    if [ -L "${CONFIG_FILE}" ] || [ ! -f "${CONFIG_FILE}" ]; then
+    if [ -L "${CONFIG_FILE}" ]; then
         err "refusing to write ${CONFIG_FILE}: not a regular file"
         return 1
     fi
 
-    _wdn_tmp=$(mktemp "${CONFIG_FILE}.XXXXXX") || return 1
+    _sdn_tmp=$(mktemp "${CONFIG_FILE}.XXXXXX") || return 1
 
-    WAZUH_NODE_DN="${_wdn_node}" WAZUH_ADMIN_DN="${_wdn_admin}" awk '
-        BEGIN { skip = 0 }
-        /^plugins\.security\.nodes_dn[[:space:]]*:/ {
-            print "plugins.security.nodes_dn:"
-            print "- \"" ENVIRON["WAZUH_NODE_DN"] "\""
+    WAZUH_NODE_DN="${_sdn_node}" WAZUH_ADMIN_DN="${_sdn_admin}" \
+    awk -v node_action="${_sdn_node_action}" -v admin_action="${_sdn_admin_action}" '
+        function emit(key, action, value) {
+            print key ":"
+            if (action == "set") print "- \"" value "\""
             skip = 1
+        }
+        /^plugins\.security\.nodes_dn[[:space:]]*:/ {
+            if (node_action == "keep") { skip = 0; print; next }
+            emit("plugins.security.nodes_dn", node_action, ENVIRON["WAZUH_NODE_DN"])
             next
         }
-        /^plugins\.security\.authcz\.admin_dn[[:space:]]*:/ && ENVIRON["WAZUH_ADMIN_DN"] != "" {
-            print "plugins.security.authcz.admin_dn:"
-            print "- \"" ENVIRON["WAZUH_ADMIN_DN"] "\""
-            skip = 1
+        /^plugins\.security\.authcz\.admin_dn[[:space:]]*:/ {
+            if (admin_action == "keep") { skip = 0; print; next }
+            emit("plugins.security.authcz.admin_dn", admin_action, ENVIRON["WAZUH_ADMIN_DN"])
             next
         }
         skip && /^[[:space:]]*#?[[:space:]]*-[[:space:]]/ { next }
         { skip = 0; print }
-    ' "${CONFIG_FILE}" > "${_wdn_tmp}" || { rm -f "${_wdn_tmp}"; return 1; }
+    ' "${CONFIG_FILE}" > "${_sdn_tmp}" || { rm -f "${_sdn_tmp}"; return 1; }
 
-    # Written back through the original file rather than moved over it, so the
-    # mode and ownership the package set survive.
-    cat "${_wdn_tmp}" > "${CONFIG_FILE}" || { rm -f "${_wdn_tmp}"; return 1; }
-    rm -f "${_wdn_tmp}"
-
+    # Written back through the original file rather than moved over it, so the mode and ownership
+    # the package set survive.
+    cat "${_sdn_tmp}" > "${CONFIG_FILE}" || { rm -f "${_sdn_tmp}"; return 1; }
+    rm -f "${_sdn_tmp}"
     chown wazuh-indexer:wazuh-indexer "${CONFIG_FILE}" 2>/dev/null || true
-    log "node DN ${_wdn_node}"
+}
+
+# True when the setting carries no value: nothing after the colon and no list item under it.
+# A key that is not in the file at all is not empty -- there is nothing to fill.
+dn_is_empty() {
+    [ "$(awk -v key="$1" '
+        substr($0, 1, length(key) + 1) == key ":" {
+            rest = substr($0, length(key) + 2)
+            gsub(/[[:space:]]/, "", rest)
+            state = (rest == "") ? "empty" : "filled"
+            if (state == "filled") exit
+            next
+        }
+        state == "empty" {
+            if ($0 ~ /^[[:space:]]*#?[[:space:]]*-[[:space:]]/) state = "filled"
+            exit
+        }
+        END { print state }
+    ' "${CONFIG_FILE}")" = "empty" ]
+}
+
+# A node whose DN is not listed is rejected by the cluster, so the DN of the certificate has to
+# reach the configuration in the same step that resolves it.
+#
+# Only --install replaces a key that already has a value. Every other mode fills the empty keys the
+# package ships and leaves the rest alone, because by then the list may be the operator's own: one
+# entry per node of their cluster.
+write_distinguished_names() {
+    [ -f "${CERTS_DIR}/indexer.pem" ] || return 0
+    [ -f "${CONFIG_FILE}" ] || return 0
+
+    _wdn_node=$(subject_of "${CERTS_DIR}/indexer.pem")
+    [ -n "${_wdn_node}" ] || return 0
+    _wdn_admin=$(subject_of "${CERTS_DIR}/admin.pem")
+
+    _wdn_node_action="set"
+    _wdn_admin_action="set"
+    [ -n "${_wdn_admin}" ] || _wdn_admin_action="keep"
+
+    if [ "${MODE}" != "install" ]; then
+        dn_is_empty "plugins.security.nodes_dn" || _wdn_node_action="keep"
+        dn_is_empty "plugins.security.authcz.admin_dn" || _wdn_admin_action="keep"
+    fi
+
+    [ "${_wdn_node_action}" = "set" ] || [ "${_wdn_admin_action}" = "set" ] || return 0
+
+    set_distinguished_names "${_wdn_node_action}" "${_wdn_node}" \
+                            "${_wdn_admin_action}" "${_wdn_admin}" || return 1
+
+    [ "${_wdn_node_action}" = "set" ] && log "node DN ${_wdn_node}"
+    [ "${_wdn_admin_action}" = "set" ] && log "admin DN ${_wdn_admin}"
+    return 0
+}
+
+# The bundled JDK has to trust the Wazuh CA. This lives here rather than in the maintainer
+# scripts so that a pair staged after the install reaches the truststore too, and so --clear can
+# take it back. LC_ALL=C because keytool's localized prompts are not all usable; -storepass and
+# -noprompt because there is nobody to answer them.
+TRUSTSTORE="${DIR}/jdk/lib/security/cacerts"
+TRUSTSTORE_ALIAS="wazuh-root-ca"
+
+keytool_run() {
+    [ -x "${DIR}/jdk/bin/keytool" ] && [ -f "${TRUSTSTORE}" ] || return 1
+    LC_ALL=C "${DIR}/jdk/bin/keytool" -keystore "${TRUSTSTORE}" -storepass changeit -noprompt "$@"
+}
+
+trust_ca() {
+    [ -f "${CERTS_DIR}/root-ca.pem" ] || return 0
+
+    # Re-importing over an existing alias is an error, so the old one goes first.
+    keytool_run -delete -alias "${TRUSTSTORE_ALIAS}" > /dev/null 2>&1
+    if keytool_run -importcert -trustcacerts -alias "${TRUSTSTORE_ALIAS}" \
+            -file "${CERTS_DIR}/root-ca.pem" > /dev/null 2>&1; then
+        log "trusted the CA in the bundled JDK truststore"
+    else
+        err "could not import ${CERTS_DIR}/root-ca.pem into ${TRUSTSTORE}"
+    fi
+}
+
+untrust_ca() {
+    if keytool_run -delete -alias "${TRUSTSTORE_ALIAS}" > /dev/null 2>&1; then
+        log "removed the CA from the bundled JDK truststore"
+    fi
 }
 
 # The four cases are decided entirely by what is present, with no mode flag: the presence of a
@@ -583,6 +706,8 @@ resolve_certificates() {
     _rc_short=$(hostname -s 2>/dev/null)
     [ -n "${_rc_short}" ] || _rc_short="wazuh-indexer"
     _rc_sans=$(derive_sans)
+    # wazuh-certs-tool issues with this same RDN order, so a deployment that later replaces these
+    # with the tool's own certificates keeps the DNs already written into opensearch.yml valid.
     _rc_suffix="/OU=Wazuh/O=Wazuh/L=California/C=US"
 
     issue_certificate "indexer" "/CN=${_rc_short}${_rc_suffix}" "${_rc_sans}" "${_rc_ca}" || {
@@ -607,16 +732,9 @@ resolve_certificates() {
 # -----------------------------------------------------------------------------------------
 # --clear
 #
-# The one destructive path in a tool whose every other rule is "never overwrite, never repair,
-# leave what is already there alone". It exists for an image built by installing the package, which
-# ran the resolver in its postinst and therefore baked this host's credentials into a layer every
-# container will share.
-#
-# Two things it deliberately does NOT remove:
-#
-#   * A CA directory holding only an anchor. No private key beside it means the CA was issued
-#     elsewhere and handed to this host; it is not ours to destroy.
-#   * Anything outside the managed block of the credentials file, or any sibling component's keys.
+# The one destructive path, for an image built by installing the package. Two things it does not
+# remove: a CA directory holding only an anchor, which was issued elsewhere, and anything outside
+# the managed block of the credentials file.
 # -----------------------------------------------------------------------------------------
 
 # The pidfile plus kill -0, using only builtins. pgrep would have been shorter but it lives in
@@ -634,10 +752,44 @@ indexer_is_running() {
     return 1
 }
 
+# A digest in internal_users.yml and the password in the credentials file are one credential in two
+# halves. Taking back only the published half is what leaves a node holding new passwords and the
+# old digests: the next resolution generates, publishes, finds no placeholder to write into, and
+# says nothing, because a missing placeholder is also how an account this build does not ship looks.
+restore_internal_users() {
+    if [ ! -f "${INTERNAL_USERS}" ]; then
+        log "no ${INTERNAL_USERS}; no digests to take back"
+        return 0
+    fi
+
+    _ciu_failed=""
+    for _ciu_key in ${OWNED_KEYS}; do
+        _ciu_account=$(account_for "${_ciu_key}") || continue
+        restore_placeholder "${_ciu_account}" "${_ciu_key}" "${INTERNAL_USERS}" \
+            || _ciu_failed="${_ciu_failed} ${_ciu_account}"
+    done
+
+    if [ -n "${_ciu_failed}" ]; then
+        err "could not restore the placeholders for:${_ciu_failed}"
+        return 1
+    fi
+
+    log "restored the password placeholders in internal_users.yml"
+}
+
 clear_credentials() {
     if indexer_is_running; then
         err "refusing to clear credentials while the indexer is running"
         err "        stop it first: systemctl stop wazuh-indexer"
+        return 1
+    fi
+
+    # First, and fatal. Everything else here is a removal, and a removal that half-completed can
+    # simply be run again; this cannot. Once the published passwords are gone, nothing is left to
+    # say which passwords the digests belong to. So if the digests cannot be taken back, nothing
+    # else is touched either.
+    if ! restore_internal_users; then
+        err "        nothing was cleared; fix the file above and run --clear again"
         return 1
     fi
 
@@ -661,13 +813,26 @@ clear_credentials() {
         log "keeping the trust anchor in ${_cc_ca}: it carries no private key, so it was issued elsewhere"
     fi
 
+    untrust_ca
+
+    # The DNs are derived from certificates that are now gone. Left behind, they would be the only
+    # thing an image built this way still carries from the build host -- and the rule above, which
+    # fills empty keys only, would never replace them.
+    if set_distinguished_names "clear" "" "clear" ""; then
+        log "cleared the node and admin DNs in opensearch.yml"
+    fi
+
     # Only this component's keys, and only inside the managed block.
     for _cc_key in ${OWNED_KEYS}; do
         wazuh_env_unset "${_cc_key}" >/dev/null 2>&1 || true
     done
     log "removed the indexer's published keys from the credentials file"
 
-    log "cleared; the next start resolves from nothing"
+    log "cleared; the next start resolves the passwords and the certificates again"
+    # The cluster keeps the configuration it was last given, so on a node that has already been
+    # initialised the new digests are only local until someone uploads them.
+    log "        a cluster already holding the previous configuration takes the new passwords from"
+    log "        ${DIR}/bin/indexer-security-init.sh, once the node is up"
     return 0
 }
 
@@ -684,29 +849,29 @@ fi
 # installation once the marker exists, which is what stops a restart or an upgrade from touching
 # credentials or certificates an operator has since changed. --clear is the only way back.
 if resolution_is_complete; then
+    # One exception: the truststore is a packaged file, so installing the package over an existing
+    # one replaces it and takes the CA entry with it. Re-importing needs nothing resolved and is
+    # idempotent.
+    case "${MODE}" in
+        install|upgrade) trust_ca ;;
+    esac
     log "already initialised; nothing is resolved again"
     exit 0
 fi
 
 resolve_internal_users
 
-# Certificates are issued once, on a fresh install, and are not part of the ladder at any other
-# moment -- see the header. An upgrade that re-derived the chain would have to find the shared CA
-# directory unchanged, which is exactly the standing dependency this design refuses to create.
-if [ "${MODE}" = "install" ]; then
-    # This is the only chance to issue them, so say so plainly rather than exiting 0 in silence and
-    # letting the operator meet it later as a security plugin that will not load.
-    if resolve_certificates; then
-        CERTIFICATES_RESOLVED=1
-    else
-        CERTIFICATES_RESOLVED=0
-        err "the indexer has no TLS certificates and this install could not issue them"
-        err "        stage the pair into ${CERTS_DIR} before starting the service"
-        err "        (e.g. with wazuh-certs-tool); the service will not start without it"
-    fi
-else
-    # Not attempted, so not something this run can fail to resolve.
+# The certificate step runs in every mode, because the marker above is what makes resolution happen
+# once. A run that reaches this point is a run where it never completed, so a pair staged after an
+# install that could not issue one is picked up by the next start.
+if resolve_certificates; then
     CERTIFICATES_RESOLVED=1
+    trust_ca
+else
+    CERTIFICATES_RESOLVED=0
+    err "the indexer has no TLS certificates and this run could not issue them"
+    err "        stage the pair into ${CERTS_DIR} before starting the service"
+    err "        (e.g. with wazuh-certs-tool); the service will not start without it"
 fi
 
 # Record completion only on a run that resolved everything it was responsible for. A node left with
@@ -722,7 +887,7 @@ if [ "${MODE}" = "install" ] || [ "${MODE}" = "upgrade" ]; then
     exit 0
 fi
 
-if [ -z "${UNRESOLVED}" ] && [ -z "${INVALID}" ]; then
+if [ -z "${UNRESOLVED}" ] && [ -z "${INVALID}" ] && [ "${CERTIFICATES_RESOLVED}" = "1" ]; then
     exit 0
 fi
 
@@ -740,5 +905,10 @@ for _key in ${UNRESOLVED}; do
     err "MISSING ${_key}"
     err "        set it in ${CREDENTIALS_FILE}"
 done
+
+if [ "${CERTIFICATES_RESOLVED}" != "1" ]; then
+    err "MISSING TLS certificates"
+    err "        stage indexer.pem and indexer-key.pem in ${CERTS_DIR}"
+fi
 
 exit 1

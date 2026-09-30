@@ -230,9 +230,6 @@ if [ -x %{product_dir}/bin/resolve-credentials.sh ]; then
         %{product_dir}/bin/resolve-credentials.sh --upgrade || true
     else
         %{product_dir}/bin/resolve-credentials.sh --install || true
-        if [ -f %{certs_dir}/root-ca.pem ]; then
-            yes | /usr/share/%{name}/jdk/bin/keytool -trustcacerts -keystore /usr/share/%{name}/jdk/lib/security/cacerts -importcert -alias wazuh-root-ca -file %{certs_dir}/root-ca.pem > /dev/null 2>&1
-        fi
     fi
 fi
 
@@ -296,19 +293,6 @@ set -e
 
 # Stop the services to remove the package
 if [ $1 = 0 ]; then
-    # Stash the shared credential helper where the package manager will not
-    # reach it. postrm runs AFTER the package's files have been deleted, so
-    # /usr/share/wazuh-indexer/lib/wazuh-credentials.sh is already gone by
-    # the time the purge path wants to take this component's keys out of
-    # credentials.env -- the guard there would silently do nothing, and the
-    # keys and the CA would be left behind. This copy is created here, not
-    # packaged, so nothing removes it but us.
-    if [ -f %{product_dir}/lib/wazuh-credentials.sh ]; then
-        mkdir -p %{data_dir}
-        cp %{product_dir}/lib/wazuh-credentials.sh %{data_dir}/.wazuh-credentials.sh 2>/dev/null || true
-        chmod 600 %{data_dir}/.wazuh-credentials.sh 2>/dev/null || true
-    fi
-
     # Stop wazuh-indexer service
     if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1 && systemctl is-active %{name}.service > /dev/null 2>&1; then
         echo "Stop existing %{name}.service"
@@ -338,6 +322,17 @@ if [ $1 = 0 ]; then
     if command -v chkconfig > /dev/null 2>&1; then
         chkconfig --del %{name} > /dev/null 2>&1 || true
     fi
+
+    # %postun runs after rpm has deleted the package's files, so the removal path needs its own
+    # copy of the shared helper to take this component's keys out of credentials.env. It is
+    # stashed beside that file, in a directory only root can write -- %postun sources it as root,
+    # so it must never sit anywhere the service account can reach. The service is already stopped.
+    if [ -f %{product_dir}/lib/wazuh-credentials.sh ] && [ -d /etc/wazuh ] && [ ! -L /etc/wazuh ] \
+       && [ "$(stat -c '%%u %%a' /etc/wazuh 2>/dev/null)" = "0 700" ]; then
+        rm -f /etc/wazuh/.%{name}-credentials.sh
+        install -m 600 -o root -g root %{product_dir}/lib/wazuh-credentials.sh \
+            /etc/wazuh/.%{name}-credentials.sh 2>/dev/null || true
+    fi
 fi
 
 exit 0
@@ -349,13 +344,30 @@ if [ $1 -eq 0 ]; then
     rm -rf %{product_dir}/engine
     rm -rf %{product_dir}/plugins
 
-    # Take back only what this package owns: its own keys inside
-    # the credentials.env.
-    # %preun stashed this, because the packaged copy is already gone.
-    _wazuh_lib=%{data_dir}/.wazuh-credentials.sh
-    [ -f "${_wazuh_lib}" ] || _wazuh_lib=%{product_dir}/lib/wazuh-credentials.sh
-    if [ -f "${_wazuh_lib}" ]; then
+    # Take back only what this package owns: its own keys inside the credentials.env.
+    #
+    # %preun stashed the helper, because the packaged copy is already gone. Root is about to
+    # source it, so accept it only where nothing but root could have written it: a regular file,
+    # not a symlink, owned by root and writable by nobody else. The last two mode digits are group
+    # and other; 2, 3, 6 and 7 carry the write bit.
+    _wazuh_safe_to_source() {
+        [ -f "$1" ] && [ ! -L "$1" ] || return 1
+        [ "$(stat -c '%%u' "$1" 2>/dev/null)" = "0" ] || return 1
+        case "$(stat -c '%%a' "$1" 2>/dev/null)" in
+            ""|*[2367][0-7]|*[2367]) return 1 ;;
+        esac
+        return 0
+    }
+
+    _wazuh_lib=/etc/wazuh/.%{name}-credentials.sh
+    if ! _wazuh_safe_to_source "${_wazuh_lib}"; then
+        _wazuh_lib=%{product_dir}/lib/wazuh-credentials.sh
+        _wazuh_safe_to_source "${_wazuh_lib}" || _wazuh_lib=""
+    fi
+    if [ -n "${_wazuh_lib}" ]; then
         . "${_wazuh_lib}"
+        # Gone as soon as it is loaded, so it cannot keep /etc/wazuh alive below.
+        rm -f /etc/wazuh/.%{name}-credentials.sh
         for key in WAZUH_INDEXER_ADMIN_PASSWORD \
                    WAZUH_INDEXER_KIBANASERVER_PASSWORD \
                    WAZUH_INDEXER_MANAGER_PASSWORD; do
@@ -385,7 +397,9 @@ if [ $1 -eq 0 ]; then
             fi
         fi
     fi
-    rm -f %{data_dir}/.initialized %{data_dir}/.wazuh-credentials.sh
+    # The second path is where releases before this one stashed the helper.
+    rm -f %{data_dir}/.initialized %{data_dir}/.wazuh-credentials.sh \
+          /etc/wazuh/.%{name}-credentials.sh
 
     # rpm saves a modified %config file as *.rpmsave when the package goes away.
     # Both of these are modified by resolve-credentials.sh -- one gains the three

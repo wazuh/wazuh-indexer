@@ -24,7 +24,6 @@ echo "Running Wazuh Indexer Post-Installation Script"
 name="wazuh-indexer"
 product_dir=/usr/share/${name}
 config_dir=/etc/${name}
-certs_dir=${config_dir}/certs
 data_dir=/var/lib/${name}
 log_dir=/var/log/${name}
 pid_dir=/run/${name}
@@ -148,9 +147,6 @@ if [ -x "${product_dir}/bin/resolve-credentials.sh" ]; then
         "${product_dir}/bin/resolve-credentials.sh" --upgrade || true
     else
         "${product_dir}/bin/resolve-credentials.sh" --install || true
-        if [ -f "${certs_dir}/root-ca.pem" ]; then
-            yes | ${product_dir}/jdk/bin/keytool -trustcacerts -keystore ${product_dir}/jdk/lib/security/cacerts -importcert -alias wazuh-root-ca -file ${certs_dir}/root-ca.pem > /dev/null 2>&1
-        fi
     fi
 fi
 

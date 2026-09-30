@@ -32,20 +32,6 @@ case "$1" in
                /var/lib/${name}/.wazuh-credentials.sh 2>/dev/null || true
             chmod 600 /var/lib/${name}/.wazuh-credentials.sh 2>/dev/null || true
         fi
-
-        # Record the directories opensearch.yml points the node at. The purge
-        # hands the files the service account owns in them over to root before it
-        # deletes the account, and by then dpkg has deleted opensearch.yml, a
-        # conffile. bin/ListDataPaths.java reads it with OpenSearch's own settings
-        # loader.
-        mkdir -p /var/lib/${name}
-        if ! timeout 120 /usr/share/${name}/jdk/bin/java -Xmx128m -XX:+UseSerialGC \
-                -cp "/usr/share/${name}/lib/*" /usr/share/${name}/bin/ListDataPaths.java \
-                /etc/${name}/opensearch.yml > /var/lib/${name}/.data-paths 2>/dev/null; then
-            echo "unknown" > /var/lib/${name}/.data-paths
-        fi
-        chmod 600 /var/lib/${name}/.data-paths 2>/dev/null || true
-
         # Stop existing service
         if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1 && systemctl is-active ${name}.service > /dev/null 2>&1; then
             echo "Stop existing ${name}.service"

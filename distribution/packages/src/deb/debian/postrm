@@ -14,6 +14,17 @@ set -e
 name="wazuh-indexer"
 product_dir=/usr/share/${name}
 
+# A file root may source: a regular file, not a symlink, owned by root, and writable by nobody
+# else. The last two mode digits are group and other; 2, 3, 6 and 7 carry the write bit.
+safe_to_source() {
+    [ -f "$1" ] && [ ! -L "$1" ] || return 1
+    [ "$(stat -c '%u' "$1" 2>/dev/null)" = "0" ] || return 1
+    case "$(stat -c '%a' "$1" 2>/dev/null)" in
+        ""|*[2367][0-7]|*[2367]) return 1 ;;
+    esac
+    return 0
+}
+
 case "$1" in
     remove|purge)
         rm -rf "${product_dir}/engine"
@@ -22,12 +33,18 @@ case "$1" in
         # On purge, take back only what this package owns: its own keys inside
         # the credentials.env.
         if [ "$1" = "purge" ]; then
-            # prerm stashed this, because the packaged copy is already gone.
-            lib="/var/lib/${name}/.wazuh-credentials.sh"
-            [ -f "${lib}" ] || lib="${product_dir}/lib/wazuh-credentials.sh"
-            if [ -f "${lib}" ]; then
+            # prerm stashed this, because the packaged copy is already gone. Root is about to
+            # source it, so accept it only where nothing but root could have written it.
+            lib="/etc/wazuh/.${name}-credentials.sh"
+            if ! safe_to_source "${lib}"; then
+                lib="${product_dir}/lib/wazuh-credentials.sh"
+                safe_to_source "${lib}" || lib=""
+            fi
+            if [ -n "${lib}" ]; then
                 # shellcheck source=/dev/null
                 . "${lib}"
+                # Gone as soon as it is loaded, so it cannot keep /etc/wazuh alive below.
+                rm -f "/etc/wazuh/.${name}-credentials.sh"
                 for key in WAZUH_INDEXER_ADMIN_PASSWORD \
                            WAZUH_INDEXER_KIBANASERVER_PASSWORD \
                            WAZUH_INDEXER_MANAGER_PASSWORD; do
@@ -62,7 +79,10 @@ case "$1" in
             # Only here. dpkg calls postrm twice on a purge -- once with
             # "remove", then again with "purge" -- so cleaning the stash in the
             # outer case would delete it before the branch that needs it runs.
-            rm -f /var/lib/${name}/.wazuh-credentials.sh
+            # Where releases before this one stashed the helper, and the stash itself if the
+            # branch above did not run.
+            rm -f /var/lib/${name}/.wazuh-credentials.sh \
+                  /etc/wazuh/.${name}-credentials.sh
         fi
 
         # Make systemd forget the unit, now that its file is gone

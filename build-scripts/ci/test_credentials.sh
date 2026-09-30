@@ -198,6 +198,27 @@ digest_verifies() {
     HS="$1" PW="$2" python3 -c 'import bcrypt,os,sys; sys.exit(0 if bcrypt.checkpw(os.environ["PW"].encode(), os.environ["HS"].replace("$2y$","$2b$").encode()) else 1)' 2>/dev/null
 }
 
+# A certificate's subject as the security plugin compares it, and the list a DN setting holds.
+subject_of() {
+    openssl x509 -in "$1" -noout -subject -nameopt RFC2253 2>/dev/null | sed 's/^subject= *//'
+}
+
+dn_list() {
+    awk -v k="$1" '
+        index($0, k ":") == 1 { f = 1; next }
+        f && /^[[:space:]]*-/ { gsub(/^[[:space:]]*-[[:space:]]*"?|"$/, ""); print; next }
+        f { exit }
+    ' "${OPENSEARCH_YML}"
+}
+
+# The bundled JDK has to trust the Wazuh CA, and --clear has to take that back.
+TRUSTSTORE="${PRODUCT_DIR}/jdk/lib/security/cacerts"
+
+ca_is_trusted() {
+    LC_ALL=C "${PRODUCT_DIR}/jdk/bin/keytool" -list -keystore "${TRUSTSTORE}" \
+        -storepass changeit -alias wazuh-root-ca > /dev/null 2>&1 && echo yes || echo no
+}
+
 # The account/key pairs this package owns, as "<account>:<KEY>".
 OWNED_PAIRS="admin:WAZUH_INDEXER_ADMIN_PASSWORD kibanaserver:WAZUH_INDEXER_KIBANASERVER_PASSWORD wazuh-manager:WAZUH_INDEXER_MANAGER_PASSWORD"
 
@@ -439,6 +460,13 @@ case "${sans}" in
     *) fail "hostname missing from the SAN list" ;;
 esac
 
+# wazuh-certs-tool issues /C=US/L=California/O=Wazuh/OU=Wazuh/CN=admin. A deployment that replaces
+# the package certificates with the tool's keeps admin_dn valid only if both orders agree.
+check_eq "the admin subject uses the certificates tool's RDN order" \
+    "CN=admin,OU=Wazuh,O=Wazuh,L=California,C=US" "$(subject_of "${CERTS_DIR}/admin.pem")"
+
+check_eq "the CA is trusted by the bundled JDK" "yes" "$(ca_is_trusted)"
+
 # The CA private key must never be readable by anything but root.
 if [ -f "${CA_DIR}/root-ca.key" ]; then
     check_eq "root-ca.key is 0400" "400" "$(mode_of "${CA_DIR}/root-ca.key")"
@@ -635,21 +663,15 @@ else
     check_eq "the rotated password survives a restart" "200" "${got}"
 fi
 
-section "1.10 --clear takes back both halves of every credential"
+section "1.10 --clear and re-resolution"
 
-# A password lives in two places at once: published in credentials.env for the
-# sibling components, and bcrypted into internal_users.yml for the node itself.
-# They only mean anything together. --clear taking back the published half while
-# leaving the digest behind is silent: the next resolution generates a new
-# password, publishes it, then finds no ${NAME} placeholder to write the digest
-# into -- which is also how an account the build does not ship looks -- and says
-# so in neither log. The node ends up advertising passwords that authenticate
-# against nothing.
+# A password lives in two places at once: published in credentials.env for the sibling components,
+# and bcrypted into internal_users.yml for the node itself. The same is true of a certificate: the
+# files in certs/, the DNs in opensearch.yml and the anchor in the JDK truststore are one thing.
+# --clear has to take back every half, and the next run has to resolve every half again.
 #
-# This phase leaves the node unable to start: --clear removes the certificates
-# and only --install issues them, so it is placed last, after every check that
-# needs a running node. It hands the host back fully resolved for the removal
-# phase that follows.
+# This phase runs last because --clear leaves the node unable to start until it re-resolves. It
+# hands the host back fully resolved for the removal phase that follows.
 
 systemctl stop wazuh-indexer >/dev/null 2>&1
 
@@ -670,6 +692,10 @@ else
     check "the state file is gone" bash -c "[ ! -e '${MARKER}' ]"
     check "the certificates are gone" bash -c "[ ! -e '${CERTS_DIR}/indexer.pem' ]"
     check "the bootstrap CA is gone" bash -c "[ ! -e '${CA_DIR}/root-ca.key' ]"
+    check_eq "the node DN is gone from opensearch.yml" "" "$(dn_list plugins.security.nodes_dn)"
+    check_eq "the admin DN is gone from opensearch.yml" "" "$(dn_list plugins.security.authcz.admin_dn)"
+    check "the DN settings themselves are kept" grep -q '^plugins.security.nodes_dn:' "${OPENSEARCH_YML}"
+    check_eq "the CA is no longer trusted by the JDK" "no" "$(ca_is_trusted)"
 
     if command -v python3 >/dev/null 2>&1 && python3 -c 'import yaml' 2>/dev/null; then
         check "internal_users.yml is still valid YAML" \
@@ -679,14 +705,44 @@ else
     fi
     check "the other entries are untouched" grep -q '^_meta:' "${INTERNAL_USERS}"
 
-    # The defect as reported: passwords are generated and published, but never
-    # reach internal_users.yml.
-    "${RESOLVER}" --prestart >/tmp/reresolve.log 2>&1
-    check_eq "--prestart after --clear succeeds" "0" "$?"
-    check_eq "three passwords published again" "3" "$(cred_count)"
+    # --- A certificate pair that arrives after the package ------------------
+    # How a bring-your-own-PKI deployment installs: the CA directory holds a trust anchor with no
+    # signing key, so the install cannot issue anything, and the pair is staged before the first
+    # start. The resolution has to finish then, not stop at the passwords.
+    mkdir -p "${CA_DIR}" && chmod 700 "${CA_DIR}"
+    openssl req -x509 -newkey rsa:2048 -keyout /tmp/external-ca.key -out "${CA_DIR}/root-ca.pem" \
+        -days 3650 -nodes -subj "/C=US/L=California/O=Wazuh/OU=Wazuh/CN=external-root-ca" \
+        >/dev/null 2>&1
+    chmod 644 "${CA_DIR}/root-ca.pem"
 
-    digests=$(grep -cE 'hash: "\$2[aby]\$[0-9]{2}\$' "${INTERNAL_USERS}" 2>/dev/null | head -1)
-    check_eq "three digests written again" "3" "${digests:-0}"
+    out=$("${RESOLVER}" --prestart 2>&1); rc=$?
+    check_eq "--prestart refuses to start a node with no certificates" "1" "${rc}"
+    case "${out}" in
+        *"MISSING TLS certificates"*) ok "it names the certificates" ;;
+        *) fail "the failure does not name the certificates" ;;
+    esac
+    check "no state file while the node is unresolved" bash -c "[ ! -e '${MARKER}' ]"
+
+    for n in indexer admin; do
+        cn="${n}"; [ "${n}" = "indexer" ] && cn="$(hostname -s)"
+        openssl req -newkey rsa:2048 -keyout "${CERTS_DIR}/${n}-key.pem" -out "/tmp/${n}.csr" \
+            -nodes -subj "/C=US/L=California/O=Wazuh/OU=Wazuh/CN=${cn}" >/dev/null 2>&1
+        openssl x509 -req -in "/tmp/${n}.csr" -CA "${CA_DIR}/root-ca.pem" -CAkey /tmp/external-ca.key \
+            -CAcreateserial -out "${CERTS_DIR}/${n}.pem" -days 3650 >/dev/null 2>&1
+    done
+    cp "${CA_DIR}/root-ca.pem" "${CERTS_DIR}/root-ca.pem"
+    chmod 400 "${CERTS_DIR}"/*.pem
+    chown wazuh-indexer:wazuh-indexer "${CERTS_DIR}"/*.pem
+
+    "${RESOLVER}" --prestart >/tmp/reresolve.log 2>&1
+    check_eq "--prestart resolves once the pair is staged" "0" "$?"
+    check_eq "nodes_dn is filled from the staged pair" \
+        "$(subject_of "${CERTS_DIR}/indexer.pem")" "$(dn_list plugins.security.nodes_dn)"
+    check_eq "admin_dn is filled from the staged pair" \
+        "$(subject_of "${CERTS_DIR}/admin.pem")" "$(dn_list plugins.security.authcz.admin_dn)"
+    check_eq "the staged anchor is trusted by the JDK" "yes" "$(ca_is_trusted)"
+    check "the state file is written now that everything resolved" test -f "${MARKER}"
+    check_eq "three passwords published again" "3" "$(cred_count)"
 
     if have_bcrypt; then
         for pair in ${OWNED_PAIRS}; do
@@ -701,12 +757,22 @@ else
         skip "bcrypt verification after --clear (python3-bcrypt not installed)"
     fi
 
-    # A digest with nothing left to supply its password is the state --clear used
-    # to produce, and it is also how an upgrade from a version that predates this
-    # mechanism arrives. Resolution must not publish a new password over it: the
-    # two halves would disagree, and the operator would meet it as a 401 months
-    # later with nothing to connect it to. It must not refuse to start the node
-    # either -- the digest is a working credential for whoever set it.
+    # --- An operator's own DN list is never replaced -------------------------
+    # write_distinguished_names replaces a key wholesale, which is right for a fresh install and
+    # wrong for a cluster node whose operator has already listed every DN. Outside --install only
+    # an empty key is filled.
+    rm -f "${MARKER}"
+    sed -i 's|^plugins.security.nodes_dn:|plugins.security.nodes_dn:\n- "CN=node-2,OU=Wazuh,O=Wazuh,L=California,C=US"|' \
+        "${OPENSEARCH_YML}"
+    before=$(dn_list plugins.security.nodes_dn | tr '\n' ' ')
+    "${RESOLVER}" --prestart >/tmp/dnkeep.log 2>&1
+    check_eq "the operator's node list survives a later resolution" \
+        "${before}" "$(dn_list plugins.security.nodes_dn | tr '\n' ' ')"
+
+    # --- A digest with nothing left to supply its password -------------------
+    # The state --clear used to leave behind, and how an upgrade from a version that predates this
+    # mechanism arrives. Resolution must not publish a new password over it, and must not refuse to
+    # start the node either: the digest is a working credential for whoever set it.
     rm -f "${MARKER}"
     kept=$(hash_of admin)
     cp -a "${CREDENTIALS}" /tmp/credentials.env.saved
@@ -724,14 +790,63 @@ else
     done
     cp -a /tmp/credentials.env.saved "${CREDENTIALS}"
 
-    # Hand the host back fully resolved: the removal phase asserts on the CA and
-    # on the published keys, and --install is the only mode that issues
-    # certificates.
+    # Hand the host back fully resolved: the removal phase asserts on the CA and on the published
+    # keys. The external anchor staged above has no signing key, so it goes first -- otherwise
+    # --install has nothing to issue from, which is the very case this phase just exercised.
     "${RESOLVER}" --clear >/dev/null 2>&1
+    rm -f "${CA_DIR}"/root-ca.* /tmp/external-ca.key
     "${RESOLVER}" --install >/dev/null 2>&1
     check "certificates are reissued by --install" test -f "${CERTS_DIR}/indexer.pem"
     check "the CA is back" test -f "${CA_DIR}/root-ca.pem"
     check_eq "three passwords published" "3" "$(cred_count)"
+    check_eq "the CA is trusted again" "yes" "$(ca_is_trusted)"
+fi
+
+section "1.11 SysV init script"
+
+# The SysV path is what a host without systemd uses, and it reaches code systemd never runs.
+INITD="/etc/init.d/wazuh-indexer"
+
+if [ ! -x "${INITD}" ]; then
+    skip "no SysV init script in this package"
+else
+    check "the start path runs the resolver" grep -q 'resolve-credentials.sh" --prestart' "${INITD}"
+
+    # A start that cannot resolve must be refused, the way ExecStartPre refuses it under systemd,
+    # rather than bringing the node up half-configured with nothing to say why. An anchor with no
+    # signing key and no staged pair is the one state resolution cannot complete on its own.
+    cp -a "${CREDENTIALS}" /tmp/credentials.env.sysv
+    "${RESOLVER}" --clear >/dev/null 2>&1
+    mkdir -p "${CA_DIR}" && chmod 700 "${CA_DIR}"
+    openssl req -x509 -newkey rsa:2048 -keyout /tmp/sysv-ca.key -out "${CA_DIR}/root-ca.pem" \
+        -days 3650 -nodes -subj "/C=US/L=California/O=Wazuh/OU=Wazuh/CN=external-root-ca" \
+        >/dev/null 2>&1
+    chmod 644 "${CA_DIR}/root-ca.pem"
+
+    out=$("${INITD}" start 2>&1); rc=$?
+    check_eq "SysV start is refused while the node cannot resolve" "1" "${rc}"
+    # The bracket keeps pgrep from matching the pattern inside this very command line.
+    check "the node was not started" bash -c "! pgrep -f '[o]rg.opensearch.bootstrap.OpenSearch' >/dev/null"
+
+    rm -f "${CA_DIR}"/root-ca.* /tmp/sysv-ca.key
+    cp -a /tmp/credentials.env.sysv "${CREDENTIALS}"
+    "${RESOLVER}" --install >/dev/null 2>&1
+
+    # stop() signals what it reads from pidfiles the service account owns. A pid that is not one of
+    # ours must not be signalled: root would be killing whatever that account pointed it at.
+    mkdir -p /run/wazuh-indexer
+    sleep 600 &
+    victim=$!
+    printf '%s\n' "${victim}" > /run/wazuh-indexer/wazuh-engine.pid
+    printf '%s\n' "${victim}" > /run/wazuh-indexer/wazuh-indexer.pid
+    "${INITD}" stop >/dev/null 2>&1
+    if kill -0 "${victim}" 2>/dev/null; then
+        ok "a foreign pid in the pidfiles is not signalled"
+    else
+        fail "the init script killed a process that is not the indexer"
+    fi
+    kill "${victim}" 2>/dev/null
+    rm -f /run/wazuh-indexer/wazuh-engine.pid
 fi
 
 # ---------------------------------------------------------------------------
@@ -776,6 +891,21 @@ else
     ok "removal emitted no unexpected errors or warnings"
 fi
 
+# The purge path sources the shared helper as root, from a copy the removal left behind. That copy
+# must never sit where the service account can write, or the account chooses what root runs.
+check "no root-sourced helper in the service-writable data directory" \
+    bash -c "[ ! -e '${DATA_DIR}/.wazuh-credentials.sh' ]"
+
+STASH="${WAZUH_DIR}/.wazuh-indexer-credentials.sh"
+if [ -e "${STASH}" ]; then
+    check_eq "the stashed helper is root-owned" "root:root" "$(owner_of "${STASH}")"
+    check_eq "the stashed helper is 0600" "600" "$(mode_of "${STASH}")"
+    check_eq "its directory is root-owned and root-only" "root:root 700" \
+        "$(owner_of "${WAZUH_DIR}") $(mode_of "${WAZUH_DIR}")"
+else
+    info "no stashed helper after removal (expected on RPM, which purges in one step)"
+fi
+
 # Per the epic, a plain `remove` keeps everything; only `purge` takes the keys
 # back. Both behaviours are asserted so a change to either is visible.
 if [ "${PKG_KIND}" = "deb" ]; then
@@ -803,6 +933,7 @@ if [ "${PKG_KIND}" = "deb" ]; then
         check "credentials.env itself is NOT deleted" test -f "${CREDENTIALS}"
         check "state file is removed" bash -c "[ ! -e '${MARKER}' ]"
         check "the CA survives while a sibling key remains" test -f "${CA_DIR}/root-ca.pem"
+        check "the stashed helper is gone" bash -c "[ ! -e '${STASH}' ]"
     fi
 else
     # RPM has no remove/purge distinction: %postun runs the whole thing.
@@ -810,6 +941,7 @@ else
     check "the sibling's key is untouched" grep -q 'WAZUH_MANAGER_API_PASSWORD' "${CREDENTIALS}"
     check "credentials.env itself is NOT deleted" test -f "${CREDENTIALS}"
     check "state file is removed" bash -c "[ ! -e '${MARKER}' ]"
+    check "the stashed helper is gone" bash -c "[ ! -e '${STASH}' ]"
 fi
 
 section "2c. No credential material outlives the package"

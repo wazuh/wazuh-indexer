@@ -396,6 +396,55 @@ if [ $1 -eq 0 ]; then
     rm -f %{config_dir}/opensearch-security/internal_users.yml.rpmsave \
           %{config_dir}/opensearch.yml.rpmsave
 
+    # %post creates the tmp directory, so it is not in the file list and rpm
+    # would leave it. The data directory itself only goes if nothing else is
+    # left in it: indexed data is never deleted here.
+    rm -rf %{data_dir}/tmp
+    rmdir %{data_dir} > /dev/null 2>&1 || true
+
+    # The package manages its own directories and nothing else. Hand every file
+    # the service account owns in them over to root, with group and other access
+    # stripped, before the account goes. userdel frees the UID, and the next
+    # system account created would inherit it -- and with it the certificates,
+    # the keystore, the logs and the indexed data left behind. Nothing is
+    # deleted: %post takes these directories back with chown -R on a reinstall.
+    # find -P and chown -h act on links themselves and chmod never sees one, so
+    # a link the account planted cannot aim any of this at another file.
+    not_handed_over=""
+    if getent passwd %{name} > /dev/null 2>&1; then
+        for dir in %{config_dir} %{product_dir} %{data_dir} %{log_dir}; do
+            [ -d "${dir}" ] || continue
+            dir_ok=true
+            find -P "${dir}" -user %{name} \
+                \( -type l -o -exec chmod go-rwx {} + \) \
+                -exec chown -h root:root {} + 2>/dev/null || dir_ok=false
+            find -P "${dir}" -group %{name} \
+                \( -type l -o -exec chmod g-rwx {} + \) \
+                -exec chgrp -h root {} + 2>/dev/null || dir_ok=false
+            if [ "${dir_ok}" = true ]; then
+                echo "Kept ${dir}, now owned by root. Reinstalling %{name} takes it back."
+            else
+                not_handed_over="${not_handed_over} ${dir}"
+            fi
+        done
+    fi
+    if [ -n "${not_handed_over}" ]; then
+        echo "Some files under${not_handed_over} could not be handed over to root; they keep the ID of the removed %{name} user." >&2
+    fi
+
+    # %pre creates the service account, and removing the package always takes
+    # it back. userdel may already have dropped the group along with the user
+    # (USERGROUPS_ENAB), hence the second lookup.
+    if getent passwd %{name} > /dev/null 2>&1; then
+        userdel %{name} > /dev/null 2>&1 || true
+    fi
+    if getent group %{name} > /dev/null 2>&1; then
+        groupdel %{name} > /dev/null 2>&1 || true
+    fi
+
+    echo "Note: the package only manages %{config_dir}, %{product_dir}, %{data_dir} and %{log_dir}."
+    echo "Directories set elsewhere in opensearch.yml (a custom path.data, path.logs or path.repo) are left as they are, still owned by the ID of the removed %{name} user."
+
     # Make systemd forget the unit, now that its file is gone
     if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
         systemctl daemon-reload > /dev/null 2>&1 || true

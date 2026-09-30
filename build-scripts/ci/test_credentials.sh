@@ -43,6 +43,7 @@ DATA_DIR="/var/lib/wazuh-indexer"
 MARKER="${DATA_DIR}/.initialized"
 PRODUCT_DIR="/usr/share/wazuh-indexer"
 SECURITY_TOOLS="${PRODUCT_DIR}/plugins/opensearch-security/tools"
+WAZUH_TOOLS="${PRODUCT_DIR}/tools"
 API="https://127.0.0.1:9200"
 
 PASSED=0
@@ -460,10 +461,19 @@ case "${sans}" in
     *) fail "hostname missing from the SAN list" ;;
 esac
 
-# wazuh-certs-tool issues /C=US/L=California/O=Wazuh/OU=Wazuh/CN=admin. A deployment that replaces
-# the package certificates with the tool's keeps admin_dn valid only if both orders agree.
-check_eq "the admin subject uses the certificates tool's RDN order" \
-    "CN=admin,OU=Wazuh,O=Wazuh,L=California,C=US" "$(subject_of "${CERTS_DIR}/admin.pem")"
+# A deployment that replaces the package certificates with wazuh-certs-tool's keeps admin_dn valid
+# only while both issue the admin certificate with the same subject. Read from the tool this
+# package ships: a literal here cannot notice the two drifting apart.
+tool_subj=$(grep -o "admin\.csr.*-subj '[^']*'" "${WAZUH_TOOLS}/wazuh-certs-tool.sh" 2>/dev/null \
+    | sed "s/.*-subj '//; s/'\$//")
+if [ -z "${tool_subj}" ]; then
+    skip "wazuh-certs-tool.sh is not shipped, or its admin subject could not be read"
+else
+    # openssl renders /A=1/B=2 as B=2,A=1, so the expected DN is the -subj arguments reversed.
+    tool_dn=$(printf '%s' "${tool_subj}" | awk -F/ '{ for (i = NF; i > 1; i--) printf "%s%s", $i, (i > 2 ? "," : "\n") }')
+    check_eq "the admin subject matches the one wazuh-certs-tool.sh issues" \
+        "${tool_dn}" "$(subject_of "${CERTS_DIR}/admin.pem")"
+fi
 
 check_eq "the CA is trusted by the bundled JDK" "yes" "$(ca_is_trusted)"
 
@@ -639,11 +649,12 @@ rm -f "${SENTINEL}"
 
 section "1.9 Rotation with wazuh-passwords-tool.sh"
 
-if [ ! -f "${SECURITY_TOOLS}/wazuh-passwords-tool.sh" ]; then
+if [ ! -f "${WAZUH_TOOLS}/wazuh-passwords-tool.sh" ]; then
     skip "wazuh-passwords-tool.sh is not shipped in this package"
 else
     NEW_PW='Rotated.Pass+2026x'
-    bash "${SECURITY_TOOLS}/wazuh-passwords-tool.sh" -u admin -p "${NEW_PW}" \
+    # -p is a flag: the tool reads the password from standard input.
+    printf '%s' "${NEW_PW}" | bash "${WAZUH_TOOLS}/wazuh-passwords-tool.sh" -u admin -p \
         >/tmp/rotate.log 2>&1
     ROTATE_RC=$?
     if [ "${ROTATE_RC}" != "0" ]; then
@@ -848,6 +859,24 @@ else
     kill "${victim}" 2>/dev/null
     rm -f /run/wazuh-indexer/wazuh-engine.pid
 fi
+
+section "1.12 Reinstalling the package keeps the CA trusted"
+
+# cacerts is a packaged file, not a configuration file, so installing over an existing install
+# replaces it and takes the wazuh-root-ca entry with it. Resolution is complete by then, so the
+# maintainer script's own run is the only thing that can put it back.
+
+check_eq "the CA is trusted before the reinstall" "yes" "$(ca_is_trusted)"
+
+if [ "${PKG_KIND}" = "deb" ]; then
+    DEBIAN_FRONTEND=noninteractive dpkg -i "${PACKAGE}" >/tmp/reinstall.log 2>&1
+else
+    yum reinstall -y "${PACKAGE}" >/tmp/reinstall.log 2>&1 \
+        || rpm -Uvh --replacepkgs "${PACKAGE}" >/tmp/reinstall.log 2>&1
+fi
+check_eq "the package reinstalls cleanly" "0" "$?"
+check "resolution did not run again" grep -q "already initialised" /tmp/reinstall.log
+check_eq "the CA is trusted after the reinstall" "yes" "$(ca_is_trusted)"
 
 # ---------------------------------------------------------------------------
 # 2. Removal

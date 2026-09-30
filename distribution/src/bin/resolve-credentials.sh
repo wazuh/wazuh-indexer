@@ -415,10 +415,11 @@ resolve_internal_users() {
             # mechanism arrives exactly like this.
             if ! placeholder_is_pending "${_riu_key}"; then
                 err "${_riu_key}: internal_users.yml already holds a digest and nothing supplies the password"
-                err "        leaving both alone. This node keeps the credential it has; nothing is published"
-                err "        for the other components. To resolve it from nothing, stop the service and run"
-                err "        ${DIR}/bin/resolve-credentials.sh --clear; to set a password, use"
-                err "        ${SECURITY_TOOLS}/wazuh-passwords-tool.sh"
+                err "        leaving both alone: this node keeps the credential it has, nothing is published"
+                err "        for the other components, and this run still records the installation as"
+                err "        resolved, so the warning is not repeated. To resolve it from nothing, stop the"
+                err "        service and run ${DIR}/bin/resolve-credentials.sh --clear; to set a password,"
+                err "        use ${DIR}/tools/wazuh-passwords-tool.sh"
                 continue
             fi
 
@@ -705,15 +706,15 @@ resolve_certificates() {
     _rc_short=$(hostname -s 2>/dev/null)
     [ -n "${_rc_short}" ] || _rc_short="wazuh-indexer"
     _rc_sans=$(derive_sans)
-    # Same RDN order as wazuh-certs-tool, so a deployment that later replaces these with the
-    # tool's own certificates keeps the DNs already written into opensearch.yml valid.
-    _rc_prefix="/C=US/L=California/O=Wazuh/OU=Wazuh"
+    # wazuh-certs-tool issues with this same RDN order, so a deployment that later replaces these
+    # with the tool's own certificates keeps the DNs already written into opensearch.yml valid.
+    _rc_suffix="/OU=Wazuh/O=Wazuh/L=California/C=US"
 
-    issue_certificate "indexer" "${_rc_prefix}/CN=${_rc_short}" "${_rc_sans}" "${_rc_ca}" || {
+    issue_certificate "indexer" "/CN=${_rc_short}${_rc_suffix}" "${_rc_sans}" "${_rc_ca}" || {
         err "could not issue the node certificate"
         return 1
     }
-    issue_certificate "admin" "${_rc_prefix}/CN=admin" "DNS:localhost" "${_rc_ca}" || {
+    issue_certificate "admin" "/CN=admin${_rc_suffix}" "DNS:localhost" "${_rc_ca}" || {
         err "could not issue the admin certificate"
         return 1
     }
@@ -848,6 +849,12 @@ fi
 # installation once the marker exists, which is what stops a restart or an upgrade from touching
 # credentials or certificates an operator has since changed. --clear is the only way back.
 if resolution_is_complete; then
+    # One exception: the truststore is a packaged file, so installing the package over an existing
+    # one replaces it and takes the CA entry with it. Re-importing needs nothing resolved and is
+    # idempotent.
+    case "${MODE}" in
+        install|upgrade) trust_ca ;;
+    esac
     log "already initialised; nothing is resolved again"
     exit 0
 fi

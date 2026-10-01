@@ -55,6 +55,13 @@ chown -R ${name}:${name} ${data_dir}
 mkdir -p ${pid_dir}
 chown -R ${name}:${name} ${pid_dir}
 
+# A purge leaves these directories closed to everyone but root, and a fresh
+# install over what it kept opens them again with their packaged mode. An
+# upgrade leaves the operator's modes alone.
+if [ -z "$2" ]; then
+    chmod 750 ${config_dir} ${product_dir} ${data_dir} ${log_dir}
+fi
+
 # systemd reads the EnvironmentFile as root, so a service-writable copy lets the
 # service account set variables for the root pre-start step. It carries no
 # secret, so group read is enough.

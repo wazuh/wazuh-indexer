@@ -316,6 +316,25 @@ else
     ok "installer printed no secret"
 fi
 
+# 1.b The install has to end by saying where the passwords are and how to continue. A first-time
+# user has no other way to find either, and the per-key progress lines it used to end with told
+# them nothing they could act on.
+check "the install says where the passwords are" \
+    grep -qF "/etc/wazuh/credentials.env" /tmp/install.log
+check "the install names the dashboard login" \
+    grep -qF "as admin, with WAZUH_INDEXER_ADMIN_PASSWORD" /tmp/install.log
+check "the install says the service is neither running nor enabled" \
+    grep -qF "not running, and will not start at boot" /tmp/install.log
+check "the install gives the command that starts and enables it" \
+    grep -qE "enable --now|chkconfig --add" /tmp/install.log
+# The package ran daemon-reload itself before printing this, so asking for it again would be noise.
+check "the install does not ask for a redundant daemon-reload" \
+    bash -c "! grep -q 'sudo systemctl daemon-reload' /tmp/install.log"
+check "the install points at indexer-security-init.sh" \
+    grep -qF "indexer-security-init.sh" /tmp/install.log
+check "the per-key progress lines are not in the install output" \
+    bash -c "! grep -q 'published WAZUH_INDEXER' /tmp/install.log"
+
 # 1.a2 Everything the resolver needs must be on the host. Since the list came
 # out of the package's own Depends, a miss here means the package under-declares
 # what it needs, not that the test forgot to install something.
@@ -867,6 +886,8 @@ section "1.12 Reinstalling the package keeps the CA trusted"
 # maintainer script's own run is the only thing that can put it back.
 
 check_eq "the CA is trusted before the reinstall" "yes" "$(ca_is_trusted)"
+cert_before=$(subject_of "${CERTS_DIR}/indexer.pem")$(openssl x509 -in "${CERTS_DIR}/indexer.pem" -noout -serial 2>/dev/null)
+creds_before=$(cred_get WAZUH_INDEXER_ADMIN_PASSWORD)
 
 if [ "${PKG_KIND}" = "deb" ]; then
     DEBIAN_FRONTEND=noninteractive dpkg -i "${PACKAGE}" >/tmp/reinstall.log 2>&1
@@ -875,7 +896,11 @@ else
         || rpm -Uvh --replacepkgs "${PACKAGE}" >/tmp/reinstall.log 2>&1
 fi
 check_eq "the package reinstalls cleanly" "0" "$?"
-check "resolution did not run again" grep -q "already initialised" /tmp/reinstall.log
+
+# Resolution happens once, so nothing the first install resolved may change.
+check_eq "the certificate is untouched" "${cert_before}" \
+    "$(subject_of "${CERTS_DIR}/indexer.pem")$(openssl x509 -in "${CERTS_DIR}/indexer.pem" -noout -serial 2>/dev/null)"
+check_eq "the published password is untouched" "${creds_before}" "$(cred_get WAZUH_INDEXER_ADMIN_PASSWORD)"
 check_eq "the CA is trusted after the reinstall" "yes" "$(ca_is_trusted)"
 
 # ---------------------------------------------------------------------------

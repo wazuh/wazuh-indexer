@@ -904,7 +904,8 @@ CREDENTIALS_FILE=$(wazuh_env_get_file 2>/dev/null) || CREDENTIALS_FILE="/etc/waz
 # It names every missing key and where to set it, and never prints a value.
 for _key in ${INVALID}; do
     err "INVALID ${_key}: the supplied value does not meet the password policy"
-    err "        (12-64 characters from A-Z a-z 0-9 . , _ + : @ % ^ = ~ -, with at least one letter and one digit)"
+    err "        12 to 64 characters from A-Z a-z 0-9 . , _ + : @ % ^ = ~ -"
+    err "        with at least one uppercase letter, one lowercase letter, one digit and one symbol"
     err "        correct it in ${CREDENTIALS_FILE} and start the service again"
 done
 

@@ -78,6 +78,7 @@
 - Update the Content Manager OpenAPI (`openapi.yml`) to match the current API [(#1353)](https://github.com/wazuh/wazuh-indexer-plugins/issues/1353)
 - [BUG] The `own_index` demo role is mapped to every user [(#6030)](https://github.com/wazuh/internal-devel-requests/issues/6030)
 - [BUG] Uninstalling wazuh-indexer leaves a dangling systemd symlink in multi-user.target.wants [(#1918)](https://github.com/wazuh/wazuh-indexer/issues/1918)
+- Update stale pre-5.0 architecture description in repository README [(#1961)](https://github.com/wazuh/wazuh-indexer/issues/1961)
 
 ## Prior versions
 - []()

@@ -662,13 +662,26 @@ untrust_ca() {
     fi
 }
 
+# True when every certificate staged in CERTS_DIR was issued by the anchor in $1. Each file is also
+# passed as -untrusted, so a certificate that carries its intermediate CAs verifies too. Expiry is
+# not this check's business.
+pair_issued_by() {
+    for _pi in indexer admin; do
+        [ -f "${CERTS_DIR}/${_pi}.pem" ] || continue
+        openssl verify -no_check_time -CAfile "$1" -untrusted "${CERTS_DIR}/${_pi}.pem" \
+            "${CERTS_DIR}/${_pi}.pem" > /dev/null 2>&1 || return 1
+    done
+    return 0
+}
+
 # The four cases are decided entirely by what is present, with no mode flag: the presence of a
 # private key beside the anchor is the signal, so a host never given one cannot sign and cannot be
 # where a CA key leaks from.
 #
 #   A  nothing in the CA directory        mint a bootstrap CA, then self-issue
 #   B  anchor and key                     issue from the CA found
-#   C  anchor only, pair already staged   use both, generate nothing
+#   C  pair already staged                use it, generate nothing -- once it is known to chain to
+#                                         the anchor
 #   D  anchor only, no pair               unresolved; nothing can be invented
 resolve_certificates() {
     _rc_ca=$(wazuh_ca_get_dir) || {
@@ -676,25 +689,54 @@ resolve_certificates() {
         return 1
     }
 
+    mkdir -p "${CERTS_DIR}"
+
+    # C: an operator staged an issued pair, or a purge kept one. A pair the anchor did not issue
+    # would leave the node unable to complete a handshake while the resolution reports success, so
+    # it is checked first. The anchor is the CA directory's; with nothing there, the copy staged
+    # beside the pair, and no CA is minted: a new one could not have issued it.
+    if [ -f "${CERTS_DIR}/indexer.pem" ] && [ -f "${CERTS_DIR}/indexer-key.pem" ]; then
+        if [ -e "${_rc_ca}/root-ca.pem" ] || [ -e "${_rc_ca}/root-ca.key" ]; then
+            if ! wazuh_ca_ensure; then
+                err "the CA directory could not be prepared"
+                return 1
+            fi
+            _rc_anchor="${_rc_ca}/root-ca.pem"
+        else
+            _rc_anchor="${CERTS_DIR}/root-ca.pem"
+        fi
+
+        if [ ! -f "${_rc_anchor}" ]; then
+            err "a certificate pair is staged in ${CERTS_DIR}, but no CA certificate to verify it"
+            err "        stage the root-ca.pem that issued it into ${_rc_ca}"
+            return 1
+        fi
+        if ! pair_issued_by "${_rc_anchor}"; then
+            err "the certificate pair in ${CERTS_DIR} was not issued by ${_rc_anchor}"
+            err "        stage the CA that issued it, or remove the pair so that this node issues a new one"
+            return 1
+        fi
+
+        # root-ca.pem mode is 0400 and service-owned.
+        if [ "${_rc_anchor}" != "${CERTS_DIR}/root-ca.pem" ]; then
+            install -m 0400 "${_rc_anchor}" "${CERTS_DIR}/root-ca.pem"
+            chown wazuh-indexer:wazuh-indexer "${CERTS_DIR}/root-ca.pem" 2>/dev/null || true
+        fi
+
+        log "found an issued certificate pair in ${CERTS_DIR}; generating nothing"
+        write_distinguished_names
+        return 0
+    fi
+
     if ! wazuh_ca_ensure; then
         err "the CA directory could not be prepared"
         return 1
     fi
 
-    mkdir -p "${CERTS_DIR}"
-
     # root-ca.pem mode is 0400 and service-owned.
     if [ -f "${_rc_ca}/root-ca.pem" ]; then
         install -m 0400 "${_rc_ca}/root-ca.pem" "${CERTS_DIR}/root-ca.pem"
         chown wazuh-indexer:wazuh-indexer "${CERTS_DIR}/root-ca.pem" 2>/dev/null || true
-    fi
-
-    # C: an operator staged an issued pair before installing. That is step 0, which is why there is
-    # no key for it.
-    if [ -f "${CERTS_DIR}/indexer.pem" ] && [ -f "${CERTS_DIR}/indexer-key.pem" ]; then
-        log "found an issued certificate pair in ${CERTS_DIR}; generating nothing"
-        write_distinguished_names
-        return 0
     fi
 
     # D: a trust anchor but no way to sign and no pair.
@@ -869,7 +911,7 @@ if resolve_certificates; then
     trust_ca
 else
     CERTIFICATES_RESOLVED=0
-    err "the indexer has no TLS certificates and this run could not issue them"
+    err "the indexer has no usable TLS certificates and this run could not issue them"
     err "        stage the pair into ${CERTS_DIR} before starting the service"
     err "        (e.g. with wazuh-certs-tool); the service will not start without it"
 fi

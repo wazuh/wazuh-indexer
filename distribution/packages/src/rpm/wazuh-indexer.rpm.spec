@@ -222,6 +222,13 @@ chown -R %{name}:%{name} %{config_dir}
 chown -R %{name}:%{name} %{log_dir}
 chown -R %{name}:%{name} %{data_dir}
 
+# Removing the package leaves these directories closed to everyone but root, and
+# a fresh install over what it kept opens them again with their packaged mode.
+# An upgrade leaves the operator's modes alone.
+if [ $1 -eq 1 ]; then
+    chmod 750 %{config_dir} %{product_dir} %{data_dir} %{log_dir}
+fi
+
 # Resolve credentials and TLS material.
 #
 # $1 is 1 on a fresh install and greater on an upgrade.
@@ -381,6 +388,23 @@ if [ $1 -eq 0 ]; then
             if ! grep -qE '^[[:space:]]*[A-Za-z_][A-Za-z0-9_]*=' "${creds}" 2>/dev/null; then
                 ca_dir="$(wazuh_ca_get_dir 2>/dev/null)" || ca_dir=""
                 if [ -n "${ca_dir}" ] && [ -d "${ca_dir}" ]; then
+                    # The certificates this node was issued from that CA go with it. Kept, they
+                    # are an identity nothing trusts any more, and a reinstall would find them
+                    # beside a new CA. Only a CA with its key here issued anything on this host;
+                    # a pair it did not issue -- the operator's own -- stays.
+                    if [ -f "${ca_dir}/root-ca.key" ] && [ -f "${ca_dir}/root-ca.pem" ]; then
+                        for cert in indexer admin; do
+                            if [ -f %{certs_dir}/${cert}.pem ] && \
+                               openssl verify -no_check_time -CAfile "${ca_dir}/root-ca.pem" \
+                                   %{certs_dir}/${cert}.pem > /dev/null 2>&1; then
+                                rm -f %{certs_dir}/${cert}.pem %{certs_dir}/${cert}-key.pem
+                            fi
+                        done
+                        if cmp -s "${ca_dir}/root-ca.pem" %{certs_dir}/root-ca.pem; then
+                            rm -f %{certs_dir}/root-ca.pem
+                        fi
+                        rmdir %{certs_dir} > /dev/null 2>&1 || true
+                    fi
                     rm -f "${ca_dir}/root-ca.pem" "${ca_dir}/root-ca.key" "${ca_dir}/root-ca.srl"
                     rmdir "${ca_dir}" > /dev/null 2>&1 || true
                 fi
@@ -409,6 +433,59 @@ if [ $1 -eq 0 ]; then
     # cluster they were uploaded to.
     rm -f %{config_dir}/opensearch-security/internal_users.yml.rpmsave \
           %{config_dir}/opensearch.yml.rpmsave
+
+    # %post creates the tmp directory, so it is not in the file list and rpm
+    # would leave it. The configuration, data and log directories themselves only
+    # go if nothing else is left in them: indexed data is never deleted here. rpm
+    # could not remove opensearch-security/ while the .rpmsave deleted above was
+    # still in it, so it goes here too.
+    rm -rf %{data_dir}/tmp
+    rmdir %{config_dir}/opensearch-security %{config_dir} %{data_dir} %{log_dir} > /dev/null 2>&1 || true
+
+    # The package manages its own directories and nothing else. Hand every file
+    # the service account owns in them over to root before the account goes:
+    # userdel frees the UID, and the next system account created would inherit
+    # it -- and with it any certificates, the keystore, the logs and the indexed
+    # data left behind. The files keep their modes. Each directory is closed to
+    # everyone but root instead, which keeps what is inside unreadable and is all
+    # a reinstall has to undo; %post does, beside the chown -R it already runs.
+    # Nothing is deleted.
+    # find -H follows a directory that is itself a symlink but no link inside it,
+    # and chown -h changes those links themselves, so a link the account planted
+    # cannot aim any of this at another file.
+    not_handed_over=""
+    if getent passwd %{name} > /dev/null 2>&1; then
+        for dir in %{config_dir} %{product_dir} %{data_dir} %{log_dir}; do
+            [ -d "${dir}" ] || continue
+            dir_ok=true
+            find -H "${dir}" -user %{name} \
+                -exec chown -h root:root {} + 2>/dev/null || dir_ok=false
+            find -H "${dir}" -group %{name} \
+                -exec chgrp -h root {} + 2>/dev/null || dir_ok=false
+            chmod go-rwx "${dir}" 2>/dev/null || dir_ok=false
+            if [ "${dir_ok}" = true ]; then
+                echo "Kept ${dir}, now owned by root. Reinstalling %{name} takes it back."
+            else
+                not_handed_over="${not_handed_over} ${dir}"
+            fi
+        done
+    fi
+    if [ -n "${not_handed_over}" ]; then
+        echo "Some files under${not_handed_over} could not be handed over to root; they keep the ID of the removed %{name} user." >&2
+    fi
+
+    # %pre creates the service account, and removing the package always takes
+    # it back. userdel may already have dropped the group along with the user
+    # (USERGROUPS_ENAB), hence the second lookup.
+    if getent passwd %{name} > /dev/null 2>&1; then
+        userdel %{name} > /dev/null 2>&1 || true
+    fi
+    if getent group %{name} > /dev/null 2>&1; then
+        groupdel %{name} > /dev/null 2>&1 || true
+    fi
+
+    echo "Note: the package only manages %{config_dir}, %{product_dir}, %{data_dir} and %{log_dir}."
+    echo "Directories set elsewhere in opensearch.yml (a custom path.data, path.logs or path.repo) are left as they are, still owned by the ID of the removed %{name} user."
 
     # Make systemd forget the unit, now that its file is gone
     if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then

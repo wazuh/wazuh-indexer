@@ -80,6 +80,13 @@ fi
 start() {
     [ -x $exec ] || exit 5
 
+    # What the systemd unit runs in ExecStartPre. Without it a host started through SysV comes up
+    # with unresolved credentials -- placeholder hashes nobody can authenticate against -- and
+    # nothing says why.
+    if [ -x "$OPENSEARCH_HOME/bin/resolve-credentials.sh" ]; then
+        "$OPENSEARCH_HOME/bin/resolve-credentials.sh" --prestart || return 1
+    fi
+
     if [ -n "$MAX_OPEN_FILES" ]; then
         ulimit -n $MAX_OPEN_FILES
     fi
@@ -94,8 +101,11 @@ start() {
     if [ -n "$PID_DIR" ] && [ ! -e "$PID_DIR" ]; then
         mkdir -p "$PID_DIR" && chown wazuh-indexer:wazuh-indexer "$PID_DIR"
     fi
-    if [ -n "$pidfile" ] && [ ! -e "$pidfile" ]; then
-        touch "$pidfile" && chown wazuh-indexer:wazuh-indexer "$pidfile"
+    # Recreated on every start, never reused: stop() signals what it reads from these, and a
+    # pidfile left behind by the previous run is not this run's process.
+    if [ -n "$PID_DIR" ]; then
+        rm -f "$pidfile" "$PID_DIR/wazuh-engine.pid"
+        touch "$pidfile" && chown $NAME:$NAME "$pidfile"
     fi
     # Ensure that the lockfile directory exists
     if [ ! -d "/var/lock/subsys/" ]; then
@@ -129,14 +139,26 @@ start() {
     return $retval
 }
 
+# The pidfiles are written by the service account, and stop() runs as root: an unverified pid is
+# a signal root sends wherever that account points it. A pid is ours only when it is a live
+# process, owned by the service account, running out of the installation directory.
+is_indexer_process() {
+    case "$1" in
+        ''|*[!0-9]*) return 1 ;;
+    esac
+    [ -r "/proc/$1/cmdline" ] || return 1
+    [ "$(stat -c '%U' "/proc/$1" 2>/dev/null)" = "$NAME" ] || return 1
+    tr '\0' ' ' < "/proc/$1/cmdline" 2>/dev/null | grep -qF "$OPENSEARCH_HOME"
+}
+
 stop() {
     echo -n $"Stopping $prog... "
     echo
-    
+
     # Stop Wazuh Engine
     if [ -f "$PID_DIR/wazuh-engine.pid" ]; then
         PID_TO_KILL=$(cat "$PID_DIR/wazuh-engine.pid")
-        if [ -n "$PID_TO_KILL" ]; then
+        if is_indexer_process "$PID_TO_KILL"; then
             pkill -P "$PID_TO_KILL" > /dev/null 2>&1 || true
             kill "$PID_TO_KILL" > /dev/null 2>&1 || true
         fi
@@ -145,7 +167,7 @@ stop() {
 
     if [ -f "$pidfile" ]; then
         pid=$(cat "$pidfile")
-        if kill -0 "$pid" > /dev/null 2>&1; then
+        if is_indexer_process "$pid"; then
             kill "$pid"
             retval=$?
             if [ $retval -eq 0 ]; then

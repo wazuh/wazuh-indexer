@@ -27,6 +27,10 @@ case "$PACKAGE_MANAGER" in
         set -e
         ;;
     deb)
+        # Install declared dependencies on the host first.
+        bash "$(dirname "$0")/install_package_dependencies.sh" \
+            "/artifacts/dist/${PACKAGE_NAME}" || true
+
         installed_before=$(dpkg-query -W -f='${Version}' wazuh-indexer)
         echo "Installed before upgrade: wazuh-indexer=$installed_before"
 

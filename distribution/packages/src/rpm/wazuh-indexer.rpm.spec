@@ -238,9 +238,17 @@ fi
 # What to do next, on a fresh install only. %posttrans cannot tell an install from an upgrade,
 # which is why this lives here.
 if [ $1 -eq 1 ]; then
+    # The credentials file moves with WAZUH_BASE_DIR, so the shared helper says where it is
+    # rather than this printing a fixed path.
+    creds=""
+    if [ -f %{product_dir}/lib/wazuh-credentials.sh ]; then
+        . %{product_dir}/lib/wazuh-credentials.sh
+        creds=$(wazuh_env_get_file 2>/dev/null) || creds=""
+    fi
+
     echo ""
-    if [ -f /etc/wazuh/credentials.env ]; then
-        echo "Passwords saved in /etc/wazuh/credentials.env (readable by root only)."
+    if [ -n "${creds}" ] && [ -f "${creds}" ]; then
+        echo "Passwords saved in ${creds} (readable by root only)."
         echo "Log in to the Wazuh dashboard as admin, with WAZUH_INDEXER_ADMIN_PASSWORD."
     fi
     # %posttrans already ran `systemctl daemon-reload`, so the only steps left are enabling and

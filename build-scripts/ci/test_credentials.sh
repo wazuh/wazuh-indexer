@@ -320,7 +320,7 @@ fi
 # user has no other way to find either, and the per-key progress lines it used to end with told
 # them nothing they could act on.
 check "the install says where the passwords are" \
-    grep -qF "/etc/wazuh/credentials.env" /tmp/install.log
+    grep -qF "${CREDENTIALS}" /tmp/install.log
 check "the install names the dashboard login" \
     grep -qF "as admin, with WAZUH_INDEXER_ADMIN_PASSWORD" /tmp/install.log
 check "the install says the service is neither running nor enabled" \

@@ -70,11 +70,14 @@ fi
 chmod -c 440 "${buildroot}${product_dir}/VERSION.json"
 chmod -c 500 "${buildroot}${certs_dir}"
 if [ -d "${buildroot}${product_dir}/plugins/opensearch-security" ]; then
-	chmod -c 0740 "${buildroot}${product_dir}"/plugins/opensearch-security/tools/*.sh
+	chmod -c 0750 "${buildroot}${product_dir}"/plugins/opensearch-security/tools/*.sh
 fi
 
 binary_files=()
 binary_files+=("${buildroot}${product_dir}"/bin/*)
+if [ -d "${buildroot}${product_dir}/tools" ]; then
+	binary_files+=("${buildroot}${product_dir}"/tools/*.sh)
+fi
 binary_files+=("${buildroot}/etc/init.d/${name}")
 binary_files+=("${buildroot}${product_dir}"/jdk/bin/*)
 binary_files+=("${buildroot}${product_dir}"/jdk/lib/jspawnhelper)

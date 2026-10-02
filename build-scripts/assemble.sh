@@ -209,6 +209,50 @@ function remove_security_entry() {
 }
 
 # ====
+# Replace an internal user's bcrypt hash with a credential placeholder
+#
+# ${NAME} names the environment variable that carries the password. It is not a
+# valid bcrypt digest, which is what keeps the package free of a usable
+# credential: until resolve-credentials.sh substitutes the digest, the account cannot be
+# authenticated as, whatever is presented.
+# ====
+function set_security_hash_placeholder() {
+    local key="$1"
+    local var="$2"
+    local file="$3"
+
+    if ! grep -q "^${key}:" "$file"; then
+        echo "ERROR: no '${key}' entry found in ${file}."
+        echo "       Upstream changed this file. Re-check where the account went before releasing."
+        exit 1
+    fi
+
+    awk -v key="^${key}:" -v var="$var" '
+        $0 ~ key { inblock = 1; print; next }
+        /^[^[:space:]]/ { inblock = 0 }
+        inblock && /^[[:space:]]*hash:[[:space:]]/ {
+            match($0, /^[[:space:]]*/)
+            print substr($0, 1, RLENGTH) "hash: \"${" var "}\""
+            replaced = 1
+            next
+        }
+        { print }
+        END { if (!replaced) exit 1 }
+    ' "$file" >"${file}.tmp" || {
+        rm -f "${file}.tmp"
+        echo "ERROR: no 'hash' field found in the '${key}' entry of ${file}."
+        echo "       Upstream changed this file. Re-check before releasing."
+        exit 1
+    }
+    mv "${file}.tmp" "$file"
+
+    if ! grep -qF "hash: \"\${${var}}\"" "$file"; then
+        echo "ERROR: failed to set the hash placeholder for '${key}' in ${file}"
+        exit 1
+    fi
+}
+
+# ====
 # Set up configuration files
 # ====
 function add_configuration_files() {
@@ -218,64 +262,19 @@ function add_configuration_files() {
     cat "$PATH_CONF/security/internal_users.wazuh.yml" >>"$PATH_CONF/opensearch-security/internal_users.yml"
     cat "$PATH_CONF/security/action_groups.wazuh.yml" >>"$PATH_CONF/opensearch-security/action_groups.yml"
 
-    # The demo configuration shipped by the security plugin maps the built-in
-    # "own_index" role to every user ("*"). That role grants indices_all over an
-    # index named after the user, so any account -- read-only ones included --
-    # can create and fill an index, change its settings and attach aliases that
-    # fall inside the product's own index patterns. A security cluster has no
-    # use for per-user scratch indices, so drop the mapping.
-    remove_security_entry "own_index" "$PATH_CONF/opensearch-security/roles_mapping.yml"
-
-    # That same demo configuration ships seven internal users, every one of them
-    # enabled with its password equal to its username. Only two have a job here:
-    # "admin", which the installer and the passwords tool expect, and
-    # "kibanaserver", the service account the dashboard authenticates with. The
-    # rest are upstream's demonstration accounts and are removed:
-    #
-    #   anomalyadmin    - anomaly_full_access, assigned directly on the account
-    #   kibanaro        - kibanauser + readall, i.e. write access to the saved
-    #                     objects (see the roles_mapping block below)
-    #   logstash        - create indices and write to logstash-* and *beat*
-    #   readall         - read every index in the cluster
-    #   snapshotrestore - manage_snapshots
-    #
+    # Deleting unused users.
     for user in anomalyadmin kibanaro logstash readall snapshotrestore; do
         remove_security_entry "$user" "$PATH_CONF/opensearch-security/internal_users.yml"
     done
 
-    # Deleting the accounts is only half of it. Four of them held no privilege
-    # directly: they carried a backend role, and the mappings below are what
-    # turn that name into a role. A backend role comes from whatever
-    # authenticates the user -- an LDAP or AD group, a JWT claim -- so while
-    # these mappings stand, a directory group that merely happens to be named
-    # "readall" or "kibanauser" is granted the privilege with no account of
-    # ours involved and nobody assigning anything. Those names are the ones
-    # upstream's own documentation uses, so the coincidence is likely.
-    #
-    #   kibana_user      <- "kibanauser": delete, index and manage over
-    #                       .kibana*, that is, write access to the index
-    #                       patterns, visualizations and dashboards the product
-    #                       ships. Multi-tenancy is disabled a few lines down,
-    #                       so there is no per-user tenant for such a write to
-    #                       land in: it reaches what every analyst sees. None of
-    #                       the Wazuh personas needs this role -- they are all
-    #                       read-only over .kibana* (see roles.wazuh.yml) and
-    #                       saved objects are managed by admin.
-    #   readall          <- "readall": read every index in the cluster
-    #   logstash         <- "logstash": create indices, write logstash-*/*beat*
-    #   manage_snapshots <- "snapshotrestore": snapshot and restore
-    #
-    # "all_access" and "kibana_server" are deliberately left in place: they are
-    # how admin and kibanaserver get their privileges.
-    #
-    # Note that this removes the paths to those roles, not the roles. They are
-    # static -- bundled in the plugin jar under static_config/static_roles.yml
-    # -- so they cannot be deleted from a configuration file, and they cannot be
-    # weakened by redefining them either: on an overlap the plugin discards the
-    # dynamic definition and keeps the static one. An operator who maps a user
-    # to one of these roles by hand still gets it; what is removed here is every
-    # path the product ships.
-    for mapping in kibana_user readall logstash manage_snapshots; do
+    # internal_users.wazuh.yml already declares a hash placeholder for "wazuh-manager".
+    set_security_hash_placeholder "admin" "WAZUH_INDEXER_ADMIN_PASSWORD" \
+        "$PATH_CONF/opensearch-security/internal_users.yml"
+    set_security_hash_placeholder "kibanaserver" "WAZUH_INDEXER_KIBANASERVER_PASSWORD" \
+        "$PATH_CONF/opensearch-security/internal_users.yml"
+
+    # Deleting unused role mappings
+    for mapping in kibana_user readall logstash manage_snapshots own_index; do
         remove_security_entry "$mapping" "$PATH_CONF/opensearch-security/roles_mapping.yml"
     done
 
@@ -309,18 +308,20 @@ function add_wazuh_tools() {
     local download_url
     download_url="https://packages-staging.xdrsiem.wazuh.info/nightly/${version}/installation-assistant"
 
-    local tools_dir="$PATH_PLUGINS"/opensearch-security/tools
+    # tools folder
+    local tools_dir="${PATH_PRODUCT}/tools"
+    mkdir -p "${tools_dir}"
 
     retry 3 5 curl -sL --connect-timeout 10 --max-time 60 --fail "${download_url}/config-${version}-latest.yml" -o "${tools_dir}"/config.yml
     retry 3 5 curl -sL --connect-timeout 10 --max-time 60 --fail "${download_url}/wazuh-passwords-tool-${version}-latest.sh" -o "${tools_dir}"/wazuh-passwords-tool.sh
     retry 3 5 curl -sL --connect-timeout 10 --max-time 60 --fail "${download_url}/wazuh-certs-tool-${version}-latest.sh" -o "${tools_dir}"/wazuh-certs-tool.sh
-}
 
-# ====
-# Add demo certificates installer
-# ====
-function add_demo_certs_installer() {
-    cp install-demo-certificates.sh "$PATH_PLUGINS"/opensearch-security/tools/
+    # The shared credential library belongs in lib/, not tools/: it is sourced,
+    # never executed, and ships non-executable.
+    local lib_dir="${PATH_PRODUCT}/lib"
+    mkdir -p "${lib_dir}"
+    retry 3 5 curl -sL --connect-timeout 10 --max-time 60 --fail "${download_url}/wazuh-credentials-${version}-latest.sh" -o "${lib_dir}"/wazuh-credentials.sh
+    chmod 644 "${lib_dir}"/wazuh-credentials.sh
 }
 
 # ====
@@ -470,6 +471,7 @@ function assemble_tar() {
 
     generate_installer_version_file "${decompressed_tar_dir}"
 
+    PATH_PRODUCT="${decompressed_tar_dir}"
     PATH_CONF="${decompressed_tar_dir}/config"
     PATH_BIN="${decompressed_tar_dir}/bin"
     PATH_PLUGINS="${decompressed_tar_dir}/plugins"
@@ -481,7 +483,6 @@ function assemble_tar() {
     # Install Wazuh Engine
     install_wazuh_engine "${decompressed_tar_dir}"
 
-    add_demo_certs_installer
     # Swap configuration files
     add_configuration_files
     remove_unneeded_files
@@ -505,6 +506,7 @@ function assemble_rpm() {
 
     cd "${TMP_DIR}"
     local src_path="./usr/share/wazuh-indexer"
+    PATH_PRODUCT="${src_path}"
     PATH_CONF="./etc/wazuh-indexer"
     PATH_BIN="${src_path}/bin"
     PATH_PLUGINS="${src_path}/plugins"
@@ -522,7 +524,6 @@ function assemble_rpm() {
     # Install Wazuh Engine
     install_wazuh_engine "${src_path}"
 
-    add_demo_certs_installer
     # Swap configuration files
     add_configuration_files
     remove_unneeded_files
@@ -559,6 +560,7 @@ function assemble_deb() {
 
     cd "${TMP_DIR}"
     local src_path="./usr/share/wazuh-indexer"
+    PATH_PRODUCT="${src_path}"
     PATH_CONF="./etc/wazuh-indexer"
     PATH_BIN="${src_path}/bin"
     PATH_PLUGINS="${src_path}/plugins"
@@ -577,7 +579,6 @@ function assemble_deb() {
     # Install Wazuh Engine
     install_wazuh_engine "${src_path}"
 
-    add_demo_certs_installer
     # Swap configuration files
     add_configuration_files
     remove_unneeded_files
@@ -628,8 +629,6 @@ function main() {
     TMP_DIR="${OUTPUT}/tmp/${TARGET}"
     mkdir -p "$TMP_DIR"
     cp "${OUTPUT}/dist/$ARTIFACT_BUILD_NAME" "${TMP_DIR}"
-    # Copy the demo certificates generator
-    cp distribution/packages/src/common/scripts/install-demo-certificates.sh "$TMP_DIR"
 
     case $PACKAGE in
     tar)

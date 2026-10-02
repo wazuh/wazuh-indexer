@@ -79,6 +79,7 @@
 - [BUG] The `own_index` demo role is mapped to every user [(#6030)](https://github.com/wazuh/internal-devel-requests/issues/6030)
 - [BUG] Uninstalling wazuh-indexer leaves a dangling systemd symlink in multi-user.target.wants [(#1918)](https://github.com/wazuh/wazuh-indexer/issues/1918)
 - Build the bundled installation-assistant tools from GitHub instead of the staging nightly [(#1972)](https://github.com/wazuh/wazuh-indexer/issues/1972)
+- Update stale pre-5.0 architecture description in repository README [(#1961)](https://github.com/wazuh/wazuh-indexer/issues/1961)
 
 ## Prior versions
 - []()

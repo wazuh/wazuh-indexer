@@ -225,12 +225,42 @@ chown -R %{name}:%{name} %{data_dir}
 # Resolve credentials and TLS material.
 #
 # $1 is 1 on a fresh install and greater on an upgrade.
+# Quiet, so the next steps below are the last thing printed; anything that could not be resolved
+# still shows.
 if [ -x %{product_dir}/bin/resolve-credentials.sh ]; then
     if [ $1 -gt 1 ]; then
-        %{product_dir}/bin/resolve-credentials.sh --upgrade || true
+        %{product_dir}/bin/resolve-credentials.sh --upgrade --quiet || true
     else
-        %{product_dir}/bin/resolve-credentials.sh --install || true
+        %{product_dir}/bin/resolve-credentials.sh --install --quiet || true
     fi
+fi
+
+# What to do next, on a fresh install only. %posttrans cannot tell an install from an upgrade,
+# which is why this lives here.
+if [ $1 -eq 1 ]; then
+    # The credentials file moves with WAZUH_BASE_DIR, so the shared helper says where it is
+    # rather than this printing a fixed path.
+    creds=""
+    if [ -f %{product_dir}/lib/wazuh-credentials.sh ]; then
+        . %{product_dir}/lib/wazuh-credentials.sh
+        creds=$(wazuh_env_get_file 2>/dev/null) || creds=""
+    fi
+
+    echo ""
+    if [ -n "${creds}" ] && [ -f "${creds}" ]; then
+        echo "Passwords saved in ${creds} (readable by root only)."
+        echo "Log in to the Wazuh dashboard as admin, with WAZUH_INDEXER_ADMIN_PASSWORD."
+    fi
+    # %posttrans already ran `systemctl daemon-reload`, so the only steps left are enabling and
+    # starting, which `--now` does together.
+    echo "The indexer is not running, and will not start at boot until it is enabled:"
+    if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
+        echo " systemctl enable --now %{name}"
+    elif command -v chkconfig > /dev/null 2>&1; then
+        echo " chkconfig --add %{name} && service %{name} start"
+    fi
+    echo "Then load the security configuration, once, from one node:"
+    echo " %{product_dir}/bin/indexer-security-init.sh"
 fi
 
 exit 0
@@ -261,31 +291,8 @@ if [ -f %{state_file} ]; then
     elif command -v /etc/init.d/%{name} > /dev/null 2>&1; then
         /etc/init.d/%{name} restart > /dev/null 2>&1
     fi
-else
-    # Messages
-    if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
-        echo "### NOT starting on installation, please execute the following statements to configure %{name} service to start automatically using systemd"
-        echo " sudo systemctl daemon-reload"
-        echo " sudo systemctl enable %{name}.service"
-        echo "### You can start %{name} service by executing"
-        echo " sudo systemctl start %{name}.service"
-    else
-        if command -v chkconfig > /dev/null 2>&1; then
-            echo "### NOT starting on installation, please execute the following statements to configure %{name} service to start automatically using chkconfig"
-            echo " sudo chkconfig --add %{name}"
-        elif command -v update-rc.d > /dev/null 2>&1; then
-            echo "### NOT starting on installation, please execute the following statements to configure %{name} service to start automatically using update-rc.d"
-            echo " sudo update-rc.d %{name} defaults 95 10"
-        fi
-        if command -v service > /dev/null 2>&1; then
-            echo "### You can start %{name} service by executing"
-            echo " sudo service %{name} start"
-        elif command -v /etc/init.d/%{name} > /dev/null 2>&1; then
-            echo "### You can start %{name} service by executing"
-            echo " sudo /etc/init.d/%{name} start"
-        fi
-    fi
 fi
+
 exit 0
 
 %preun
@@ -479,7 +486,9 @@ exit 0
 %changelog
 * Wed Oct 14 2026 support <info@wazuh.com> - 5.0.0
 - More info: https://documentation.wazuh.com/current/release-notes/release-5-0-0.html
-* Wed Sep 16 2026 support <info@wazuh.com> - 4.14.9
+* Thu Oct 08 2026 support <info@wazuh.com> - 4.14.10
+- More info: https://documentation.wazuh.com/current/release-notes/release-4-14-10.html
+* Wed Oct 07 2026 support <info@wazuh.com> - 4.14.9
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-14-9.html
 * Wed Sep 23 2026 support <info@wazuh.com> - 4.14.8
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-14-8.html

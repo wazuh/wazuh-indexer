@@ -32,6 +32,8 @@
 #   --clear      Takes back everything this component resolved, for images built by installing the
 #                package. Nothing in the product calls it.
 #
+# -q|--quiet silences the progress lines; whatever could not be resolved still prints.
+#
 # Every mode resolves passwords, certificates and the JDK truststore entry while the marker is
 # absent; the marker, not the mode, is what stops it happening twice. Nothing here opens a network
 # connection: presence and format only.
@@ -41,6 +43,7 @@
 
 MODE="prestart"
 DIR=""
+QUIET=""
 
 # ${1-} rather than $1, matching the helpers' convention: the bare form is an "unbound variable"
 # error under a caller that runs us with `set -u`, and `shift 2` on a lone -H is a hard error in
@@ -51,6 +54,7 @@ while [ -n "${1-}" ]; do
         --upgrade)  MODE="upgrade" ; shift ;;
         --prestart) MODE="prestart"; shift ;;
         --clear)    MODE="clear"   ; shift ;;
+        -q|--quiet) QUIET="1"      ; shift ;;
         -H)
             if [ -z "${2-}" ]; then
                 echo "resolve-credentials: -H needs a directory" >&2
@@ -60,7 +64,7 @@ while [ -n "${1-}" ]; do
             shift 2
             ;;
         -h|--help)
-            echo "Usage: $0 [--install|--upgrade|--prestart|--clear] [-H <home>]"
+            echo "Usage: $0 [--install|--upgrade|--prestart|--clear] [-q|--quiet] [-H <home>]"
             exit 0
             ;;
         *)
@@ -113,7 +117,10 @@ OWNED_KEYS="WAZUH_INDEXER_ADMIN_PASSWORD WAZUH_INDEXER_KIBANASERVER_PASSWORD WAZ
 
 LOG_TAG="resolve-credentials"
 
+# Progress. Silenced by --quiet, which the maintainer scripts use so that the install ends with
+# its next-steps block rather than with a list of keys. Errors are never silenced.
 log() {
+    [ -z "${QUIET}" ] || return 0
     echo "${LOG_TAG}: $*"
 }
 

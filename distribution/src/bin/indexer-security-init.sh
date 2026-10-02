@@ -98,7 +98,29 @@ getPort() {
 }
 # -----------------------------------------------------------------------------
 
+# securityadmin authenticates with a certificate, and the cluster accepts it only if its subject
+# is listed in plugins.security.authcz.admin_dn. Replacing the certificates without updating that
+# setting fails with "is not an admin user", which does not say what is wrong.
+checkAdminDn() {
+
+    admin_cert="${WAZUH_INDEXER_ADMIN_PATH}/admin.pem"
+    [ -f "${admin_cert}" ] || return 0
+
+    dn=$(openssl x509 -in "${admin_cert}" -noout -subject -nameopt RFC2253 2>/dev/null | sed 's/^subject= *//')
+    [ -n "${dn}" ] || return 0
+
+    if ! grep -qF "${dn}" "${CONFIG_FILE}"; then
+        echo "WARNING: the subject of ${admin_cert}"
+        echo "           ${dn}"
+        echo "         is not listed in plugins.security.authcz.admin_dn of ${CONFIG_FILE}."
+        echo "         The cluster will refuse it with \"is not an admin user\". Add it there and retry."
+    fi
+
+}
+
 securityadmin() {
+
+    checkAdminDn
 
     if [ ! -d "${SECURITY_PATH}" ]; then
         echo "ERROR: it was not possible to find ${SECURITY_PATH}"

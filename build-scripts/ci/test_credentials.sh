@@ -799,6 +799,23 @@ else
     check_eq "the operator's node list survives a later resolution" \
         "${before}" "$(dn_list plugins.security.nodes_dn | tr '\n' ' ')"
 
+    # --- A password the policy rejects --------------------------------------
+    # The message has to describe the rule that is actually enforced, which lives in
+    # wazuh_password_validate.
+    rm -f "${MARKER}"
+    cp -a "${CREDENTIALS}" /tmp/credentials.env.policy
+    printf "WAZUH_INDEXER_ADMIN_PASSWORD='MyCompanyPass2026'\n" > "${CREDENTIALS}"
+    chmod 600 "${CREDENTIALS}"
+    out=$("${RESOLVER}" --prestart 2>&1); rc=$?
+    check_eq "a password without a symbol is refused" "1" "${rc}"
+    case "${out}" in
+        *"one uppercase letter, one lowercase letter, one digit and one symbol"*)
+            ok "the refusal describes the rule that is enforced" ;;
+        *) fail "the refusal describes a different rule than the one checked" ;;
+    esac
+    cp -a /tmp/credentials.env.policy "${CREDENTIALS}"
+    rm -f "${MARKER}"
+
     # --- A digest with nothing left to supply its password -------------------
     # The state --clear used to leave behind, and how an upgrade from a version that predates this
     # mechanism arrives. Resolution must not publish a new password over it, and must not refuse to

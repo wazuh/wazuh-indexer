@@ -1,7 +1,7 @@
 ## [v5.0.0]
 
 ### Added
-- Bundle the Wazuh Engine in the Wazuh Indexer packages and Docker images, and manage its lifecycle with the `wazuh-indexer` service [(#1298)](https://github.com/wazuh/wazuh-indexer/pull/1298) [(#1302)](https://github.com/wazuh/wazuh-indexer/pull/1302)
+- Bundle the Wazuh Engine in the Wazuh Indexer packages and Docker images, and manage its lifecycle with the `wazuh-indexer` service <!-- [(#1298)](https://github.com/wazuh/wazuh-indexer/pull/1298) [(#1302)](https://github.com/wazuh/wazuh-indexer/pull/1302) -->
 - Bundle CTI content snapshots in the Wazuh Indexer packages [(#1105)](https://github.com/wazuh/wazuh-indexer-plugins/issues/1105)
 - Generate indexer credentials and TLS material at install time instead of shipping defaults [(#1927)](https://github.com/wazuh/wazuh-indexer/issues/1927)
 - Add default Wazuh Indexer users and roles [(#462)](https://github.com/wazuh/wazuh-indexer-plugins/issues/462) [(#1538)](https://github.com/wazuh/wazuh-indexer/issues/1538) [(#1719)](https://github.com/wazuh/wazuh-indexer/issues/1719)
@@ -13,7 +13,7 @@
 - Add `workload-management` plugin [(#1576)](https://github.com/wazuh/wazuh-indexer/issues/1576)
 - Add `opensearch-custom-codecs` plugin [(#1271)](https://github.com/wazuh/wazuh-indexer-plugins/issues/1271)
 - Add `wazuh-indexer-setup` plugin [(#857)](https://github.com/wazuh/wazuh-indexer/issues/857)
-- Add `wazuh-indexer-content-manager` plugin [(#1221)](https://github.com/wazuh/wazuh-indexer/pull/1221)
+- Add `wazuh-indexer-content-manager` plugin <!-- [(#1221)](https://github.com/wazuh/wazuh-indexer/pull/1221) -->
 - Add `wazuh-indexer-reports-scheduler` plugin, replacing `opensearch-reports-scheduler` [(#1)](https://github.com/wazuh/wazuh-indexer-reporting/issues/1) [(#999)](https://github.com/wazuh/wazuh-indexer/issues/999)
 - Add `wazuh-indexer-security-analytics` plugin, a fork of `opensearch-security-analytics` [(#1)](https://github.com/wazuh/wazuh-indexer-security-analytics/issues/1) [(#1270)](https://github.com/wazuh/wazuh-indexer/issues/1270)
 - Add `wazuh-indexer-common-utils` library, shared by the forked plugins [(#1)](https://github.com/wazuh/wazuh-indexer-common-utils/issues/1)
@@ -32,7 +32,7 @@
 - Upgrade to OpenSearch 3.6.0 and JDK 25 [(#874)](https://github.com/wazuh/wazuh-indexer/issues/874) [(#1000)](https://github.com/wazuh/wazuh-indexer/issues/1000) [(#1086)](https://github.com/wazuh/wazuh-indexer/issues/1086) [(#1177)](https://github.com/wazuh/wazuh-indexer/issues/1177) [(#1207)](https://github.com/wazuh/wazuh-indexer/issues/1207) [(#1284)](https://github.com/wazuh/wazuh-indexer/issues/1284) [(#1332)](https://github.com/wazuh/wazuh-indexer/issues/1332) [(#1410)](https://github.com/wazuh/wazuh-indexer/issues/1410) [(#1341)](https://github.com/wazuh/wazuh-indexer/issues/1341)
 - Refuse package upgrades from Wazuh Indexer 4.x, which require a clean installation [(#1653)](https://github.com/wazuh/wazuh-indexer/issues/1653) [(#1661)](https://github.com/wazuh/wazuh-indexer/issues/1661)
 - Ship the `admin`, `kibanaserver` and `wazuh-manager` users without a usable password hash [(#1927)](https://github.com/wazuh/wazuh-indexer/issues/1927)
-- Enable transport hostname verification (`transport.ssl.enforce_hostname_verification`) by default [(#1916)](https://github.com/wazuh/wazuh-indexer/pull/1916)
+- Enable transport hostname verification (`transport.ssl.enforce_hostname_verification`) by default <!-- [(#1916)](https://github.com/wazuh/wazuh-indexer/pull/1916) -->
 - Enable memory locking (`bootstrap.memory_lock`) by default [(#1670)](https://github.com/wazuh/wazuh-indexer/issues/1670)
 - Disable multi-tenancy by default [(#1080)](https://github.com/wazuh/wazuh-indexer/issues/1080)
 - Set `OPENSEARCH_TMPDIR` to `/var/lib/wazuh-indexer/tmp` to avoid exhausting the `/tmp` partition [(#1572)](https://github.com/wazuh/wazuh-indexer/issues/1572)

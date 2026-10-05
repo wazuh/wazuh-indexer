@@ -64,7 +64,7 @@
 - Fix `lintian/overrides` file not being read and bundled into Wazuh Indexer packages [(#907)](https://github.com/wazuh/wazuh-indexer/issues/907)
 - Fix SLF4J warnings during startup [(#1577)](https://github.com/wazuh/wazuh-indexer/issues/1577)
 - Fix `StreamTransportService is not available` warnings [(#1582)](https://github.com/wazuh/wazuh-indexer/issues/1582)
-- (operational) Fix packaging test failures on Debian packages by adding `DEBIAN_FRONTEND=noninteractive` to the installation command [(#1115)](
+- (operational) Fix packaging test failures on Debian packages by adding `DEBIAN_FRONTEND=noninteractive` to the installation command [(#913)](https://github.com/wazuh/wazuh-indexer/issues/913)
 - (operational) Fix packages upload [(#844)](https://github.com/wazuh/wazuh-indexer/issues/844)
 - (operational) Fix deprecation warning on the email checker GH Action [(#1110)](https://github.com/wazuh/wazuh-indexer/issues/1110)
 - (operational) `linkchecker` failures [(#867)](https://github.com/wazuh/wazuh-indexer-plugins/issues/867)

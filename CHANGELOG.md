@@ -37,6 +37,7 @@
 - Disable multi-tenancy by default [(#1080)](https://github.com/wazuh/wazuh-indexer/issues/1080)
 - Set `OPENSEARCH_TMPDIR` to `/var/lib/wazuh-indexer/tmp` to avoid exhausting the `/tmp` partition [(#1572)](https://github.com/wazuh/wazuh-indexer/issues/1572)
 - Update `README.md` after 5.0.0 conceptual and architectural changes [(#1961)](https://github.com/wazuh/wazuh-indexer/issues/1961)
+- Hand leftover files over to root and remove the `wazuh-indexer` user and group when the package is purged [(#1951)](https://github.com/wazuh/wazuh-indexer/issues/1951)
 - (operational) Migrate packaging tests to Docker [(#928)](https://github.com/wazuh/wazuh-indexer/issues/928)
 - (operational) Change workflows names to include the version it targets to [(#1122)](https://github.com/wazuh/wazuh-indexer/issues/1122)
 - (operational) Update GitHub Actions to the latest version available [(#1129)](https://github.com/wazuh/wazuh-indexer/issues/1129)

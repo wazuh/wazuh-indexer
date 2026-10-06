@@ -122,39 +122,46 @@ if [ -n "$2" ]; then
             echo " sudo /etc/init.d/${name} start"
         fi
     fi
-else
-    # Messages
-    if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
-        echo "### NOT starting on installation, please execute the following statements to configure ${name} service to start automatically using systemd"
-        echo " sudo systemctl daemon-reload"
-        echo " sudo systemctl enable ${name}.service"
-        echo "### You can start ${name} service by executing"
-        echo " sudo systemctl start ${name}.service"
+fi
+
+# Resolve credentials and TLS material. Quiet, so the next steps below are the last thing printed;
+# anything that could not be resolved still shows.
+if [ -x "${product_dir}/bin/resolve-credentials.sh" ]; then
+    if [ -n "$2" ]; then
+        "${product_dir}/bin/resolve-credentials.sh" --upgrade --quiet || true
     else
-        if command -v chkconfig > /dev/null 2>&1; then
-            echo "### NOT starting on installation, please execute the following statements to configure ${name} service to start automatically using chkconfig"
-            echo " sudo chkconfig --add ${name}"
-        elif command -v update-rc.d > /dev/null 2>&1; then
-            echo "### NOT starting on installation, please execute the following statements to configure ${name} service to start automatically using update-rc.d"
-            echo " sudo update-rc.d ${name} defaults 95 10"
-        fi
-        if command -v service > /dev/null 2>&1; then
-            echo "### You can start ${name} service by executing"
-            echo " sudo service ${name} start"
-        elif command -v /etc/init.d/${name} > /dev/null 2>&1; then
-            echo "### You can start ${name} service by executing"
-            echo " sudo /etc/init.d/${name} start"
-        fi
+        "${product_dir}/bin/resolve-credentials.sh" --install --quiet || true
     fi
 fi
 
-# Resolve credentials and TLS material.
-if [ -x "${product_dir}/bin/resolve-credentials.sh" ]; then
-    if [ -n "$2" ]; then
-        "${product_dir}/bin/resolve-credentials.sh" --upgrade || true
-    else
-        "${product_dir}/bin/resolve-credentials.sh" --install || true
+# What to do next, on a fresh install only.
+if [ -z "$2" ]; then
+    # The credentials file moves with WAZUH_BASE_DIR, so the shared helper says where it is
+    # rather than this printing a fixed path.
+    creds=""
+    if [ -f "${product_dir}/lib/wazuh-credentials.sh" ]; then
+        # shellcheck source=/dev/null
+        . "${product_dir}/lib/wazuh-credentials.sh"
+        creds=$(wazuh_env_get_file 2>/dev/null) || creds=""
     fi
+
+    echo ""
+    if [ -n "${creds}" ] && [ -f "${creds}" ]; then
+        echo "Passwords saved in ${creds} (readable by root only)."
+        echo "Log in to the Wazuh dashboard as admin, with WAZUH_INDEXER_ADMIN_PASSWORD."
+    fi
+    # The package already ran `systemctl daemon-reload`, so the only steps left are enabling and
+    # starting, which `--now` does together.
+    echo "The indexer is not running, and will not start at boot until it is enabled:"
+    if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
+        echo " systemctl enable --now ${name}"
+    elif command -v chkconfig > /dev/null 2>&1; then
+        echo " chkconfig --add ${name} && service ${name} start"
+    elif command -v update-rc.d > /dev/null 2>&1; then
+        echo " update-rc.d ${name} defaults 95 10 && service ${name} start"
+    fi
+    echo "Then load the security configuration, once, from one node:"
+    echo " ${product_dir}/bin/indexer-security-init.sh"
 fi
 
 exit 0

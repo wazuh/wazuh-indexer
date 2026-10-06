@@ -302,26 +302,52 @@ function remove_unneeded_files() {
 # ====
 # Add additional tools into packages
 # ====
+#
+# The tools are built from the wazuh-installation-assistant sources on GitHub,
+# so the package does not depend on a nightly being published for the version.
+# The first reference that resolves wins: the branch named after the version,
+# then its tag.
 function add_wazuh_tools() {
     local version=${1}
 
-    local download_url
-    download_url="https://packages-staging.xdrsiem.wazuh.info/nightly/${version}/installation-assistant"
+    local archive_url="https://github.com/wazuh/wazuh-installation-assistant/archive"
+    local refs=("refs/heads/${version}" "refs/tags/v${version}")
+
+    local src_dir
+    src_dir=$(mktemp -d)
+
+    # curl --retry only retries transient errors, so a missing reference fails
+    # at once and the next one is tried.
+    local ref
+    for ref in "${refs[@]}"; do
+        if curl -sL --connect-timeout 10 --max-time 60 --retry 3 --retry-delay 5 --fail \
+            "${archive_url}/${ref}.tar.gz" -o "${src_dir}/source.tar.gz"; then
+            break
+        fi
+        rm -f "${src_dir}/source.tar.gz"
+    done
+    if [ ! -f "${src_dir}/source.tar.gz" ]; then
+        echo "ERROR: Could not download wazuh-installation-assistant from any of: ${refs[*]}" >&2
+        exit 1
+    fi
+    tar -xzf "${src_dir}/source.tar.gz" -C "${src_dir}" --strip-components=1
+    bash "${src_dir}/builder.sh" -c -p
 
     # tools folder
     local tools_dir="${PATH_PRODUCT}/tools"
     mkdir -p "${tools_dir}"
 
-    retry 3 5 curl -sL --connect-timeout 10 --max-time 60 --fail "${download_url}/config-${version}-latest.yml" -o "${tools_dir}"/config.yml
-    retry 3 5 curl -sL --connect-timeout 10 --max-time 60 --fail "${download_url}/wazuh-passwords-tool-${version}-latest.sh" -o "${tools_dir}"/wazuh-passwords-tool.sh
-    retry 3 5 curl -sL --connect-timeout 10 --max-time 60 --fail "${download_url}/wazuh-certs-tool-${version}-latest.sh" -o "${tools_dir}"/wazuh-certs-tool.sh
+    install -m 644 "${src_dir}/documentation-templates/wazuh/config.yml" "${tools_dir}"/config.yml
+    install -m 644 "${src_dir}/wazuh-passwords-tool.sh" "${tools_dir}"/wazuh-passwords-tool.sh
+    install -m 644 "${src_dir}/wazuh-certs-tool.sh" "${tools_dir}"/wazuh-certs-tool.sh
 
     # The shared credential library belongs in lib/, not tools/: it is sourced,
     # never executed, and ships non-executable.
     local lib_dir="${PATH_PRODUCT}/lib"
     mkdir -p "${lib_dir}"
-    retry 3 5 curl -sL --connect-timeout 10 --max-time 60 --fail "${download_url}/wazuh-credentials-${version}-latest.sh" -o "${lib_dir}"/wazuh-credentials.sh
-    chmod 644 "${lib_dir}"/wazuh-credentials.sh
+    install -m 644 "${src_dir}/credentials_lib/wazuh-credentials.sh" "${lib_dir}"/wazuh-credentials.sh
+
+    rm -rf "${src_dir}"
 }
 
 # ====

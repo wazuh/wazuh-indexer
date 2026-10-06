@@ -32,6 +32,9 @@ state_file=${config_dir}/.was_active
 
 # Create tmp directory for snapshot operations (avoids filling /tmp)
 tmp_dir=${data_dir}/tmp
+if [ -L ${tmp_dir} ]; then
+    rm -f ${tmp_dir}
+fi
 mkdir -p ${tmp_dir}
 
 # Set owner
@@ -68,8 +71,6 @@ fi
 chown root:${name} ${defaults_file}
 chmod 0640 ${defaults_file}
 
-chown ${name}:${name} ${tmp_dir}
-
 # Change permissions for Wazuh Engine
 ENGINE_DIR="${product_dir}/engine"
 
@@ -82,7 +83,7 @@ if [ -d "$ENGINE_DIR" ]; then
     [ -f "$ENGINE_DIR/bin/wazuh-engine" ] && chmod 750 "$ENGINE_DIR/bin/wazuh-engine"
 
     # Set sockets directory permissions
-    [ -d "$ENGINE_DIR/sockets" ] && chmod 750 "$ENGINE_DIR/sockets"
+    [ -d "$ENGINE_DIR/sockets" ] && [ ! -L "$ENGINE_DIR/sockets" ] && chmod 750 "$ENGINE_DIR/sockets"
 fi
 
 # Reload systemctl daemon

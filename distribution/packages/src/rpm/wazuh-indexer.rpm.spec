@@ -214,8 +214,10 @@ exit 0
 set -e
 
 # Create tmp directory for snapshot operations (avoids filling /tmp)
+if [ -L %{data_dir}/tmp ]; then
+    rm -f %{data_dir}/tmp
+fi
 mkdir -p %{data_dir}/tmp
-chown %{name}:%{name} %{data_dir}/tmp
 
 # Fix ownership and permissions.
 chown -R %{name}:%{name} %{config_dir}

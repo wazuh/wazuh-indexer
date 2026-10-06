@@ -224,13 +224,6 @@ chown -R %{name}:%{name} %{config_dir}
 chown -R %{name}:%{name} %{log_dir}
 chown -R %{name}:%{name} %{data_dir}
 
-# Removing the package leaves these directories closed to everyone but root, and
-# a fresh install over what it kept opens them again with their packaged mode.
-# An upgrade leaves the operator's modes alone.
-if [ $1 -eq 1 ]; then
-    chmod 750 %{config_dir} %{product_dir} %{data_dir} %{log_dir}
-fi
-
 # Resolve credentials and TLS material.
 #
 # $1 is 1 on a fresh install and greater on an upgrade.
@@ -444,12 +437,13 @@ if [ $1 -eq 0 ]; then
           %{config_dir}/opensearch.yml.rpmsave
 
     # %post creates the tmp directory, so it is not in the file list and rpm
-    # would leave it. The configuration, data and log directories themselves only
-    # go if nothing else is left in them: indexed data is never deleted here. rpm
-    # could not remove opensearch-security/ while the .rpmsave deleted above was
-    # still in it, so it goes here too.
+    # would leave it. The package's directories themselves only go if nothing
+    # else is left in them: indexed data is never deleted here. rpm could not
+    # remove opensearch-security/ while the .rpmsave deleted above was still in
+    # it, nor the product directory while the engine's runtime files deleted at
+    # the top were, so they go here too.
     rm -rf %{data_dir}/tmp
-    rmdir %{config_dir}/opensearch-security %{config_dir} %{data_dir} %{log_dir} > /dev/null 2>&1 || true
+    rmdir %{config_dir}/opensearch-security %{config_dir} %{product_dir} %{data_dir} %{log_dir} > /dev/null 2>&1 || true
 
     # The package manages its own directories and nothing else. Hand every file
     # the service account owns in them over to root before the account goes:
@@ -457,25 +451,24 @@ if [ $1 -eq 0 ]; then
     # it -- and with it any certificates, the keystore, the logs and the indexed
     # data left behind. The files keep their modes. Each directory is closed to
     # everyone but root instead, which keeps what is inside unreadable and is all
-    # a reinstall has to undo; %post does, beside the chown -R it already runs.
-    # Nothing is deleted.
+    # a reinstall has to undo: rpm restores the packaged mode of every directory
+    # in the file list, and %post runs chown -R. Nothing is deleted.
     # find -H follows a directory that is itself a symlink but no link inside it,
     # and chown -h changes those links themselves, so a link the account planted
-    # cannot aim any of this at another file.
+    # cannot aim any of this at another file. Only a directory that still holds
+    # something other than directories is reported as kept.
     not_handed_over=""
     if getent passwd %{name} > /dev/null 2>&1; then
         for dir in %{config_dir} %{product_dir} %{data_dir} %{log_dir}; do
             [ -d "${dir}" ] || continue
             dir_ok=true
-            find -H "${dir}" -user %{name} \
-                -exec chown -h root:root {} + 2>/dev/null || dir_ok=false
-            find -H "${dir}" -group %{name} \
-                -exec chgrp -h root {} + 2>/dev/null || dir_ok=false
+            find -H "${dir}" \( -user %{name} -exec chown -h root:root {} + \) \
+                -o \( -group %{name} -exec chgrp -h root {} + \) 2>/dev/null || dir_ok=false
             chmod go-rwx "${dir}" 2>/dev/null || dir_ok=false
-            if [ "${dir_ok}" = true ]; then
-                echo "Kept ${dir}, now owned by root. Reinstalling %{name} takes it back."
-            else
+            if [ "${dir_ok}" != true ]; then
                 not_handed_over="${not_handed_over} ${dir}"
+            elif [ -n "$(find -H "${dir}" -mindepth 1 ! -type d -print -quit 2>/dev/null)" ]; then
+                echo "Kept ${dir}, now owned by root. Reinstalling %{name} takes it back."
             fi
         done
     fi
@@ -486,7 +479,15 @@ if [ $1 -eq 0 ]; then
     # %pre creates the service account, and removing the package always takes
     # it back. userdel may already have dropped the group along with the user
     # (USERGROUPS_ENAB), hence the second lookup.
+    #
+    # A JVM keeps its performance data in /tmp/hsperfdata_<user>.
+    # indexer-security-init.sh runs securityadmin.sh as the account outside the
+    # unit's private /tmp, and so does a node the SysV script starts, so that
+    # directory is left behind. It is empty once the JVM exits, but the next
+    # account given the freed ID would own it.
     if getent passwd %{name} > /dev/null 2>&1; then
+        find /tmp -maxdepth 1 -type d -name "hsperfdata_%{name}" -user %{name} \
+            -exec rm -rf {} + 2>/dev/null || true
         userdel %{name} > /dev/null 2>&1 || true
     fi
     if getent group %{name} > /dev/null 2>&1; then

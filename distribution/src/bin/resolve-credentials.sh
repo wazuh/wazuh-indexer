@@ -670,13 +670,14 @@ untrust_ca() {
 }
 
 # True when every certificate staged in CERTS_DIR was issued by the anchor in $1. Each file is also
-# passed as -untrusted, so a certificate that carries its intermediate CAs verifies too. Expiry is
-# not this check's business.
+# passed as -untrusted, so a certificate that carries its intermediate CAs verifies too, and
+# -partial_chain lets the anchor be an issuing CA rather than a self-signed root, which the node's
+# trust store accepts as well. Expiry is not this check's business.
 pair_issued_by() {
     for _pi in indexer admin; do
         [ -f "${CERTS_DIR}/${_pi}.pem" ] || continue
-        openssl verify -no_check_time -CAfile "$1" -untrusted "${CERTS_DIR}/${_pi}.pem" \
-            "${CERTS_DIR}/${_pi}.pem" > /dev/null 2>&1 || return 1
+        openssl verify -no_check_time -partial_chain -CAfile "$1" \
+            -untrusted "${CERTS_DIR}/${_pi}.pem" "${CERTS_DIR}/${_pi}.pem" > /dev/null 2>&1 || return 1
     done
     return 0
 }
@@ -715,7 +716,8 @@ resolve_certificates() {
 
         if [ ! -f "${_rc_anchor}" ]; then
             err "a certificate pair is staged in ${CERTS_DIR}, but no CA certificate to verify it"
-            err "        stage the root-ca.pem that issued it into ${_rc_ca}"
+            err "        stage the root-ca.pem that issued it beside the pair, in ${CERTS_DIR},"
+            err "        or in ${_rc_ca} (directory root:root 0700, file root:root 0644)"
             return 1
         fi
         if ! pair_issued_by "${_rc_anchor}"; then

@@ -11,15 +11,18 @@
 # Five scenarios, run one after the other on the same host:
 #
 #   1. Fresh install, then purge. Nothing is left: no user, no group, no data
-#      or configuration directory, no CA and no certificate issued from it, and
-#      no "not empty" warning from the package manager.
-#   2. A node that has been used, then purge. Index data, logs, the keystore, a
+#      or configuration directory, no CA and no certificate issued from it, no
+#      "not empty" warning from the package manager, and no directory reported
+#      as kept.
+#   2. A node that has been used, then purge. Index data, logs, the keystore,
+#      the engine's runtime files, the JVM's performance data in /tmp, a
 #      snapshot repository at a custom path.repo and a planted symlink stand in
 #      for a node that ran. What the account owned in the default directories
 #      belongs to root and keeps its mode, and each of those directories is
-#      closed to everyone but root. The certificates issued from the removed CA
-#      are removed with it. The custom snapshot repository and the symlink's
-#      target are not touched.
+#      closed to everyone but root. The product directory and the performance
+#      data are removed, and the certificates issued from the removed CA go with
+#      it. The custom snapshot repository and the symlink's target are not
+#      touched.
 #   3. Reinstall. Everything kept comes back with the owner and mode it had
 #      before the purge, and the node's certificates chain to the CA it trusts.
 #   4. A default directory the purge cannot hand over (a read-only mount), then
@@ -54,6 +57,7 @@ ca_dir="/etc/wazuh/ca"
 marker="${data_dir}/.initialized"
 resolver="${product_dir}/bin/resolve-credentials.sh"
 repo_dir="/srv/${name}-repo"
+hsperfdata="/tmp/hsperfdata_${name}"
 canary="/etc/${name}-canary"
 note="Directories set elsewhere in opensearch.yml (a custom path.data, path.logs or path.repo) are left as they are"
 failed=0
@@ -191,6 +195,7 @@ check "the CA is removed" [ ! -e "${ca_dir}/root-ca.pem" ]
 
 left=$(orphans "${default_dirs[@]}")
 check "no file is left with an orphaned owner" [ -z "${left}" ]
+check "the purge reports no directory as kept" not output_has "Kept "
 check "the purge says it leaves custom paths alone" output_has "${note}"
 
 # ---------------------------------------------------------------------------
@@ -201,12 +206,15 @@ install_package
 
 # What a node that ran leaves behind, owned by the service account, with the
 # permissive modes an unset UMask gives.
-mkdir -p "${data_dir}/nodes/0/indices/index-uuid" "${repo_dir}/indices"
+mkdir -p "${data_dir}/nodes/0/indices/index-uuid" "${repo_dir}/indices" \
+    "${product_dir}/engine/data/store" "${hsperfdata}"
 echo "segment" > "${data_dir}/nodes/0/indices/index-uuid/segment"
 echo "log line" > "${log_dir}/${name}.log"
 echo "keystore" > "${config_dir}/opensearch.keystore"
 echo "snapshot" > "${repo_dir}/indices/snapshot"
-chown -R "${name}:${name}" "${data_dir}/nodes" "${log_dir}" "${repo_dir}" "${config_dir}/opensearch.keystore"
+echo "store" > "${product_dir}/engine/data/store/runtime"
+chown -R "${name}:${name}" "${data_dir}/nodes" "${log_dir}" "${repo_dir}" "${config_dir}/opensearch.keystore" \
+    "${product_dir}/engine/data/store" "${hsperfdata}"
 chmod 755 "${data_dir}/nodes" "${data_dir}/nodes/0" "${data_dir}/nodes/0/indices" "${data_dir}/nodes/0/indices/index-uuid"
 chmod 644 "${data_dir}/nodes/0/indices/index-uuid/segment" "${log_dir}/${name}.log" "${repo_dir}/indices/snapshot"
 chmod 660 "${config_dir}/opensearch.keystore"
@@ -228,6 +236,10 @@ check_purged
 
 check "index data is kept" [ -f "${data_dir}/nodes/0/indices/index-uuid/segment" ]
 check "the keystore is kept" [ -f "${config_dir}/opensearch.keystore" ]
+check "the purge reports ${data_dir} as kept" output_has "Kept ${data_dir}, now owned by root"
+check "${product_dir} is removed with the engine's runtime files" [ ! -e "${product_dir}" ]
+check "the purge does not report ${product_dir} as kept" not output_has "Kept ${product_dir}"
+check "the JVM's performance data in /tmp is removed" [ ! -e "${hsperfdata}" ]
 
 left=$(orphans "${default_dirs[@]}")
 if [ -z "${left}" ]; then

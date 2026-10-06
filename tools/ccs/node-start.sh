@@ -1,270 +1,217 @@
 #!/bin/bash
 
-# This scripts configures the enviroment for the diferent nodes in the ccs.
-# Usage: ./node-start.sh <node_name> <version>
+# This script provisions one node of the Wazuh CCS environment.
+# Usage: ./node-start.sh <node_name>
 # node_name can be "ccs", "cluster_a" or "cluster_b".
 #
-# It is used to create the certificates and configure the nodes for the cluster.
+# Every node runs a single-node Wazuh indexer cluster. cluster_a and cluster_b add a Wazuh server;
+# ccs adds the Wazuh dashboard and connects to the other two as remote clusters.
+#
+# It runs as root and expects:
+#   - ARTIFACT_URLS in the environment: the artifact list to download the packages from.
+#   - root-ca.pem, root-ca.key and credentials.env in /tmp/ccs, uploaded by the Vagrantfile.
+#
+# The packages resolve passwords and certificates on their own when installed: certificates are
+# issued from the CA staged in /etc/wazuh/ca, and any password missing from
+# /etc/wazuh/credentials.env is generated and written there.
 
-if [ -z "$2" ]; then
-    echo "Usage: $0 <node_name> <version>"
-    echo "node_name can be 'ccs', 'cluster_a' or 'cluster_b'."
-    echo "version is the Wazuh version to use, e.g., 4.12.0"
+set -euo pipefail
+
+NODE="${1-}"
+
+# Must match the Vagrantfile.
+CCS_HOSTNAME="ccs"
+CLUSTER_A_IP="192.168.56.11"
+CLUSTER_B_IP="192.168.56.12"
+
+case "${NODE}" in
+    ccs)       PREFIX="ccs"; IP="192.168.56.10" ;;
+    cluster_a) PREFIX="ca";  IP="${CLUSTER_A_IP}" ;;
+    cluster_b) PREFIX="cb";  IP="${CLUSTER_B_IP}" ;;
+    *)
+        echo "Usage: $0 <node_name>"
+        echo "node_name can be 'ccs', 'cluster_a' or 'cluster_b'."
+        exit 1
+        ;;
+esac
+
+if [ -z "${ARTIFACT_URLS-}" ]; then
+    echo "ARTIFACT_URLS is not set" >&2
     exit 1
 fi
 
-NODE=$1
-WAZUH_VERSION=$2
+UPLOADS="/tmp/ccs"
+DOWNLOADS="/var/tmp/ccs"
+CREDENTIALS="/etc/wazuh/credentials.env"
+INDEXER_CERTS="/etc/wazuh-indexer/certs"
 
-# Check if the node name is valid
-if [[ "$NODE" != "ccs" && "$NODE" != "cluster_a" && "$NODE" != "cluster_b" ]]; then
-    echo "Invalid node name: $NODE"
-    echo "Valid node names are: ccs, cluster_a, cluster_b"
-    exit 1
-fi
+case "$(uname -m)" in
+    x86_64)  ARCH="x86_64" ;;
+    aarch64) ARCH="aarch64" ;;
+    *) echo "Unsupported architecture: $(uname -m)" >&2; exit 1 ;;
+esac
 
+# The packages accept the CA and the credentials file only when every directory down to them is
+# root-owned and closed to group and others. Whatever a previous run left is kept: the credentials
+# file holds the passwords generated on this node.
+stage_credentials() {
+    install -d -m 0700 -o root -g root /etc/wazuh /etc/wazuh/ca
+    if [ ! -f /etc/wazuh/ca/root-ca.pem ]; then
+        install -m 0644 -o root -g root "${UPLOADS}/root-ca.pem" /etc/wazuh/ca/root-ca.pem
+        install -m 0400 -o root -g root "${UPLOADS}/root-ca.key" /etc/wazuh/ca/root-ca.key
+    fi
+    if [ ! -f "${CREDENTIALS}" ]; then
+        install -m 0600 -o root -g root "${UPLOADS}/credentials.env" "${CREDENTIALS}"
+    fi
+}
 
-if [ "$NODE" == "ccs" ]; then
+# Prints the value of a key in the credentials file. The file is parsed, never sourced.
+credential() {
+    awk -v key="$1" 'index($0, key "=") == 1 { value = substr($0, length(key) + 2) } END { print value }' \
+        "${CREDENTIALS}" | sed -e "s/^'\(.*\)'$/\1/" -e 's/^"\(.*\)"$/\1/'
+}
 
-    # Create the certificates for the Wazuh ccs node
-    tar -cvf ./wazuh-certificates.tar -C ./wazuh-certificates/ .
-    rm -rf ./wazuh-certificates
+installed() {
+    rpm -q "$1" > /dev/null
+}
 
-    # Install wazuh-indexer
-    yum install -y coreutils
-    rpm --import https://packages.wazuh.com/key/GPG-KEY-WAZUH
-    echo -e '[wazuh]\ngpgcheck=1\ngpgkey=https://packages.wazuh.com/key/GPG-KEY-WAZUH\nenabled=1\nname=EL-$releasever - Wazuh\nbaseurl=https://packages.wazuh.com/4.x/yum/\nprotect=1' | tee /etc/yum.repos.d/wazuh.repo
-    yum update -y
+# Downloads a package from the artifact list. Usage: download <component>
+download() {
+    local key="wazuh_$1_${ARCH}_rpm"
+    local url
+    url=$(awk -v key="${key}:" '$1 == key { gsub(/"/, "", $2); print $2 }' "${DOWNLOADS}/artifact_urls.yaml")
+    if [ -z "${url}" ]; then
+        echo "${key} is not in ${ARTIFACT_URLS}" >&2
+        exit 1
+    fi
+    echo "Downloading ${url}"
+    curl -fsSL --retry 5 -o "${DOWNLOADS}/wazuh-$1.rpm" "${url}"
+}
 
-    yum -y install wazuh-indexer-$WAZUH_VERSION-1
+install_indexer() {
+    download indexer
+    # The indexer puts in its certificate the addresses of the default-route interface only, which
+    # here is the provider's management interface. The clusters reach each other on the private
+    # network with hostname verification enabled, so the private address has to be there too.
+    WAZUH_INDEXER_CERT_SANS="DNS:$(hostname -s),IP:${IP}" dnf install -y "${DOWNLOADS}/wazuh-indexer.rpm"
 
-    # Configure the wazuh-indexer /etc/wazuh-indexer/opensearch.yml file
-    sed -i 's/node-1/ccs-wazuh-indexer-1/g' /etc/wazuh-indexer/opensearch.yml
-    sed -i 's/^network\.host:.*$/network.host: "192.168.56.10"/' /etc/wazuh-indexer/opensearch.yml
-    sed -i 's/^cluster\.name:.*$/cluster.name: "ccs-cluster"/' /etc/wazuh-indexer/opensearch.yml
+    local config="/etc/wazuh-indexer/opensearch.yml"
+    sed -i "s/node-1/${PREFIX}-wazuh-indexer-1/g" "${config}"
+    sed -i "s/^cluster\.name:.*$/cluster.name: \"${PREFIX}-cluster\"/" "${config}"
+    # Listen on every interface, since the server and the dashboard connect through localhost, but
+    # publish the private address, which is the one the CCS node connects to.
+    echo "network.publish_host: \"${IP}\"" >> "${config}"
 
+    if [ "${NODE}" != "ccs" ]; then
+        # A remote cluster only accepts the CCS node if its certificate is listed as a node's. Both
+        # are issued by the package with the same DN but for the CN, which is the host name.
+        local node_dn ccs_dn
+        node_dn=$(openssl x509 -in "${INDEXER_CERTS}/indexer.pem" -noout -subject -nameopt RFC2253 | sed 's/^subject= *//')
+        ccs_dn=$(echo "${node_dn}" | sed "s/\(^\|,\)CN=[^,]*/\1CN=${CCS_HOSTNAME}/")
+        sed -i "/^plugins\.security\.nodes_dn:/a - \"${ccs_dn}\"" "${config}"
+    fi
 
-
-    # Deploy the certificates
-    NODE_NAME=ccs-wazuh-indexer-1
-    mkdir /etc/wazuh-indexer/certs
-    tar -xf ./wazuh-certificates.tar -C /etc/wazuh-indexer/certs/ ./$NODE_NAME.pem ./$NODE_NAME-key.pem ./admin.pem ./admin-key.pem ./root-ca.pem
-    mv -n /etc/wazuh-indexer/certs/$NODE_NAME.pem /etc/wazuh-indexer/certs/indexer.pem
-    mv -n /etc/wazuh-indexer/certs/$NODE_NAME-key.pem /etc/wazuh-indexer/certs/indexer-key.pem
-    chmod 500 /etc/wazuh-indexer/certs
-    chmod 400 /etc/wazuh-indexer/certs/*
-    chown -R wazuh-indexer:wazuh-indexer /etc/wazuh-indexer/certs
-
-    # Start the Wazuh indexer service
     systemctl daemon-reload
-    systemctl enable wazuh-indexer
-    systemctl start wazuh-indexer
+    systemctl enable --now wazuh-indexer
 
-    # Initialize the Wazuh indexer cluster
+    # Load the security configuration, with the passwords the package wrote in it, into the cluster.
     /usr/share/wazuh-indexer/bin/indexer-security-init.sh
+}
 
-    # Install wazuh-dashboard
-    yum install libcap
-    yum -y install wazuh-dashboard-$WAZUH_VERSION-1
+install_manager() {
+    download manager
+    dnf install -y "${DOWNLOADS}/wazuh-manager.rpm"
 
-    # Configure the wazuh-dashboard /etc/wazuh-dashboard/opensearch_dashboards.yml file
-    sed -i 's|^opensearch\.hosts:.*$|opensearch.hosts: "https://192.168.56.10:9200"|' /etc/wazuh-dashboard/opensearch_dashboards.yml
-
-    # Deploy the certificates
-    NODE_NAME=ccs-wazuh-dashboard
-    mkdir /etc/wazuh-dashboard/certs
-    tar -xf ./wazuh-certificates.tar -C /etc/wazuh-dashboard/certs/ ./$NODE_NAME.pem ./$NODE_NAME-key.pem ./root-ca.pem
-    mv -n /etc/wazuh-dashboard/certs/$NODE_NAME.pem /etc/wazuh-dashboard/certs/dashboard.pem
-    mv -n /etc/wazuh-dashboard/certs/$NODE_NAME-key.pem /etc/wazuh-dashboard/certs/dashboard-key.pem
-    chmod 500 /etc/wazuh-dashboard/certs
-    chmod 400 /etc/wazuh-dashboard/certs/*
-    chown -R wazuh-dashboard:wazuh-dashboard /etc/wazuh-dashboard/certs
-
-    # Start the Wazuh dashboard service
     systemctl daemon-reload
-    systemctl enable wazuh-dashboard
-    systemctl start wazuh-dashboard
+    systemctl enable --now wazuh-manager
+}
 
-    # Configure the Wazuh dashboard /usr/share/wazuh-dashboard/data/wazuh/config/wazuh.yml file
-    sleep 30  # Wait for the wazuh-dashboard plugin to create the file
-    cat <<EOF > /usr/share/wazuh-dashboard/data/wazuh/config/wazuh.yml
----
-hosts:
-  - Cluster A:
-      url: https://192.168.56.11
-      port: 55000
-      username: wazuh-internal-client
-      password: wazuh-internal-client
-      run_as: true
-  - Cluster B:
-      url: https://192.168.56.12
-      port: 55000
-      username: wazuh-internal-client
-      password: wazuh-internal-client
-      run_as: true
+dashboard_keystore() {
+    (cd / && runuser -u wazuh-dashboard -- env OSD_PATH_CONF=/etc/wazuh-dashboard \
+        /usr/share/wazuh-dashboard/bin/opensearch-dashboards-keystore "$@")
+}
+
+install_dashboard() {
+    download dashboard
+    dnf install -y "${DOWNLOADS}/wazuh-dashboard.rpm"
+
+    local config="/etc/wazuh-dashboard/opensearch_dashboards.yml"
+    # The account the dashboard authenticates to the servers with: the one the package's own
+    # default host uses, so that it matches the server build (wazuh-wui before its rename to
+    # wazuh-internal-client).
+    local api_user
+    api_user=$(awk '/^wazuh_core\.hosts:/ { hosts = 1 } hosts && $1 == "username:" { print $2; exit }' "${config}")
+    api_user="${api_user:-wazuh-internal-client}"
+
+    # Replace the default host, a server on this node, with the servers of both remote clusters.
+    local hosts
+    hosts=$(awk '/^wazuh_core\.hosts:/ { skip = 1; next } skip && /^[[:space:]]/ { next } { skip = 0; print }' "${config}")
+    cat > "${config}" << EOF
+${hosts}
+wazuh_core.hosts:
+  cluster-a:
+    url: https://${CLUSTER_A_IP}
+    port: 55000
+    username: ${api_user}
+    run_as: true
+  cluster-b:
+    url: https://${CLUSTER_B_IP}
+    port: 55000
+    username: ${api_user}
+    run_as: true
 EOF
 
-    # Restart the Wazuh dashboard service to apply the changes
-    systemctl restart wazuh-dashboard
+    # Both servers were installed with the WAZUH_MANAGER_WUI_PASSWORD from the same credentials file.
+    local password
+    password=$(credential WAZUH_MANAGER_WUI_PASSWORD)
+    dashboard_keystore remove wazuh_core.hosts.default.password > /dev/null 2>&1 || true
+    for host in cluster-a cluster-b; do
+        printf '%s' "${password}" | dashboard_keystore add --force --stdin "wazuh_core.hosts.${host}.password" > /dev/null
+    done
 
+    systemctl daemon-reload
+    systemctl enable --now wazuh-dashboard
+}
 
-    # Configure the Wazuh indexer cluster settings
-    curl -XPUT -k -u admin:admin "https://192.168.56.10:9200/_cluster/settings" -H 'Content-Type: application/json' -d'
-    {
+# Authenticates with the admin certificate, so no password is needed.
+configure_remote_clusters() {
+    curl -fsS --cacert "${INDEXER_CERTS}/root-ca.pem" \
+        --cert "${INDEXER_CERTS}/admin.pem" --key "${INDEXER_CERTS}/admin-key.pem" \
+        -X PUT "https://localhost:9200/_cluster/settings" -H 'Content-Type: application/json' -d @- << EOF
+{
     "persistent": {
         "cluster.remote": {
-        "ca-wazuh-indexer-1": {
-            "seeds": ["192.168.56.11:9300"]
-        },
-        "cb-wazuh-indexer-1": {
-            "seeds": ["192.168.56.12:9300"]
-        }
+            "ca-wazuh-indexer-1": { "seeds": ["${CLUSTER_A_IP}:9300"] },
+            "cb-wazuh-indexer-1": { "seeds": ["${CLUSTER_B_IP}:9300"] }
         }
     }
-    }'
-
-else
-    version=$(echo "$2" | cut -d'.' -f1-2)
-
-    # Create the certificates for the Wazuh cluster A node
-    curl -sO https://packages.wazuh.com/$version/wazuh-certs-tool.sh
-
-    if [ "$NODE" == "cluster_a" ]; then
-        # Create the config file for cluster A
-        cat <<EOF > config.yml
-nodes:
-  # Wazuh indexer nodes
-  indexer:
-    - name: ca-wazuh-indexer-1
-      ip: "192.168.56.11"
-
-  # Wazuh server nodes
-  server:
-    - name: ca-wazuh-server-1
-      ip: "192.168.56.11"
+}
 EOF
+    echo
+}
 
-    else
-        # Create the config file for cluster B
-        cat <<EOF > config.yml
-nodes:
-  # Wazuh indexer nodes
-  indexer:
-    - name: cb-wazuh-indexer-1
-      ip: "192.168.56.12"
+systemctl disable --now firewalld > /dev/null 2>&1 || true
 
-  # Wazuh server nodes
-  server:
-    - name: cb-wazuh-server-1
-      ip: "192.168.56.12"
-EOF
-    fi
+mkdir -p "${DOWNLOADS}"
+curl -fsSL --retry 5 -o "${DOWNLOADS}/artifact_urls.yaml" "${ARTIFACT_URLS}"
+stage_credentials
 
-
-    # Generate the certificates using the root CA from the ccs node
-    bash ./wazuh-certs-tool.sh -A ./root-ca.pem ./root-ca.key
-    tar -cvf ./wazuh-certificates.tar -C ./wazuh-certificates/ .
-    rm -rf ./wazuh-certificates
-
-    # Install wazuh-indexer
-    yum install -y coreutils
-    rpm --import https://packages.wazuh.com/key/GPG-KEY-WAZUH
-    echo -e '[wazuh]\ngpgcheck=1\ngpgkey=https://packages.wazuh.com/key/GPG-KEY-WAZUH\nenabled=1\nname=EL-$releasever - Wazuh\nbaseurl=https://packages.wazuh.com/4.x/yum/\nprotect=1' | tee /etc/yum.repos.d/wazuh.repo
-
-    yum update -y
-    yum -y install wazuh-indexer-$WAZUH_VERSION-1
-
-    # Configure the wazuh-indexer /etc/wazuh-indexer/opensearch.yml file
-    if [ "$NODE" == "cluster_a" ]; then
-        sed -i 's/node-1/ca-wazuh-indexer-1/g' /etc/wazuh-indexer/opensearch.yml
-        sed -i 's/^network\.host:.*$/network.host: "192.168.56.11"/' /etc/wazuh-indexer/opensearch.yml
-        sed -i 's/^cluster\.name:.*$/cluster.name: "ca-cluster"/' /etc/wazuh-indexer/opensearch.yml
-        sed -i '/#- "CN=node-2,OU=Wazuh,O=Wazuh,L=California,C=US"/c\- "CN=ccs-wazuh-indexer-1,OU=Wazuh,O=Wazuh,L=California,C=US"' /etc/wazuh-indexer/opensearch.yml
-    else
-        sed -i 's/node-1/cb-wazuh-indexer-1/g' /etc/wazuh-indexer/opensearch.yml
-        sed -i 's/^network\.host:.*$/network.host: "192.168.56.12"/' /etc/wazuh-indexer/opensearch.yml
-        sed -i 's/^cluster\.name:.*$/cluster.name: "cb-cluster"/' /etc/wazuh-indexer/opensearch.yml
-        sed -i '/#- "CN=node-2,OU=Wazuh,O=Wazuh,L=California,C=US"/c\- "CN=ccs-wazuh-indexer-1,OU=Wazuh,O=Wazuh,L=California,C=US"' /etc/wazuh-indexer/opensearch.yml
-    fi
-
-
-    # Deploy the certificates
-    if [ "$NODE" == "cluster_a" ]; then
-        NODE_NAME=ca-wazuh-indexer-1
-    else
-        NODE_NAME=cb-wazuh-indexer-1
-    fi
-    mkdir /etc/wazuh-indexer/certs
-    tar -xf ./wazuh-certificates.tar -C /etc/wazuh-indexer/certs/ ./$NODE_NAME.pem ./$NODE_NAME-key.pem ./admin.pem ./admin-key.pem ./root-ca.pem
-    mv -n /etc/wazuh-indexer/certs/$NODE_NAME.pem /etc/wazuh-indexer/certs/indexer.pem
-    mv -n /etc/wazuh-indexer/certs/$NODE_NAME-key.pem /etc/wazuh-indexer/certs/indexer-key.pem
-    chmod 500 /etc/wazuh-indexer/certs
-    chmod 400 /etc/wazuh-indexer/certs/*
-    chown -R wazuh-indexer:wazuh-indexer /etc/wazuh-indexer/certs
-
-    # Start the Wazuh indexer service
-    systemctl daemon-reload
-    systemctl enable wazuh-indexer
-    systemctl start wazuh-indexer
-
-    # Initialize the Wazuh indexer cluster
-    /usr/share/wazuh-indexer/bin/indexer-security-init.sh
-
-    # Install wazuh-server
-    yum -y install wazuh-manager-$WAZUH_VERSION-1
-    yum -y install filebeat
-
-    curl -so /etc/filebeat/filebeat.yml https://packages.wazuh.com/$version/tpl/wazuh/filebeat/filebeat.yml
-
-    # Configure the /etc/filebeat/filebeat.yml file
-    if [ "$NODE" == "cluster_a" ]; then
-        sed -i 's|^[ \t]*hosts: \["127\.0\.0\.1:9200"\]|  hosts: ["192.168.56.11:9200"]|' /etc/filebeat/filebeat.yml
-    else
-        sed -i 's|^[ \t]*hosts: \["127\.0\.0\.1:9200"\]|  hosts: ["192.168.56.12:9200"]|' /etc/filebeat/filebeat.yml
-    fi
-
-    # Create filebeat keystore
-    filebeat keystore create
-    echo admin | filebeat keystore add username --stdin --force
-    echo admin | filebeat keystore add password --stdin --force
-
-    # Download the alerts template
-    curl -so /etc/filebeat/wazuh-template.json https://raw.githubusercontent.com/wazuh/wazuh/v$2/extensions/elasticsearch/7.x/wazuh-template.json
-    chmod go+r /etc/filebeat/wazuh-template.json
-
-    # Install the Wazuh module for Filebeat
-    curl -s https://packages.wazuh.com/4.x/filebeat/wazuh-filebeat-0.4.tar.gz | tar -xvz -C /usr/share/filebeat/module
-
-    # Deploy the certificates
-    if [ "$NODE" == "cluster_a" ]; then
-        NODE_NAME=ca-wazuh-server-1
-    else
-        NODE_NAME=cb-wazuh-server-1
-    fi
-    mkdir /etc/filebeat/certs
-    tar -xf ./wazuh-certificates.tar -C /etc/filebeat/certs/ ./$NODE_NAME.pem ./$NODE_NAME-key.pem ./root-ca.pem
-    mv -n /etc/filebeat/certs/$NODE_NAME.pem /etc/filebeat/certs/filebeat.pem
-    mv -n /etc/filebeat/certs/$NODE_NAME-key.pem /etc/filebeat/certs/filebeat-key.pem
-    chmod 500 /etc/filebeat/certs
-    chmod 400 /etc/filebeat/certs/*
-    chown -R root:root /etc/filebeat/certs
-
-    # Save the Wazuh indexer user and password in the manager keystore
-    /var/ossec/bin/wazuh-keystore -f indexer -k username -v admin
-    /var/ossec/bin/wazuh-keystore -f indexer -k password -v admin
-
-    # Configure the Wazuh manager /var/ossec/etc/ossec.conf file
-    if [ "$NODE" == "cluster_a" ]; then
-        sed -i 's|<host>.*</host>|<host>https://192.168.56.11:9200</host>|' /var/ossec/etc/ossec.conf
-    else
-        sed -i 's|<host>.*</host>|<host>https://192.168.56.12:9200</host>|' /var/ossec/etc/ossec.conf
-    fi
-
-
-    # Start the Wazuh manager service and Filebeat
-    systemctl daemon-reload
-    systemctl enable wazuh-manager
-    systemctl start wazuh-manager
-    systemctl enable filebeat
-    systemctl start filebeat
+# A component already installed by a previous run is left as it is. Not written as
+# `installed ... || install_...`: errexit is ignored inside a function called that way.
+if ! installed wazuh-indexer; then
+    install_indexer
 fi
+if [ "${NODE}" == "ccs" ]; then
+    if ! installed wazuh-dashboard; then
+        install_dashboard
+    fi
+    configure_remote_clusters
+else
+    if ! installed wazuh-manager; then
+        install_manager
+    fi
+fi
+
+rm -rf "${UPLOADS}" "${DOWNLOADS}"
+
+echo "${NODE} is ready. The passwords of this node are in ${CREDENTIALS}."

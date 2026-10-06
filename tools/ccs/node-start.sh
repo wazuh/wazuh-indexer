@@ -93,14 +93,14 @@ hosts:
   - Cluster A:
       url: https://192.168.56.11
       port: 55000
-      username: wazuh-wui
-      password: wazuh-wui
+      username: wazuh-internal-client
+      password: wazuh-internal-client
       run_as: true
   - Cluster B:
       url: https://192.168.56.12
       port: 55000
-      username: wazuh-wui
-      password: wazuh-wui
+      username: wazuh-internal-client
+      password: wazuh-internal-client
       run_as: true
 EOF
 
@@ -122,9 +122,9 @@ EOF
         }
     }
     }'
-    
+
 else
-    version=$(echo "$2" | cut -d'.' -f1-2) 
+    version=$(echo "$2" | cut -d'.' -f1-2)
 
     # Create the certificates for the Wazuh cluster A node
     curl -sO https://packages.wazuh.com/$version/wazuh-certs-tool.sh
@@ -187,7 +187,7 @@ EOF
         sed -i '/#- "CN=node-2,OU=Wazuh,O=Wazuh,L=California,C=US"/c\- "CN=ccs-wazuh-indexer-1,OU=Wazuh,O=Wazuh,L=California,C=US"' /etc/wazuh-indexer/opensearch.yml
     fi
 
-    
+
     # Deploy the certificates
     if [ "$NODE" == "cluster_a" ]; then
         NODE_NAME=ca-wazuh-indexer-1

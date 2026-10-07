@@ -273,6 +273,9 @@ function assemble_tar() {
 # RPM assemble
 # ====
 function assemble_rpm() {
+    # Validate the changelog, as rpmbuild does not fail on an unordered one
+    bash packaging_scripts/check_rpm_changelog.sh "distribution/packages/src/rpm/wazuh-indexer.rpm.spec"
+
     # Copy spec
     cp "distribution/packages/src/rpm/wazuh-indexer.rpm.spec" "${TMP_DIR}"
     

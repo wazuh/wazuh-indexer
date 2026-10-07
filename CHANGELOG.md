@@ -4,7 +4,7 @@
 
 | Issue | Comment |
 |-------|---------|
-| [(#1995)](https://github.com/wazuh/wazuh-indexer/issues/1995) | Bundle the Wazuh Engine in the Wazuh Indexer packages and Docker images, and manage its lifecycle with the `wazuh-indexer` service |
+| [#1995](https://github.com/wazuh/wazuh-indexer/issues/1995) | Bundle the Wazuh Engine in the Wazuh Indexer packages and Docker images, and manage its lifecycle with the `wazuh-indexer` service |
 | [#1105](https://github.com/wazuh/wazuh-indexer-plugins/issues/1105) | Bundle CTI content snapshots in the Wazuh Indexer packages |
 | [#1927](https://github.com/wazuh/wazuh-indexer/issues/1927) [#1975](https://github.com/wazuh/wazuh-indexer/issues/1975) | Generate indexer credentials and TLS material at install time instead of shipping defaults |
 | [#462](https://github.com/wazuh/wazuh-indexer-plugins/issues/462) [#1538](https://github.com/wazuh/wazuh-indexer/issues/1538) [#528](https://github.com/wazuh/wazuh-indexer-plugins/issues/528) [#1422](https://github.com/wazuh/wazuh-indexer-plugins/issues/1422) [#1195](https://github.com/wazuh/wazuh-indexer/issues/1195) | Add default Wazuh Indexer users and roles |

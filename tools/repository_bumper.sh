@@ -15,6 +15,8 @@
 # and will be formatted as follows:
 #   * [DATE] support <info@wazuh.com> - [VERSION]
 #   - More info: https://documentation.wazuh.com/current/release-notes/release-[VERSION].html
+#
+# The resulting %changelog is then validated with packaging_scripts/check_rpm_changelog.sh.
 
 set -euo pipefail
 
@@ -206,6 +208,11 @@ function update_rpm_changelog() {
         ' "$spec_file" >"${spec_file}.tmp" && mv "${spec_file}.tmp" "$spec_file"
 
         log "Inserted new changelog entry for version=$version with date=$date"
+    fi
+
+    if ! bash packaging_scripts/check_rpm_changelog.sh "$spec_file"; then
+        log "Error: Invalid %changelog in $spec_file."
+        exit 1
     fi
 }
 

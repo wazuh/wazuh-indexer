@@ -157,7 +157,11 @@ and the service files.
 
 The script will:
 
-1. Extract the RPM package using `rpm2cpio` and `cpio` tools.
+1. Validate the `%changelog` section of the SPEC file using `check_rpm_changelog.sh`.
+
+    > `rpmbuild` does not fail when the changelog entries are not in descending chronological order. It only logs an error and drops every entry from that point on, so the script stops the assembly instead.
+
+2. Extract the RPM package using `rpm2cpio` and `cpio` tools.
 
     > By default, `rpm2cpio` and `cpio` tools expect the package to be in `wazuh-indexer/artifacts/tmp/rpm`.The script takes care of creating the required folder structure, copying also the min package and the SPEC file.
 
@@ -176,12 +180,12 @@ The script will:
     `wazuh-indexer.rpm.spec` is copied over from `wazuh-indexer/distribution/packages/src/rpm/wazuh-indexer.rpm.spec`.
     The `wazuh-indexer-performance-analyzer.service` file is also copied from the same folder. It is a dependency of the SPEC file.
 
-2. Install the plugins using the `opensearch-plugin` CLI tool.
-3. Set up configuration files.
+3. Install the plugins using the `opensearch-plugin` CLI tool.
+4. Set up configuration files.
 
     > Included in `min-package`. Default files are overwritten.
 
-4. Bundle an RPM file with `rpmbuild` and the SPEC file `wazuh-indexer.rpm.spec`.
+5. Bundle an RPM file with `rpmbuild` and the SPEC file `wazuh-indexer.rpm.spec`.
 
     > `rpmbuild` is part of the `rpm` OS package.
 
@@ -248,6 +252,17 @@ scripts:
     outputs:
       package: wazuh-indexer package.
   
+  - file: check_rpm_changelog.sh
+    description: |
+      validates the %changelog section of the RPM SPEC file: dates must be valid,
+      weekdays must match, entries must be in descending chronological order and
+      each one must link to the release notes of its version. Used by assemble.sh
+      and tools/repository_bumper.sh.
+    inputs:
+      spec_file: path to the SPEC file. wazuh-indexer.rpm.spec by default.
+    outputs:
+      exit code: 0 if the changelog is valid, 1 otherwise.
+
   - file: provision.sh
     description: Provision script for the assembly of DEB packages.
   

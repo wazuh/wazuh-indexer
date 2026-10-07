@@ -1,78 +1,58 @@
 ## [v5.0.0]
 
 ### Added
-- Bundle the Wazuh Engine in the Wazuh Indexer packages and Docker images, and manage its lifecycle with the `wazuh-indexer` service <!-- [(#1298)](https://github.com/wazuh/wazuh-indexer/pull/1298) [(#1302)](https://github.com/wazuh/wazuh-indexer/pull/1302) -->
-- Bundle CTI content snapshots in the Wazuh Indexer packages [(#1105)](https://github.com/wazuh/wazuh-indexer-plugins/issues/1105)
-- Generate indexer credentials and TLS material at install time instead of shipping defaults [(#1927)](https://github.com/wazuh/wazuh-indexer/issues/1927)
-- Add default Wazuh Indexer users and roles [(#462)](https://github.com/wazuh/wazuh-indexer-plugins/issues/462) [(#1538)](https://github.com/wazuh/wazuh-indexer/issues/1538)
-- Add `cluster.default_number_of_replicas` and `plugins.index_state_management.history.number_of_replicas` settings to `opensearch.yml` to avoid a yellow cluster status on single-node deployments [(#1249)](https://github.com/wazuh/wazuh-indexer/issues/1249) [(#1782)](https://github.com/wazuh/wazuh-indexer/issues/1782)
-- Add AI assistant support [(#1422)](https://github.com/wazuh/wazuh-indexer-plugins/issues/1422)
-- Add performance improvements & default configurations [(#1636)](https://github.com/wazuh/wazuh-indexer/issues/1636)
-- Map alerting and notifications roles to the `kibanaserver` user [(#1195)](https://github.com/wazuh/wazuh-indexer/issues/1195)
-- Add support for ARM architecture in Wazuh Indexer Docker images [(#1299)](https://github.com/wazuh/wazuh-indexer/issues/1299) [(#1365)](https://github.com/wazuh/wazuh-indexer/issues/1365)
-- Add `workload-management` plugin [(#1576)](https://github.com/wazuh/wazuh-indexer/issues/1576)
-- Add `opensearch-custom-codecs` plugin [(#1271)](https://github.com/wazuh/wazuh-indexer-plugins/issues/1271)
-- Add `wazuh-indexer-setup` plugin [(#857)](https://github.com/wazuh/wazuh-indexer/issues/857)
-- Add `wazuh-indexer-content-manager` plugin <!-- [(#1221)](https://github.com/wazuh/wazuh-indexer/pull/1221) -->
-- Add `wazuh-indexer-reports-scheduler` plugin, replacing `opensearch-reports-scheduler` [(#1)](https://github.com/wazuh/wazuh-indexer-reporting/issues/1) [(#999)](https://github.com/wazuh/wazuh-indexer/issues/999)
-- Add `wazuh-indexer-security-analytics` plugin, a fork of `opensearch-security-analytics` [(#1)](https://github.com/wazuh/wazuh-indexer-security-analytics/issues/1) [(#1270)](https://github.com/wazuh/wazuh-indexer/issues/1270)
-- Add `wazuh-indexer-common-utils` library, shared by the forked plugins [(#1)](https://github.com/wazuh/wazuh-indexer-common-utils/issues/1)
-- Add `wazuh-indexer-alerting` plugin, replacing `opensearch-alerting` [(#1)](https://github.com/wazuh/wazuh-indexer-alerting/issues/1)
-- Add `wazuh-indexer-notifications` and `wazuh-indexer-notifications-core` plugins, replacing `opensearch-notifications` and `opensearch-notifications-core` [(#2)](https://github.com/wazuh/wazuh-indexer-notifications/issues/2) [(#1335)](https://github.com/wazuh/wazuh-indexer/issues/1335)
-- (operational) Add templates, workflows and tools for Wazuh Indexer 5.x [(#853)](https://github.com/wazuh/wazuh-indexer/issues/853) [(#862)](https://github.com/wazuh/wazuh-indexer/issues/862) [(#904)](https://github.com/wazuh/wazuh-indexer/issues/904)
-- (operational) Improve workflow to build Wazuh Indexer packages [(#934)](https://github.com/wazuh/wazuh-indexer/issues/934)
-- (operational) Add custom GitHub Action to validate committer's emails by domain [(#884)](https://github.com/wazuh/wazuh-indexer/issues/884)
-- (operational) Add Cross-Cluster Search environment [(#1032)](https://github.com/wazuh/wazuh-indexer/issues/1032)
-- (operational) Add GH Action for Local Maven publication [(#743)](https://github.com/wazuh/wazuh-indexer-plugins/issues/743)
-- (operational) Add Wazuh Indexer nightly Docker images [(#1433)](https://github.com/wazuh/wazuh-indexer/issues/1433)
-- (operational) Add repository bumper tool [(#985)](https://github.com/wazuh/wazuh-indexer/issues/985)
-- (operational) Add `--set-as-main` flag support to repository bumper [(#1394)](https://github.com/wazuh/wazuh-indexer/issues/1394)
+
+| Issue | Comment |
+|-------|---------|
+| [#1995](https://github.com/wazuh/wazuh-indexer/issues/1995) | Bundle the Wazuh Engine in the Wazuh Indexer packages and Docker images, and manage its lifecycle with the `wazuh-indexer` service |
+| [#1105](https://github.com/wazuh/wazuh-indexer-plugins/issues/1105) | Bundle CTI content snapshots in the Wazuh Indexer packages |
+| [#1927](https://github.com/wazuh/wazuh-indexer/issues/1927) [#1975](https://github.com/wazuh/wazuh-indexer/issues/1975) | Generate indexer credentials and TLS material at install time instead of shipping defaults |
+| [#462](https://github.com/wazuh/wazuh-indexer-plugins/issues/462) [#1538](https://github.com/wazuh/wazuh-indexer/issues/1538) [#528](https://github.com/wazuh/wazuh-indexer-plugins/issues/528) [#1422](https://github.com/wazuh/wazuh-indexer-plugins/issues/1422) [#1195](https://github.com/wazuh/wazuh-indexer/issues/1195) | Add default Wazuh Indexer users and roles |
+| [#1636](https://github.com/wazuh/wazuh-indexer/issues/1636) [#1662](https://github.com/wazuh/wazuh-indexer/issues/1662) [#1249](https://github.com/wazuh/wazuh-indexer/issues/1249) [#1782](https://github.com/wazuh/wazuh-indexer/issues/1782) | Add performance improvements & default configurations |
+| [#1299](https://github.com/wazuh/wazuh-indexer/issues/1299) [#1365](https://github.com/wazuh/wazuh-indexer/issues/1365) | Add support for ARM architecture in Wazuh Indexer Docker images |
+| [#1576](https://github.com/wazuh/wazuh-indexer/issues/1576) | Add `workload-management` plugin |
+| [#1271](https://github.com/wazuh/wazuh-indexer-plugins/issues/1271) | Add `opensearch-custom-codecs` plugin |
+| [#857](https://github.com/wazuh/wazuh-indexer/issues/857) | Add `wazuh-indexer-setup` plugin |
+| [#1996](https://github.com/wazuh/wazuh-indexer/issues/1996) | Add `wazuh-indexer-content-manager` plugin |
+| [#1](https://github.com/wazuh/wazuh-indexer-reporting/issues/1) [#999](https://github.com/wazuh/wazuh-indexer/issues/999) | Add `wazuh-indexer-reports-scheduler` plugin, replacing `opensearch-reports-scheduler` |
+| [#1](https://github.com/wazuh/wazuh-indexer-security-analytics/issues/1) [#1270](https://github.com/wazuh/wazuh-indexer/issues/1270) | Add `wazuh-indexer-security-analytics` plugin, a fork of `opensearch-security-analytics` |
+| [#1](https://github.com/wazuh/wazuh-indexer-alerting/issues/1) | Add `wazuh-indexer-alerting` plugin, replacing `opensearch-alerting` |
+| [#2](https://github.com/wazuh/wazuh-indexer-notifications/issues/2) [#1335](https://github.com/wazuh/wazuh-indexer/issues/1335) | Add `wazuh-indexer-notifications` and `wazuh-indexer-notifications-core` plugins, replacing `opensearch-notifications` and `opensearch-notifications-core` |
 
 ### Changed
-- Upgrade to OpenSearch 3.6.0 and JDK 25 [(#874)](https://github.com/wazuh/wazuh-indexer/issues/874) [(#1000)](https://github.com/wazuh/wazuh-indexer/issues/1000) [(#1086)](https://github.com/wazuh/wazuh-indexer/issues/1086) [(#1177)](https://github.com/wazuh/wazuh-indexer/issues/1177) [(#1207)](https://github.com/wazuh/wazuh-indexer/issues/1207) [(#1284)](https://github.com/wazuh/wazuh-indexer/issues/1284) [(#1332)](https://github.com/wazuh/wazuh-indexer/issues/1332) [(#1410)](https://github.com/wazuh/wazuh-indexer/issues/1410) [(#1341)](https://github.com/wazuh/wazuh-indexer/issues/1341)
-- Refuse package upgrades from Wazuh Indexer 4.x, which require a clean installation [(#1653)](https://github.com/wazuh/wazuh-indexer/issues/1653) [(#1661)](https://github.com/wazuh/wazuh-indexer/issues/1661)
-- Ship the `admin`, `kibanaserver` and `wazuh-manager` users without a usable password hash [(#1927)](https://github.com/wazuh/wazuh-indexer/issues/1927)
-- Enable transport hostname verification (`transport.ssl.enforce_hostname_verification`) by default <!-- [(#1916)](https://github.com/wazuh/wazuh-indexer/pull/1916) -->
-- Enable memory locking (`bootstrap.memory_lock`) by default [(#1670)](https://github.com/wazuh/wazuh-indexer/issues/1670)
-- Disable multi-tenancy by default [(#1080)](https://github.com/wazuh/wazuh-indexer/issues/1080)
-- Set `OPENSEARCH_TMPDIR` to `/var/lib/wazuh-indexer/tmp` to avoid exhausting the `/tmp` partition [(#1572)](https://github.com/wazuh/wazuh-indexer/issues/1572)
-- Update `README.md` after 5.0.0 conceptual and architectural changes [(#1961)](https://github.com/wazuh/wazuh-indexer/issues/1961)
-- (operational) Migrate packaging tests to Docker [(#928)](https://github.com/wazuh/wazuh-indexer/issues/928)
-- (operational) Change workflows names to include the version it targets to [(#1122)](https://github.com/wazuh/wazuh-indexer/issues/1122)
-- (operational) Update GitHub Actions to the latest version available [(#1129)](https://github.com/wazuh/wazuh-indexer/issues/1129)
-- (operational) Refactor GH Workflow to build packages to use a single branch input [(#1120)](https://github.com/wazuh/wazuh-indexer/issues/1120)
-- (operational) Change Dependabot's configuration to track GH Actions version updates [(#1191)](https://github.com/wazuh/wazuh-indexer/issues/1191)
-- (operational) Update CodeQL configuration [(#1219)](https://github.com/wazuh/wazuh-indexer/issues/1219) [(#961)](https://github.com/wazuh/wazuh-indexer/issues/961) [(#1340)](https://github.com/wazuh/wazuh-indexer/issues/1340)
-- (operational) Change the package builder GH Workflow to use dedicated runners [(#1339)](https://github.com/wazuh/wazuh-indexer/issues/1339)
-- (operational) Replace `addnab/docker-run-action` with Docker commands [(#1325)](https://github.com/wazuh/wazuh-indexer/issues/1325)
+
+| Issue | Comment |
+|-------|---------|
+| [#874](https://github.com/wazuh/wazuh-indexer/issues/874) [#1000](https://github.com/wazuh/wazuh-indexer/issues/1000) [#1086](https://github.com/wazuh/wazuh-indexer/issues/1086) [#1177](https://github.com/wazuh/wazuh-indexer/issues/1177) [#1207](https://github.com/wazuh/wazuh-indexer/issues/1207) [#1284](https://github.com/wazuh/wazuh-indexer/issues/1284) [#1332](https://github.com/wazuh/wazuh-indexer/issues/1332) [#1410](https://github.com/wazuh/wazuh-indexer/issues/1410) [#1341](https://github.com/wazuh/wazuh-indexer/issues/1341) | Upgrade to OpenSearch 3.6.0 and JDK 25 |
+| [#1653](https://github.com/wazuh/wazuh-indexer/issues/1653) [#1661](https://github.com/wazuh/wazuh-indexer/issues/1661) | Refuse package upgrades from Wazuh Indexer 4.x, which require a clean installation |
+| [#1927](https://github.com/wazuh/wazuh-indexer/issues/1927) | Ship the `admin`, `kibanaserver` and `wazuh-manager` users without a usable password hash |
+| [#1670](https://github.com/wazuh/wazuh-indexer/issues/1670) | Enable memory locking (`bootstrap.memory_lock`) by default |
+| [#1080](https://github.com/wazuh/wazuh-indexer/issues/1080) | Disable multi-tenancy by default |
+| [#1572](https://github.com/wazuh/wazuh-indexer/issues/1572) | Set `OPENSEARCH_TMPDIR` to `/var/lib/wazuh-indexer/tmp` to avoid exhausting the `/tmp` partition |
+| [#1581](https://github.com/wazuh/wazuh-indexer/issues/1581) | Log the disabled automatic import of dangling indices at `INFO` instead of `WARN` on every startup |
+| [#1998](https://github.com/wazuh/wazuh-indexer/issues/1998) | Enable transport hostname verification (`transport.ssl.enforce_hostname_verification`) by default |
+
 
 ### Removed
-- Remove deprecated OpenSearch settings in 3.0.0 from `opensearch.yml` [(#893)](https://github.com/wazuh/wazuh-indexer/issues/893) [(#874)](https://github.com/wazuh/wazuh-indexer/issues/874)
-- Remove `opensearch-performance-analyzer` plugin [(#891)](https://github.com/wazuh/wazuh-indexer/issues/891)
-- Remove `opensearch-anomaly-detection` plugin [(#1272)](https://github.com/wazuh/wazuh-indexer-plugins/issues/1272)
-- Remove `opensearch-asynchronous-search` plugin [(#1272)](https://github.com/wazuh/wazuh-indexer-plugins/issues/1272)
-- Remove `opensearch-knn` plugin [(#1577)](https://github.com/wazuh/wazuh-indexer/issues/1577)
-- Remove `opensearch-ml` plugin [(#1582)](https://github.com/wazuh/wazuh-indexer/issues/1582)
-- Remove `opensearch-neural-search` plugin [(#1577)](https://github.com/wazuh/wazuh-indexer/issues/1577)
-- Remove `opensearch-observability` plugin [(#1272)](https://github.com/wazuh/wazuh-indexer-plugins/issues/1272)
-- Remove `opensearch-sql` plugin [(#1580)](https://github.com/wazuh/wazuh-indexer/issues/1580)
-- Remove `install-demo-certificates.sh` and the `GENERATE_CERTS` gate, superseded by `resolve-credentials.sh` [(#1927)](https://github.com/wazuh/wazuh-indexer/issues/1927)
-- Remove the OpenSearch demo users `anomalyadmin`, `kibanaro`, `logstash`, `readall` and `snapshotrestore`, and the demo role mappings, including `own_index` for every user [(#1927)](https://github.com/wazuh/wazuh-indexer/issues/1927)
-- Remove references to legacy `VERSION` file [(#905)](https://github.com/wazuh/wazuh-indexer/issues/905)
-- (operational) Remove the `integrations`, `packaging_scripts`, `docker` and `ecs` folders, superseded by `build-scripts` and the `wazuh-indexer-plugins` repository [(#865)](https://github.com/wazuh/wazuh-indexer/issues/865) [(#1068)](https://github.com/wazuh/wazuh-indexer/issues/1068) [(#683)](https://github.com/wazuh/wazuh-indexer/issues/683)
+
+| Issue | Comment |
+|-------|---------|
+| [#893](https://github.com/wazuh/wazuh-indexer/issues/893) [#874](https://github.com/wazuh/wazuh-indexer/issues/874) | Remove deprecated OpenSearch settings in 3.0.0 from `opensearch.yml` |
+| [#891](https://github.com/wazuh/wazuh-indexer/issues/891) | Remove `opensearch-performance-analyzer` plugin |
+| [#1272](https://github.com/wazuh/wazuh-indexer-plugins/issues/1272) | Remove `opensearch-anomaly-detection` plugin |
+| [#1272](https://github.com/wazuh/wazuh-indexer-plugins/issues/1272) | Remove `opensearch-asynchronous-search` plugin |
+| [#1577](https://github.com/wazuh/wazuh-indexer/issues/1577) | Remove `opensearch-knn` plugin |
+| [#1582](https://github.com/wazuh/wazuh-indexer/issues/1582) | Remove `opensearch-ml` plugin |
+| [#1577](https://github.com/wazuh/wazuh-indexer/issues/1577) | Remove `opensearch-neural-search` plugin |
+| [#1272](https://github.com/wazuh/wazuh-indexer-plugins/issues/1272) | Remove `opensearch-observability` plugin |
+| [#1580](https://github.com/wazuh/wazuh-indexer/issues/1580) | Remove `opensearch-sql` plugin |
+| [#1927](https://github.com/wazuh/wazuh-indexer/issues/1927) | Remove the OpenSearch demo users `anomalyadmin`, `kibanaro`, `logstash`, `readall` and `snapshotrestore`, and the demo role mappings, including `own_index` for every user |
 
 ### Fixed
-- Fix unescaped commands in `indexer-security-init.sh` [(#1189)](https://github.com/wazuh/wazuh-indexer/issues/1189)
-- Fix Java warnings caused by restricted-native access and `sun.misc.Unsafe` deprecation [(#1573)](https://github.com/wazuh/wazuh-indexer/issues/1573)
-- Fix systemd and sysv symlinks and runtime files left behind after uninstalling Wazuh Indexer [(#1918)](https://github.com/wazuh/wazuh-indexer/issues/1918) [(#1687)](https://github.com/wazuh/wazuh-indexer/issues/1687)
-- Fix `indexer-security-init.sh` connecting to the transport port instead of the HTTP port [(#1227)](https://github.com/wazuh/wazuh-indexer/issues/1227)
-- Fix the ownership and permissions of `/etc/default/wazuh-indexer` in DEB packages [(#1532)](https://github.com/wazuh/wazuh-indexer/issues/1532)
-- Fix the `wazuh-indexer` user and group left behind when the package is purged, and hand the files it keeps over to root [(#1951)](https://github.com/wazuh/wazuh-indexer/issues/1951)
-- (operational) Fix packaging test failures on Debian packages by adding `DEBIAN_FRONTEND=noninteractive` to the installation command [(#913)](https://github.com/wazuh/wazuh-indexer/issues/913)
-- (operational) Fix packages upload [(#844)](https://github.com/wazuh/wazuh-indexer/issues/844)
-- (operational) Fix deprecation warning on the email checker GH Action [(#1110)](https://github.com/wazuh/wazuh-indexer/issues/1110)
-- (operational) Fix `linkchecker` failures [(#867)](https://github.com/wazuh/wazuh-indexer-plugins/issues/867)
-- (operational) Fix repository bumper building broken links [(#1205)](https://github.com/wazuh/wazuh-indexer/issues/1205)
+
+| Issue | Comment |
+|-------|---------|
+| [#1532](https://github.com/wazuh/wazuh-indexer/issues/1532) | Fix the ownership and permissions of `/etc/default/wazuh-indexer` in DEB packages |
+| [#1951](https://github.com/wazuh/wazuh-indexer/issues/1951) | Fix the `wazuh-indexer` user and group left behind when the package is purged, and hand the files it keeps over to root |
 
 ## Prior versions
-- []()

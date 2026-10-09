@@ -29,6 +29,7 @@
 %define log_dir %{_localstatedir}/log/%{name}
 %define pid_dir %{_localstatedir}/run/%{name}
 %define state_file %{config_dir}/.was_active
+%define snapshots_dir %{product_dir}/plugins/wazuh-indexer-content-manager/snapshots
 %{!?_version: %define _version 0.0.0 }
 %{!?_architecture: %define _architecture x86_64 }
 
@@ -77,6 +78,10 @@ For more information, see: https://www.wazuh.com/
 %build
 
 %define reportsscheduler_plugin %( if [ -f %{_topdir}/etc/wazuh-indexer/opensearch-reports-scheduler/reports-scheduler.yml ]; then echo "1" ; else echo "0"; fi )
+
+# The CTI snapshot archives this package ships. Which ones depends on the CTI plan the build
+# downloaded them from, so they are read from the assembled tree rather than named here
+%define cti_snapshots %( cd %{_topdir}%{snapshots_dir} 2>/dev/null && ls *.zip 2>/dev/null | xargs )
 
 %install
 set -e
@@ -344,6 +349,14 @@ if [ $1 = 0 ]; then
     fi
 fi
 
+for snapshot in %{cti_snapshots}; do
+    target=%{snapshots_dir}/${snapshot}
+    if [ ! -e "${target}" ] && [ ! -L "${target}" ]; then
+        placeholder=$(mktemp -p %{snapshots_dir} 2>/dev/null) || continue
+        mv -fT "${placeholder}" "${target}" 2>/dev/null || rm -f "${placeholder}" || true
+    fi
+done
+
 exit 0
 
 %postun
@@ -532,7 +545,7 @@ exit 0
 # Carve-out: the content manager deletes the shipped snapshot once it has
 # consumed it, which needs write on this directory. Everything else under the
 # product tree is read-only to the service account.
-%dir %attr(750, %{name}, %{name}) %{product_dir}/plugins/wazuh-indexer-content-manager/snapshots
+%dir %attr(750, %{name}, %{name}) %{snapshots_dir}
 
 # Wazuh Engine
 %dir %attr(750, %{name}, %{name}) %{product_dir}/engine

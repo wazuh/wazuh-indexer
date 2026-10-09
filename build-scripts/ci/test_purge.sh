@@ -8,7 +8,7 @@
 # /usr/share/wazuh-indexer, /var/lib/wazuh-indexer and /var/log/wazuh-indexer --
 # and nothing else, and it always removes the wazuh-indexer user and group.
 #
-# Five scenarios, run one after the other on the same host:
+# Six scenarios, run one after the other on the same host:
 #
 #   1. Fresh install, then purge. Nothing is left: no user, no group, no data
 #      or configuration directory, no CA and no certificate issued from it, no
@@ -16,13 +16,14 @@
 #      as kept.
 #   2. A node that has been used, then purge. Index data, logs, the keystore,
 #      the engine's runtime files, the JVM's performance data in /tmp, a
-#      snapshot repository at a custom path.repo and a planted symlink stand in
-#      for a node that ran. What the account owned in the default directories
-#      belongs to root and keeps its mode, and each of those directories is
-#      closed to everyone but root. The product directory and the performance
-#      data are removed, and the certificates issued from the removed CA go with
-#      it. The custom snapshot repository and the symlink's target are not
-#      touched.
+#      snapshot repository at a custom path.repo, a planted symlink and the
+#      CTI snapshots the content manager consumed stand in for a node that ran.
+#      What the account owned in the default directories belongs to root and
+#      keeps its mode, and each of those directories is closed to everyone but
+#      root. The product directory and the performance data are removed, and
+#      the certificates issued from the removed CA go with it. The custom
+#      snapshot repository and the symlink's target are not touched, and the
+#      package manager does not warn about the snapshots it found gone.
 #   3. Reinstall. Everything kept comes back with the owner and mode it had
 #      before the purge, and the node's certificates chain to the CA it trusts.
 #   4. A default directory the purge cannot hand over (a read-only mount), then
@@ -32,6 +33,9 @@
 #      resolver refuses it while the CA directory holds another CA, the purge
 #      keeps it, a reinstall with nothing to verify it against reports it
 #      instead of minting a CA, and staging the CA that issued it resolves.
+#   6. The package installed over itself, as an upgrade would, once the
+#      content manager has consumed the CTI snapshots. Every snapshot the
+#      package ships is laid down again, without a warning.
 #
 # Required env:
 #   PACKAGE_MANAGER   — "rpm" or "deb"
@@ -52,6 +56,7 @@ certs_dir="${config_dir}/certs"
 data_dir="/var/lib/${name}"
 log_dir="/var/log/${name}"
 product_dir="/usr/share/${name}"
+snapshots_dir="${product_dir}/plugins/wazuh-indexer-content-manager/snapshots"
 default_dirs=("${config_dir}" "${product_dir}" "${data_dir}" "${log_dir}")
 ca_dir="/etc/wazuh/ca"
 marker="${data_dir}/.initialized"
@@ -150,7 +155,35 @@ purge_package() {
         deb) purge_out=$(apt-get purge -y "${name}" 2>&1) ;;
     esac
     purge_rc=$?
-    echo "${purge_out}" | grep -E 'Kept|Some files|Note:|Directories set' || true
+    echo "${purge_out}" | grep -E 'Kept|Some files|Note:|Directories set|remove failed' || true
+}
+
+# Installs the package over itself, which runs the scriptlets the way an
+# upgrade does. Sets reinstall_out and reinstall_rc.
+reinstall_package() {
+    case "$PACKAGE_MANAGER" in
+        rpm) reinstall_out=$(yum reinstall -y "${package}" 2>&1) ;;
+        deb) reinstall_out=$(DEBIAN_FRONTEND=noninteractive dpkg -i "${package}" 2>&1) ;;
+    esac
+    reinstall_rc=$?
+}
+
+# What the content manager does with each CTI snapshot in ${snapshots} once it
+# has loaded it: it moves it to <name>.stable.zip, or deletes it. The first one
+# is moved and the rest deleted, as the service account, so the package manager
+# finds every archive it installed already gone.
+consume_snapshots() {
+    local f first=1
+    for f in "${snapshots[@]}"; do
+        if [ "${first}" -eq 1 ]; then
+            check "the ${name} account can move ${f} to ${f%.zip}.stable.zip" \
+                runuser -u "${name}" -- mv "${snapshots_dir}/${f}" "${snapshots_dir}/${f%.zip}.stable.zip"
+            first=0
+        else
+            check "the ${name} account can delete ${f}" \
+                runuser -u "${name}" -- rm "${snapshots_dir}/${f}"
+        fi
+    done
 }
 
 check_purged() {
@@ -227,6 +260,15 @@ chmod 644 "${canary}"
 ln -s "${canary}" "${data_dir}/nodes/trap"
 chown -h "${name}:${name}" "${data_dir}/nodes/trap"
 
+# The CTI snapshots the package ships, which a node that ran has consumed.
+mapfile -t snapshots < <(find "${snapshots_dir}" -maxdepth 1 -name '*.zip' ! -name '*.stable.zip' \
+    -printf '%f\n' 2>/dev/null | sort)
+if [ ${#snapshots[@]} -gt 0 ]; then
+    consume_snapshots
+else
+    echo "  skip: the package ships no CTI snapshots"
+fi
+
 listing > /tmp/listing.installed
 repo_before=$(find -P "${repo_dir}" -printf '%p %U:%G %m\n' | sort)
 
@@ -240,6 +282,7 @@ check "the purge reports ${data_dir} as kept" output_has "Kept ${data_dir}, now 
 check "${product_dir} is removed with the engine's runtime files" [ ! -e "${product_dir}" ]
 check "the purge does not report ${product_dir} as kept" not output_has "Kept ${product_dir}"
 check "the JVM's performance data in /tmp is removed" [ ! -e "${hsperfdata}" ]
+check "no 'remove failed' warning for the CTI snapshots the node consumed" not output_has "remove failed"
 
 left=$(orphans "${default_dirs[@]}")
 if [ -z "${left}" ]; then
@@ -367,6 +410,23 @@ check "--prestart resolves" [ "${rc}" -eq 0 ]
 check "the state file is written" [ -f "${marker}" ]
 check "the operator's pair is used, not replaced" \
     cmp -s /tmp/external-pki/indexer.pem "${certs_dir}/indexer.pem"
+
+# ---------------------------------------------------------------------------
+echo "== 6. An upgrade over CTI snapshots the node consumed"
+# ---------------------------------------------------------------------------
+
+if [ ${#snapshots[@]} -gt 0 ]; then
+    consume_snapshots
+    reinstall_package
+    echo "Checking what the reinstall laid down:"
+    check "package reinstalled cleanly" [ "${reinstall_rc}" -eq 0 ]
+    for f in "${snapshots[@]}"; do
+        check "${f} is laid down again" [ -s "${snapshots_dir}/${f}" ]
+    done
+    check "no 'remove failed' warning" not grep -qF "remove failed" <<< "${reinstall_out}"
+else
+    echo "  skip: the package ships no CTI snapshots"
+fi
 
 # ---------------------------------------------------------------------------
 

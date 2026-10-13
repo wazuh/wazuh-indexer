@@ -511,6 +511,16 @@ jobs:
             redhat/ubi9:latest \
             bash -c "yum localinstall '/artifacts/dist/${{ steps.package.outputs.name }}' -y && yum remove wazuh-indexer -y"
 
+      - name: Test RPM package leaves nothing behind on removal
+        if: ${{ matrix.distribution == 'rpm' }}
+        run: |
+          SYSTEMD_IMAGE=redhat/ubi9-init:latest \
+          bash build-scripts/run_in_systemd_container.sh "${{ github.workspace }}" "
+            PACKAGE_MANAGER=rpm \
+            PACKAGE_NAME=${{ steps.package.outputs.name }} \
+            bash /build-scripts/ci/test_purge.sh
+          "
+
       - name: Test RPM credential and TLS resolution
         if: ${{ matrix.distribution == 'rpm' }}
         run: |
@@ -579,6 +589,15 @@ jobs:
             dpkg -i "/artifacts/dist/${{ steps.package.outputs.name }}"
             apt-get remove --purge wazuh-indexer -y
           '
+
+      - name: Test DEB package leaves nothing behind on purge
+        if: ${{ matrix.distribution == 'deb' }}
+        run: |
+          bash build-scripts/run_in_systemd_container.sh "${{ github.workspace }}" "
+            PACKAGE_MANAGER=deb \
+            PACKAGE_NAME=${{ steps.package.outputs.name }} \
+            bash /build-scripts/ci/test_purge.sh
+          "
 
       - name: Test DEB credential and TLS resolution
         if: ${{ matrix.distribution == 'deb' }}

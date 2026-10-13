@@ -577,9 +577,9 @@ exit 0
 %attr(500, %{name}, %{name}) %{certs_dir}
 
 %changelog
-* Wed Oct 14 2026 support <info@wazuh.com> - 5.0.0
+* Wed Oct 28 2026 support <info@wazuh.com> - 5.0.0
 - More info: https://documentation.wazuh.com/current/release-notes/release-5-0-0.html
-* Thu Oct 08 2026 support <info@wazuh.com> - 4.14.10
+* Wed Oct 28 2026 support <info@wazuh.com> - 4.14.10
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-14-10.html
 * Wed Oct 14 2026 support <info@wazuh.com> - 4.14.9
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-14-9.html

@@ -531,7 +531,6 @@ function assemble_rpm() {
     bash build-scripts/check_rpm_changelog.sh "distribution/packages/src/rpm/wazuh-indexer.rpm.spec"
 
     # Copy spec
-    # Copy spec
     cp "distribution/packages/src/rpm/wazuh-indexer.rpm.spec" "${TMP_DIR}"
 
     cd "${TMP_DIR}"

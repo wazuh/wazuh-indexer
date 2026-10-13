@@ -29,6 +29,7 @@
 %define log_dir %{_localstatedir}/log/%{name}
 %define pid_dir %{_localstatedir}/run/%{name}
 %define state_file %{config_dir}/.was_active
+%define snapshots_dir %{product_dir}/plugins/wazuh-indexer-content-manager/snapshots
 %{!?_version: %define _version 0.0.0 }
 %{!?_architecture: %define _architecture x86_64 }
 
@@ -77,6 +78,10 @@ For more information, see: https://www.wazuh.com/
 %build
 
 %define reportsscheduler_plugin %( if [ -f %{_topdir}/etc/wazuh-indexer/opensearch-reports-scheduler/reports-scheduler.yml ]; then echo "1" ; else echo "0"; fi )
+
+# The CTI snapshot archives this package ships. Which ones depends on the CTI plan the build
+# downloaded them from, so they are read from the assembled tree rather than named here
+%define cti_snapshots %( cd %{_topdir}%{snapshots_dir} 2>/dev/null && ls *.zip 2>/dev/null | xargs )
 
 %install
 set -e
@@ -214,8 +219,10 @@ exit 0
 set -e
 
 # Create tmp directory for snapshot operations (avoids filling /tmp)
+if [ -L %{data_dir}/tmp ]; then
+    rm -f %{data_dir}/tmp
+fi
 mkdir -p %{data_dir}/tmp
-chown %{name}:%{name} %{data_dir}/tmp
 
 # Fix ownership and permissions.
 chown -R %{name}:%{name} %{config_dir}
@@ -342,6 +349,14 @@ if [ $1 = 0 ]; then
     fi
 fi
 
+for snapshot in %{cti_snapshots}; do
+    target=%{snapshots_dir}/${snapshot}
+    if [ ! -e "${target}" ] && [ ! -L "${target}" ]; then
+        placeholder=$(mktemp -p %{snapshots_dir} 2>/dev/null) || continue
+        mv -fT "${placeholder}" "${target}" 2>/dev/null || rm -f "${placeholder}" || true
+    fi
+done
+
 exit 0
 
 %postun
@@ -388,6 +403,23 @@ if [ $1 -eq 0 ]; then
             if ! grep -qE '^[[:space:]]*[A-Za-z_][A-Za-z0-9_]*=' "${creds}" 2>/dev/null; then
                 ca_dir="$(wazuh_ca_get_dir 2>/dev/null)" || ca_dir=""
                 if [ -n "${ca_dir}" ] && [ -d "${ca_dir}" ]; then
+                    # The certificates this node was issued from that CA go with it. Kept, they
+                    # are an identity nothing trusts any more, and a reinstall would find them
+                    # beside a new CA. Only a CA with its key here issued anything on this host;
+                    # a pair it did not issue -- the operator's own -- stays.
+                    if [ -f "${ca_dir}/root-ca.key" ] && [ -f "${ca_dir}/root-ca.pem" ]; then
+                        for cert in indexer admin; do
+                            if [ -f %{certs_dir}/${cert}.pem ] && \
+                               openssl verify -no_check_time -CAfile "${ca_dir}/root-ca.pem" \
+                                   %{certs_dir}/${cert}.pem > /dev/null 2>&1; then
+                                rm -f %{certs_dir}/${cert}.pem %{certs_dir}/${cert}-key.pem
+                            fi
+                        done
+                        if cmp -s "${ca_dir}/root-ca.pem" %{certs_dir}/root-ca.pem; then
+                            rm -f %{certs_dir}/root-ca.pem
+                        fi
+                        rmdir %{certs_dir} > /dev/null 2>&1 || true
+                    fi
                     rm -f "${ca_dir}/root-ca.pem" "${ca_dir}/root-ca.key" "${ca_dir}/root-ca.srl"
                     rmdir "${ca_dir}" > /dev/null 2>&1 || true
                 fi
@@ -416,6 +448,67 @@ if [ $1 -eq 0 ]; then
     # cluster they were uploaded to.
     rm -f %{config_dir}/opensearch-security/internal_users.yml.rpmsave \
           %{config_dir}/opensearch.yml.rpmsave
+
+    # %post creates the tmp directory, so it is not in the file list and rpm
+    # would leave it. The package's directories themselves only go if nothing
+    # else is left in them: indexed data is never deleted here. rpm could not
+    # remove opensearch-security/ while the .rpmsave deleted above was still in
+    # it, nor the product directory while the engine's runtime files deleted at
+    # the top were, so they go here too.
+    rm -rf %{data_dir}/tmp
+    rmdir %{config_dir}/opensearch-security %{config_dir} %{product_dir} %{data_dir} %{log_dir} > /dev/null 2>&1 || true
+
+    # The package manages its own directories and nothing else. Hand every file
+    # the service account owns in them over to root before the account goes:
+    # userdel frees the UID, and the next system account created would inherit
+    # it -- and with it any certificates, the keystore, the logs and the indexed
+    # data left behind. The files keep their modes. Each directory is closed to
+    # everyone but root instead, which keeps what is inside unreadable and is all
+    # a reinstall has to undo: rpm restores the packaged mode of every directory
+    # in the file list, and %post runs chown -R. Nothing is deleted.
+    # find -H follows a directory that is itself a symlink but no link inside it,
+    # and chown -h changes those links themselves, so a link the account planted
+    # cannot aim any of this at another file. Only a directory that still holds
+    # something other than directories is reported as kept.
+    not_handed_over=""
+    if getent passwd %{name} > /dev/null 2>&1; then
+        for dir in %{config_dir} %{product_dir} %{data_dir} %{log_dir}; do
+            [ -d "${dir}" ] || continue
+            dir_ok=true
+            find -H "${dir}" \( -user %{name} -exec chown -h root:root {} + \) \
+                -o \( -group %{name} -exec chgrp -h root {} + \) 2>/dev/null || dir_ok=false
+            chmod go-rwx "${dir}" 2>/dev/null || dir_ok=false
+            if [ "${dir_ok}" != true ]; then
+                not_handed_over="${not_handed_over} ${dir}"
+            elif [ -n "$(find -H "${dir}" -mindepth 1 ! -type d -print -quit 2>/dev/null)" ]; then
+                echo "Kept ${dir}, now owned by root. Reinstalling %{name} takes it back."
+            fi
+        done
+    fi
+    if [ -n "${not_handed_over}" ]; then
+        echo "Some files under${not_handed_over} could not be handed over to root; they keep the ID of the removed %{name} user." >&2
+    fi
+
+    # %pre creates the service account, and removing the package always takes
+    # it back. userdel may already have dropped the group along with the user
+    # (USERGROUPS_ENAB), hence the second lookup.
+    #
+    # A JVM keeps its performance data in /tmp/hsperfdata_<user>.
+    # indexer-security-init.sh runs securityadmin.sh as the account outside the
+    # unit's private /tmp, and so does a node the SysV script starts, so that
+    # directory is left behind. It is empty once the JVM exits, but the next
+    # account given the freed ID would own it.
+    if getent passwd %{name} > /dev/null 2>&1; then
+        find /tmp -maxdepth 1 -type d -name "hsperfdata_%{name}" -user %{name} \
+            -exec rm -rf {} + 2>/dev/null || true
+        userdel %{name} > /dev/null 2>&1 || true
+    fi
+    if getent group %{name} > /dev/null 2>&1; then
+        groupdel %{name} > /dev/null 2>&1 || true
+    fi
+
+    echo "Note: the package only manages %{config_dir}, %{product_dir}, %{data_dir} and %{log_dir}."
+    echo "Directories set elsewhere in opensearch.yml (a custom path.data, path.logs or path.repo) are left as they are, still owned by the ID of the removed %{name} user."
 
     # Make systemd forget the unit, now that its file is gone
     if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
@@ -452,7 +545,7 @@ exit 0
 # Carve-out: the content manager deletes the shipped snapshot once it has
 # consumed it, which needs write on this directory. Everything else under the
 # product tree is read-only to the service account.
-%dir %attr(750, %{name}, %{name}) %{product_dir}/plugins/wazuh-indexer-content-manager/snapshots
+%dir %attr(750, %{name}, %{name}) %{snapshots_dir}
 
 # Wazuh Engine
 %dir %attr(750, %{name}, %{name}) %{product_dir}/engine
@@ -484,22 +577,26 @@ exit 0
 %attr(500, %{name}, %{name}) %{certs_dir}
 
 %changelog
-* Wed Sep 30 2026 support <info@wazuh.com> - 5.1.0
+* Wed Oct 28 2026 support <info@wazuh.com> - 5.1.0
 - More info: https://documentation.wazuh.com/current/release-notes/release-5-1-0.html
-* Wed Sep 09 2026 support <info@wazuh.com> - 5.0.1
+* Wed Oct 28 2026 support <info@wazuh.com> - 5.0.1
 - More info: https://documentation.wazuh.com/current/release-notes/release-5-0-1.html
-* Wed Oct 14 2026 support <info@wazuh.com> - 5.0.0
+* Wed Oct 28 2026 support <info@wazuh.com> - 5.0.0
 - More info: https://documentation.wazuh.com/current/release-notes/release-5-0-0.html
-* Thu Oct 08 2026 support <info@wazuh.com> - 4.14.10
+* Wed Oct 28 2026 support <info@wazuh.com> - 4.14.10
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-14-10.html
-* Wed Oct 07 2026 support <info@wazuh.com> - 4.14.9
+* Wed Oct 14 2026 support <info@wazuh.com> - 4.14.9
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-14-9.html
 * Wed Sep 23 2026 support <info@wazuh.com> - 4.14.8
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-14-8.html
+* Thu Sep 03 2026 support <info@wazuh.com> - 4.10.5
+- More info: https://documentation.wazuh.com/current/release-notes/release-4-10-5.html
 * Wed Jul 29 2026 support <info@wazuh.com> - 4.14.7
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-14-7.html
-* Tue Jul 01 2026 support <info@wazuh.com> - 4.14.6
+* Wed Jul 01 2026 support <info@wazuh.com> - 4.14.6
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-14-6.html
+* Thu May 21 2026 support <info@wazuh.com> - 4.10.4
+- More info: https://documentation.wazuh.com/current/release-notes/release-4-10-4.html
 * Thu Apr 23 2026 support <info@wazuh.com> - 4.14.5
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-14-5.html
 * Tue Mar 17 2026 support <info@wazuh.com> - 4.14.4
@@ -516,22 +613,18 @@ exit 0
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-13-1.html
 * Thu Sep 18 2025 support <info@wazuh.com> - 4.13.0
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-13-0.html
+* Tue Aug 19 2025 support <info@wazuh.com> - 4.10.3
+- More info: https://documentation.wazuh.com/current/release-notes/release-4-10-3.html
+* Wed May 21 2025 support <info@wazuh.com> - 4.10.2
+- More info: https://documentation.wazuh.com/current/release-notes/release-4-10-2.html
 * Wed May 07 2025 support <info@wazuh.com> - 4.12.0
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-12-0.html
 * Tue Apr 01 2025 support <info@wazuh.com> - 4.11.2
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-11-2.html
 * Wed Mar 12 2025 support <info@wazuh.com> - 4.11.1
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-11-1.html
-* Wed Feb 21 2025 support <info@wazuh.com> - 4.11.0
+* Fri Feb 21 2025 support <info@wazuh.com> - 4.11.0
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-11-0.html
-* Thu Sep 03 2026 support <info@wazuh.com> - 4.10.5
-- More info: https://documentation.wazuh.com/current/release-notes/release-4-10-5.html
-* Thu May 21 2026 support <info@wazuh.com> - 4.10.4
-- More info: https://documentation.wazuh.com/current/release-notes/release-4-10-4.html
-* Tue Aug 19 2025 support <info@wazuh.com> - 4.10.3
-- More info: https://documentation.wazuh.com/current/release-notes/release-4-10-3.html
-* Wed May 21 2025 support <info@wazuh.com> - 4.10.2
-- More info: https://documentation.wazuh.com/current/release-notes/release-4-10-2.html
 * Thu Jan 16 2025 support <info@wazuh.com> - 4.10.1
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-10-1.html
 * Wed Jan 08 2025 support <info@wazuh.com> - 4.10.0
@@ -559,7 +652,7 @@ exit 0
 * Thu Aug 31 2023 support <info@wazuh.com> - 4.5.2
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-5-2.html
 * Thu Aug 24 2023 support <info@wazuh.com> - 4.5.1
-- More info: https://documentation.wazuh.com/current/release-notes/release-4-5.1.html
+- More info: https://documentation.wazuh.com/current/release-notes/release-4-5-1.html
 * Thu Aug 10 2023 support <info@wazuh.com> - 4.5.0
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-5-0.html
 * Mon Jul 10 2023 support <info@wazuh.com> - 4.4.5

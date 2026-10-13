@@ -102,10 +102,12 @@ start() {
         mkdir -p "$PID_DIR" && chown wazuh-indexer:wazuh-indexer "$PID_DIR"
     fi
     # Recreated on every start, never reused: stop() signals what it reads from these, and a
-    # pidfile left behind by the previous run is not this run's process.
+    # pidfile left behind by the previous run is not this run's process. PID_DIR belongs to the
+    # service account, which can plant a link in it at any time, so nothing here touches its
+    # contents as root: the old pidfiles are removed as that account, and the new one is written
+    # by the indexer itself (-p), as that account too, the way the systemd unit does it.
     if [ -n "$PID_DIR" ]; then
-        rm -f "$pidfile" "$PID_DIR/wazuh-engine.pid"
-        touch "$pidfile" && chown $NAME:$NAME "$pidfile"
+        runuser -u $NAME -- rm -f "$pidfile" "$PID_DIR/wazuh-engine.pid"
     fi
     # Ensure that the lockfile directory exists
     if [ ! -d "/var/lock/subsys/" ]; then
@@ -116,7 +118,7 @@ start() {
     echo -n $"Starting $prog..."
     # if not running, start it up here, usually something like "daemon $exec"
     if command -v daemon > /dev/null 2>&1; then
-        nohup daemon --user wazuh-indexer --pidfile $pidfile $exec -d > /dev/null 2>&1
+        nohup daemon --user wazuh-indexer --pidfile $pidfile $exec -p $pidfile -d > /dev/null 2>&1
     else
         nohup runuser wazuh-indexer --shell="/bin/bash" --command="$exec -p $pidfile -d" > /dev/null 2>&1
     fi

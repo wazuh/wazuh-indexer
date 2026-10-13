@@ -1,0 +1,6 @@
+# Created by pre-start.sh
+ca/
+credentials.env
+
+# Vagrant machine state
+.vagrant/

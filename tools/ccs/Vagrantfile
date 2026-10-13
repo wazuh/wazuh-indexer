@@ -1,72 +1,49 @@
-version = "4.12.0"
-provider = "virtualbox"
-    
-system("
-    if [ #{ARGV[0]} = 'up' ]; then
-        echo 'Executing pre-start script.'
-        bash ./pre-start.sh #{version}
-    fi 
-")
+# Packages are taken from this artifact list. Override it with WAZUH_ARTIFACT_URLS to test another
+# build, e.g. a different nightly or a release candidate.
+artifact_urls = ENV.fetch(
+    "WAZUH_ARTIFACT_URLS",
+    "https://packages-staging.xdrsiem.wazuh.info/nightly/5.0.0/artifact-urls/artifact_urls_5.0.0-latest.yaml"
+)
+memory = ENV.fetch("VM_MEMORY", "4096")
+cpus = ENV.fetch("VM_CPUS", "4")
+
+# node-start.sh carries the same addresses and host names.
+nodes = [
+    { name: "cluster_a", hostname: "cluster-a", ip: "192.168.56.11" },
+    { name: "cluster_b", hostname: "cluster-b", ip: "192.168.56.12" },
+    { name: "ccs",       hostname: "ccs",       ip: "192.168.56.10" },
+]
+
+# Creates the shared root CA and the credentials file before any machine is provisioned.
+if (ARGV & %w[up provision reload]).any?
+    abort("pre-start.sh failed") unless system("bash", "./pre-start.sh", chdir: __dir__)
+end
 
 Vagrant.configure("2") do |config|
-    
-    config.vm.define "cluster_a" do |cluster_a|
-        cluster_a.vm.box = "generic/alma9"
-        cluster_a.vm.synced_folder ".", "/vagrant"
-        cluster_a.vm.network "private_network", ip: "192.168.56.11"
-        cluster_a.vm.hostname = "cluster-a"
-        cluster_a.vm.provider "#{provider}" do |vb|
-            vb.memory = "4096"
-            vb.cpus = "4"
-        end
-        cluster_a.vm.provision "shell", inline: <<-SHELL
-            systemctl stop firewalld
-            systemctl disable firewalld
+    config.vm.box = "almalinux/9"
+    # Nothing is shared through /vagrant: the files each node needs are uploaded below, which works
+    # the same on every provider.
+    config.vm.synced_folder ".", "/vagrant", disabled: true
 
-            cp /vagrant/node-start.sh /home/vagrant/
-            cp /vagrant/wazuh-certificates/root-ca* /home/vagrant
-            bash ./node-start.sh cluster_a #{version}
-        SHELL
+    config.vm.provider "virtualbox" do |vb|
+        vb.memory = memory
+        vb.cpus = cpus
+    end
+    config.vm.provider "libvirt" do |lv|
+        lv.memory = memory
+        lv.cpus = cpus
     end
 
-    config.vm.define "cluster_b" do |cluster_b|
-        cluster_b.vm.box = "generic/alma9"
-        cluster_b.vm.synced_folder ".", "/vagrant"
-        cluster_b.vm.network "private_network", ip: "192.168.56.12"
-        cluster_b.vm.hostname = "cluster-b"
+    nodes.each do |node|
+        config.vm.define node[:name] do |n|
+            n.vm.hostname = node[:hostname]
+            n.vm.network "private_network", ip: node[:ip]
 
-        cluster_b.vm.provider "#{provider}" do |vb|
-            vb.memory = "4096"
-            vb.cpus = "4"
+            %w[ca/root-ca.pem ca/root-ca.key credentials.env].each do |file|
+                n.vm.provision "file", source: file, destination: "/tmp/ccs/#{File.basename(file)}"
+            end
+            n.vm.provision "shell", path: "node-start.sh", args: [node[:name]],
+                env: { "ARTIFACT_URLS" => artifact_urls }
         end
-
-        cluster_b.vm.provision "shell", inline: <<-SHELL
-            systemctl stop firewalld
-            systemctl disable firewalld
-
-            cp /vagrant/node-start.sh /home/vagrant/
-            cp /vagrant/wazuh-certificates/root-ca* /home/vagrant
-            bash ./node-start.sh cluster_b #{version}
-        SHELL
-    end 
-
-    config.vm.define "ccs" do |ccs|
-        ccs.vm.box = "generic/alma9"
-        ccs.vm.synced_folder ".", "/vagrant"
-        ccs.vm.network "private_network", ip: "192.168.56.10"
-        ccs.vm.hostname = "ccs"
-        ccs.vm.provider "#{provider}" do |vb|
-            vb.memory = "4096"
-            vb.cpus = "4"
-        end
-
-        ccs.vm.provision "shell", inline: <<-SHELL
-            systemctl stop firewalld
-            systemctl disable firewalld
-
-            cp /vagrant/node-start.sh /home/vagrant/
-            cp -r /vagrant/wazuh-certificates /home/vagrant/
-            bash ./node-start.sh ccs #{version}
-        SHELL
     end
 end

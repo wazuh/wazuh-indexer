@@ -1046,11 +1046,13 @@ for _log in /tmp/remove.log /tmp/purge.log; do
     done
 done
 
-# Pre-existing: the certificates directory is not owned by the package manifest,
-# so a private key placed there outlives removal. Reported, not asserted, since
-# it predates this feature and an operator may legitimately want the pair back.
+# The certificates directory is not owned by the package manifest, so a private
+# key there outlives removal unless the purge removes the CA that issued it,
+# which it does only once no component's key is left (test_purge.sh covers
+# that). Here a sibling's key keeps the CA, so the pair stays. Reported, not
+# asserted: an operator may legitimately want the pair back.
 for key in "${CERTS_DIR}/indexer-key.pem" "${CERTS_DIR}/admin-key.pem"; do
-    [ -f "${key}" ] && info "note: ${key} still present after removal (pre-existing behaviour)"
+    [ -f "${key}" ] && info "note: ${key} still present after removal (another component keeps the CA that issued it)"
 done
 
 # ---------------------------------------------------------------------------

@@ -1,51 +1,74 @@
 # Cross Cluster Search (CCS) environment
-This environment enables the deployment of a Wazuh Indexer cluster with Cross Cluster Search configuration, using Vagrant and Virtualbox (or other supported providers).
 
-It also generates the node's required certificates using the `wazuh-certs-tool` and copy them to each node's `/home/vagrant`
-directory, leaving a copy in `tools/ccs`.
+This environment deploys three Wazuh 5.x clusters with Vagrant and connects them through
+Cross Cluster Search: a CCS node running the Wazuh indexer and the Wazuh dashboard, and two remote
+clusters, A and B, each running the Wazuh indexer and the Wazuh server. From the CCS node you can
+search the data of both remote clusters and manage both Wazuh servers from one dashboard.
 
-For the development of this environment, we have based it on [Wazuh documentation](https://wazuh.com/blog/managing-multiple-wazuh-clusters-with-cross-cluster-search/)
+It works with VirtualBox and with libvirt.
 
 ### Prerequisites
 
 1. Download and install Vagrant ([source](https://developer.hashicorp.com/vagrant/downloads))
-2. Install virtualbox ([source](https://www.virtualbox.org/wiki/Downloads))
+2. Install a provider:
+   - VirtualBox ([source](https://www.virtualbox.org/wiki/Downloads)), or
+   - libvirt with the [vagrant-libvirt](https://vagrant-libvirt.github.io/vagrant-libvirt/) plugin.
+3. Install OpenSSL on the host. It is used to create the root CA of the environment.
 
-> [!Note]
-> If instead of virtualbox you want to use another provider like libvirt, the variable on the second line of the Vagrantfile should be changed to the name of the desired provider.
+## Infrastructure overview
 
-## Wazuh Version Configuration
+| Node      | IP address    | Host name   | Components                               | RAM  | CPU     |
+| --------- | ------------- | ----------- | ---------------------------------------- | ---- | ------- |
+| ccs       | 192.168.56.10 | `ccs`       | Wazuh indexer (`ccs-cluster`), dashboard | 4 GB | 4 cores |
+| cluster_a | 192.168.56.11 | `cluster-a` | Wazuh indexer (`ca-cluster`), server     | 4 GB | 4 cores |
+| cluster_b | 192.168.56.12 | `cluster-b` | Wazuh indexer (`cb-cluster`), server     | 4 GB | 4 cores |
 
-The Wazuh version is set in the first line of the `Vagrantfile` within the variable `version`. You can change it to your desired version, for example:
+The CCS node registers the remote clusters as `ca-wazuh-indexer-1` and `cb-wazuh-indexer-1`, and
+the dashboard connects to the Wazuh server API of both, as `cluster-a` and `cluster-b`.
+
+## Configuration
+
+The `Vagrantfile` reads these environment variables:
+
+| Variable              | Default                                                                                                   | Description                                    |
+| --------------------- | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| `WAZUH_ARTIFACT_URLS` | `https://packages-staging.xdrsiem.wazuh.info/nightly/5.0.0/artifact-urls/artifact_urls_5.0.0-latest.yaml` | Artifact list the RPM packages are taken from. |
+| `VM_MEMORY`           | `4096`                                                                                                    | RAM of each node, in MB.                       |
+| `VM_CPUS`             | `4`                                                                                                       | CPUs of each node.                             |
+
+By default, the environment installs the latest 5.0.0 nightly packages. To test another build,
+point `WAZUH_ARTIFACT_URLS` to its artifact list.
+
+### Certificates and credentials
+
+The Wazuh 5.x packages issue their own certificates and generate their own passwords when
+installed. Before the nodes are created, `pre-start.sh` prepares the two things they must share:
+
+- **`ca/root-ca.pem` and `ca/root-ca.key`**: the root CA every node issues its certificates from.
+  The clusters must share it to trust each other.
+- **`credentials.env`**: the passwords given to the packages instead of generating them.
+  `pre-start.sh` only puts `WAZUH_MANAGER_WUI_PASSWORD` in it, because the dashboard on the CCS
+  node needs it to connect to both Wazuh servers. Every other password is generated on each node.
+
+Both are copied to `/etc/wazuh/` on every node and kept between runs. To use your own CA or
+passwords, create them in `tools/ccs` before running `vagrant up`. If your `credentials.env` has no
+`WAZUH_MANAGER_WUI_PASSWORD`, a generated one is added to it. For example:
 
 ```
-version = "4.12.0"
+WAZUH_MANAGER_WUI_PASSWORD=<password>
+WAZUH_INDEXER_ADMIN_PASSWORD=<password>
 ```
 
-This version is passed to the `node-start.sh` script during provisioning.
+Passwords must be 12 to 64 characters long, use only `A-Z a-z 0-9 . , _ + : @ % ^ = ~ -`, and
+include at least one uppercase letter, one lowercase letter, one digit and one symbol.
 
-## Infrastructure Overview
-The environment includes the following nodes:
-
-- ccs: Main control node (Cross Cluster Search)
-- cluster_a: Cluster A node
-- cluster_b: Cluster B node
-
-Each node is configured with its IP address, hostname, and system resources (RAM, CPUs).
-
-## Requirements:
-| Node      | RAM      | CPU        |
-|-----------|----------|------------|
-| ccs       | 4 GB     | 4 cores    |
-| cluster_a | 4 GB     | 4 cores    |
-| cluster_b | 4 GB     | 4 cores    |
-
+The passwords used on each node, generated or not, are in its `/etc/wazuh/credentials.env`.
 
 ## Usage
 
 1. Navigate to the environment's root directory
    ```bash
-   cd tools
+   cd tools/ccs
    ```
 2. Initialize the environment
    ```bash
@@ -53,127 +76,101 @@ Each node is configured with its IP address, hostname, and system resources (RAM
    ```
 
 > [!Note]
-> The process of starting all the nodes and configuring them may take approximately 20 minutes.
+> With libvirt, the three nodes are provisioned in parallel. Each one downloads its packages from
+> the artifact list, which can take a while.
 
 3. Connect to the different systems
    ```bash
    vagrant ssh ccs/cluster_a/cluster_b
    ```
 
+## Test the Cross Cluster Search
 
-## Test the Cross-Cluster Search 
-Perform the following steps on the Wazuh dashboard to enable Cross-Cluster Search from the CCS environment to the remote clusters.
+1. Get the password of the `admin` user of the CCS node:
+   ```bash
+   vagrant ssh ccs -c "sudo grep ^WAZUH_INDEXER_ADMIN_PASSWORD= /etc/wazuh/credentials.env"
+   ```
 
-1. Log in to the Wazuh dashboard using the login credentials:
-```
-URL: https://192.168.56.10
-Username: admin
-Password: admin
-```
+2. Log in to the Wazuh dashboard:
+   ```
+   URL: https://192.168.56.10
+   Username: admin
+   Password: <the password from the previous step>
+   ```
 
-2. Test that the remote clusters are connected by running the following API call:
-> [!Note] Note: Change the Wazuh indexer name highlighted to match the cluster being tested.
+   The browser warns about the certificate, because it is issued by the CA of the environment. To
+   avoid it, trust `tools/ccs/ca/root-ca.pem` in your browser.
 
-```
-GET ca-wazuh-indexer-1:wazuh-alerts-*/_search
-```
+3. Open **Dev Tools** (`https://192.168.56.10/app/dev_tools#/console`) and check that both remote
+   clusters are connected:
+   ```
+   GET _remote/info
+   ```
+   ```json
+   {
+     "ca-wazuh-indexer-1": {
+       "connected": true,
+       "mode": "sniff",
+       "seeds": ["192.168.56.11:9300"],
+       "num_nodes_connected": 1,
+       ...
+     },
+     "cb-wazuh-indexer-1": {
+       "connected": true,
+       ...
+     }
+   }
+   ```
 
-Output
-``` json
-{
-  "took": 833,
-  "timed_out": false,
-  "_shards": {
-    "total": 6,
-    "successful": 6,
-    "skipped": 0,
-    "failed": 0
-  },
-  "_clusters": {
-    "total": 1,
-    "successful": 1,
-    "skipped": 0
-  },
-  "hits": {
-    "total": {
-      "value": 221,
-      "relation": "eq"
-    },
-    "max_score": 1,
-    "hits": [
-      {
-        "_index": "ca-wazuh-indexer-1:wazuh-alerts-4.x-2024.08.25",
-        "_id": "BZ40i5EB-SZRRdc_oF6H",
-        "_score": 1,
-        "_source": {
-          "predecoder": {
-            "hostname": "ccs",
-            "program_name": "systemd",
-            "timestamp": "Aug 25 21:22:35"
-          },
-          "agent": {
-            "name": "cluster-a",
-            "id": "000"
-          },
-          "manager": {
-            "name": "cluster-a"
-          },
-          "rule": {
-            "firedtimes": 1,
-            "mail": false,
-            "level": 5,
-            "description": "Systemd: System time has been changed.",
-            "groups": [
-              "local",
-              "systemd"
-            ],
-            "id": "40705",
-            "gpg13": [
-              "4.3"
-            ],
-            "gdpr": [
-              "IV_35.7.d"
-            ]
-          },
-          "decoder": {
-            "name": "systemd"
-          },
-          "full_log": "Aug 25 21:22:35 ccs systemd: Time has been changed",
-          "input": {
-            "type": "log"
-          },
-          "@timestamp": "2024-08-25T20:22:37.091Z",
-          "location": "/var/log/messages",
-          "id": "1724617357.562701",
-          "timestamp": "2024-08-25T21:22:37.091+0100"
-        }
-      },
-...
-```
+4. Run a search on both remote clusters. Until agents report to the Wazuh servers, there are no
+   events, but the servers' own metrics are a good test:
+   ```
+   GET *:wazuh-metrics-*/_search
+   ```
+   ```json
+   {
+     "took": 56,
+     "timed_out": false,
+     "num_reduce_phases": 3,
+     "_shards": {
+       "total": 6,
+       "successful": 6,
+       "skipped": 0,
+       "failed": 0
+     },
+     "_clusters": {
+       "total": 2,
+       "successful": 2,
+       "skipped": 0
+     },
+     "hits": {
+       "total": {
+         "value": 40,
+         "relation": "eq"
+       },
+       "max_score": 1,
+       "hits": [
+         {
+           "_index": "cb-wazuh-indexer-1:.ds-wazuh-metrics-comms-v4-000001",
+           ...
+   ```
 
-### Configure the `wazuh-alerts-*` index pattern
-1. Select **☰** > **Dashboard management** > **Dashboard Management**  > **Index patterns** and select **Create index pattern** to add the index patterns for the remote clusters.
+   `*` matches both remote clusters. Use a remote cluster name to search only one, for example
+   `ca-wazuh-indexer-1:wazuh-events-v5*` for the events of cluster A.
 
-2. Add the index pattern name using the format `*:wazuh-alerts-*` and select Next step. The wildcard ‘`*`‘ matches all indexers in the remote Wazuh clusters.
-   
-3. Select **@timestamp** as the primary time field.
+The dashboard also connects to the Wazuh server API of both remote clusters, listed in its API
+connections as `cluster-a` and `cluster-b`.
 
-4. Select **Create index pattern** to create the index pattern.
+### Explore the remote data in the dashboard
 
-5. Select **☰** > **Dashboard management** > **App Settings**  > **General** and set the default index pattern for alerts to `*:wazuh-alerts-*` in the **Index pattern** field.
+1. Open **Dashboards Management** > **Index patterns**
+   (`https://192.168.56.10/app/management/opensearch-dashboards/indexPatterns`) and select
+   **Create index pattern**.
+2. Enter an index pattern with the `<cluster>:<index>` format, for example `*:wazuh-events-v5*` for
+   the events of both remote clusters. Select **Next step**.
+3. Select **@timestamp** as the time field and select **Create index pattern**.
+4. Open **Discover** and select the new index pattern.
 
-6. Select the `*:wazuh-alerts-*` index pattern and toggle the API between Cluster A and B to view alerts from both remote clusters.
-
-### Configure the `wazuh-states-vulnerabilities*` index pattern
-1. Select **☰** > **Dashboard management** > **Dashboard Management**  > **Index patterns** and select **Create index pattern** to add the index patterns for the remote clusters.
-
-2. Add the index pattern name using the format `*:wazuh-states-vulnerabilities-*` and select **Next step**.  The wildcard ‘`*`‘ matches all indexers in the remote Wazuh clusters.
-
-3. Select **package.installed** as the primary time field. This will show you when the vulnerable package was installed.
-
-4. Select **Create index pattern** to create the index pattern.
-
-5. Select **☰** > **Dashboard management** > **App Settings**  > **Vulnerabilities** and set the default index pattern for vulnerabilities to `*:wazuh-states-vulnerabilities-*` in the **Index pattern** field.
 ## Cleanup
 
 After the testing session is complete you can stop or destroy the environment as you wish:
@@ -186,3 +183,6 @@ After the testing session is complete you can stop or destroy the environment as
   ```bash
   vagrant destroy -f
   ```
+
+To start the next environment with a new CA and new passwords, also delete `ca/` and
+`credentials.env`.

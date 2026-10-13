@@ -32,6 +32,9 @@ state_file=${config_dir}/.was_active
 
 # Create tmp directory for snapshot operations (avoids filling /tmp)
 tmp_dir=${data_dir}/tmp
+if [ -L ${tmp_dir} ]; then
+    rm -f ${tmp_dir}
+fi
 mkdir -p ${tmp_dir}
 
 # Set owner
@@ -55,13 +58,18 @@ chown -R ${name}:${name} ${data_dir}
 mkdir -p ${pid_dir}
 chown -R ${name}:${name} ${pid_dir}
 
+# A purge leaves these directories closed to everyone but root, and a fresh
+# install over what it kept opens them again with their packaged mode. An
+# upgrade leaves the operator's modes alone.
+if [ -z "$2" ]; then
+    chmod 750 ${config_dir} ${product_dir} ${data_dir} ${log_dir}
+fi
+
 # systemd reads the EnvironmentFile as root, so a service-writable copy lets the
 # service account set variables for the root pre-start step. It carries no
 # secret, so group read is enough.
 chown root:${name} ${defaults_file}
 chmod 0640 ${defaults_file}
-
-chown ${name}:${name} ${tmp_dir}
 
 # Change permissions for Wazuh Engine
 ENGINE_DIR="${product_dir}/engine"
@@ -75,7 +83,7 @@ if [ -d "$ENGINE_DIR" ]; then
     [ -f "$ENGINE_DIR/bin/wazuh-engine" ] && chmod 750 "$ENGINE_DIR/bin/wazuh-engine"
 
     # Set sockets directory permissions
-    [ -d "$ENGINE_DIR/sockets" ] && chmod 750 "$ENGINE_DIR/sockets"
+    [ -d "$ENGINE_DIR/sockets" ] && [ ! -L "$ENGINE_DIR/sockets" ] && chmod 750 "$ENGINE_DIR/sockets"
 fi
 
 # Reload systemctl daemon

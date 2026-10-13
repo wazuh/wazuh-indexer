@@ -73,14 +73,14 @@ function render_changelog() {
     {
         echo "## [v${version}]"
         echo ""
-        echo "### Added"
-        echo ""
-        echo "### Changed"
-        echo ""
-        echo "### Removed"
-        echo ""
-        echo "### Fixed"
-        echo ""
+        local section
+        for section in Added Changed Removed Fixed; do
+            echo "### ${section}"
+            echo ""
+            echo "| Issue | Comment |"
+            echo "|-------|---------|"
+            echo ""
+        done
         echo "## Prior versions"
 
         local prior

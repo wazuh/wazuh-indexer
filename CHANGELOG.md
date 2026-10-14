@@ -31,6 +31,7 @@
 | [#1572](https://github.com/wazuh/wazuh-indexer/issues/1572) | Set `OPENSEARCH_TMPDIR` to `/var/lib/wazuh-indexer/tmp` to avoid exhausting the `/tmp` partition |
 | [#1581](https://github.com/wazuh/wazuh-indexer/issues/1581) | Log the disabled automatic import of dangling indices at `INFO` instead of `WARN` on every startup |
 | [#1998](https://github.com/wazuh/wazuh-indexer/issues/1998) | Enable transport hostname verification (`transport.ssl.enforce_hostname_verification`) by default |
+| [#2007](https://github.com/wazuh/wazuh-indexer/issues/2007) | Raise the search backpressure heap threshold of search shard tasks to 4% of the heap (`search_backpressure.search_shard_task.heap_percent_threshold`), so it no longer cancels the Wazuh manager's inventory sync |
 
 
 ### Removed

@@ -41,7 +41,7 @@ mkdir -p ${tmp_dir}
 #
 # The product tree stays root-owned. Root runs bin/resolve-credentials.sh from
 # this script and from the unit's ExecStartPre, and that script sources
-# lib/wazuh-credentials.sh. Group ${name} keeps read and execute -- the
+# lib/wazuh-indexer-credentials.sh. Group ${name} keeps read and execute -- the
 # tree ships 750/640 -- so the service reads everything and writes nothing.
 chown -R root:${name} ${product_dir}
 
@@ -52,7 +52,91 @@ if [ -d ${product_dir}/plugins/wazuh-indexer-content-manager/snapshots ]; then
     chown -R ${name}:${name} ${product_dir}/plugins/wazuh-indexer-content-manager/snapshots
 fi
 
-chown -R ${name}:${name} ${config_dir}
+# The configuration directory is root's: the service reads it through its group and writes
+# nothing in it, so a compromised node cannot rewrite its own configuration, keystore or trust
+# material. Regular files and directories only, never through a symbolic link, and chown -h so
+# that a link planted where a file is expected is never followed.
+#
+# own_tree <dir>: <dir> and everything below it, root:${name}, directories 0750, files 0640.
+own_tree() {
+    local dir="$1" entry
+    [ -d "${dir}" ] && [ ! -L "${dir}" ] || return 0
+    chown -h root:${name} "${dir}"
+    chmod 750 "${dir}"
+    for entry in "${dir}"/* "${dir}"/.[!.]* "${dir}"/..?*; do
+        [ -e "${entry}" ] || [ -L "${entry}" ] || continue
+        [ -L "${entry}" ] && continue
+        if [ -d "${entry}" ]; then
+            own_tree "${entry}"
+        elif [ -f "${entry}" ]; then
+            chown -h root:${name} "${entry}"
+            chmod 640 "${entry}"
+        fi
+    done
+}
+
+# root_file <path> <mode> [group]: a regular file that is root's alone, or root's and the group's.
+root_file() {
+    [ -f "$1" ] && [ ! -L "$1" ] || return 0
+    chown -h "root:${3:-root}" "$1"
+    chmod "$2" "$1"
+}
+
+own_config_dir() {
+    local entry
+    [ -d "${config_dir}" ] && [ ! -L "${config_dir}" ] || return 0
+    chown -h root:${name} "${config_dir}"
+    chmod 750 "${config_dir}"
+    for entry in "${config_dir}"/* "${config_dir}"/.[!.]* "${config_dir}"/..?*; do
+        [ -e "${entry}" ] || [ -L "${entry}" ] || continue
+        [ -L "${entry}" ] && continue
+        case "${entry##*/}" in
+            export)
+                # What this package publishes: the directory can be entered by the service
+                # group, the passwords are root's alone, the CA certificate is the group's to
+                # read.
+                [ -d "${entry}" ] || continue
+                chown -h root:${name} "${entry}"
+                chmod 750 "${entry}"
+                root_file "${entry}/credentials.env" 600
+                root_file "${entry}/ca.pem" 640 ${name}
+                ;;
+            ca)
+                # This package's CA, or one staged by the operator: the key is root's alone.
+                [ -d "${entry}" ] || continue
+                chown -h root:${name} "${entry}"
+                chmod 750 "${entry}"
+                root_file "${entry}/root-ca.pem" 640 ${name}
+                root_file "${entry}/root-ca.key" 400
+                root_file "${entry}/.wazuh-indexer-bootstrap-ca" 600
+                ;;
+            local.env)
+                # The operator's values, never written by the package.
+                root_file "${entry}" 600
+                ;;
+            certs)
+                # The node's pair and the CA it trusts are read by the service through its
+                # group. The admin pair is root's alone: indexer-security-init.sh runs
+                # securityadmin as root, and the service must not be able to act as the
+                # security administrator.
+                own_tree "${entry}"
+                root_file "${entry}/admin.pem" 600
+                root_file "${entry}/admin-key.pem" 600
+                ;;
+            *)
+                if [ -d "${entry}" ]; then
+                    own_tree "${entry}"
+                elif [ -f "${entry}" ]; then
+                    chown -h root:${name} "${entry}"
+                    chmod 640 "${entry}"
+                fi
+                ;;
+        esac
+    done
+}
+
+own_config_dir
+
 chown -R ${name}:${name} ${log_dir}
 chown -R ${name}:${name} ${data_dir}
 mkdir -p ${pid_dir}
@@ -70,6 +154,18 @@ fi
 # secret, so group read is enough.
 chown root:${name} ${defaults_file}
 chmod 0640 ${defaults_file}
+
+# The node creates opensearch.keystore at its first start when it is absent, and rewrites it
+# when its format is older than the one it knows. The configuration directory is root's now,
+# so both happen here, as root, and the node never has to write there. A keystore the operator
+# protected with a password is left alone: the upgrade would prompt for it.
+keystore="${config_dir}/opensearch.keystore"
+if [ ! -e "${keystore}" ] && [ ! -L "${keystore}" ]; then
+    OPENSEARCH_PATH_CONF="${config_dir}" "${product_dir}/bin/opensearch-keystore" create < /dev/null > /dev/null 2>&1 || true
+elif [ -f "${keystore}" ] && [ ! -L "${keystore}" ]; then
+    OPENSEARCH_PATH_CONF="${config_dir}" "${product_dir}/bin/opensearch-keystore" upgrade < /dev/null > /dev/null 2>&1 || true
+fi
+root_file "${keystore}" 640 ${name}
 
 # Change permissions for Wazuh Engine
 ENGINE_DIR="${product_dir}/engine"
@@ -137,18 +233,9 @@ fi
 
 # What to do next, on a fresh install only.
 if [ -z "$2" ]; then
-    # The credentials file moves with WAZUH_BASE_DIR, so the shared helper says where it is
-    # rather than this printing a fixed path.
-    creds=""
-    if [ -f "${product_dir}/lib/wazuh-credentials.sh" ]; then
-        # shellcheck source=/dev/null
-        . "${product_dir}/lib/wazuh-credentials.sh"
-        creds=$(wazuh_env_get_file 2>/dev/null) || creds=""
-    fi
-
     echo ""
-    if [ -n "${creds}" ] && [ -f "${creds}" ]; then
-        echo "Passwords saved in ${creds} (readable by root only)."
+    if [ -f "${config_dir}/export/credentials.env" ]; then
+        echo "Passwords saved in ${config_dir}/export/credentials.env (readable by root only)."
         echo "Log in to the Wazuh dashboard as admin, with WAZUH_INDEXER_ADMIN_PASSWORD."
     fi
     # The package already ran `systemctl daemon-reload`, so the only steps left are enabling and
@@ -163,6 +250,7 @@ if [ -z "$2" ]; then
     fi
     echo "Then load the security configuration, once, from one node:"
     echo " ${product_dir}/bin/indexer-security-init.sh"
+    echo "The package opens no firewall port: 9200 (API) and 9300 (cluster) stay as the host has them."
 fi
 
 exit 0

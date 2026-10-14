@@ -307,6 +307,13 @@ function remove_unneeded_files() {
 # so the package does not depend on a nightly being published for the version.
 # The first reference that resolves wins: the branch named after the version,
 # then its tag.
+#
+# The assistant's builder embeds its own shared credential library in each tool,
+# between two marker lines. That library writes /etc/wazuh, which this package
+# neither creates nor reads, so the indexer's own helper takes its place in the
+# shipped tools, and the checks for host tools only that library needed go with
+# it. Every edit asserts the text it replaces, so a changed upstream fails the
+# build rather than shipping a tool half on each model.
 function add_wazuh_tools() {
     local version=${1}
 
@@ -333,6 +340,13 @@ function add_wazuh_tools() {
     tar -xzf "${src_dir}/source.tar.gz" -C "${src_dir}" --strip-components=1
     bash "${src_dir}/builder.sh" -c -p
 
+    # The indexer's credential helper belongs in lib/, not tools/: it is sourced,
+    # never executed, and ships non-executable.
+    local helper="${REPO_PATH}/distribution/src/lib/wazuh-indexer-credentials.sh"
+    local lib_dir="${PATH_PRODUCT}/lib"
+    mkdir -p "${lib_dir}"
+    install -m 644 "${helper}" "${lib_dir}"/wazuh-indexer-credentials.sh
+
     # tools folder
     local tools_dir="${PATH_PRODUCT}/tools"
     mkdir -p "${tools_dir}"
@@ -341,13 +355,92 @@ function add_wazuh_tools() {
     install -m 644 "${src_dir}/wazuh-passwords-tool.sh" "${tools_dir}"/wazuh-passwords-tool.sh
     install -m 644 "${src_dir}/wazuh-certs-tool.sh" "${tools_dir}"/wazuh-certs-tool.sh
 
-    # The shared credential library belongs in lib/, not tools/: it is sourced,
-    # never executed, and ships non-executable.
-    local lib_dir="${PATH_PRODUCT}/lib"
-    mkdir -p "${lib_dir}"
-    install -m 644 "${src_dir}/credentials_lib/wazuh-credentials.sh" "${lib_dir}"/wazuh-credentials.sh
+    adapt_wazuh_tool "${tools_dir}/wazuh-passwords-tool.sh" "${helper}"
+    adapt_wazuh_tool "${tools_dir}/wazuh-certs-tool.sh" "${helper}"
 
     rm -rf "${src_dir}"
+}
+
+# Replace an exact block of text in a file. The block must be there exactly as many times as the
+# fourth argument says, once by default.
+function replace_once() {
+    local file="$1" old="$2" new="$3" count="${4:-1}"
+    python3 - "${file}" "${old}" "${new}" "${count}" <<'PYEOF'
+import sys
+path, old, new, want = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4])
+text = open(path).read()
+count = text.count(old)
+if count != want:
+    sys.stderr.write(f"ERROR: expected {want} occurrence(s) in {path}, found {count}:\n{old}\n")
+    sys.exit(1)
+open(path, "w").write(text.replace(old, new))
+PYEOF
+}
+
+# Put the indexer's helper where the assistant's builder embedded the shared one, and drop what
+# only the shared one needed: the checks for cmp, flock and GNU ln in wazuh-certs-tool.sh, the
+# WAZUH_BASE_DIR note in wazuh-passwords-tool.sh, and runuser and ps, which are not among this
+# package's dependencies.
+function adapt_wazuh_tool() {
+    local tool="$1" helper="$2"
+    local begin="# ------------ wazuh-credentials.sh ------------ "
+    local end="# ------------ end of wazuh-credentials.sh ------------ "
+
+    python3 - "${tool}" "${helper}" "${begin}" "${end}" <<'PYEOF'
+import sys
+tool, helper, begin, end = sys.argv[1:5]
+text = open(tool).read()
+if text.count(begin) != 1 or text.count(end) != 1:
+    sys.stderr.write(f"ERROR: {tool} does not embed the shared library exactly once\n")
+    sys.exit(1)
+body = open(helper).read().split("\n", 1)[1]  # without the shebang
+a = text.index(begin)
+b = text.index(end) + len(end) + 1
+text = (text[:a]
+        + "# ------------ wazuh-indexer-credentials.sh ------------\n"
+        + body
+        + "# ------------ end of wazuh-indexer-credentials.sh ------------\n"
+        + text[b:])
+open(tool, "w").write(text)
+PYEOF
+
+    case "${tool}" in
+        *wazuh-certs-tool.sh)
+            replace_once "${tool}" '    if [ -z "$(command -v cmp)" ]; then
+        missing+=("cmp (package diffutils)")
+    fi
+' ''
+            replace_once "${tool}" '    if [ -z "$(command -v flock)" ]; then
+        missing+=("flock (package util-linux)")
+    fi
+' ''
+            replace_once "${tool}" '    if ! ln --help 2>&1 | grep -q -- '"'"'-T'"'"'; then
+        missing+=("GNU ln (package coreutils)")
+    fi
+' ''
+            ;;
+        *wazuh-passwords-tool.sh)
+            # The init system is detected with procps; /proc says the same.
+            replace_once "${tool}" '    elif ps -p 1 -o comm= | grep "init"; then
+' '    elif grep "init" /proc/1/comm; then
+' 2
+            replace_once "${tool}" '    echo -e "                -p|--password only updates it when the file already exists. The directory can be"
+    echo -e "                changed with WAZUH_BASE_DIR."
+' '    echo -e "                -p|--password only updates it when the file already exists."
+'
+            replace_once "${tool}" '    if ! printf '"'"'%s'"'"' "${2}" | (cd / && runuser -u "${dashboard_user}" -- "${dashboard_keystore}" add -f --stdin "${1}") > /dev/null 2>&1; then
+' '    if ! printf '"'"'%s'"'"' "${2}" | (cd / && chroot --userspec="${dashboard_user}" --skip-chdir / "${dashboard_keystore}" add -f --stdin "${1}") > /dev/null 2>&1; then
+'
+            # The hint for a dashboard keystore left behind names the previous model.
+            replace_once "${tool}" 'Write the new password (WAZUH_INDEXER_KIBANASERVER_PASSWORD in credentials.env, or the one you set with -p) with: echo '"'"'<WAZUH_INDEXER_KIBANASERVER_PASSWORD>'"'"' | runuser -u ${dashboard_user} -- ${dashboard_keystore} add opensearch.password --stdin --force.' 'Write the new password (WAZUH_INDEXER_KIBANASERVER_PASSWORD in /etc/wazuh-indexer/export/credentials.env, or the one you set with -p) with: echo '"'"'<WAZUH_INDEXER_KIBANASERVER_PASSWORD>'"'"' | ${dashboard_keystore} --allow-root add opensearch.password --stdin --force, then give the keystore back to the dashboard'"'"'s group.'
+            ;;
+    esac
+
+    # The body of the tool never names the shared base.
+    if grep -qE '/etc/wazuh([^-a-z]|$)|wazuh_base_get_dir|WAZUH_BASE_DIR' <(sed -n '/end of wazuh-indexer-credentials.sh/,$p' "${tool}"); then
+        echo "ERROR: ${tool} still refers to the shared /etc/wazuh model" >&2
+        exit 1
+    fi
 }
 
 # ====

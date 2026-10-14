@@ -90,7 +90,7 @@ else
   if [ ! -z "$OPENSEARCH_STARTUP_SLEEP_TIME" ]; then
     sleep $OPENSEARCH_STARTUP_SLEEP_TIME
   fi
-  if ! ps -p $pid > /dev/null ; then
+  if ! kill -0 $pid > /dev/null 2>&1 ; then
     exit 1
   fi
   exit 0

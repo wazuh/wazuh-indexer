@@ -81,6 +81,8 @@ check() {
 }
 
 not()          { ! "$@"; }
+# The host's short name, without hostname(1): the package no longer depends on it.
+short_hostname() { local h; h=$(cat /proc/sys/kernel/hostname 2>/dev/null || uname -n); printf '%s' "${h%%.*}"; }
 user_exists()  { getent passwd "${name}" > /dev/null 2>&1; }
 group_exists() { getent group "${name}" > /dev/null 2>&1; }
 output_has()   { grep -qF -- "$1" <<< "${purge_out}"; }
@@ -127,7 +129,7 @@ external_pki() {
         -addext "basicConstraints=critical,CA:TRUE" -addext "keyUsage=critical,keyCertSign,cRLSign" \
         > /dev/null 2>&1
     for n in indexer admin; do
-        cn="${n}"; [ "${n}" = "indexer" ] && cn="$(hostname -s)"
+        cn="${n}"; [ "${n}" = "indexer" ] && cn="$(short_hostname)"
         openssl req -newkey rsa:2048 -nodes -keyout "${dir}/${n}-key.pem" -out "${dir}/${n}.csr" \
             -subj "/C=US/L=California/O=Wazuh/OU=Wazuh/CN=${cn}" > /dev/null 2>&1
         printf 'subjectAltName = DNS:%s,DNS:localhost,IP:127.0.0.1\n' "${cn}" > "${dir}/${n}.ext"

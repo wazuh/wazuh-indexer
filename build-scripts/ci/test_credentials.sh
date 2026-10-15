@@ -236,6 +236,8 @@ OWNED_PAIRS="admin:WAZUH_INDEXER_ADMIN_PASSWORD kibanaserver:WAZUH_INDEXER_KIBAN
 
 mode_of() { stat -c '%a' "$1" 2>/dev/null; }
 owner_of() { stat -c '%U:%G' "$1" 2>/dev/null; }
+# The host's short name, without hostname(1): the package no longer depends on it.
+short_hostname() { local h; h=$(cat /proc/sys/kernel/hostname 2>/dev/null || uname -n); printf '%s' "${h%%.*}"; }
 is() { [ "$(mode_of "$2")" = "$1" ] && [ "$(owner_of "$2")" = "$3" ]; }
 same() { [ "$(sha256sum < "$1")" = "$(sha256sum < "$2")" ]; }
 fingerprint() { sha256sum "$@" 2>/dev/null | sha256sum | cut -c1-16; }
@@ -495,7 +497,7 @@ check "no file under ${CONFIG_DIR} carries an execute bit" \
     bash -c "! find '${CONFIG_DIR}' -type f -perm /a+x -print 2>/dev/null | grep -q ."
 check "no /etc/wazuh was created" bash -c "[ ! -e /etc/wazuh ]"
 check "the service account cannot create a file in ${CONFIG_DIR}" \
-    bash -c "! $(declare -f as_service); as_service 'touch ${CONFIG_DIR}/planted' 2>/dev/null; [ ! -e '${CONFIG_DIR}/planted' ]"
+    bash -c "! chroot --userspec=${NAME}:${NAME} --skip-chdir / /bin/sh -c 'touch ${CONFIG_DIR}/planted' 2>/dev/null && [ ! -e '${CONFIG_DIR}/planted' ]"
 for d in certs export ca opensearch-security; do
     check "the service account cannot create a file in ${d}/" \
         bash -c "! chroot --userspec=${NAME}:${NAME} --skip-chdir / /bin/sh -c 'touch ${CONFIG_DIR}/${d}/planted' 2>/dev/null"
@@ -562,7 +564,7 @@ check "admin.pem chains to the CA" \
 check_eq "indexer.pem carries the leaf followed by the CA" "2" \
     "$(grep -c 'BEGIN CERTIFICATE' "${CERTS_DIR}/indexer.pem")"
 check "the CA names this host" \
-    bash -c "openssl x509 -in '${CA_DIR}/root-ca.pem' -noout -subject | grep -q 'wazuh-indexer-$(hostname -s)'"
+    bash -c "openssl x509 -in '${CA_DIR}/root-ca.pem' -noout -subject | grep -q 'wazuh-indexer-$(short_hostname)'"
 check "the CA is a CA" \
     bash -c "openssl x509 -in '${CA_DIR}/root-ca.pem' -noout -ext basicConstraints | grep -q 'CA:TRUE'"
 
@@ -579,7 +581,7 @@ case "${sans}" in
     *) fail "loopback missing from the SAN list (localhost tooling will fail)" ;;
 esac
 case "${sans}" in
-    *"DNS:$(hostname -s)"*) ok "this host's name is in the SAN list" ;;
+    *"DNS:$(short_hostname)"*) ok "this host's name is in the SAN list" ;;
     *) fail "hostname missing from the SAN list" ;;
 esac
 
@@ -880,7 +882,7 @@ else
     check "the staged anchor was published for the other components" same "${EXPORT_DIR}/ca.pem" /tmp/external-ca.pem
 
     for n in indexer admin; do
-        cn="${n}"; [ "${n}" = "indexer" ] && cn="$(hostname -s)"
+        cn="${n}"; [ "${n}" = "indexer" ] && cn="$(short_hostname)"
         openssl req -newkey rsa:2048 -keyout "/tmp/${n}-key.pem" -out "/tmp/${n}.csr" \
             -nodes -subj "/C=US/L=California/O=Wazuh/OU=Wazuh/CN=${cn}" >/dev/null 2>&1
         printf 'subjectAltName = DNS:%s,DNS:localhost,IP:127.0.0.1\n' "${cn}" > "/tmp/${n}.ext"
@@ -942,8 +944,11 @@ else
     # --- A password the policy rejects, supplied in local.env ----------------
     # The message has to describe the rule that is actually enforced, which lives in
     # wazuh_password_validate, and name the file the operator has to correct.
+    # From nothing: --clear takes back the passwords and the certificates, and the external
+    # anchor staged above has no signing key, so it goes too, or nothing could be issued.
     rm -f "${MARKER}"
     "${RESOLVER}" --clear >/dev/null 2>&1
+    rm -f "${CA_DIR}"/root-ca.* "${CERTS_DIR}"/*.pem
     printf "WAZUH_INDEXER_ADMIN_PASSWORD='MyCompanyPass2026'\n" > "${LOCAL_ENV}"
     chmod 600 "${LOCAL_ENV}"
     out=$("${RESOLVER}" --prestart 2>&1); rc=$?
@@ -963,6 +968,7 @@ else
     esac
     check "the other two passwords were published meanwhile" \
         bash -c "[ \"\$(grep -cE '^WAZUH_INDEXER_(KIBANASERVER|MANAGER)_PASSWORD=' '${CREDENTIALS}')\" = 2 ]"
+    check "the certificates were issued meanwhile" test -f "${CERTS_DIR}/indexer.pem"
 
     # --- A password the operator supplies ------------------------------------
     printf "WAZUH_INDEXER_ADMIN_PASSWORD='Chosen.By.Operator1'\n" > "${LOCAL_ENV}"
@@ -972,6 +978,14 @@ else
     check_eq "the supplied password is published" "Chosen.By.Operator1" "$(cred_get WAZUH_INDEXER_ADMIN_PASSWORD)"
     check "local.env is left exactly as the operator wrote it" \
         grep -qx "WAZUH_INDEXER_ADMIN_PASSWORD='Chosen.By.Operator1'" "${LOCAL_ENV}"
+    check "the state file is written" test -f "${MARKER}"
+    if have_bcrypt; then
+        if digest_verifies "$(hash_of admin)" "Chosen.By.Operator1"; then
+            ok "the admin digest matches the supplied password"
+        else
+            fail "the admin digest does NOT match the supplied password"
+        fi
+    fi
     rm -f "${LOCAL_ENV}"
 
     # --- A digest with nothing left to supply its password -------------------
@@ -1034,7 +1048,7 @@ else
 
     out=$("${INITD}" start 2>&1); rc=$?
     check_eq "SysV start is refused while the node cannot resolve" "1" "${rc}"
-    check "the node was not started" bash -c "! $(declare -f node_running); node_running"
+    if node_running; then fail "the node was started"; else ok "the node was not started"; fi
 
     rm -f "${CA_DIR}"/root-ca.* /tmp/sysv-ca.key /tmp/sysv-ca.pem
     cp -a /tmp/credentials.env.sysv "${CREDENTIALS}"

@@ -50,6 +50,16 @@ case "$1" in
             rm -rf "${config_dir:?}/export" "${config_dir:?}/ca"
             rm -f "${data_dir:?}/.initialized"
 
+            # The keystore the package created, when it is still exactly as created: one the
+            # operator put secrets in has a different digest and stays, with the marker.
+            keystore="${config_dir}/opensearch.keystore"
+            keystore_marker="${config_dir}/.wazuh-indexer-keystore"
+            if [ -f "${keystore_marker}" ] && [ ! -L "${keystore_marker}" ] \
+               && [ -f "${keystore}" ] && [ ! -L "${keystore}" ] \
+               && [ "$(sha256sum < "${keystore}")" = "$(cat "${keystore_marker}")" ]; then
+                rm -f "${config_dir:?}/opensearch.keystore" "${config_dir:?}/.wazuh-indexer-keystore"
+            fi
+
             # Where releases before this one stashed a helper library.
             rm -f /var/lib/${name}/.wazuh-credentials.sh /etc/wazuh/.${name}-credentials.sh
 

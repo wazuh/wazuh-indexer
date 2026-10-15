@@ -1081,6 +1081,33 @@ resolve_certificates() {
 }
 
 # -----------------------------------------------------------------------------------------
+# The keystore
+#
+# The node creates opensearch.keystore at its first start when it is absent, and the
+# configuration directory is root's now, so this step, as root, does it instead, at every run
+# where it is still missing. It comes after the certificates: the keystore tool loads
+# opensearch.yml, and refuses it while the DN settings the resolution fills are still empty.
+# Nothing is written through an existing entry: a link or anything else in its place is reported
+# by the file checks.
+# -----------------------------------------------------------------------------------------
+
+ensure_keystore() {
+    _ek_file="${CONFIG_DIR}/opensearch.keystore"
+    [ -e "${_ek_file}" ] || [ -L "${_ek_file}" ] && return 0
+    [ -x "${DIR}/bin/opensearch-keystore" ] || return 0
+    if OPENSEARCH_PATH_CONF="${CONFIG_DIR}" "${DIR}/bin/opensearch-keystore" create < /dev/null > /dev/null; then
+        chown "root:${SERVICE_GROUP}" "${_ek_file}" 2>/dev/null || true
+        chmod 0640 "${_ek_file}" 2>/dev/null || true
+        # The digest of the keystore as created, so that a purge can tell it from one the
+        # operator put secrets in.
+        sha256sum < "${_ek_file}" | _wazuh_write_file "${CONFIG_DIR}/.wazuh-indexer-keystore" 0600 || true
+        log "created ${_ek_file}"
+    else
+        err "could not create ${_ek_file}; the node will not start without it"
+    fi
+}
+
+# -----------------------------------------------------------------------------------------
 # --clear
 #
 # The one destructive path, for an image built by installing the package. Two things it does not
@@ -1230,6 +1257,7 @@ if resolution_is_complete; then
     case "${MODE}" in
         install|upgrade) trust_ca ;;
     esac
+    ensure_keystore
     log "already initialised; nothing is resolved again"
     exit 0
 fi
@@ -1254,6 +1282,12 @@ fi
 # resolved is never examined again.
 if [ -z "${UNRESOLVED}" ] && [ -z "${INVALID}" ] && [ "${CERTIFICATES_RESOLVED}" = "1" ]; then
     mark_complete
+fi
+
+# The keystore is not a credential this script resolves, so it is not subject to the marker; it
+# needs the DN settings in place, which the certificate step wrote.
+if [ "${CERTIFICATES_RESOLVED}" = "1" ]; then
+    ensure_keystore
 fi
 
 # The installer has no opinion about whether the component can run: no warning, no failure, no

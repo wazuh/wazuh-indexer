@@ -292,8 +292,9 @@ own_config_dir() {
                 root_file "${_oc_entry}/root-ca.key" 400
                 root_file "${_oc_entry}/.wazuh-indexer-bootstrap-ca" 600
                 ;;
-            local.env)
-                # The operator's values, never written by the package.
+            local.env|.wazuh-indexer-keystore)
+                # The operator's values, never written by the package, and the record of the
+                # keystore the package created: root's alone.
                 root_file "${_oc_entry}" 600
                 ;;
             certs)
@@ -321,16 +322,6 @@ own_config_dir
 chown -R %{name}:%{name} %{log_dir}
 chown -R %{name}:%{name} %{data_dir}
 
-# The node creates opensearch.keystore at its first start when it is absent, and rewrites it
-# when its format is older than the one it knows. The configuration directory is root's now,
-# so both happen here, as root, and the node never has to write there. A keystore the operator
-# protected with a password is left alone: the upgrade would prompt for it.
-if [ ! -e %{config_dir}/opensearch.keystore ] && [ ! -L %{config_dir}/opensearch.keystore ]; then
-    OPENSEARCH_PATH_CONF=%{config_dir} %{product_dir}/bin/opensearch-keystore create < /dev/null > /dev/null 2>&1 || true
-elif [ -f %{config_dir}/opensearch.keystore ] && [ ! -L %{config_dir}/opensearch.keystore ]; then
-    OPENSEARCH_PATH_CONF=%{config_dir} %{product_dir}/bin/opensearch-keystore upgrade < /dev/null > /dev/null 2>&1 || true
-fi
-root_file %{config_dir}/opensearch.keystore 640 %{name}
 
 # Resolve credentials and TLS material.
 #
@@ -344,6 +335,28 @@ if [ -x %{product_dir}/bin/resolve-credentials.sh ]; then
         %{product_dir}/bin/resolve-credentials.sh --install --quiet || true
     fi
 fi
+
+# The node creates opensearch.keystore at its first start when it is absent, and rewrites it
+# when its format is older than the one it knows. The configuration directory is root's now,
+# so both happen here, as root, and the node never has to write there. After the resolver: the
+# keystore tool loads opensearch.yml and refuses it while the DN settings the resolver fills
+# are empty, so on a node whose certificates could not be issued yet the pre-start step creates
+# the keystore once they are. A keystore the operator protected with a password is left alone:
+# the upgrade would prompt for it.
+if [ ! -e %{config_dir}/opensearch.keystore ] && [ ! -L %{config_dir}/opensearch.keystore ]; then
+    if OPENSEARCH_PATH_CONF=%{config_dir} %{product_dir}/bin/opensearch-keystore create < /dev/null > /dev/null; then
+        # What the package created, so that an erase can tell it from one the operator put
+        # secrets in: the digest of the keystore as created.
+        sha256sum < %{config_dir}/opensearch.keystore > %{config_dir}/.wazuh-indexer-keystore
+        chmod 600 %{config_dir}/.wazuh-indexer-keystore
+    else
+        echo "WARNING: could not create %{config_dir}/opensearch.keystore; the pre-start step will try again" >&2
+    fi
+elif [ -f %{config_dir}/opensearch.keystore ] && [ ! -L %{config_dir}/opensearch.keystore ]; then
+    OPENSEARCH_PATH_CONF=%{config_dir} %{product_dir}/bin/opensearch-keystore upgrade < /dev/null > /dev/null \
+        || echo "WARNING: could not upgrade %{config_dir}/opensearch.keystore" >&2
+fi
+root_file %{config_dir}/opensearch.keystore 640 %{name}
 
 # What to do next, on a fresh install only. %posttrans cannot tell an install from an upgrade,
 # which is why this lives here.
@@ -475,6 +488,14 @@ if [ $1 -eq 0 ]; then
     # that it resolved its credentials.
     rm -rf %{config_dir}/export %{config_dir}/ca
     rm -f %{data_dir}/.initialized
+
+    # The keystore the package created, when it is still exactly as created: one the operator
+    # put secrets in has a different digest and stays, with the marker.
+    if [ -f %{config_dir}/.wazuh-indexer-keystore ] && [ ! -L %{config_dir}/.wazuh-indexer-keystore ] \
+       && [ -f %{config_dir}/opensearch.keystore ] && [ ! -L %{config_dir}/opensearch.keystore ] \
+       && [ "$(sha256sum < %{config_dir}/opensearch.keystore)" = "$(cat %{config_dir}/.wazuh-indexer-keystore)" ]; then
+        rm -f %{config_dir}/opensearch.keystore %{config_dir}/.wazuh-indexer-keystore
+    fi
 
     # Where releases before this one stashed a helper library.
     rm -f %{data_dir}/.wazuh-credentials.sh /etc/wazuh/.%{name}-credentials.sh

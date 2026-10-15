@@ -110,8 +110,9 @@ own_config_dir() {
                 root_file "${entry}/root-ca.key" 400
                 root_file "${entry}/.wazuh-indexer-bootstrap-ca" 600
                 ;;
-            local.env)
-                # The operator's values, never written by the package.
+            local.env|.wazuh-indexer-keystore)
+                # The operator's values, never written by the package, and the record of the
+                # keystore the package created: root's alone.
                 root_file "${entry}" 600
                 ;;
             certs)
@@ -155,17 +156,6 @@ fi
 chown root:${name} ${defaults_file}
 chmod 0640 ${defaults_file}
 
-# The node creates opensearch.keystore at its first start when it is absent, and rewrites it
-# when its format is older than the one it knows. The configuration directory is root's now,
-# so both happen here, as root, and the node never has to write there. A keystore the operator
-# protected with a password is left alone: the upgrade would prompt for it.
-keystore="${config_dir}/opensearch.keystore"
-if [ ! -e "${keystore}" ] && [ ! -L "${keystore}" ]; then
-    OPENSEARCH_PATH_CONF="${config_dir}" "${product_dir}/bin/opensearch-keystore" create < /dev/null > /dev/null 2>&1 || true
-elif [ -f "${keystore}" ] && [ ! -L "${keystore}" ]; then
-    OPENSEARCH_PATH_CONF="${config_dir}" "${product_dir}/bin/opensearch-keystore" upgrade < /dev/null > /dev/null 2>&1 || true
-fi
-root_file "${keystore}" 640 ${name}
 
 # Change permissions for Wazuh Engine
 ENGINE_DIR="${product_dir}/engine"
@@ -230,6 +220,29 @@ if [ -x "${product_dir}/bin/resolve-credentials.sh" ]; then
         "${product_dir}/bin/resolve-credentials.sh" --install --quiet || true
     fi
 fi
+
+# The node creates opensearch.keystore at its first start when it is absent, and rewrites it
+# when its format is older than the one it knows. The configuration directory is root's now,
+# so both happen here, as root, and the node never has to write there. After the resolver: the
+# keystore tool loads opensearch.yml and refuses it while the DN settings the resolver fills
+# are empty, so on a node whose certificates could not be issued yet the pre-start step creates
+# the keystore once they are. A keystore the operator protected with a password is left alone:
+# the upgrade would prompt for it.
+keystore="${config_dir}/opensearch.keystore"
+if [ ! -e "${keystore}" ] && [ ! -L "${keystore}" ]; then
+    if OPENSEARCH_PATH_CONF="${config_dir}" "${product_dir}/bin/opensearch-keystore" create < /dev/null > /dev/null; then
+        # What the package created, so that a purge can tell it from one the operator put
+        # secrets in: the digest of the keystore as created.
+        sha256sum < "${keystore}" > "${config_dir}/.wazuh-indexer-keystore"
+        chmod 600 "${config_dir}/.wazuh-indexer-keystore"
+    else
+        echo "WARNING: could not create ${keystore}; the pre-start step will try again" >&2
+    fi
+elif [ -f "${keystore}" ] && [ ! -L "${keystore}" ]; then
+    OPENSEARCH_PATH_CONF="${config_dir}" "${product_dir}/bin/opensearch-keystore" upgrade < /dev/null > /dev/null \
+        || echo "WARNING: could not upgrade ${keystore}" >&2
+fi
+root_file "${keystore}" 640 ${name}
 
 # What to do next, on a fresh install only.
 if [ -z "$2" ]; then

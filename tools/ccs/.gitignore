@@ -4,3 +4,4 @@ credentials.env
 
 # Vagrant machine state
 .vagrant/
+manager-ca/

@@ -17,10 +17,29 @@ state_file=${config_dir}/.was_active
 
 echo "Running Wazuh Indexer Pre-Installation Script"
 
+# The version of a wazuh-indexer 4.x installation, read from its VERSION or VERSION.json with
+# coreutils alone: every quote, brace, comma and blank becomes a line break, so each value stands
+# on its own, and the shell picks the first one shaped like 4.x.y. Prints nothing for 5.x.
+detect_4x_version() {
+    local file word
+    for file in /usr/share/${name}/VERSION /usr/share/${name}/VERSION.json; do
+        [ -f "${file}" ] || continue
+        for word in $(tr -c 'A-Za-z0-9.:_-' '\n' < "${file}"); do
+            case "${word}" in
+                4.[0-9]*.[0-9]*)
+                    echo "${word}"
+                    return 0
+                    ;;
+            esac
+        done
+    done
+    return 1
+}
+
 case "$1" in
     upgrade)
         # Hard block: refuse 4.X -> 5.X upgrades
-        detected_version=$(grep -Pho '4\.\d+\.\d+' /usr/share/wazuh-indexer/VERSION* 2>/dev/null | head -n1)
+        detected_version=$(detect_4x_version 2>/dev/null || true)
         if [ -n "${detected_version}" ]; then
             cat >&2 <<EOF
 ==============================================================

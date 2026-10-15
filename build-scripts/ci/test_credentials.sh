@@ -4,13 +4,18 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # Acceptance tests for install-time credential and TLS resolution.
-# See https://github.com/wazuh/wazuh-indexer/issues/1927
+# See https://github.com/wazuh/wazuh-indexer/issues/1927 and
+# https://github.com/wazuh/wazuh-indexer/issues/2020
 #
 # Exercises the wazuh-indexer package end to end: that it generates its own
-# passwords and certificates at install, that the node comes up, that the three
-# internal users authenticate once an operator has uploaded the security
-# configuration, that resolution never happens a second time, and that removal
-# and purge take back exactly what they own.
+# passwords and certificates at install, under its own /etc/wazuh-indexer and
+# nowhere else; that it publishes what the manager and the dashboard need in
+# export/; that the configuration directory is root's and the service account
+# can write nothing in it; that the node comes up; that the three internal
+# users authenticate once an operator has uploaded the security configuration;
+# that resolution never happens a second time; that planted material is refused
+# before the service starts; and that removal and purge take back exactly what
+# they own.
 #
 # This is deliberately a plain script with no framework, so it can be run
 # anywhere the package can be installed: a CI container, a Vagrant box, a VM.
@@ -32,18 +37,24 @@ PACKAGE="${PACKAGE:-}"
 KEEP_PACKAGE="${KEEP_PACKAGE:-0}"
 SKIP_PURGE="${SKIP_PURGE:-0}"
 
-WAZUH_DIR="/etc/wazuh"
-CREDENTIALS="${WAZUH_DIR}/credentials.env"
-CA_DIR="${WAZUH_DIR}/ca"
+NAME="wazuh-indexer"
 CONFIG_DIR="/etc/wazuh-indexer"
+EXPORT_DIR="${CONFIG_DIR}/export"
+CREDENTIALS="${EXPORT_DIR}/credentials.env"
+CA_DIR="${CONFIG_DIR}/ca"
+LOCAL_ENV="${CONFIG_DIR}/local.env"
 CERTS_DIR="${CONFIG_DIR}/certs"
 INTERNAL_USERS="${CONFIG_DIR}/opensearch-security/internal_users.yml"
 OPENSEARCH_YML="${CONFIG_DIR}/opensearch.yml"
+KEYSTORE="${CONFIG_DIR}/opensearch.keystore"
 DATA_DIR="/var/lib/wazuh-indexer"
+LOG_DIR="/var/log/wazuh-indexer"
 MARKER="${DATA_DIR}/.initialized"
 PRODUCT_DIR="/usr/share/wazuh-indexer"
 SECURITY_TOOLS="${PRODUCT_DIR}/plugins/opensearch-security/tools"
 WAZUH_TOOLS="${PRODUCT_DIR}/tools"
+HELPER="${PRODUCT_DIR}/lib/wazuh-indexer-credentials.sh"
+RESOLVER="${PRODUCT_DIR}/bin/resolve-credentials.sh"
 API="https://127.0.0.1:9200"
 
 PASSED=0
@@ -61,22 +72,22 @@ section() {
 
 ok() {
     PASSED=$((PASSED + 1))
-    printf '  \033[32mPASS\033[0m  %s\n' "$*"
+    printf '  ok:   %s\n' "$*"
 }
 
 fail() {
     FAILED=$((FAILED + 1))
     FAILURES="${FAILURES}\n  - $*"
-    printf '  \033[31mFAIL\033[0m  %s\n' "$*"
+    printf '  FAIL: %s\n' "$*"
 }
 
 skip() {
     SKIPPED=$((SKIPPED + 1))
-    printf '  \033[33mSKIP\033[0m  %s\n' "$*"
+    printf '  skip: %s\n' "$*"
 }
 
 info() {
-    printf '        %s\n' "$*"
+    printf '  info: %s\n' "$*"
 }
 
 # check <description> <command...>
@@ -85,7 +96,6 @@ check() {
     if "$@" >/dev/null 2>&1; then ok "${_desc}"; else fail "${_desc}"; fi
 }
 
-# check_eq <description> <expected> <actual>
 check_eq() {
     if [ "$2" = "$3" ]; then
         ok "$1"
@@ -98,8 +108,9 @@ check_eq() {
 # Helpers
 # ---------------------------------------------------------------------------
 
-# Read a key from the credentials file without sourcing it, and without relying
-# on the shared helper being installed (removal tests run after it is gone).
+# Read a key from the published credentials file without sourcing it, and
+# without relying on the package's helper being installed (removal tests run
+# after it is gone).
 cred_get() {
     [ -f "${CREDENTIALS}" ] || return 1
     _line=$(grep -E "^[[:space:]]*$1=" "${CREDENTIALS}" 2>/dev/null | tail -n 1)
@@ -225,6 +236,26 @@ OWNED_PAIRS="admin:WAZUH_INDEXER_ADMIN_PASSWORD kibanaserver:WAZUH_INDEXER_KIBAN
 
 mode_of() { stat -c '%a' "$1" 2>/dev/null; }
 owner_of() { stat -c '%U:%G' "$1" 2>/dev/null; }
+# The host's short name, without hostname(1): the package no longer depends on it.
+short_hostname() { local h; h=$(cat /proc/sys/kernel/hostname 2>/dev/null || uname -n); printf '%s' "${h%%.*}"; }
+is() { [ "$(mode_of "$2")" = "$1" ] && [ "$(owner_of "$2")" = "$3" ]; }
+same() { [ "$(sha256sum < "$1")" = "$(sha256sum < "$2")" ]; }
+fingerprint() { sha256sum "$@" 2>/dev/null | sha256sum | cut -c1-16; }
+
+# Run a command as the service account, with coreutils alone: the package no
+# longer depends on util-linux, so runuser may be absent from the host.
+as_service() {
+    chroot --userspec="${NAME}:${NAME}" --skip-chdir / /bin/sh -c "$*"
+}
+
+# True when a node (the OpenSearch bootstrap class) is running, read from /proc:
+# the package no longer depends on procps, so pgrep may be absent from the host.
+node_running() {
+    for _nr in /proc/[0-9]*/cmdline; do
+        tr '\0' ' ' < "${_nr}" 2>/dev/null | grep -q 'org.opensearch.bootstrap.OpenSearch' && return 0
+    done
+    return 1
+}
 
 # Journal lines the service emitted at ERROR level or above, excluding the ones
 # a correct installation legitimately produces.
@@ -233,6 +264,13 @@ service_errors() {
         | grep -iE '\b(error|fatal|exception)\b' \
         | grep -viE 'ErrorFile|OnOutOfMemoryError|HeapDumpOnOutOfMemoryError|error_trace|no-error' \
         || true
+}
+
+# The security plugin walks the whole configuration directory at start and warns
+# about every file readable by others and every directory others can enter.
+permission_warnings() {
+    { journalctl -u wazuh-indexer --no-pager 2>/dev/null; cat "${LOG_DIR}"/*.log 2>/dev/null; } \
+        | grep -F 'insecure file permissions' || true
 }
 
 # ---------------------------------------------------------------------------
@@ -269,8 +307,8 @@ for tool in curl openssl grep awk stat; do
 done
 
 # A previous run must not colour the results.
-if [ -e "${WAZUH_DIR}" ] || [ -e "${MARKER}" ]; then
-    echo "FATAL: ${WAZUH_DIR} or ${MARKER} already exists; use a clean host" >&2
+if [ -e "${EXPORT_DIR}" ] || [ -e "${MARKER}" ] || [ -e /etc/wazuh ]; then
+    echo "FATAL: ${EXPORT_DIR}, ${MARKER} or /etc/wazuh already exists; use a clean host" >&2
     exit 125
 fi
 ensure_max_map_count
@@ -332,19 +370,38 @@ check "the install does not ask for a redundant daemon-reload" \
     bash -c "! grep -q 'sudo systemctl daemon-reload' /tmp/install.log"
 check "the install points at indexer-security-init.sh" \
     grep -qF "indexer-security-init.sh" /tmp/install.log
+check "the install says it opens no firewall port" \
+    grep -qF "opens no firewall port" /tmp/install.log
 check "the per-key progress lines are not in the install output" \
     bash -c "! grep -q 'published WAZUH_INDEXER' /tmp/install.log"
 
-# 1.a2 Everything the resolver needs must be on the host. Since the list came
-# out of the package's own Depends, a miss here means the package under-declares
-# what it needs, not that the test forgot to install something.
-for tool in openssl cmp ip hostname pgrep flock; do
+# 1.a2 Everything the resolver needs must be on the host, and nothing else may
+# be declared: the dependency list is exactly the host tools the scripts run.
+for tool in openssl ip getent; do
     if command -v "${tool}" >/dev/null 2>&1; then
         ok "dependency provides ${tool}"
     else
         fail "${tool} is absent: a declared dependency did not resolve"
     fi
 done
+if [ "${PKG_KIND}" = "deb" ]; then
+    declared=$(dpkg-deb -f "${PACKAGE}" Depends 2>/dev/null | tr ',' '\n' | sed -e 's/(.*)//' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' | grep -v '^$' | sort | tr '\n' ' ')
+    check_eq "the DEB declares exactly iproute2, openssl and passwd" "iproute2 openssl passwd " "${declared}"
+else
+    declared=$(rpm -qp --requires "${PACKAGE}" 2>/dev/null | grep -vE '^rpmlib\(' | sort -u | tr '\n' ' ')
+    for want in /bin/sh openssl iproute /usr/sbin/groupadd /usr/sbin/useradd /usr/sbin/userdel /usr/sbin/groupdel; do
+        case " ${declared} " in
+            *" ${want} "*) ok "the RPM requires ${want}" ;;
+            *) fail "the RPM does not require ${want}" ;;
+        esac
+    done
+    for gone in coreutils diffutils hostname procps-ng util-linux; do
+        case " ${declared} " in
+            *" ${gone} "*) fail "the RPM still requires ${gone}" ;;
+            *) ok "the RPM no longer requires ${gone}" ;;
+        esac
+    done
+fi
 
 # 1.b The installer must not start or enable the service.
 # `systemctl is-active` prints AND exits non-zero, so `|| echo` would append a
@@ -356,9 +413,9 @@ check_eq "service not enabled by the installer" "disabled" \
 
 section "1.0 Ownership: the service account cannot rewrite what root runs"
 
-# Root executes bin/resolve-credentials.sh and sources lib/wazuh-credentials.sh.
+# Root executes bin/resolve-credentials.sh and sources lib/wazuh-indexer-credentials.sh.
 # If the service account owned either, it could have root run its own code.
-for f in "${PRODUCT_DIR}/bin/resolve-credentials.sh" "${PRODUCT_DIR}/lib/wazuh-credentials.sh"; do
+for f in "${RESOLVER}" "${HELPER}"; do
     check_eq "$(basename "${f}") is root-owned" "root:wazuh-indexer" "$(owner_of "${f}")"
     mode="$(mode_of "${f}")"
     case "${mode}" in
@@ -371,6 +428,10 @@ for f in "${PRODUCT_DIR}/bin/resolve-credentials.sh" "${PRODUCT_DIR}/lib/wazuh-c
         *)       ok "$(basename "${f}") is not group-writable (mode ${mode})" ;;
     esac
 done
+check "the shared helper of the previous model is not shipped" \
+    bash -c "[ ! -e '${PRODUCT_DIR}/lib/wazuh-credentials.sh' ]"
+check "no package test suite is shipped under the product tree" \
+    bash -c "! ls -d '${PRODUCT_DIR}'/test* 2>/dev/null | grep -q ."
 
 # systemd reads the EnvironmentFile as root; a service-writable copy would let
 # the service account set variables for the root pre-start step.
@@ -388,33 +449,81 @@ for writable in "${PRODUCT_DIR}/engine" \
         skip "$(basename "${writable}") not present in this build"
         continue
     fi
-    if runuser -u wazuh-indexer -- test -w "${writable}" 2>/dev/null; then
+    if as_service "test -w '${writable}'" 2>/dev/null; then
         ok "$(basename "${writable}") is still writable by the service account"
     else
         fail "$(basename "${writable}") is no longer writable by the service account"
     fi
 done
 
-# The service-owned trees. %defattr / the product-tree chown are package-wide, so
-# these have to be handed back explicitly; a root-owned DATA_DIR stops the node
+# The service-owned trees: data and logs. A root-owned DATA_DIR stops the node
 # creating nodes/ and it dies in NodeEnvironment before anything else runs.
-for owned in "${DATA_DIR}" "${CONFIG_DIR}" /var/log/wazuh-indexer; do
+for owned in "${DATA_DIR}" "${LOG_DIR}"; do
     [ -d "${owned}" ] || continue
-    if runuser -u wazuh-indexer -- test -w "${owned}" 2>/dev/null; then
+    if as_service "test -w '${owned}'" 2>/dev/null; then
         ok "${owned} is writable by the service account"
     else
         fail "${owned} is not writable by the service account (the node will not start)"
     fi
 done
 
-# securityadmin.sh is executed via `runuser wazuh-indexer`, so group execute has
-# to survive the owner change.
-sa="${SECURITY_TOOLS}/securityadmin.sh"
-if [ -f "${sa}" ]; then
-    if runuser -u wazuh-indexer -- test -x "${sa}" 2>/dev/null; then
-        ok "securityadmin.sh is executable by the service account"
+section "1.0b Layout: the configuration directory is root's"
+
+check "${CONFIG_DIR} is root:wazuh-indexer 0750" is 750 "${CONFIG_DIR}" root:wazuh-indexer
+for f in opensearch.yml jvm.options log4j2.properties; do
+    check "${f} is root:wazuh-indexer 0640" is 640 "${CONFIG_DIR}/${f}" root:wazuh-indexer
+done
+check "opensearch-security/ is root:wazuh-indexer 0750" is 750 "${CONFIG_DIR}/opensearch-security" root:wazuh-indexer
+check "internal_users.yml is root:wazuh-indexer 0640" is 640 "${INTERNAL_USERS}" root:wazuh-indexer
+check "the keystore was created by the package" test -f "${KEYSTORE}"
+check "the keystore is root:wazuh-indexer 0640" is 640 "${KEYSTORE}" root:wazuh-indexer
+check "export/ is root:wazuh-indexer 0750" is 750 "${EXPORT_DIR}" root:wazuh-indexer
+check "export/credentials.env is root:root 0600" is 600 "${CREDENTIALS}" root:root
+check "export/ca.pem is root:wazuh-indexer 0640" is 640 "${EXPORT_DIR}/ca.pem" root:wazuh-indexer
+check "ca/ is root:wazuh-indexer 0750" is 750 "${CA_DIR}" root:wazuh-indexer
+check "ca/root-ca.pem is root:wazuh-indexer 0640" is 640 "${CA_DIR}/root-ca.pem" root:wazuh-indexer
+check "ca/root-ca.key is root:root 0400" is 400 "${CA_DIR}/root-ca.key" root:root
+check "the bootstrap marker records that the package minted the CA" is 600 "${CA_DIR}/.wazuh-indexer-bootstrap-ca" root:root
+check "certs/ is root:wazuh-indexer 0750" is 750 "${CERTS_DIR}" root:wazuh-indexer
+for f in indexer.pem indexer-key.pem root-ca.pem; do
+    check "certs/${f} is root:wazuh-indexer 0640" is 640 "${CERTS_DIR}/${f}" root:wazuh-indexer
+done
+for f in admin.pem admin-key.pem; do
+    check "certs/${f} is root:root 0600 (securityadmin runs as root)" is 600 "${CERTS_DIR}/${f}" root:root
+done
+check "no file under ${CONFIG_DIR} is readable by others" \
+    bash -c "! find '${CONFIG_DIR}' -perm /o+r -print 2>/dev/null | grep -q ."
+check "no file under ${CONFIG_DIR} carries an execute bit" \
+    bash -c "! find '${CONFIG_DIR}' -type f -perm /a+x -print 2>/dev/null | grep -q ."
+check "no /etc/wazuh was created" bash -c "[ ! -e /etc/wazuh ]"
+check "the service account cannot create a file in ${CONFIG_DIR}" \
+    bash -c "! chroot --userspec=${NAME}:${NAME} --skip-chdir / /bin/sh -c 'touch ${CONFIG_DIR}/planted' 2>/dev/null && [ ! -e '${CONFIG_DIR}/planted' ]"
+for d in certs export ca opensearch-security; do
+    check "the service account cannot create a file in ${d}/" \
+        bash -c "! chroot --userspec=${NAME}:${NAME} --skip-chdir / /bin/sh -c 'touch ${CONFIG_DIR}/${d}/planted' 2>/dev/null"
+done
+check "the service account cannot write opensearch.yml" \
+    bash -c "! chroot --userspec=${NAME}:${NAME} --skip-chdir / /bin/sh -c 'echo x >> ${OPENSEARCH_YML}' 2>/dev/null"
+check "the service account can read its own certificate and key" \
+    as_service "cat '${CERTS_DIR}/indexer.pem' '${CERTS_DIR}/indexer-key.pem' '${CERTS_DIR}/root-ca.pem' > /dev/null"
+check "the service account can read export/ca.pem" \
+    as_service "cat '${EXPORT_DIR}/ca.pem' > /dev/null"
+check "the service account cannot read the admin key" \
+    bash -c "! chroot --userspec=${NAME}:${NAME} --skip-chdir / /bin/sh -c 'cat ${CERTS_DIR}/admin-key.pem' 2>/dev/null"
+check "the service account cannot read the published passwords" \
+    bash -c "! chroot --userspec=${NAME}:${NAME} --skip-chdir / /bin/sh -c 'cat ${CREDENTIALS}' 2>/dev/null"
+check "the service account cannot read the CA key" \
+    bash -c "! chroot --userspec=${NAME}:${NAME} --skip-chdir / /bin/sh -c 'cat ${CA_DIR}/root-ca.key' 2>/dev/null"
+
+if [ "${PKG_KIND}" = "rpm" ]; then
+    # Content changes to the configuration files are expected (the resolver writes digests and
+    # DNs); an ownership (U, G) or mode (M) change means %files and %post disagree.
+    verify=$(rpm -V wazuh-indexer 2>/dev/null | awk '{ flags = substr($0, 1, 9); if (flags ~ /[UGM]/) print }')
+    if [ -z "${verify}" ]; then
+        ok "rpm -V reports no ownership or mode change"
     else
-        fail "securityadmin.sh is not executable by the service account (indexer-security-init.sh would fail)"
+        fail "rpm -V reports ownership or mode changes"
+        printf '%s\n' "${verify}" | head -10 | sed 's/^/        /'
     fi
 fi
 
@@ -446,22 +555,18 @@ section "1.2 Auto-generated certificates"
 for f in root-ca.pem indexer.pem indexer-key.pem admin.pem admin-key.pem; do
     check "certs/${f} exists" test -f "${CERTS_DIR}/${f}"
 done
-
-# Assert certificates permissions.
-for f in root-ca.pem indexer.pem indexer-key.pem admin.pem admin-key.pem; do
-    [ -f "${CERTS_DIR}/${f}" ] || continue
-    _m=$(mode_of "${CERTS_DIR}/${f}")
-    case "${_m}" in
-        ?00) ok "certs/${f} is owner-only (mode ${_m})" ;;
-        *)   fail "certs/${f} is readable by group or others (mode ${_m}); the plugin warns on every start" ;;
-    esac
-    check_eq "certs/${f} is owned by the service account" "wazuh-indexer:wazuh-indexer" \
-        "$(owner_of "${CERTS_DIR}/${f}")"
-done
 check "indexer.pem chains to the CA" \
     openssl verify -CAfile "${CA_DIR}/root-ca.pem" "${CERTS_DIR}/indexer.pem"
+check "indexer.pem chains to the published CA" \
+    openssl verify -CAfile "${EXPORT_DIR}/ca.pem" "${CERTS_DIR}/indexer.pem"
 check "admin.pem chains to the CA" \
     openssl verify -CAfile "${CA_DIR}/root-ca.pem" "${CERTS_DIR}/admin.pem"
+check_eq "indexer.pem carries the leaf followed by the CA" "2" \
+    "$(grep -c 'BEGIN CERTIFICATE' "${CERTS_DIR}/indexer.pem")"
+check "the CA names this host" \
+    bash -c "openssl x509 -in '${CA_DIR}/root-ca.pem' -noout -subject | grep -q 'wazuh-indexer-$(short_hostname)'"
+check "the CA is a CA" \
+    bash -c "openssl x509 -in '${CA_DIR}/root-ca.pem' -noout -ext basicConstraints | grep -q 'CA:TRUE'"
 
 sans=$(openssl x509 -in "${CERTS_DIR}/indexer.pem" -noout -text 2>/dev/null \
     | grep -A1 'Subject Alternative Name' | tail -1 | tr -d ' ')
@@ -476,7 +581,7 @@ case "${sans}" in
     *) fail "loopback missing from the SAN list (localhost tooling will fail)" ;;
 esac
 case "${sans}" in
-    *"DNS:$(hostname -s)"*) ok "this host's name is in the SAN list" ;;
+    *"DNS:$(short_hostname)"*) ok "this host's name is in the SAN list" ;;
     *) fail "hostname missing from the SAN list" ;;
 esac
 
@@ -496,24 +601,16 @@ fi
 
 check_eq "the CA is trusted by the bundled JDK" "yes" "$(ca_is_trusted)"
 
-# The CA private key must never be readable by anything but root.
-if [ -f "${CA_DIR}/root-ca.key" ]; then
-    check_eq "root-ca.key is 0400" "400" "$(mode_of "${CA_DIR}/root-ca.key")"
-    check_eq "root-ca.key is root-owned" "root:root" "$(owner_of "${CA_DIR}/root-ca.key")"
-else
-    skip "root-ca.key absent (externally issued CA)"
-fi
+section "1.3 What the package publishes for the manager and the dashboard"
 
-section "1.3 /etc/wazuh, credentials.env and root-ca.pem"
-
-check "${WAZUH_DIR} exists" test -d "${WAZUH_DIR}"
-check_eq "${WAZUH_DIR} is 0700" "700" "$(mode_of "${WAZUH_DIR}")"
-check_eq "${WAZUH_DIR} is root-owned" "root:root" "$(owner_of "${WAZUH_DIR}")"
-check "credentials.env exists" test -f "${CREDENTIALS}"
-check_eq "credentials.env is 0600" "600" "$(mode_of "${CREDENTIALS}")"
-check_eq "credentials.env is root-owned" "root:root" "$(owner_of "${CREDENTIALS}")"
-check "CA anchor exists" test -f "${CA_DIR}/root-ca.pem"
-check_eq "CA directory is 0700" "700" "$(mode_of "${CA_DIR}")"
+check "export/ca.pem is the CA in ca/" same "${EXPORT_DIR}/ca.pem" "${CA_DIR}/root-ca.pem"
+check "export/credentials.env starts with its header" \
+    grep -q '^# Published by wazuh-indexer' "${CREDENTIALS}"
+check "no serial file is kept beside the CA" bash -c "[ ! -e '${CA_DIR}/root-ca.srl' ]"
+check "the shipped tools carry the indexer's helper" \
+    bash -c "grep -q 'wazuh-indexer-credentials.sh ------' '${WAZUH_TOOLS}/wazuh-certs-tool.sh' && grep -q 'wazuh-indexer-credentials.sh ------' '${WAZUH_TOOLS}/wazuh-passwords-tool.sh'"
+check "the shipped tools no longer name /etc/wazuh" \
+    bash -c "! grep -qE '/etc/wazuh([^-a-z]|\$)' '${WAZUH_TOOLS}/wazuh-certs-tool.sh' '${WAZUH_TOOLS}/wazuh-passwords-tool.sh'"
 
 section "1.4 internal_users.yml and opensearch.yml"
 
@@ -544,8 +641,8 @@ else
     skip "bcrypt verification (python3-bcrypt not installed)"
 fi
 
-node_dn=$(openssl x509 -in "${CERTS_DIR}/indexer.pem" -noout -subject -nameopt RFC2253 2>/dev/null | sed 's/^subject= *//')
-admin_dn=$(openssl x509 -in "${CERTS_DIR}/admin.pem" -noout -subject -nameopt RFC2253 2>/dev/null | sed 's/^subject= *//')
+node_dn=$(subject_of "${CERTS_DIR}/indexer.pem")
+admin_dn=$(subject_of "${CERTS_DIR}/admin.pem")
 check "nodes_dn carries this node's DN" grep -qF "${node_dn}" "${OPENSEARCH_YML}"
 check "admin_dn carries the admin DN" grep -qF "${admin_dn}" "${OPENSEARCH_YML}"
 check "no shipped CN=node-1 placeholder DN" bash -c "! grep -q 'CN=node-1,OU=Wazuh' '${OPENSEARCH_YML}'"
@@ -553,6 +650,7 @@ check "no shipped CN=node-1 placeholder DN" bash -c "! grep -q 'CN=node-1,OU=Waz
 section "1.5 State file"
 
 check "${MARKER} exists" test -f "${MARKER}"
+check "${MARKER} is root's" is 600 "${MARKER}" root:root
 
 section "1.6 The node starts"
 
@@ -574,11 +672,23 @@ else
     ok "no errors in the service journal"
 fi
 
+warns="$(permission_warnings)"
+if [ -n "${warns}" ]; then
+    fail "the security plugin warned about file permissions in ${CONFIG_DIR}"
+    printf '%s\n' "${warns}" | head -5 | sed 's/^/        /'
+else
+    ok "no insecure file permissions warning from the security plugin"
+fi
+
+# The node must not have written anything in the configuration directory: it is root's.
+check "the node wrote nothing under ${CONFIG_DIR}" \
+    bash -c "! find '${CONFIG_DIR}' ! -user root -print 2>/dev/null | grep -q ."
+
 # Security configuration is pending: nothing has uploaded it yet, so the
 # security plugin answers but authenticates nobody.
 pending=$(curl -sk "${API}/" 2>/dev/null | head -c 200)
 case "${pending}" in
-    *"not initialized"*|*"Unauthorized"*|*"OpenSearch Security not initialized"*)
+    *"not initialized"*|*"Unauthorized"*)
         ok "security configuration is pending, as designed" ;;
     *)
         fail "unexpected pre-upload response: ${pending}" ;;
@@ -594,6 +704,8 @@ else
     grep -q "Done with success" /tmp/secinit.log \
         && ok "securityadmin reported success" \
         || { fail "securityadmin did not report success"; tail -10 /tmp/secinit.log | sed 's/^/        /'; }
+    check "securityadmin ran as root (no hsperfdata for the service account)" \
+        bash -c "[ ! -e /tmp/hsperfdata_wazuh-indexer ] || [ \"\$(stat -c %U /tmp/hsperfdata_wazuh-indexer)\" != wazuh-indexer ]"
 fi
 
 for pair in "admin:WAZUH_INDEXER_ADMIN_PASSWORD:200" \
@@ -619,52 +731,63 @@ for pair in "admin:admin" "kibanaserver:kibanaserver" "wazuh-manager:wazuh-manag
     check_eq "${u}:${p} is rejected" "401" "${got}"
 done
 
-section "1.8 Resolution happens once — /etc/wazuh unavailable"
+section "1.8 Resolution happens once — a restart changes nothing"
 
-mv "${WAZUH_DIR}" "${WAZUH_DIR}.moved"
+before=$(fingerprint "${CERTS_DIR}"/*.pem "${CREDENTIALS}" "${EXPORT_DIR}/ca.pem" "${CA_DIR}/root-ca.pem" "${CA_DIR}/root-ca.key" "${KEYSTORE}" "${OPENSEARCH_YML}" "${INTERNAL_USERS}")
+mv "${EXPORT_DIR}" "${EXPORT_DIR}.moved"
 systemctl restart wazuh-indexer >/tmp/restart.log 2>&1
 RESTART_RC=$?
-check_eq "service restarts with ${WAZUH_DIR} gone" "0" "${RESTART_RC}"
+check_eq "service restarts with export/ moved away" "0" "${RESTART_RC}"
 if wait_for_node; then
-    ok "node answers after restart without ${WAZUH_DIR}"
+    ok "node answers after the restart"
 else
-    fail "node did not come back after restart without ${WAZUH_DIR}"
+    fail "node did not come back after the restart"
     journalctl -u wazuh-indexer --no-pager -n 20 2>/dev/null | sed 's/^/        /'
 fi
-check "no ${WAZUH_DIR} was recreated" bash -c "[ ! -e '${WAZUH_DIR}/credentials.env' ]"
-mv "${WAZUH_DIR}.moved" "${WAZUH_DIR}"
+check "nothing was published again" bash -c "[ ! -e '${CREDENTIALS}' ]"
+mv "${EXPORT_DIR}.moved" "${EXPORT_DIR}"
+after=$(fingerprint "${CERTS_DIR}"/*.pem "${CREDENTIALS}" "${EXPORT_DIR}/ca.pem" "${CA_DIR}/root-ca.pem" "${CA_DIR}/root-ca.key" "${KEYSTORE}" "${OPENSEARCH_YML}" "${INTERNAL_USERS}")
+check_eq "no credential, keystore or certificate changed" "${before}" "${after}"
 
 admin_pw="$(cred_get WAZUH_INDEXER_ADMIN_PASSWORD)"
 wait_for_cluster admin "${admin_pw}"
 check_eq "admin still authenticates after the restart" "200" "$(api_status admin "${admin_pw}")"
 
-section "1.8b Symlink clobber: a planted .tmp must not redirect a root write"
+section "1.8b Planted trust material is refused before the service starts"
 
-# /etc/wazuh-indexer and its opensearch-security/ subdir stay service-owned, so
-# the service account can pre-create files there. The resolver runs as root; a
-# fixed, guessable scratch name would let it be pointed at any file on the host.
+# The service account can plant nothing: the configuration directory is root's.
+check "the service account cannot plant a link in export/" \
+    bash -c "! chroot --userspec=${NAME}:${NAME} --skip-chdir / /bin/sh -c 'ln -s /etc/passwd ${EXPORT_DIR}/evil' 2>/dev/null; [ ! -L '${EXPORT_DIR}/evil' ]"
+check "the service account cannot plant a certificate" \
+    bash -c "! chroot --userspec=${NAME}:${NAME} --skip-chdir / /bin/sh -c 'cp ${CERTS_DIR}/indexer.pem ${CERTS_DIR}/evil.pem' 2>/dev/null; [ ! -e '${CERTS_DIR}/evil.pem' ]"
+
+# What root finds planted -- a link, a group-writable file -- is refused by the pre-start check,
+# the service does not start, and nothing is written through it.
 SENTINEL=/root/.credentials-sentinel
 printf 'untouched\n' > "${SENTINEL}"
 chmod 600 "${SENTINEL}"
-
-runuser -u wazuh-indexer -- ln -sf "${SENTINEL}" "${INTERNAL_USERS}.tmp" 2>/dev/null
-runuser -u wazuh-indexer -- ln -sf "${SENTINEL}" "${OPENSEARCH_YML}.tmp" 2>/dev/null
-
-if [ -L "${INTERNAL_USERS}.tmp" ] || [ -L "${OPENSEARCH_YML}.tmp" ]; then
-    # Force a full re-resolution so both write paths run.
-    rm -f "${MARKER}"
-    "${PRODUCT_DIR}/bin/resolve-credentials.sh" --prestart >/tmp/symlink.log 2>&1 || true
-
-    if [ "$(cat "${SENTINEL}" 2>/dev/null)" = "untouched" ]; then
-        ok "a planted .tmp symlink did not redirect the resolver's write"
-    else
-        fail "the resolver followed a symlink and overwrote ${SENTINEL}"
-    fi
-    rm -f "${INTERNAL_USERS}.tmp" "${OPENSEARCH_YML}.tmp"
-else
-    skip "symlink clobber (could not pre-create the .tmp paths as the service account)"
-fi
-rm -f "${SENTINEL}"
+systemctl stop wazuh-indexer >/dev/null 2>&1
+ln -s "${SENTINEL}" "${EXPORT_DIR}/evil"
+out=$("${RESOLVER}" --check 2>&1); rc=$?
+check_eq "--check refuses a link in export/" "1" "${rc}"
+case "${out}" in
+    *"UNSAFE ${EXPORT_DIR}/evil: a symbolic link"*) ok "it names the link" ;;
+    *) fail "the refusal does not name the link: ${out}" ;;
+esac
+systemctl start wazuh-indexer >/dev/null 2>&1
+check_eq "the service does not start with the link in place" "0" "$(node_running && echo 1 || echo 0)"
+check_eq "the sentinel was not written through" "untouched" "$(cat "${SENTINEL}" 2>/dev/null)"
+rm -f "${EXPORT_DIR}/evil" "${SENTINEL}"
+chmod 660 "${CERTS_DIR}/indexer.pem"
+out=$("${RESOLVER}" --check 2>&1); rc=$?
+check_eq "--check refuses a group-writable certificate" "1" "${rc}"
+chmod 640 "${CERTS_DIR}/indexer.pem"
+check "--check passes once the planted material is gone" "${RESOLVER}" --check
+systemctl reset-failed wazuh-indexer >/dev/null 2>&1
+systemctl start wazuh-indexer >/tmp/start2.log 2>&1
+check_eq "the service starts again" "0" "$?"
+wait_for_node && ok "node answers again" || fail "node did not come back"
+wait_for_cluster admin "${admin_pw}"
 
 section "1.9 Rotation with wazuh-passwords-tool.sh"
 
@@ -685,6 +808,8 @@ else
     sleep 5
     got=$(api_status admin "${NEW_PW}")
     check_eq "admin authenticates with the rotated password" "200" "${got}"
+    check_eq "the rotated password is published in export/" "${NEW_PW}" "$(cred_get WAZUH_INDEXER_ADMIN_PASSWORD)"
+    check "export/credentials.env is still root:root 0600" is 600 "${CREDENTIALS}" root:root
 
     systemctl restart wazuh-indexer >/dev/null 2>&1
     wait_for_node
@@ -695,17 +820,16 @@ fi
 
 section "1.10 --clear and re-resolution"
 
-# A password lives in two places at once: published in credentials.env for the sibling components,
-# and bcrypted into internal_users.yml for the node itself. The same is true of a certificate: the
-# files in certs/, the DNs in opensearch.yml and the anchor in the JDK truststore are one thing.
-# --clear has to take back every half, and the next run has to resolve every half again.
+# A password lives in two places at once: published in export/credentials.env for the sibling
+# components, and bcrypted into internal_users.yml for the node itself. The same is true of a
+# certificate: the files in certs/, the DNs in opensearch.yml and the anchor in the JDK truststore
+# are one thing. --clear has to take back every half, and the next run has to resolve every half
+# again.
 #
 # This phase runs last because --clear leaves the node unable to start until it re-resolves. It
 # hands the host back fully resolved for the removal phase that follows.
 
 systemctl stop wazuh-indexer >/dev/null 2>&1
-
-RESOLVER="${PRODUCT_DIR}/bin/resolve-credentials.sh"
 
 if [ ! -x "${RESOLVER}" ]; then
     skip "resolve-credentials.sh is not shipped in this package"
@@ -718,10 +842,11 @@ else
         check_eq "${u} is back to its \${NAME} placeholder" "\${${k}}" "$(hash_of "${u}")"
     done
 
-    check_eq "the indexer's published passwords are gone" "0" "$(cred_count)"
+    check "the published passwords are gone" bash -c "[ ! -e '${CREDENTIALS}' ]"
+    check "the published CA is gone" bash -c "[ ! -e '${EXPORT_DIR}/ca.pem' ]"
     check "the state file is gone" bash -c "[ ! -e '${MARKER}' ]"
     check "the certificates are gone" bash -c "[ ! -e '${CERTS_DIR}/indexer.pem' ]"
-    check "the bootstrap CA is gone" bash -c "[ ! -e '${CA_DIR}/root-ca.key' ]"
+    check "the bootstrap CA is gone" bash -c "[ ! -e '${CA_DIR}/root-ca.key' ] && [ ! -e '${CA_DIR}/.wazuh-indexer-bootstrap-ca' ]"
     check_eq "the node DN is gone from opensearch.yml" "" "$(dn_list plugins.security.nodes_dn)"
     check_eq "the admin DN is gone from opensearch.yml" "" "$(dn_list plugins.security.authcz.admin_dn)"
     check "the DN settings themselves are kept" grep -q '^plugins.security.nodes_dn:' "${OPENSEARCH_YML}"
@@ -738,12 +863,14 @@ else
     # --- A certificate pair that arrives after the package ------------------
     # How a bring-your-own-PKI deployment installs: the CA directory holds a trust anchor with no
     # signing key, so the install cannot issue anything, and the pair is staged before the first
-    # start. The resolution has to finish then, not stop at the passwords.
-    mkdir -p "${CA_DIR}" && chmod 700 "${CA_DIR}"
-    openssl req -x509 -newkey rsa:2048 -keyout /tmp/external-ca.key -out "${CA_DIR}/root-ca.pem" \
+    # start, with the ownership the specification asks for. The resolution has to finish then, not
+    # stop at the passwords.
+    install -d -m 0750 -o root -g wazuh-indexer "${CA_DIR}"
+    openssl req -x509 -newkey rsa:2048 -keyout /tmp/external-ca.key -out /tmp/external-ca.pem \
         -days 3650 -nodes -subj "/C=US/L=California/O=Wazuh/OU=Wazuh/CN=external-root-ca" \
+        -addext "basicConstraints=critical,CA:TRUE" -addext "keyUsage=critical,keyCertSign,cRLSign" \
         >/dev/null 2>&1
-    chmod 644 "${CA_DIR}/root-ca.pem"
+    install -m 0640 -o root -g wazuh-indexer /tmp/external-ca.pem "${CA_DIR}/root-ca.pem"
 
     out=$("${RESOLVER}" --prestart 2>&1); rc=$?
     check_eq "--prestart refuses to start a node with no certificates" "1" "${rc}"
@@ -752,20 +879,35 @@ else
         *) fail "the failure does not name the certificates" ;;
     esac
     check "no state file while the node is unresolved" bash -c "[ ! -e '${MARKER}' ]"
+    check "the staged anchor was published for the other components" same "${EXPORT_DIR}/ca.pem" /tmp/external-ca.pem
 
     for n in indexer admin; do
-        cn="${n}"; [ "${n}" = "indexer" ] && cn="$(hostname -s)"
-        openssl req -newkey rsa:2048 -keyout "${CERTS_DIR}/${n}-key.pem" -out "/tmp/${n}.csr" \
+        cn="${n}"; [ "${n}" = "indexer" ] && cn="$(short_hostname)"
+        openssl req -newkey rsa:2048 -keyout "/tmp/${n}-key.pem" -out "/tmp/${n}.csr" \
             -nodes -subj "/C=US/L=California/O=Wazuh/OU=Wazuh/CN=${cn}" >/dev/null 2>&1
-        openssl x509 -req -in "/tmp/${n}.csr" -CA "${CA_DIR}/root-ca.pem" -CAkey /tmp/external-ca.key \
-            -CAcreateserial -out "${CERTS_DIR}/${n}.pem" -days 3650 >/dev/null 2>&1
+        printf 'subjectAltName = DNS:%s,DNS:localhost,IP:127.0.0.1\n' "${cn}" > "/tmp/${n}.ext"
+        openssl x509 -req -in "/tmp/${n}.csr" -CA /tmp/external-ca.pem -CAkey /tmp/external-ca.key \
+            -set_serial "0x$(od -An -N8 -tx1 /dev/urandom | tr -d ' \n')" -out "/tmp/${n}.pem" -days 3650 \
+            -extfile "/tmp/${n}.ext" >/dev/null 2>&1
     done
-    cp "${CA_DIR}/root-ca.pem" "${CERTS_DIR}/root-ca.pem"
-    chmod 400 "${CERTS_DIR}"/*.pem
-    chown wazuh-indexer:wazuh-indexer "${CERTS_DIR}"/*.pem
+    # Staged the way the previous documentation said, service-owned: refused, with the fix named.
+    install -m 0400 -o wazuh-indexer -g wazuh-indexer /tmp/indexer.pem "${CERTS_DIR}/indexer.pem"
+    install -m 0400 -o wazuh-indexer -g wazuh-indexer /tmp/indexer-key.pem "${CERTS_DIR}/indexer-key.pem"
+    out=$("${RESOLVER}" --prestart 2>&1); rc=$?
+    check_eq "a service-owned staged pair is refused" "1" "${rc}"
+    case "${out}" in
+        *"UNSAFE ${CERTS_DIR}/indexer.pem"*) ok "it names the file and the owner" ;;
+        *) fail "the refusal does not name the file" ;;
+    esac
+    # Staged as specified: root's, read by the service through its group.
+    install -m 0640 -o root -g wazuh-indexer /tmp/indexer.pem "${CERTS_DIR}/indexer.pem"
+    install -m 0640 -o root -g wazuh-indexer /tmp/indexer-key.pem "${CERTS_DIR}/indexer-key.pem"
+    install -m 0600 -o root -g root /tmp/admin.pem "${CERTS_DIR}/admin.pem"
+    install -m 0600 -o root -g root /tmp/admin-key.pem "${CERTS_DIR}/admin-key.pem"
 
     "${RESOLVER}" --prestart >/tmp/reresolve.log 2>&1
     check_eq "--prestart resolves once the pair is staged" "0" "$?"
+    check "the anchor was copied beside the pair for the node" is 640 "${CERTS_DIR}/root-ca.pem" root:wazuh-indexer
     check_eq "nodes_dn is filled from the staged pair" \
         "$(subject_of "${CERTS_DIR}/indexer.pem")" "$(dn_list plugins.security.nodes_dn)"
     check_eq "admin_dn is filled from the staged pair" \
@@ -799,13 +941,16 @@ else
     check_eq "the operator's node list survives a later resolution" \
         "${before}" "$(dn_list plugins.security.nodes_dn | tr '\n' ' ')"
 
-    # --- A password the policy rejects --------------------------------------
+    # --- A password the policy rejects, supplied in local.env ----------------
     # The message has to describe the rule that is actually enforced, which lives in
-    # wazuh_password_validate.
+    # wazuh_password_validate, and name the file the operator has to correct.
+    # From nothing: --clear takes back the passwords and the certificates, and the external
+    # anchor staged above has no signing key, so it goes too, or nothing could be issued.
     rm -f "${MARKER}"
-    cp -a "${CREDENTIALS}" /tmp/credentials.env.policy
-    printf "WAZUH_INDEXER_ADMIN_PASSWORD='MyCompanyPass2026'\n" > "${CREDENTIALS}"
-    chmod 600 "${CREDENTIALS}"
+    "${RESOLVER}" --clear >/dev/null 2>&1
+    rm -f "${CA_DIR}"/root-ca.* "${CERTS_DIR}"/*.pem
+    printf "WAZUH_INDEXER_ADMIN_PASSWORD='MyCompanyPass2026'\n" > "${LOCAL_ENV}"
+    chmod 600 "${LOCAL_ENV}"
     out=$("${RESOLVER}" --prestart 2>&1); rc=$?
     check_eq "a password without a symbol is refused" "1" "${rc}"
     case "${out}" in
@@ -813,8 +958,35 @@ else
             ok "the refusal describes the rule that is enforced" ;;
         *) fail "the refusal describes a different rule than the one checked" ;;
     esac
-    cp -a /tmp/credentials.env.policy "${CREDENTIALS}"
-    rm -f "${MARKER}"
+    case "${out}" in
+        *"correct it in ${LOCAL_ENV}"*) ok "the refusal names local.env" ;;
+        *) fail "the refusal does not name local.env" ;;
+    esac
+    case "${out}" in
+        *MyCompanyPass2026*) fail "the refusal printed the rejected value" ;;
+        *) ok "the rejected value is never printed" ;;
+    esac
+    check "the other two passwords were published meanwhile" \
+        bash -c "[ \"\$(grep -cE '^WAZUH_INDEXER_(KIBANASERVER|MANAGER)_PASSWORD=' '${CREDENTIALS}')\" = 2 ]"
+    check "the certificates were issued meanwhile" test -f "${CERTS_DIR}/indexer.pem"
+
+    # --- A password the operator supplies ------------------------------------
+    printf "WAZUH_INDEXER_ADMIN_PASSWORD='Chosen.By.Operator1'\n" > "${LOCAL_ENV}"
+    chmod 600 "${LOCAL_ENV}"
+    "${RESOLVER}" --prestart >/tmp/supplied.log 2>&1
+    check_eq "--prestart resolves with the corrected value" "0" "$?"
+    check_eq "the supplied password is published" "Chosen.By.Operator1" "$(cred_get WAZUH_INDEXER_ADMIN_PASSWORD)"
+    check "local.env is left exactly as the operator wrote it" \
+        grep -qx "WAZUH_INDEXER_ADMIN_PASSWORD='Chosen.By.Operator1'" "${LOCAL_ENV}"
+    check "the state file is written" test -f "${MARKER}"
+    if have_bcrypt; then
+        if digest_verifies "$(hash_of admin)" "Chosen.By.Operator1"; then
+            ok "the admin digest matches the supplied password"
+        else
+            fail "the admin digest does NOT match the supplied password"
+        fi
+    fi
+    rm -f "${LOCAL_ENV}"
 
     # --- A digest with nothing left to supply its password -------------------
     # The state --clear used to leave behind, and how an upgrade from a version that predates this
@@ -841,12 +1013,14 @@ else
     # keys. The external anchor staged above has no signing key, so it goes first -- otherwise
     # --install has nothing to issue from, which is the very case this phase just exercised.
     "${RESOLVER}" --clear >/dev/null 2>&1
-    rm -f "${CA_DIR}"/root-ca.* /tmp/external-ca.key
+    rm -f "${CA_DIR}"/root-ca.* "${CERTS_DIR}"/*.pem /tmp/external-ca.key
     "${RESOLVER}" --install >/dev/null 2>&1
     check "certificates are reissued by --install" test -f "${CERTS_DIR}/indexer.pem"
     check "the CA is back" test -f "${CA_DIR}/root-ca.pem"
+    check "the CA is published again" same "${EXPORT_DIR}/ca.pem" "${CA_DIR}/root-ca.pem"
     check_eq "three passwords published" "3" "$(cred_count)"
     check_eq "the CA is trusted again" "yes" "$(ca_is_trusted)"
+    check "--check passes on the resolved host" "${RESOLVER}" --check
 fi
 
 section "1.11 SysV init script"
@@ -858,24 +1032,25 @@ if [ ! -x "${INITD}" ]; then
     skip "no SysV init script in this package"
 else
     check "the start path runs the resolver" grep -q 'resolve-credentials.sh" --prestart' "${INITD}"
+    check "the init script runs no host tool the package does not declare" \
+        bash -c "! grep -vE '^[[:space:]]*#' '${INITD}' | grep -qE '(^|[^a-zA-Z_./-])(runuser|pgrep|pkill|ps|awk)([^a-zA-Z_-]|\$)'"
 
     # A start that cannot resolve must be refused, the way ExecStartPre refuses it under systemd,
     # rather than bringing the node up half-configured with nothing to say why. An anchor with no
     # signing key and no staged pair is the one state resolution cannot complete on its own.
     cp -a "${CREDENTIALS}" /tmp/credentials.env.sysv
     "${RESOLVER}" --clear >/dev/null 2>&1
-    mkdir -p "${CA_DIR}" && chmod 700 "${CA_DIR}"
-    openssl req -x509 -newkey rsa:2048 -keyout /tmp/sysv-ca.key -out "${CA_DIR}/root-ca.pem" \
+    install -d -m 0750 -o root -g wazuh-indexer "${CA_DIR}"
+    openssl req -x509 -newkey rsa:2048 -keyout /tmp/sysv-ca.key -out /tmp/sysv-ca.pem \
         -days 3650 -nodes -subj "/C=US/L=California/O=Wazuh/OU=Wazuh/CN=external-root-ca" \
-        >/dev/null 2>&1
-    chmod 644 "${CA_DIR}/root-ca.pem"
+        -addext "basicConstraints=critical,CA:TRUE" >/dev/null 2>&1
+    install -m 0640 -o root -g wazuh-indexer /tmp/sysv-ca.pem "${CA_DIR}/root-ca.pem"
 
     out=$("${INITD}" start 2>&1); rc=$?
     check_eq "SysV start is refused while the node cannot resolve" "1" "${rc}"
-    # The bracket keeps pgrep from matching the pattern inside this very command line.
-    check "the node was not started" bash -c "! pgrep -f '[o]rg.opensearch.bootstrap.OpenSearch' >/dev/null"
+    if node_running; then fail "the node was started"; else ok "the node was not started"; fi
 
-    rm -f "${CA_DIR}"/root-ca.* /tmp/sysv-ca.key
+    rm -f "${CA_DIR}"/root-ca.* /tmp/sysv-ca.key /tmp/sysv-ca.pem
     cp -a /tmp/credentials.env.sysv "${CREDENTIALS}"
     "${RESOLVER}" --install >/dev/null 2>&1
 
@@ -905,6 +1080,7 @@ section "1.12 Reinstalling the package keeps the CA trusted"
 check_eq "the CA is trusted before the reinstall" "yes" "$(ca_is_trusted)"
 cert_before=$(subject_of "${CERTS_DIR}/indexer.pem")$(openssl x509 -in "${CERTS_DIR}/indexer.pem" -noout -serial 2>/dev/null)
 creds_before=$(cred_get WAZUH_INDEXER_ADMIN_PASSWORD)
+keystore_before=$(fingerprint "${KEYSTORE}")
 
 if [ "${PKG_KIND}" = "deb" ]; then
     DEBIAN_FRONTEND=noninteractive dpkg -i "${PACKAGE}" >/tmp/reinstall.log 2>&1
@@ -918,16 +1094,16 @@ check_eq "the package reinstalls cleanly" "0" "$?"
 check_eq "the certificate is untouched" "${cert_before}" \
     "$(subject_of "${CERTS_DIR}/indexer.pem")$(openssl x509 -in "${CERTS_DIR}/indexer.pem" -noout -serial 2>/dev/null)"
 check_eq "the published password is untouched" "${creds_before}" "$(cred_get WAZUH_INDEXER_ADMIN_PASSWORD)"
+check_eq "the keystore is untouched" "${keystore_before}" "$(fingerprint "${KEYSTORE}")"
 check_eq "the CA is trusted after the reinstall" "yes" "$(ca_is_trusted)"
+check "the configuration directory is still root's" is 750 "${CONFIG_DIR}" root:wazuh-indexer
+check "export/credentials.env is still root:root 0600" is 600 "${CREDENTIALS}" root:root
 
 # ---------------------------------------------------------------------------
 # 2. Removal
 # ---------------------------------------------------------------------------
 
 section "2. Removing wazuh-indexer"
-
-# A sibling's key, to prove removal takes only what it owns.
-printf "WAZUH_MANAGER_API_PASSWORD='Sibling.Key+01'\n" >> "${CREDENTIALS}"
 
 systemctl stop wazuh-indexer >/dev/null 2>&1
 
@@ -940,12 +1116,6 @@ fi
 REMOVE_RC=$?
 check_eq "package removes cleanly" "0" "${REMOVE_RC}"
 
-# dpkg always notes directories it declined to remove because something
-# unpackaged is still in them; that is not a fault of this feature.
-# dpkg notes directories it declined to remove; rpm notes config files it saved.
-# Both are ordinary package-manager behaviour. Whether the saved copies leak
-# anything is asserted separately below, on their contents rather than on the
-# message.
 # Package-manager chatter that is not this feature's business:
 #   * dpkg notes directories it declined to remove
 #   * rpm notes config files it saved as *.rpmsave
@@ -962,27 +1132,15 @@ else
     ok "removal emitted no unexpected errors or warnings"
 fi
 
-# The purge path sources the shared helper as root, from a copy the removal left behind. That copy
-# must never sit where the service account can write, or the account chooses what root runs.
-check "no root-sourced helper in the service-writable data directory" \
-    bash -c "[ ! -e '${DATA_DIR}/.wazuh-credentials.sh' ]"
+check "no helper was stashed anywhere for the removal" \
+    bash -c "[ ! -e '${DATA_DIR}/.wazuh-credentials.sh' ] && [ ! -e /etc/wazuh ]"
 
-STASH="${WAZUH_DIR}/.wazuh-indexer-credentials.sh"
-if [ -e "${STASH}" ]; then
-    check_eq "the stashed helper is root-owned" "root:root" "$(owner_of "${STASH}")"
-    check_eq "the stashed helper is 0600" "600" "$(mode_of "${STASH}")"
-    check_eq "its directory is root-owned and root-only" "root:root 700" \
-        "$(owner_of "${WAZUH_DIR}") $(mode_of "${WAZUH_DIR}")"
-else
-    info "no stashed helper after removal (expected on RPM, which purges in one step)"
-fi
-
-# Per the epic, a plain `remove` keeps everything; only `purge` takes the keys
-# back. Both behaviours are asserted so a change to either is visible.
+# A plain `remove` keeps everything the package published; only `purge` takes it back. Both
+# behaviours are asserted so a change to either is visible.
 if [ "${PKG_KIND}" = "deb" ]; then
-    check_eq "remove keeps the indexer keys (purge takes them)" "3" "$(cred_count)"
-    check "remove keeps credentials.env" test -f "${CREDENTIALS}"
+    check_eq "remove keeps the published passwords (purge takes them)" "3" "$(cred_count)"
     check "remove keeps the CA" test -f "${CA_DIR}/root-ca.pem"
+    check "remove keeps the state file" test -f "${MARKER}"
 
     if [ "${SKIP_PURGE}" = "1" ]; then
         skip "purge phase (SKIP_PURGE=1)"
@@ -999,20 +1157,23 @@ if [ "${PKG_KIND}" = "deb" ]; then
             ok "purge emitted no unexpected errors or warnings"
         fi
 
-        check_eq "indexer keys removed from credentials.env" "0" "$(cred_count)"
-        check "the sibling's key is untouched" grep -q 'WAZUH_MANAGER_API_PASSWORD' "${CREDENTIALS}"
-        check "credentials.env itself is NOT deleted" test -f "${CREDENTIALS}"
+        check "export/ is removed" bash -c "[ ! -e '${EXPORT_DIR}' ]"
+        check "ca/ is removed" bash -c "[ ! -e '${CA_DIR}' ]"
         check "state file is removed" bash -c "[ ! -e '${MARKER}' ]"
-        check "the CA survives while a sibling key remains" test -f "${CA_DIR}/root-ca.pem"
-        check "the stashed helper is gone" bash -c "[ ! -e '${STASH}' ]"
+        check "the certificates issued from the removed CA are removed" \
+            bash -c "[ ! -e '${CERTS_DIR}/indexer.pem' ] && [ ! -e '${CERTS_DIR}/admin-key.pem' ]"
+        check "the keystore is kept, handed to root" bash -c "[ ! -e '${KEYSTORE}' ] || [ \"\$(stat -c %U '${KEYSTORE}')\" = root ]"
+        check "no /etc/wazuh was ever created" bash -c "[ ! -e /etc/wazuh ]"
     fi
 else
     # RPM has no remove/purge distinction: %postun runs the whole thing.
-    check_eq "indexer keys removed from credentials.env" "0" "$(cred_count)"
-    check "the sibling's key is untouched" grep -q 'WAZUH_MANAGER_API_PASSWORD' "${CREDENTIALS}"
-    check "credentials.env itself is NOT deleted" test -f "${CREDENTIALS}"
+    check "export/ is removed" bash -c "[ ! -e '${EXPORT_DIR}' ]"
+    check "ca/ is removed" bash -c "[ ! -e '${CA_DIR}' ]"
     check "state file is removed" bash -c "[ ! -e '${MARKER}' ]"
-    check "the stashed helper is gone" bash -c "[ ! -e '${STASH}' ]"
+    check "the certificates issued from the removed CA are removed" \
+        bash -c "[ ! -e '${CERTS_DIR}/indexer.pem' ] && [ ! -e '${CERTS_DIR}/admin-key.pem' ]"
+    check "the keystore is kept, handed to root" bash -c "[ ! -e '${KEYSTORE}' ] || [ \"\$(stat -c %U '${KEYSTORE}')\" = root ]"
+    check "no /etc/wazuh was ever created" bash -c "[ ! -e /etc/wazuh ]"
 fi
 
 section "2c. No credential material outlives the package"
@@ -1035,6 +1196,8 @@ fi
 printf '%s\n' "${all_leftovers}" | grep '/internalusers-backup/' | while read -r f; do
     [ -n "${f}" ] && info "note: ${f} holds digests (wazuh-passwords-tool.sh backup, pre-existing)"
 done
+check "no published password outlives the package" bash -c "[ ! -e '${CREDENTIALS}' ]"
+check "no CA private key outlives the package" bash -c "[ ! -e '${CA_DIR}/root-ca.key' ]"
 
 # Packaged files the software itself removed at runtime. Harmless to the removal,
 # but the package manifest and the filesystem disagree about them.
@@ -1044,15 +1207,6 @@ for _log in /tmp/remove.log /tmp/purge.log; do
         | sed -e 's/^file //' -e 's/: remove failed.*//' | sort -u | while read -r missing; do
         [ -n "${missing}" ] && info "note: ${missing} was already gone at removal (deleted at runtime)"
     done
-done
-
-# The certificates directory is not owned by the package manifest, so a private
-# key there outlives removal unless the purge removes the CA that issued it,
-# which it does only once no component's key is left (test_purge.sh covers
-# that). Here a sibling's key keeps the CA, so the pair stays. Reported, not
-# asserted: an operator may legitimately want the pair back.
-for key in "${CERTS_DIR}/indexer-key.pem" "${CERTS_DIR}/admin-key.pem"; do
-    [ -f "${key}" ] && info "note: ${key} still present after removal (another component keeps the CA that issued it)"
 done
 
 # ---------------------------------------------------------------------------

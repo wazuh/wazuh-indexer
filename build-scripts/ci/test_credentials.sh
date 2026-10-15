@@ -612,6 +612,47 @@ check "the shipped tools carry the indexer's helper" \
 check "the shipped tools no longer name /etc/wazuh" \
     bash -c "! grep -qE '/etc/wazuh([^-a-z]|\$)' '${WAZUH_TOOLS}/wazuh-certs-tool.sh' '${WAZUH_TOOLS}/wazuh-passwords-tool.sh'"
 
+section "1.3b Client pairs for the manager and the dashboard"
+
+# The indexer trusts only its own CA, so it issues the client pairs the manager and the dashboard
+# present to it, and publishes them for the consumer on this host. They grant no rights.
+now=$(date -u +%s)
+for consumer in manager dashboard; do
+    pem="${EXPORT_DIR}/${consumer}-client.pem"; key="${EXPORT_DIR}/${consumer}-client-key.pem"
+    check "export/${consumer}-client.pem is root:root 0600" is 600 "${pem}" root:root
+    check "export/${consumer}-client-key.pem is root:root 0600" is 600 "${key}" root:root
+    [ -f "${pem}" ] || continue
+    check "${consumer} pair chains to the CA" openssl verify -CAfile "${CA_DIR}/root-ca.pem" "${pem}"
+    check "${consumer} pair chains to the published CA" openssl verify -CAfile "${EXPORT_DIR}/ca.pem" "${pem}"
+    check_eq "${consumer} pair carries the leaf followed by the CA" "2" "$(grep -c 'BEGIN CERTIFICATE' "${pem}")"
+    check_eq "${consumer} subject" "C=US,L=California,O=Wazuh,OU=Wazuh,CN=wazuh-${consumer}" "$(subject_of "${pem}")"
+    check "${consumer} pair is for client authentication" \
+        bash -c "openssl x509 -in '${pem}' -noout -ext extendedKeyUsage | grep -q 'TLS Web Client Authentication'"
+    check "${consumer} pair names no host" \
+        bash -c "! openssl x509 -in '${pem}' -noout -ext subjectAltName 2>/dev/null | grep -q 'DNS:\|IP'"
+    check "${consumer} key matches its certificate" \
+        bash -c "[ \"\$(openssl x509 -in '${pem}' -noout -pubkey | sha256sum)\" = \"\$(openssl pkey -in '${key}' -pubout | sha256sum)\" ]"
+    check "${consumer} subject is in neither admin_dn nor nodes_dn" \
+        bash -c "! grep -q 'CN=wazuh-${consumer}' '${OPENSEARCH_YML}'"
+    notbefore=$(date -u -d "$(openssl x509 -in "${pem}" -noout -startdate | cut -d= -f2)" +%s)
+    notafter=$(date -u -d "$(openssl x509 -in "${pem}" -noout -enddate | cut -d= -f2)" +%s)
+    check "${consumer} pair is backdated one day" bash -c "[ $((now - notbefore)) -ge 82800 ] && [ $((now - notbefore)) -le 90000 ]"
+    check "${consumer} pair is valid for ten years" bash -c "[ $((notafter - notbefore)) -ge 315446400 ] && [ $((notafter - notbefore)) -le 315705600 ]"
+done
+# The node's own certificates go through the same signing path.
+for f in indexer.pem admin.pem; do
+    notbefore=$(date -u -d "$(openssl x509 -in "${CERTS_DIR}/${f}" -noout -startdate | cut -d= -f2)" +%s)
+    check "certs/${f} is backdated one day" bash -c "[ $((now - notbefore)) -ge 82800 ] && [ $((now - notbefore)) -le 90000 ]"
+done
+notbefore=$(date -u -d "$(openssl x509 -in "${CA_DIR}/root-ca.pem" -noout -startdate | cut -d= -f2)" +%s)
+check "the CA is backdated one day" bash -c "[ $((now - notbefore)) -ge 82800 ] && [ $((now - notbefore)) -le 90000 ]"
+check_eq "the node DN keeps its order" "C=US,L=California,O=Wazuh,OU=Wazuh,CN=$(short_hostname)" "$(subject_of "${CERTS_DIR}/indexer.pem")"
+# What keeps a client certificate from being a credential.
+check "the certificate authentication domain is disabled" \
+    bash -c "awk '/clientcert_auth_domain:/{f=1} f && /http_enabled:/{print \$2; exit}' '${CONFIG_DIR}/opensearch-security/config.yml' | grep -qx false"
+check "client certificates are not required by the HTTP layer" \
+    bash -c "! grep -qE '^plugins.security.ssl.http.clientauth_mode:[[:space:]]*REQUIRE' '${OPENSEARCH_YML}'"
+
 section "1.4 internal_users.yml and opensearch.yml"
 
 placeholders=$(grep -c '\${WAZUH_INDEXER_' "${INTERNAL_USERS}" 2>/dev/null | head -1)
@@ -724,6 +765,33 @@ for pair in "admin:WAZUH_INDEXER_ADMIN_PASSWORD:200" \
     fi
 done
 
+# A client pair grants nothing by itself, and nothing more with the password.
+for consumer in manager dashboard; do
+    pem="${EXPORT_DIR}/${consumer}-client.pem"; key="${EXPORT_DIR}/${consumer}-client-key.pem"
+    [ -f "${pem}" ] || continue
+    got=$(curl -sk --cert "${pem}" --key "${key}" -o /dev/null -w '%{http_code}' "${API}/_cluster/health" 2>/dev/null)
+    check_eq "the ${consumer} pair without a password is refused" "401" "${got}"
+    got=$(curl -sk --cert "${pem}" --key "${key}" -o /dev/null -w '%{http_code}' "${API}/_plugins/_security/api/internalusers" 2>/dev/null)
+    check_eq "the ${consumer} pair gives no access to the security API" "401" "${got}"
+done
+with_pw=$(api_status wazuh-manager "$(cred_get WAZUH_INDEXER_MANAGER_PASSWORD)")
+with_both=$(curl -sk --cert "${EXPORT_DIR}/manager-client.pem" --key "${EXPORT_DIR}/manager-client-key.pem" -o /dev/null -w '%{http_code}' -u "wazuh-manager:$(cred_get WAZUH_INDEXER_MANAGER_PASSWORD)" "${API}/_cluster/health" 2>/dev/null)
+check_eq "the manager pair with the password gives what the password alone gives" "${with_pw}" "${with_both}"
+with_admin=$(curl -sk --cert "${EXPORT_DIR}/manager-client.pem" --key "${EXPORT_DIR}/manager-client-key.pem" -o /dev/null -w '%{http_code}' -u "wazuh-manager:$(cred_get WAZUH_INDEXER_MANAGER_PASSWORD)" "${API}/_plugins/_security/api/internalusers" 2>/dev/null)
+check "the manager pair with the password is not an admin" bash -c "[ '${with_admin}' = 401 ] || [ '${with_admin}' = 403 ]"
+# A pair from another CA fails the handshake.
+openssl req -x509 -newkey rsa:2048 -nodes -days 3650 -keyout /tmp/other-ca.key -out /tmp/other-ca.pem \
+    -subj "/CN=other-ca" -addext "basicConstraints=critical,CA:TRUE" >/dev/null 2>&1
+openssl req -newkey rsa:2048 -nodes -keyout /tmp/other-client-key.pem -out /tmp/other-client.csr \
+    -subj "/CN=wazuh-manager/OU=Wazuh/O=Wazuh/L=California/C=US" >/dev/null 2>&1
+printf 'extendedKeyUsage = clientAuth\n' > /tmp/other-client.ext
+openssl x509 -req -in /tmp/other-client.csr -CA /tmp/other-ca.pem -CAkey /tmp/other-ca.key \
+    -set_serial "0x$(od -An -N8 -tx1 /dev/urandom | tr -d ' \n')" -days 365 -extfile /tmp/other-client.ext \
+    -out /tmp/other-client.pem >/dev/null 2>&1
+got=$(curl -sk --cert /tmp/other-client.pem --key /tmp/other-client-key.pem -o /dev/null -w '%{http_code}' "${API}/" 2>/dev/null)
+check_eq "a client pair from another CA fails the handshake" "000" "${got}"
+rm -f /tmp/other-ca.key /tmp/other-ca.pem /tmp/other-client-key.pem /tmp/other-client.csr /tmp/other-client.ext /tmp/other-client.pem
+
 # The shipped defaults must be dead.
 for pair in "admin:admin" "kibanaserver:kibanaserver" "wazuh-manager:wazuh-manager"; do
     u="${pair%%:*}"; p="${pair##*:}"
@@ -733,7 +801,7 @@ done
 
 section "1.8 Resolution happens once — a restart changes nothing"
 
-before=$(fingerprint "${CERTS_DIR}"/*.pem "${CREDENTIALS}" "${EXPORT_DIR}/ca.pem" "${CA_DIR}/root-ca.pem" "${CA_DIR}/root-ca.key" "${KEYSTORE}" "${OPENSEARCH_YML}" "${INTERNAL_USERS}")
+before=$(fingerprint "${CERTS_DIR}"/*.pem "${EXPORT_DIR}"/*.pem "${CREDENTIALS}" "${CA_DIR}/root-ca.pem" "${CA_DIR}/root-ca.key" "${KEYSTORE}" "${OPENSEARCH_YML}" "${INTERNAL_USERS}")
 mv "${EXPORT_DIR}" "${EXPORT_DIR}.moved"
 systemctl restart wazuh-indexer >/tmp/restart.log 2>&1
 RESTART_RC=$?
@@ -746,7 +814,7 @@ else
 fi
 check "nothing was published again" bash -c "[ ! -e '${CREDENTIALS}' ]"
 mv "${EXPORT_DIR}.moved" "${EXPORT_DIR}"
-after=$(fingerprint "${CERTS_DIR}"/*.pem "${CREDENTIALS}" "${EXPORT_DIR}/ca.pem" "${CA_DIR}/root-ca.pem" "${CA_DIR}/root-ca.key" "${KEYSTORE}" "${OPENSEARCH_YML}" "${INTERNAL_USERS}")
+after=$(fingerprint "${CERTS_DIR}"/*.pem "${EXPORT_DIR}"/*.pem "${CREDENTIALS}" "${CA_DIR}/root-ca.pem" "${CA_DIR}/root-ca.key" "${KEYSTORE}" "${OPENSEARCH_YML}" "${INTERNAL_USERS}")
 check_eq "no credential, keystore or certificate changed" "${before}" "${after}"
 
 admin_pw="$(cred_get WAZUH_INDEXER_ADMIN_PASSWORD)"
@@ -782,6 +850,17 @@ chmod 660 "${CERTS_DIR}/indexer.pem"
 out=$("${RESOLVER}" --check 2>&1); rc=$?
 check_eq "--check refuses a group-writable certificate" "1" "${rc}"
 chmod 640 "${CERTS_DIR}/indexer.pem"
+cp -a "${EXPORT_DIR}/manager-client.pem" /tmp/manager-client.pem.saved
+openssl req -x509 -newkey rsa:2048 -nodes -days 365 -keyout /tmp/evil-key.pem -out /tmp/evil.pem -subj "/CN=wazuh-manager" >/dev/null 2>&1
+install -m 0600 -o root -g root /tmp/evil.pem "${EXPORT_DIR}/manager-client.pem"
+out=$("${RESOLVER}" --check 2>&1); rc=$?
+check_eq "--check refuses a published pair that does not chain to the CA" "1" "${rc}"
+case "${out}" in
+    *"INVALID ${EXPORT_DIR}/manager-client.pem"*) ok "it names the pair" ;;
+    *) fail "the refusal does not name the pair" ;;
+esac
+cp -a /tmp/manager-client.pem.saved "${EXPORT_DIR}/manager-client.pem"
+rm -f /tmp/manager-client.pem.saved /tmp/evil-key.pem /tmp/evil.pem
 check "--check passes once the planted material is gone" "${RESOLVER}" --check
 systemctl reset-failed wazuh-indexer >/dev/null 2>&1
 systemctl start wazuh-indexer >/tmp/start2.log 2>&1
@@ -844,6 +923,7 @@ else
 
     check "the published passwords are gone" bash -c "[ ! -e '${CREDENTIALS}' ]"
     check "the published CA is gone" bash -c "[ ! -e '${EXPORT_DIR}/ca.pem' ]"
+    check "the published client pairs are gone" bash -c "! ls '${EXPORT_DIR}'/*-client*.pem 2>/dev/null | grep -q ."
     check "the state file is gone" bash -c "[ ! -e '${MARKER}' ]"
     check "the certificates are gone" bash -c "[ ! -e '${CERTS_DIR}/indexer.pem' ]"
     check "the bootstrap CA is gone" bash -c "[ ! -e '${CA_DIR}/root-ca.key' ] && [ ! -e '${CA_DIR}/.wazuh-indexer-bootstrap-ca' ]"
@@ -880,6 +960,7 @@ else
     esac
     check "no state file while the node is unresolved" bash -c "[ ! -e '${MARKER}' ]"
     check "the staged anchor was published for the other components" same "${EXPORT_DIR}/ca.pem" /tmp/external-ca.pem
+    check "no client pair is published without the CA key" bash -c "! ls '${EXPORT_DIR}'/*-client*.pem 2>/dev/null | grep -q ."
 
     for n in indexer admin; do
         cn="${n}"; [ "${n}" = "indexer" ] && cn="$(short_hostname)"
@@ -1018,6 +1099,10 @@ else
     check "certificates are reissued by --install" test -f "${CERTS_DIR}/indexer.pem"
     check "the CA is back" test -f "${CA_DIR}/root-ca.pem"
     check "the CA is published again" same "${EXPORT_DIR}/ca.pem" "${CA_DIR}/root-ca.pem"
+    for consumer in manager dashboard; do
+        check "the ${consumer} client pair chains to the new CA" \
+            openssl verify -CAfile "${CA_DIR}/root-ca.pem" "${EXPORT_DIR}/${consumer}-client.pem"
+    done
     check_eq "three passwords published" "3" "$(cred_count)"
     check_eq "the CA is trusted again" "yes" "$(ca_is_trusted)"
     check "--check passes on the resolved host" "${RESOLVER}" --check

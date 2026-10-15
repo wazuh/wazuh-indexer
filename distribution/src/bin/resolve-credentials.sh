@@ -214,6 +214,25 @@ check_files() {
         2) check_failed ;;
     esac
 
+    # The client pairs this package published: root's private files that chain to the CA, whose
+    # keys match, and whose subjects grant nothing.
+    for _cf_consumer in ${CLIENT_CONSUMERS}; do
+        _cf_pem="${EXPORT_DIR}/${_cf_consumer}-client.pem"
+        _cf_key="${EXPORT_DIR}/${_cf_consumer}-client-key.pem"
+        wazuh_check_secret "${_cf_pem}"; case $? in 2) check_failed ;; esac
+        wazuh_check_secret "${_cf_key}"; case $? in 2) check_failed ;; esac
+        if [ -f "${_cf_pem}" ] && [ ! -L "${_cf_pem}" ]; then
+            if [ -f "$(wazuh_ca_get_dir)/root-ca.pem" ] && ! client_pair_is_valid "${_cf_consumer}"; then
+                err "INVALID ${_cf_pem}: does not chain to the CA, or its key does not match"
+                check_failed
+            fi
+            if ! client_subject_is_free "${_cf_pem}"; then
+                err "INVALID ${_cf_pem}: its subject is listed in ${CONFIG_FILE} and would grant rights"
+                check_failed
+            fi
+        fi
+    done
+
     # The CA: its key is root's private file, and the pair must be a CA that matches it.
     _cf_ca=$(wazuh_ca_get_dir)
     check_optional_dir "${_cf_ca}"
@@ -708,52 +727,129 @@ EOT
     printf '%s' "${_ds_sans}"
 }
 
-# A random, positive serial number, so no serial file is kept beside the CA.
-random_serial() {
-    _rs=$(od -An -N16 -tx1 /dev/urandom 2>/dev/null | tr -d ' \n')
-    [ -n "${_rs}" ] || return 1
-    printf '0x%s' "${_rs}"
+# make_pair <work dir> <name> <subject> <extensions file>: a fresh key and a certificate signed by
+# the CA with the given extensions, as <work dir>/<name>-key.pem and <name>.pem; the certificate
+# file carries the leaf followed by the CA, so a client that trusts the CA can chain to it. Ten
+# years, backdated one day, through the helper.
+make_pair() {
+    _mp_work="$1"
+    _mp_name="$2"
+    _mp_subject="$3"
+    _mp_exts="$4"
+    (
+        umask 077
+        openssl genrsa -out "${_mp_work}/key-temp.pem" 2048 2>/dev/null &&
+        openssl pkcs8 -inform PEM -outform PEM -in "${_mp_work}/key-temp.pem" \
+            -topk8 -nocrypt -v1 PBE-SHA1-3DES -out "${_mp_work}/${_mp_name}-key.pem" 2>/dev/null
+    ) || return 1
+    openssl req -new -key "${_mp_work}/${_mp_name}-key.pem" -subj "${_mp_subject}" \
+        -out "${_mp_work}/${_mp_name}.csr" 2>/dev/null || return 1
+    wazuh_ca_sign "${_mp_work}/${_mp_name}.csr" "${_mp_work}/${_mp_name}.pem" "${_mp_exts}" || return 1
+    cat "$(wazuh_ca_get_dir)/root-ca.pem" >> "${_mp_work}/${_mp_name}.pem" || return 1
 }
 
-# issue_certificate <name> <subject> <sans> <ca dir> <group> <mode>: a key and a certificate issued
-# from the CA, installed as root:<group> <mode>. The certificate file carries the leaf followed by
-# the CA, so a client that trusts the CA can chain to it.
+# issue_certificate <name> <subject> <sans> <group> <mode>: this node's own pair, issued from the
+# CA and installed in certs/ as root:<group> <mode>.
 issue_certificate() {
     _ic_name="$1"
     _ic_subject="$2"
     _ic_sans="$3"
-    _ic_ca="$4"
-    _ic_group="$5"
-    _ic_mode="$6"
+    _ic_group="$4"
+    _ic_mode="$5"
 
     _ic_work=$(mktemp -d "${TMPDIR:-/tmp}/wazuh-indexer-certs.XXXXXX") || return 1
     chmod 700 "${_ic_work}"
+    printf '%s\n' "subjectAltName = ${_ic_sans}" 'basicConstraints = CA:FALSE' \
+        'subjectKeyIdentifier = hash' 'authorityKeyIdentifier = keyid' > "${_ic_work}/req.ext"
 
-    (
-        umask 077
-        openssl genrsa -out "${_ic_work}/key-temp.pem" 2048 2>/dev/null &&
-        openssl pkcs8 -inform PEM -outform PEM -in "${_ic_work}/key-temp.pem" \
-            -topk8 -nocrypt -v1 PBE-SHA1-3DES -out "${_ic_work}/${_ic_name}-key.pem" 2>/dev/null
-    ) || { rm -rf -- "${_ic_work:?}"; return 1; }
-
-    openssl req -new -key "${_ic_work}/${_ic_name}-key.pem" -subj "${_ic_subject}" \
-        -out "${_ic_work}/req.csr" 2>/dev/null || { rm -rf -- "${_ic_work:?}"; return 1; }
-
-    printf 'subjectAltName = %s\n' "${_ic_sans}" > "${_ic_work}/req.ext"
-
-    _ic_serial=$(random_serial) || { rm -rf -- "${_ic_work:?}"; return 1; }
-    openssl x509 -req -in "${_ic_work}/req.csr" \
-        -CA "${_ic_ca}/root-ca.pem" -CAkey "${_ic_ca}/root-ca.key" -set_serial "${_ic_serial}" \
-        -sha256 -out "${_ic_work}/${_ic_name}.pem" -days 3650 \
-        -extfile "${_ic_work}/req.ext" 2>/dev/null || { rm -rf -- "${_ic_work:?}"; return 1; }
-    cat "${_ic_ca}/root-ca.pem" >> "${_ic_work}/${_ic_name}.pem" || { rm -rf -- "${_ic_work:?}"; return 1; }
-
-    install -m "${_ic_mode}" -o root -g "${_ic_group}" "${_ic_work}/${_ic_name}-key.pem" "${CERTS_DIR}/${_ic_name}-key.pem" &&
-    install -m "${_ic_mode}" -o root -g "${_ic_group}" "${_ic_work}/${_ic_name}.pem" "${CERTS_DIR}/${_ic_name}.pem"
-    _ic_status=$?
+    if make_pair "${_ic_work}" "${_ic_name}" "${_ic_subject}" "${_ic_work}/req.ext"; then
+        install -m "${_ic_mode}" -o root -g "${_ic_group}" "${_ic_work}/${_ic_name}-key.pem" "${CERTS_DIR}/${_ic_name}-key.pem" &&
+        install -m "${_ic_mode}" -o root -g "${_ic_group}" "${_ic_work}/${_ic_name}.pem" "${CERTS_DIR}/${_ic_name}.pem"
+        _ic_status=$?
+    else
+        _ic_status=1
+    fi
 
     rm -rf -- "${_ic_work:?}"
     return ${_ic_status}
+}
+
+# -----------------------------------------------------------------------------------------
+# Published: the client pairs of the manager and the dashboard
+#
+# The indexer trusts only its own CA, so a client that presents a certificate to it has to present
+# one this CA issued, and only this package holds the key. The pairs are published in export/ for
+# the consumer on this host to import; a consumer on another host takes a copy from any node of the
+# cluster, since the pair names no host. They grant no rights: the security plugin's certificate
+# authentication domain is disabled, the subjects are in neither admin_dn nor nodes_dn, and each
+# client keeps authenticating with its password.
+# -----------------------------------------------------------------------------------------
+
+CLIENT_CONSUMERS="manager dashboard"
+
+client_subject() {
+    printf '/CN=wazuh-%s/OU=Wazuh/O=Wazuh/L=California/C=US' "$1"
+}
+
+# The published pair of <consumer> is present, trusted, chains to the current CA, and its key
+# matches: nothing to reissue.
+client_pair_is_valid() {
+    _cpv_pem="${EXPORT_DIR}/$1-client.pem"
+    _cpv_key="${EXPORT_DIR}/$1-client-key.pem"
+    wazuh_check_secret "${_cpv_pem}" > /dev/null 2>&1 || return 1
+    wazuh_check_secret "${_cpv_key}" > /dev/null 2>&1 || return 1
+    openssl verify -no_check_time -CAfile "$(wazuh_ca_get_dir)/root-ca.pem" "${_cpv_pem}" > /dev/null 2>&1 || return 1
+    _cpv_a=$(openssl x509 -in "${_cpv_pem}" -noout -pubkey 2>/dev/null | sha256sum)
+    _cpv_b=$(openssl pkey -in "${_cpv_key}" -pubout 2>/dev/null | sha256sum)
+    [ -n "${_cpv_a}" ] && [ "${_cpv_a%% *}" = "${_cpv_b%% *}" ]
+}
+
+# The subject of a client pair must map to nothing: a match in admin_dn or nodes_dn would make the
+# certificate an admin or a node.
+client_subject_is_free() {
+    [ -f "${CONFIG_FILE}" ] || return 0
+    _csf_dn=$(subject_of "$1")
+    [ -n "${_csf_dn}" ] || return 0
+    ! file_contains "\"${_csf_dn}\"" "${CONFIG_FILE}"
+}
+
+issue_client_pair() {
+    _icp_consumer="$1"
+    _icp_work=$(mktemp -d "${TMPDIR:-/tmp}/wazuh-indexer-client.XXXXXX") || return 1
+    chmod 700 "${_icp_work}"
+    printf '%s\n' 'extendedKeyUsage = clientAuth' 'keyUsage = digitalSignature, keyEncipherment' \
+        'basicConstraints = CA:FALSE' 'subjectKeyIdentifier = hash' 'authorityKeyIdentifier = keyid' \
+        > "${_icp_work}/client.ext"
+    _icp_status=1
+    if make_pair "${_icp_work}" "${_icp_consumer}-client" "$(client_subject "${_icp_consumer}")" "${_icp_work}/client.ext"; then
+        if client_subject_is_free "${_icp_work}/${_icp_consumer}-client.pem"; then
+            wazuh_export_publish "${_icp_consumer}-client-key.pem" 0600 < "${_icp_work}/${_icp_consumer}-client-key.pem" &&
+            wazuh_export_publish "${_icp_consumer}-client.pem" 0600 < "${_icp_work}/${_icp_consumer}-client.pem"
+            _icp_status=$?
+        else
+            err "the subject of the ${_icp_consumer} client certificate is listed in ${CONFIG_FILE}; it would grant rights"
+        fi
+    fi
+    rm -rf -- "${_icp_work:?}"
+    return ${_icp_status}
+}
+
+# Issued, or kept when still valid, whenever the CA key is here. Without the key nothing can be
+# issued: the consumer's pre-start names where to get a pair from.
+issue_client_pairs() {
+    [ -f "$(wazuh_ca_get_dir)/root-ca.key" ] || return 0
+    for _icps_consumer in ${CLIENT_CONSUMERS}; do
+        if client_pair_is_valid "${_icps_consumer}"; then
+            continue
+        fi
+        if issue_client_pair "${_icps_consumer}"; then
+            log "published the ${_icps_consumer} client pair in ${EXPORT_DIR}"
+        else
+            err "could not publish the ${_icps_consumer} client pair"
+            return 1
+        fi
+    done
+    return 0
 }
 
 # The certificate's subject in the form the security plugin compares against.
@@ -1027,7 +1123,8 @@ resolve_certificates() {
         fi
 
         log "found an issued certificate pair in ${CERTS_DIR}; generating nothing"
-        write_distinguished_names
+        write_distinguished_names || return 1
+        issue_client_pairs || return 1
         return 0
     fi
 
@@ -1063,11 +1160,11 @@ resolve_certificates() {
     # The node's pair is read by the service through its group. The admin pair is root's alone:
     # indexer-security-init.sh runs securityadmin as root, and the service account must not be
     # able to act as the security administrator.
-    issue_certificate "indexer" "/CN=${_rc_short}${_rc_suffix}" "${_rc_sans}" "${_rc_ca}" "${SERVICE_GROUP}" 0640 || {
+    issue_certificate "indexer" "/CN=${_rc_short}${_rc_suffix}" "${_rc_sans}" "${SERVICE_GROUP}" 0640 || {
         err "could not issue the node certificate"
         return 1
     }
-    issue_certificate "admin" "/CN=admin${_rc_suffix}" "DNS:localhost" "${_rc_ca}" root 0600 || {
+    issue_certificate "admin" "/CN=admin${_rc_suffix}" "DNS:localhost" root 0600 || {
         err "could not issue the admin certificate"
         return 1
     }
@@ -1076,7 +1173,8 @@ resolve_certificates() {
     # presents.
     log "issued indexer.pem: CN=${_rc_short}; SANs ${_rc_sans}"
 
-    write_distinguished_names
+    write_distinguished_names || return 1
+    issue_client_pairs || return 1
     return 0
 }
 
@@ -1208,7 +1306,7 @@ clear_credentials() {
     for _cc_key in ${OWNED_KEYS}; do
         wazuh_env_unset "${_cc_key}" >/dev/null 2>&1 || true
     done
-    for _cc_published in credentials.env ca.pem; do
+    for _cc_published in credentials.env ca.pem manager-client.pem manager-client-key.pem dashboard-client.pem dashboard-client-key.pem; do
         if [ -e "${EXPORT_DIR}/${_cc_published}" ] || [ -L "${EXPORT_DIR}/${_cc_published}" ]; then
             rm -f -- "${EXPORT_DIR:?}/${_cc_published:?}"
         fi

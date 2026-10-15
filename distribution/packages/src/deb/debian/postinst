@@ -100,6 +100,10 @@ own_config_dir() {
                 chmod 750 "${entry}"
                 root_file "${entry}/credentials.env" 600
                 root_file "${entry}/ca.pem" 640 ${name}
+                for pair in manager-client dashboard-client; do
+                    root_file "${entry}/${pair}.pem" 600
+                    root_file "${entry}/${pair}-key.pem" 600
+                done
                 ;;
             ca)
                 # This package's CA, or one staged by the operator: the key is root's alone.

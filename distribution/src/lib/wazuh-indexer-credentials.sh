@@ -70,6 +70,13 @@
 #                                 export/ca.pem.
 #   wazuh_ca_is_minted            0 when the CA in ca/ was minted by this package.
 #   wazuh_ca_publish_file FILE    Publishes the CA certificate in FILE as export/ca.pem.
+#   wazuh_ca_sign CSR OUT EXTS    Signs the request in CSR with the CA in ca/ and writes the
+#                                 certificate to OUT. EXTS is a file holding the X.509 extension
+#                                 lines. Ten years, backdated one day, SHA-256, the subject in the
+#                                 order of the request. With "selfsign KEY" in place of the CA, the
+#                                 request is signed with KEY: how the CA itself is minted.
+#   wazuh_export_publish NAME MODE [GROUP]
+#                                 Writes standard input to export/NAME atomically, root:GROUP MODE.
 #   wazuh_password_generate       Prints 32 characters from the password alphabet, with at
 #                                 least one of each of its four classes.
 #   wazuh_password_validate VALUE The rule every supplied password must meet: 12 to 64
@@ -467,6 +474,53 @@ wazuh_env_unset() (
     _wazuh_export_mutate "$1" ""
 )
 
+# -- signing --------------------------------------------------------------------------------------
+
+# Every certificate this package issues goes through `openssl ca`, the one openssl command on the
+# platforms we ship for that can set the start of the validity: one day before issuance, so that a
+# consumer whose clock lags does not refuse a certificate minted a minute ago. The CA database it
+# needs is a throwaway directory. -preserveDN keeps the subject in the order of the request, which
+# is the order the DNs in opensearch.yml and the certificates of wazuh-certs-tool.sh use.
+#
+# wazuh_ca_sign CSR OUT EXTS [selfsign KEY]
+wazuh_ca_sign() (
+    _csr=$1
+    _out=$2
+    _exts=$3
+    _mode=${4-}
+    _key=${5-}
+    _work=$(mktemp -d "${TMPDIR:-/tmp}/wazuh-indexer-sign.XXXXXX") || return 1
+    chmod 700 "$_work"
+    : > "$_work/index.txt"
+    od -An -N16 -tx1 /dev/urandom | tr -d ' \n' > "$_work/serial" && printf '\n' >> "$_work/serial" || { rm -rf "${_work:?}"; return 1; }
+    {
+        printf '[ ca ]\ndefault_ca = wazuh\n[ wazuh ]\n'
+        printf 'dir = %s\ndatabase = %s/index.txt\nserial = %s/serial\nnew_certs_dir = %s\n' "$_work" "$_work" "$_work" "$_work"
+        printf 'default_md = sha256\npolicy = any\nunique_subject = no\nemail_in_dn = no\n'
+        printf '[ any ]\ncountryName = optional\nstateOrProvinceName = optional\nlocalityName = optional\n'
+        printf 'organizationName = optional\norganizationalUnitName = optional\ncommonName = optional\n'
+        printf '[ ext ]\n'
+        cat "$_exts"
+    } > "$_work/ca.cnf" || { rm -rf "${_work:?}"; return 1; }
+    _start=$(date -u -d '1 day ago' +%Y%m%d%H%M%SZ) || { rm -rf "${_work:?}"; return 1; }
+    _end=$(date -u -d '+3650 days' +%Y%m%d%H%M%SZ) || { rm -rf "${_work:?}"; return 1; }
+    if [ "$_mode" = selfsign ]; then
+        set -- -selfsign -keyfile "$_key"
+    else
+        set -- -cert "${_WAZUH_CA}/root-ca.pem" -keyfile "${_WAZUH_CA}/root-ca.key"
+    fi
+    openssl ca -batch -config "$_work/ca.cnf" "$@" -in "$_csr" -out "$_work/out.pem" \
+        -notext -md sha256 -preserveDN -startdate "$_start" -enddate "$_end" -extensions ext > /dev/null 2>&1
+    _rc=$?
+    if [ "$_rc" -eq 0 ] && [ -s "$_work/out.pem" ]; then
+        cat "$_work/out.pem" > "$_out" || _rc=1
+    else
+        _rc=1
+    fi
+    rm -rf "${_work:?}"
+    return $_rc
+)
+
 # -- the CA ---------------------------------------------------------------------------------------
 
 wazuh_ca_is_minted() (
@@ -522,6 +576,15 @@ wazuh_ca_publish_file() (
     _wazuh_write_file "${_WAZUH_EXPORT}/ca.pem" 0640 "$_WAZUH_GROUP" < "$_pem"
 )
 
+# Write standard input to export/NAME atomically, for the client pairs the resolver issues.
+wazuh_export_publish() (
+    _name=$1
+    _m=$2
+    _g=${3-root}
+    _wazuh_root_dir "$_WAZUH_EXPORT" 0750 "$_WAZUH_GROUP" || return 1
+    _wazuh_write_file "${_WAZUH_EXPORT}/${_name}" "$_m" "$_g"
+)
+
 # Publish the CA this package keeps in ca/. A directory given with WAZUH_CA_DIR is someone
 # else's and is never published.
 _wazuh_ca_publish() (
@@ -543,22 +606,22 @@ wazuh_ca_ensure() (
         [ -n "$_host" ] || _host=wazuh-indexer
         _tmp=$(mktemp -d "${_WAZUH_CA}/mint.XXXXXX") || return 1
         chmod 700 "$_tmp"
+        printf '%s\n' 'basicConstraints = critical, CA:TRUE' 'keyUsage = critical, keyCertSign, cRLSign' \
+            'subjectKeyIdentifier = hash' > "$_tmp/ca.ext"
         (
             umask 077
-            openssl req -x509 -new -newkey rsa:2048 -nodes -sha256 -days 3650 \
+            openssl req -new -newkey rsa:2048 -nodes -sha256 \
                 -subj "/C=US/L=California/O=Wazuh/OU=Wazuh/CN=wazuh-indexer-${_host}" \
-                -addext "basicConstraints = critical, CA:TRUE" \
-                -addext "keyUsage = critical, keyCertSign, cRLSign" \
-                -addext "subjectKeyIdentifier = hash" \
-                -keyout "$_tmp/root-ca.key" -out "$_tmp/root-ca.pem" > /dev/null 2>&1
-        ) || { rm -rf "$_tmp"; _wazuh_error "openssl could not mint the CA"; return 1; }
+                -keyout "$_tmp/root-ca.key" -out "$_tmp/root-ca.csr" > /dev/null 2>&1 &&
+            wazuh_ca_sign "$_tmp/root-ca.csr" "$_tmp/root-ca.pem" "$_tmp/ca.ext" selfsign "$_tmp/root-ca.key"
+        ) || { rm -rf "${_tmp:?}"; _wazuh_error "openssl could not mint the CA"; return 1; }
         chown root:root "$_tmp/root-ca.key" && chmod 0400 "$_tmp/root-ca.key" &&
         chown "root:$_WAZUH_GROUP" "$_tmp/root-ca.pem" && chmod 0640 "$_tmp/root-ca.pem" &&
         mv -f "$_tmp/root-ca.key" "$_key" && mv -f "$_tmp/root-ca.pem" "$_pem" || {
-            rm -rf "$_tmp"
+            rm -rf "${_tmp:?}"
             return 1
         }
-        rm -rf "$_tmp"
+        rm -rf "${_tmp:?}"
         printf '' | _wazuh_write_file "${_WAZUH_CA}/${_WAZUH_CA_MARKER}" 0600 || return 1
         if command -v restorecon > /dev/null 2>&1; then
             restorecon "$_key" "$_pem" > /dev/null 2>&1 || true

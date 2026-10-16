@@ -727,6 +727,22 @@ EOT
     printf '%s' "${_ds_sans}"
 }
 
+# Every entry of an explicit SAN list is DNS:<name> or IP:<address>, the form openssl takes; a
+# bare name would make openssl refuse the request with a message that names nothing useful.
+sans_are_valid() {
+    _sav_ifs="${IFS}"
+    IFS=,
+    for _sav_entry in $1; do
+        IFS="${_sav_ifs}"
+        case "${_sav_entry}" in
+            DNS:?*|IP:?*) ;;
+            *) return 1 ;;
+        esac
+    done
+    IFS="${_sav_ifs}"
+    return 0
+}
+
 # make_pair <work dir> <name> <subject> <extensions file>: a fresh key and a certificate signed by
 # the CA with the given extensions, as <work dir>/<name>-key.pem and <name>.pem; the certificate
 # file carries the leaf followed by the CA, so a client that trusts the CA can chain to it. Ten
@@ -1147,6 +1163,11 @@ resolve_certificates() {
     _rc_given=$(cert_sans_setting) || _rc_sans_status=$?
     if [ "${_rc_sans_status}" -eq 2 ]; then
         err "WAZUH_INDEXER_CERT_SANS is set but empty or unusable; name at least one address, or unset it"
+        return 1
+    fi
+    if [ -n "${_rc_given}" ] && ! sans_are_valid "${_rc_given}"; then
+        err "WAZUH_INDEXER_CERT_SANS must be a comma-separated list of DNS:<name> or IP:<address> entries,"
+        err "        for example DNS:node-1.example.com,IP:10.0.0.1; got: ${_rc_given}"
         return 1
     fi
 

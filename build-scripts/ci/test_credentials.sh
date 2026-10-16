@@ -1069,6 +1069,25 @@ else
     fi
     rm -f "${LOCAL_ENV}"
 
+    # --- A SAN list without the DNS:/IP: prefixes ----------------------------
+    rm -f "${MARKER}"
+    "${RESOLVER}" --clear >/dev/null 2>&1
+    printf 'WAZUH_INDEXER_CERT_SANS=node-1.example.com,10.0.0.1\n' > "${LOCAL_ENV}"
+    chmod 600 "${LOCAL_ENV}"
+    out=$("${RESOLVER}" --prestart 2>&1); rc=$?
+    check_eq "a SAN list without DNS:/IP: prefixes is refused" "1" "${rc}"
+    case "${out}" in
+        *"WAZUH_INDEXER_CERT_SANS must be a comma-separated list of DNS:<name> or IP:<address>"*) ok "the refusal names the variable and the format" ;;
+        *) fail "the refusal does not explain the format" ;;
+    esac
+    check "no certificate was issued" bash -c "[ ! -e '${CERTS_DIR}/indexer.pem' ]"
+    printf 'WAZUH_INDEXER_CERT_SANS=DNS:node-1.example.com,IP:10.0.0.1\n' > "${LOCAL_ENV}"
+    "${RESOLVER}" --prestart >/tmp/sans.log 2>&1
+    check_eq "--prestart resolves with the prefixed list" "0" "$?"
+    check "the certificate carries the listed names" \
+        bash -c "openssl x509 -in '${CERTS_DIR}/indexer.pem' -noout -ext subjectAltName | grep -q 'DNS:node-1.example.com' && openssl x509 -in '${CERTS_DIR}/indexer.pem' -noout -ext subjectAltName | grep -q '10.0.0.1'"
+    rm -f "${LOCAL_ENV}"
+
     # --- A digest with nothing left to supply its password -------------------
     # The state --clear used to leave behind, and how an upgrade from a version that predates this
     # mechanism arrives. Resolution must not publish a new password over it, and must not refuse to

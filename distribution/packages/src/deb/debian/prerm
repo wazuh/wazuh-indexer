@@ -29,18 +29,6 @@ case "$1" in
             /etc/init.d/${name} stop > /dev/null 2>&1
         fi
 
-        # postrm runs after dpkg has deleted the package's files, so the purge path needs its own
-        # copy of the shared helper to take this component's keys out of credentials.env. It is
-        # stashed beside that file, in a directory only root can write -- postrm sources it as
-        # root, so it must never sit anywhere the service account can reach. The service is
-        # already stopped above.
-        lib="/usr/share/${name}/lib/wazuh-credentials.sh"
-        if [ -f "${lib}" ] && [ -d /etc/wazuh ] && [ ! -L /etc/wazuh ] \
-           && [ "$(stat -c '%u %a' /etc/wazuh 2>/dev/null)" = "0 700" ]; then
-            rm -f /etc/wazuh/.${name}-credentials.sh
-            install -m 600 -o root -g root "${lib}" /etc/wazuh/.${name}-credentials.sh 2>/dev/null || true
-        fi
-
         # Disable the service. The enablement symlinks are created at runtime by
         # `systemctl enable`, so they are not part of the package manifest and
         # dpkg will never remove them. This has to run here and not in postrm:

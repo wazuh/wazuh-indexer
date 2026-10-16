@@ -1,21 +1,29 @@
 #!/bin/bash
 
-# This script prepares, on the host, what every node of the CCS environment shares:
+# This script prepares, on the host, what the nodes of the CCS environment share:
 #
-#   ca/root-ca.pem, ca/root-ca.key  The root CA every node issues its own certificates from. The
-#                                   clusters must share it to trust each other's transport layer.
-#   credentials.env                 Passwords handed to the packages instead of generating them.
-#                                   Only WAZUH_MANAGER_WUI_PASSWORD is required: the dashboard on
-#                                   the CCS node must know it for both remote Wazuh servers.
+#   ca/root-ca.pem, ca/root-ca.key                  The indexer CA every indexer node issues its own
+#                                                   certificates from. The clusters must share it to
+#                                                   trust each other's transport layer.
+#   manager-ca/root-ca.pem, manager-ca/root-ca.key  The server CA both Wazuh servers issue their
+#                                                   certificates from, so that the dashboard on the
+#                                                   CCS node trusts both Server APIs through one file.
+#   credentials.env                                 Passwords handed to the packages instead of
+#                                                   generating them. Only WAZUH_MANAGER_WUI_PASSWORD is
+#                                                   required: the dashboard on the CCS node must know
+#                                                   it for both remote Wazuh servers.
 #
-# Anything already in place is kept, so you can provide your own CA or credentials beforehand.
+# Each package reads these from its own directory: the CAs are staged in <conf>/ca/ and the
+# passwords in <conf>/local.env, per component, by node-start.sh. Nothing is shared between the
+# packages on a node.
+#
+# Anything already in place is kept, so you can provide your own CAs or credentials beforehand.
 # Usage: ./pre-start.sh
 
 set -euo pipefail
 
 cd "$(dirname "$0")"
 
-CA_DIR="ca"
 CREDENTIALS="credentials.env"
 
 # 32 characters satisfying the password policy of the packages: 12 to 64 characters from
@@ -31,49 +39,59 @@ generate_password() {
     done
 }
 
-if [ -f "${CA_DIR}/root-ca.pem" ] && [ -f "${CA_DIR}/root-ca.key" ]; then
-    echo "Using the root CA in ${CA_DIR}/"
-elif [ -f "${CA_DIR}/root-ca.pem" ] || [ -f "${CA_DIR}/root-ca.key" ]; then
-    echo "${CA_DIR}/ must hold both root-ca.pem and root-ca.key, or neither" >&2
-    exit 1
-else
-    echo "Creating the root CA in ${CA_DIR}/"
-    mkdir -p "${CA_DIR}"
-    # The same subject and extensions as the CA the packages mint for themselves.
-    (
-        umask 077
-        openssl req -x509 -new -nodes -newkey rsa:2048 -sha256 -days 3650 -batch \
-            -keyout "${CA_DIR}/root-ca.key" -out "${CA_DIR}/root-ca.pem" -config <(printf '%s\n' \
-                '[req]' \
-                'distinguished_name = dn' \
-                'x509_extensions = v3_ca' \
-                'prompt = no' \
-                '[dn]' \
-                'OU = Wazuh' \
-                'O = Wazuh' \
-                'L = California' \
-                '[v3_ca]' \
-                'basicConstraints = critical, CA:TRUE' \
-                'keyUsage = critical, keyCertSign, cRLSign' \
-                'subjectKeyIdentifier = hash' \
-                'authorityKeyIdentifier = keyid:always') 2> /dev/null
-    )
-    chmod 644 "${CA_DIR}/root-ca.pem"
-fi
+# ensure_ca <dir> <common name>: a CA with the subject and extensions the packages mint for
+# themselves, unless the directory already holds one.
+ensure_ca() {
+    local dir="$1" cn="$2"
+    if [ -f "${dir}/root-ca.pem" ] && [ -f "${dir}/root-ca.key" ]; then
+        echo "Using the CA in ${dir}/"
+    elif [ -f "${dir}/root-ca.pem" ] || [ -f "${dir}/root-ca.key" ]; then
+        echo "${dir}/ must hold both root-ca.pem and root-ca.key, or neither" >&2
+        exit 1
+    else
+        echo "Creating the CA in ${dir}/"
+        mkdir -p "${dir}"
+        (
+            umask 077
+            openssl req -x509 -new -nodes -newkey rsa:2048 -sha256 -days 3650 -batch \
+                -keyout "${dir}/root-ca.key" -out "${dir}/root-ca.pem" -config <(printf '%s\n' \
+                    '[req]' \
+                    'distinguished_name = dn' \
+                    'x509_extensions = v3_ca' \
+                    'prompt = no' \
+                    '[dn]' \
+                    'C = US' \
+                    'L = California' \
+                    'O = Wazuh' \
+                    'OU = Wazuh' \
+                    "CN = ${cn}" \
+                    '[v3_ca]' \
+                    'basicConstraints = critical, CA:TRUE' \
+                    'keyUsage = critical, keyCertSign, cRLSign' \
+                    'subjectKeyIdentifier = hash' \
+                    'authorityKeyIdentifier = keyid:always') 2> /dev/null
+        )
+        chmod 644 "${dir}/root-ca.pem"
+    fi
+}
+
+ensure_ca ca wazuh-indexer-ccs
+ensure_ca manager-ca wazuh-manager-ccs
 
 if [ ! -f "${CREDENTIALS}" ]; then
     echo "Creating ${CREDENTIALS}"
     (
         umask 077
         cat > "${CREDENTIALS}" << EOF
-# Passwords for the Wazuh packages of the CCS environment, copied to /etc/wazuh/credentials.env on
-# every node. Any password not set here is generated by the packages on each node.
+# Passwords for the Wazuh packages of the CCS environment. Each key is staged in the local.env of
+# the component that owns it on every node. Any password not set here is generated by the packages
+# on each node.
 WAZUH_MANAGER_WUI_PASSWORD=$(generate_password)
 EOF
     )
 elif ! grep -q '^WAZUH_MANAGER_WUI_PASSWORD=' "${CREDENTIALS}"; then
     echo "Adding WAZUH_MANAGER_WUI_PASSWORD to ${CREDENTIALS}"
-    # Keep the file newline-terminated: the packages refuse to write to one that is not.
+    # Keep the file newline-terminated: the packages refuse to read one that is not.
     [ -z "$(tail -c 1 "${CREDENTIALS}")" ] || echo >> "${CREDENTIALS}"
     echo "WAZUH_MANAGER_WUI_PASSWORD=$(generate_password)" >> "${CREDENTIALS}"
 else

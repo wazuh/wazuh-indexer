@@ -150,13 +150,12 @@ ReadWritePaths=/var/lib/wazuh-indexer
 ReadWritePaths=/dev/shm/
 ReadWritePaths=/usr/share/wazuh-indexer/engine
 ReadWritePaths= /usr/share/wazuh-indexer/plugins/wazuh-indexer-content-manager/snapshots
+## ProtectSystem=full makes /etc read-only for this unit, and the '+' prefix on
+## ExecStartPre lifts User= but not the mount namespace. Without this the root
+## pre-start step cannot write export/, ca/ or certs/, and fails silently. The
+## service itself still writes nothing there: the directory is root's.
 ReadWritePaths=-/etc/wazuh-indexer
 ReadWritePaths=-/mnt/snapshots
-
-## ProtectSystem=full makes /etc read-only for this unit, and the '+' prefix on
-## ExecStartPre lifts User= but not the mount namespace. Without these the
-## resolver cannot write credentials.env or the CA, and fails silently.
-ReadWritePaths=-/etc/wazuh
 
 ## Allow read access to system files
 ReadOnlyPaths=-/etc/os-release -/usr/lib/os-release -/etc/system-release

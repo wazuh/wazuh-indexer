@@ -23,6 +23,7 @@
 
 | Issue | Comment |
 |-------|---------|
+| [#2020](https://github.com/wazuh/wazuh-indexer/issues/2020) | Keep the indexer's credentials, CA and what it publishes for the other components under `/etc/wazuh-indexer` (`export/`, `ca/`, `local.env`) instead of the shared `/etc/wazuh`, make the configuration directory root-owned, run `securityadmin` as root, issue every certificate through `openssl ca` (ten years, backdated one day), publish client certificate pairs for the Wazuh manager and the Wazuh dashboard, and declare only `openssl`, `iproute` and the account tools as host dependencies |
 | [#874](https://github.com/wazuh/wazuh-indexer/issues/874) [#1000](https://github.com/wazuh/wazuh-indexer/issues/1000) [#1086](https://github.com/wazuh/wazuh-indexer/issues/1086) [#1177](https://github.com/wazuh/wazuh-indexer/issues/1177) [#1207](https://github.com/wazuh/wazuh-indexer/issues/1207) [#1284](https://github.com/wazuh/wazuh-indexer/issues/1284) [#1332](https://github.com/wazuh/wazuh-indexer/issues/1332) [#1410](https://github.com/wazuh/wazuh-indexer/issues/1410) [#1341](https://github.com/wazuh/wazuh-indexer/issues/1341) | Upgrade to OpenSearch 3.6.0 and JDK 25 |
 | [#1653](https://github.com/wazuh/wazuh-indexer/issues/1653) [#1661](https://github.com/wazuh/wazuh-indexer/issues/1661) | Refuse package upgrades from Wazuh Indexer 4.x, which require a clean installation |
 | [#1927](https://github.com/wazuh/wazuh-indexer/issues/1927) | Ship the `admin`, `kibanaserver` and `wazuh-manager` users without a usable password hash |

@@ -503,6 +503,15 @@ jobs:
             redhat/ubi9:latest \
             bash -c "yum localinstall '/artifacts/dist/${{ steps.package.outputs.name }}' -y"
 
+      - name: Test RPM package host tools
+        if: ${{ matrix.distribution == 'rpm' }}
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}/artifacts/dist:/artifacts/dist" \
+            -v "${{ github.workspace }}/build-scripts/:/build-scripts/" \
+            redhat/ubi9:latest \
+            bash -c "dnf install -y -q cpio gawk > /dev/null 2>&1; PACKAGE='/artifacts/dist/${{ steps.package.outputs.name }}' bash /build-scripts/ci/test_host_tools.sh"
+
       - name: Test RPM package uninstallation
         if: ${{ matrix.distribution == 'rpm' }}
         run: |
@@ -589,6 +598,15 @@ jobs:
             dpkg -i "/artifacts/dist/${{ steps.package.outputs.name }}"
             apt-get remove --purge wazuh-indexer -y
           '
+
+      - name: Test DEB package host tools
+        if: ${{ matrix.distribution == 'deb' }}
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}/artifacts/dist:/artifacts/dist" \
+            -v "${{ github.workspace }}/build-scripts/:/build-scripts/" \
+            ubuntu:22.04 \
+            bash -c "PACKAGE='/artifacts/dist/${{ steps.package.outputs.name }}' bash /build-scripts/ci/test_host_tools.sh"
 
       - name: Test DEB package leaves nothing behind on purge
         if: ${{ matrix.distribution == 'deb' }}

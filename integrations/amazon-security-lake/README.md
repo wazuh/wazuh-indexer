@@ -89,6 +89,7 @@ Follow the [official documentation](https://docs.aws.amazon.com/lambda/latest/dg
 - Select Python 3.12 as the runtime.
 - Configure the runtime to have 512 MB of memory and 30 seconds timeout.
 - Configure a trigger so every object with `.txt` extension uploaded to the S3 bucket created previously invokes the Lambda.
+  The Lambda reads both plain-text and gzip-compressed objects. If the `s3` output of your Logstash pipeline sets `encoding => "gzip"`, as the [pipeline](./logstash/pipeline/indexer-to-s3.conf) of this repository does, Logstash writes `.txt.gz` objects: add a second trigger for the `.gz` suffix so these objects invoke the Lambda too.
   ![AWS Lambda trigger](./images/asl-lambda-trigger.jpeg)
 - Use the [Makefile](./Makefile) to generate the zip package `wazuh_to_amazon_security_lake.zip`, and upload it to the S3 bucket created previously as per [these instructions](https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-package.html#gettingstarted-package-zip). See [CONTRIBUTING](./CONTRIBUTING.md) for details about the Makefile.
 - Configure the Lambda with the at least the required _Environment Variables_ below:

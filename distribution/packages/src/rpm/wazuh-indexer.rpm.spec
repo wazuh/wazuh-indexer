@@ -134,10 +134,12 @@ set -- "$@" "%{config_dir}/opensearch-security/.*"
 set -- "$@" "%%dir %{data_dir}"
 set -- "$@" "%%dir %{log_dir}"
 set -- "$@" "%%dir %{certs_dir}"
+set -- "$@" "%%dir %{snapshots_dir}"
 set -- "$@" "%{product_dir}/VERSION.json"
 set -- "$@" "%{product_dir}/plugins/opensearch-security/tools/.*\.sh"
 set -- "$@" "%{product_dir}/tools/.*\.sh"
-set -- "$@" "%{product_dir}/engine"
+set -- "$@" "%%dir %{product_dir}/engine"
+set -- "$@" "%%dir %{product_dir}/engine/.*"
 set -- "$@" "%{product_dir}/engine/.*"
 set -- "$@" "%{product_dir}/bin/.*"
 set -- "$@" "%{product_dir}/jdk/bin/.*"
@@ -161,6 +163,23 @@ for i in "$@"
 do
 	sed -ri "\|^$i$|d" filelist.txt
 done
+
+# List the Wazuh Engine tree from what the bundle ships, so files it adds cannot break the build
+engine_dir=%{buildroot}%{product_dir}/engine
+find "${engine_dir}" -type d | sed 's|^%{buildroot}|%%dir %%attr(750, %{name}, %{name}) |' >> filelist.txt
+find "${engine_dir}" -type f | while read -r file; do
+    path=${file#%{buildroot}}
+    case "${path}" in
+        %{product_dir}/engine/bin/wazuh-engine|%{product_dir}/engine/run_engine.sh)
+            ;;
+        %{product_dir}/engine/*/*)
+            echo "%%attr(640, %{name}, %{name}) ${path}" ;;
+        %{product_dir}/engine/LICENSE*|%{product_dir}/engine/COPYING*|%{product_dir}/engine/*NOTICE*)
+            echo "%%license %%attr(640, %{name}, %{name}) ${path}" ;;
+        *)
+            echo "%%attr(640, %{name}, %{name}) ${path}" ;;
+    esac
+done >> filelist.txt
 
 # Change Permissions
 chmod -Rf a+rX,u+w,g-w,o-w %{buildroot}/*
@@ -652,18 +671,8 @@ exit 0
 %dir %attr(750, %{name}, %{name}) %{snapshots_dir}
 
 # Wazuh Engine
-%dir %attr(750, %{name}, %{name}) %{product_dir}/engine
-%dir %attr(750, %{name}, %{name}) %{product_dir}/engine/bin
 %attr(750, %{name}, %{name}) %{product_dir}/engine/bin/wazuh-engine
 %attr(750, %{name}, %{name}) %{product_dir}/engine/run_engine.sh
-%dir %attr(750, %{name}, %{name}) %{product_dir}/engine/sockets
-%attr(-, %{name}, %{name}) %{product_dir}/engine/sockets/.keep
-%attr(-, %{name}, %{name}) %{product_dir}/engine/bin/lib
-%attr(-, %{name}, %{name}) %{product_dir}/engine/data
-%attr(-, %{name}, %{name}) %{product_dir}/engine/data/tzdb
-%attr(-, %{name}, %{name}) %{product_dir}/engine/logs
-%attr(-, %{name}, %{name}) %{product_dir}/engine/schemas
-%attr(-, %{name}, %{name}) %{product_dir}/engine/README.md
 
 # Files that need other permissions
 %attr(440, root, %{name}) %{product_dir}/VERSION.json

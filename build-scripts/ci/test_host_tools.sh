@@ -19,9 +19,9 @@
 # Essential on Debian; the RPM scriptlets and the shipped scripts may not.
 #
 # The two tools built from the installation assistant, wazuh-certs-tool.sh and
-# wazuh-passwords-tool.sh, are checked only for what the assembly step removes
-# from them (runuser, ps, cmp, flock); their own use of awk, sed and grep
-# belongs to that repository.
+# wazuh-passwords-tool.sh, are checked only for the tools this package does not
+# declare and the assistant no longer needs (runuser, ps, cmp, flock); their own
+# use of awk, sed and grep belongs to that repository.
 #
 #   PACKAGE=/path/to/wazuh-indexer_5.0.0-0_amd64.deb bash test_host_tools.sh
 #
@@ -45,7 +45,7 @@ trap 'rm -rf "${work}"' EXIT
 STRICT="awk gawk mawk sed grep egrep fgrep find xargs hostname runuser su sudo ps pgrep pkill cmp diff flock setsid perl python python3 curl wget nc netstat ss lsof"
 # What the DEB maintainer scripts may use on top of the closure: Essential on Debian.
 DEB_ALLOWED="grep sed find"
-# What the assembly step removes from the assistant's tools.
+# What the assistant's tools no longer need, and this package does not declare.
 TOOLS_ONLY="runuser ps cmp flock"
 
 cat > "${work}/scan.awk" <<'AWK'
@@ -143,7 +143,7 @@ done
 for rel in usr/share/wazuh-indexer/tools/wazuh-certs-tool.sh \
            usr/share/wazuh-indexer/tools/wazuh-passwords-tool.sh; do
     if [ -f "${root}/${rel}" ]; then
-        scan "${rel} (assembly-time removals only)" "${root}/${rel}" ${TOOLS_ONLY}
+        scan "${rel} (runuser, ps, cmp, flock only)" "${root}/${rel}" ${TOOLS_ONLY}
     else
         echo "  skip: ${rel} is not in the package"
     fi

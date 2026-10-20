@@ -607,8 +607,8 @@ check "export/ca.pem is the CA in ca/" same "${EXPORT_DIR}/ca.pem" "${CA_DIR}/ro
 check "export/credentials.env starts with its header" \
     grep -q '^# Published by wazuh-indexer' "${CREDENTIALS}"
 check "no serial file is kept beside the CA" bash -c "[ ! -e '${CA_DIR}/root-ca.srl' ]"
-check "the shipped tools carry the indexer's helper" \
-    bash -c "grep -q 'wazuh-indexer-credentials.sh ------' '${WAZUH_TOOLS}/wazuh-certs-tool.sh' && grep -q 'wazuh-indexer-credentials.sh ------' '${WAZUH_TOOLS}/wazuh-passwords-tool.sh'"
+check "the shipped tools embed no shared credential library" \
+    bash -c "! grep -q 'wazuh-credentials.sh ------' '${WAZUH_TOOLS}/wazuh-certs-tool.sh' '${WAZUH_TOOLS}/wazuh-passwords-tool.sh'"
 check "the shipped tools no longer name /etc/wazuh" \
     bash -c "! grep -qE '/etc/wazuh([^-a-z]|\$)' '${WAZUH_TOOLS}/wazuh-certs-tool.sh' '${WAZUH_TOOLS}/wazuh-passwords-tool.sh'"
 

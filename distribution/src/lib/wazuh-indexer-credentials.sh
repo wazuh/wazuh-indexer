@@ -8,9 +8,8 @@
 # Foundation.
 #
 # The indexer's credential helper. It belongs to the wazuh-indexer package and is used only by
-# it: bin/resolve-credentials.sh sources it, and tools/wazuh-certs-tool.sh and
-# tools/wazuh-passwords-tool.sh carry a copy of it. It is a library: sourcing it performs no
-# action and changes nothing in the caller's shell.
+# it: bin/resolve-credentials.sh sources it. It is a library: sourcing it performs no action
+# and changes nothing in the caller's shell.
 #
 # Everything is under the indexer's own configuration directory, /etc/wazuh-indexer:
 #

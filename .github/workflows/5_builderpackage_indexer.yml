@@ -113,6 +113,9 @@ on:
       CI_INTERNAL_DEVELOPMENT_BUCKET_USER_SECRET_KEY:
         required: true
         description: "AWS user secret key for the final package upload"
+      CI_OIDC_ROLE_ARN:
+        required: true
+        description: "AWS IAM OIDC role for authenticated pulls from ECR Public"
 
     outputs:
       name:
@@ -419,6 +422,12 @@ jobs:
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
     outputs:
       name: ${{ steps.package.outputs.name }}
+    # Docker Hub limits anonymous pulls per IP, which the shared runners reach. The test
+    # images come from ECR Public, with authenticated pulls, and from the Red Hat registry.
+    env:
+      UBUNTU_IMAGE: public.ecr.aws/ubuntu/ubuntu:jammy
+      UBI_IMAGE: registry.access.redhat.com/ubi9/ubi:latest
+      UBI_INIT_IMAGE: registry.access.redhat.com/ubi9/ubi-init:latest
     steps:
       - uses: actions/checkout@v7
 
@@ -464,6 +473,19 @@ jobs:
             # TODO: remove once Docker daemon and Compose are baked into the runner image.
             bash build-scripts/ci/ensure_docker.sh
 
+      # The builder and the Ubuntu test images are pulled from ECR Public. Its token is always issued
+      # in us-east-1, whatever the region of the role.
+      - name: Set up AWS CLI for ECR Public
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.CI_OIDC_ROLE_ARN }}
+          aws-region: ${{ secrets.CI_AWS_REGION }}
+
+      - name: Log in to ECR Public
+        run: |
+          aws ecr-public get-login-password --region us-east-1 \
+            | docker login --username AWS --password-stdin public.ecr.aws
+
       - name: Build package with the Docker builder
         env:
           CTI_API_URL: ${{ vars.CTI_API_URL }}
@@ -497,10 +519,10 @@ jobs:
       - name: Test RPM package installation
         if: ${{ matrix.distribution == 'rpm' }}
         run: |
-          docker pull redhat/ubi9:latest
+          docker pull "$UBI_IMAGE"
           docker run --rm \
             -v "${{ github.workspace }}/artifacts/dist:/artifacts/dist" \
-            redhat/ubi9:latest \
+            "$UBI_IMAGE" \
             bash -c "yum localinstall '/artifacts/dist/${{ steps.package.outputs.name }}' -y"
 
       - name: Test RPM package host tools
@@ -509,7 +531,7 @@ jobs:
           docker run --rm \
             -v "${{ github.workspace }}/artifacts/dist:/artifacts/dist" \
             -v "${{ github.workspace }}/build-scripts/:/build-scripts/" \
-            redhat/ubi9:latest \
+            "$UBI_IMAGE" \
             bash -c "dnf install -y -q cpio gawk > /dev/null 2>&1; PACKAGE='/artifacts/dist/${{ steps.package.outputs.name }}' bash /build-scripts/ci/test_host_tools.sh"
 
       - name: Test RPM package uninstallation
@@ -517,13 +539,13 @@ jobs:
         run: |
           docker run --rm \
             -v "${{ github.workspace }}/artifacts/dist:/artifacts/dist" \
-            redhat/ubi9:latest \
+            "$UBI_IMAGE" \
             bash -c "yum localinstall '/artifacts/dist/${{ steps.package.outputs.name }}' -y && yum remove wazuh-indexer -y"
 
       - name: Test RPM package leaves nothing behind on removal
         if: ${{ matrix.distribution == 'rpm' }}
         run: |
-          SYSTEMD_IMAGE=redhat/ubi9-init:latest \
+          SYSTEMD_IMAGE="$UBI_INIT_IMAGE" \
           bash build-scripts/run_in_systemd_container.sh "${{ github.workspace }}" "
             PACKAGE_MANAGER=rpm \
             PACKAGE_NAME=${{ steps.package.outputs.name }} \
@@ -533,7 +555,7 @@ jobs:
       - name: Test RPM credential and TLS resolution
         if: ${{ matrix.distribution == 'rpm' }}
         run: |
-          SYSTEMD_IMAGE=redhat/ubi9-init:latest \
+          SYSTEMD_IMAGE="$UBI_INIT_IMAGE" \
           bash build-scripts/run_in_systemd_container.sh "${{ github.workspace }}" '
             set -e
             # ubi9-init ships neither curl nor a bcrypt module. curl is required;
@@ -551,7 +573,7 @@ jobs:
           docker run --rm --privileged \
             -v "${{ github.workspace }}/artifacts/dist:/artifacts/dist" \
             -v "${{ github.workspace }}/build-scripts/:/build-scripts/" \
-            redhat/ubi9:latest \
+            "$UBI_IMAGE" \
             bash -c "bash /build-scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }} && \
                      systemctl stop wazuh-indexer && \
                      yum localinstall '/artifacts/dist/${{ steps.package.outputs.name }}' -y && \
@@ -563,7 +585,7 @@ jobs:
           docker run --rm --privileged \
             -v "${{ github.workspace }}/artifacts/dist:/artifacts/dist" \
             -v "${{ github.workspace }}/build-scripts/:/build-scripts/" \
-            redhat/ubi9:latest \
+            "$UBI_IMAGE" \
             bash -c "bash /build-scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }} && \
                      yum localinstall '/artifacts/dist/${{ steps.package.outputs.name }}' -y && \
                      if systemctl is-active --quiet wazuh-indexer; then echo 'Indexer running (expected)'; else echo 'Indexer not running (unexpected)'; exit 1; fi"
@@ -577,7 +599,7 @@ jobs:
             -v /sys/fs/cgroup:/sys/fs/cgroup:rw \
             -v "${{ github.workspace }}/artifacts/dist:/artifacts/dist" \
             -v "${{ github.workspace }}/build-scripts/:/build-scripts/" \
-            redhat/ubi9-init:latest /sbin/init)
+            "$UBI_INIT_IMAGE" /sbin/init)
           trap 'docker stop "$cid" >/dev/null 2>&1 || true' EXIT
 
           docker exec "$cid" bash -c "
@@ -605,7 +627,7 @@ jobs:
           docker run --rm \
             -v "${{ github.workspace }}/artifacts/dist:/artifacts/dist" \
             -v "${{ github.workspace }}/build-scripts/:/build-scripts/" \
-            ubuntu:22.04 \
+            "$UBUNTU_IMAGE" \
             bash -c "PACKAGE='/artifacts/dist/${{ steps.package.outputs.name }}' bash /build-scripts/ci/test_host_tools.sh"
 
       - name: Test DEB package leaves nothing behind on purge

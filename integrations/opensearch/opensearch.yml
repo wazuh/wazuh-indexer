@@ -1,6 +1,5 @@
 network.host: "0.0.0.0"
 node.name: "opensearch"
-compatibility.override_main_response_version: true
 plugins.security.ssl.http.pemcert_filepath: /usr/share/opensearch/config/certs/opensearch.pem
 plugins.security.ssl.http.pemkey_filepath: /usr/share/opensearch/config/certs/opensearch.key
 plugins.security.ssl.http.pemtrustedcas_filepath: /usr/share/opensearch/config/certs/root-ca.pem
@@ -24,15 +23,8 @@ plugins.security.system_indices.indices:
   [
     ".opendistro-alerting-config",
     ".opendistro-alerting-alert*",
-    ".opendistro-anomaly-results*",
-    ".opendistro-anomaly-detector*",
-    ".opendistro-anomaly-checkpoints",
-    ".opendistro-anomaly-detection-state",
     ".opendistro-reports-*",
     ".opendistro-notifications-*",
-    ".opendistro-notebooks",
-    ".opensearch-observability",
-    ".opendistro-asynchronous-search-response*",
     ".replication-metadata-store",
   ]
 plugins.security.allow_default_init_securityindex: true

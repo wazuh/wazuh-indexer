@@ -15,7 +15,11 @@ splunk:
           general:
             serverName: splunk
             pass4SymmKey: dadqaBZA2fzxHOvfdlSQpKjIooupehTnmjysUx7j+bP1/NucBL+rch/Kw==
-          sslConfig:
+    - key: inputs
+      value:
+        directory: /opt/splunk/etc/system/local
+        content:
+          http:
             serverCert: /opt/splunk/etc/auth/custom/splunkhec.pem
   hec:
     enable: True

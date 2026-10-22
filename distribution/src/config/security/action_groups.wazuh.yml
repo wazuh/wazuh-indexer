@@ -281,6 +281,14 @@ plugin:content_manager/policy/update:
   type: "cluster"
   description: "Update the draft policy"
 
+plugin:content_manager/policy/resources/get:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:monitor/content_manager/policy/resources/get'
+  type: "cluster"
+  description: "List a space's resources"
+
 plugin:wazuh/settings/write:
   reserved: true
   hidden: false

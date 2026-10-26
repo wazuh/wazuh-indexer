@@ -45,24 +45,19 @@ Group: Application/Internet
 ExclusiveArch: %{_architecture}
 AutoReqProv: no
 
-# Runtime dependencies of the credential and TLS resolution that runs from %post and from the
-# unit's ExecStartPre. AutoReqProv is off, so nothing is inferred and every one of these has to be
-# stated. Without them the package installs cleanly and then produces no credentials, which is the
-# failure mode this whole mechanism exists to prevent.
-#   openssl    mints the bootstrap CA and issues this node's certificate pair
-#   diffutils  cmp(1), which matches the CA private key against its trust anchor
+# The host tools the scriptlets, the resolver and the scripts they start run. AutoReqProv is off,
+# so nothing is inferred and every one of these has to be stated. Everything else they run is a
+# shell builtin or coreutils, which rpm itself requires.
+#   openssl    mints the CA and issues this node's certificate pair
 #   iproute    ip(1), which derives the certificate's Subject Alternative Names
-#   hostname   the certificate's common name and its first SAN
-#   util-linux flock(1) for the shared credentials file, runuser(1) for securityadmin.sh
-#   procps-ng  pgrep(1), used by indexer-security-init.sh when an operator runs it
-#   coreutils  stat(1) and install(1), for the ownership and mode checks
-Requires: coreutils
-Requires: diffutils
-Requires: hostname
-Requires: iproute
+#   the account tools, from shadow-utils, for %pre and %postun
+Requires: /bin/sh
 Requires: openssl
-Requires: procps-ng
-Requires: util-linux
+Requires: iproute
+Requires(pre): /usr/sbin/groupadd
+Requires(pre): /usr/sbin/useradd
+Requires(postun): /usr/sbin/userdel
+Requires(postun): /usr/sbin/groupdel
 
 %description
 Wazuh indexer is a near real-time full-text search and analytics engine that
@@ -111,7 +106,7 @@ sed -i 's|%{buildroot}|%%dir |' filelist.txt
 find %{buildroot} -type f >> filelist.txt
 sed -i 's|%{buildroot}||' filelist.txt
 
-# The %install section gets executed under a dash shell,
+# The %%install section gets executed under a dash shell,
 # which doesn't have array structures.
 # Below, we are building a list of directories
 # which will later be excluded from filelist.txt
@@ -135,10 +130,16 @@ set -- "$@" "%{_sysconfdir}/sysconfig/%{name}"
 set -- "$@" "%{config_dir}/log4j2.properties"
 set -- "$@" "%{config_dir}/jvm.options"
 set -- "$@" "%{config_dir}/opensearch.yml"
+set -- "$@" "%{config_dir}/opensearch-security/.*"
+set -- "$@" "%%dir %{data_dir}"
+set -- "$@" "%%dir %{log_dir}"
+set -- "$@" "%%dir %{certs_dir}"
+set -- "$@" "%%dir %{snapshots_dir}"
 set -- "$@" "%{product_dir}/VERSION.json"
 set -- "$@" "%{product_dir}/plugins/opensearch-security/tools/.*\.sh"
 set -- "$@" "%{product_dir}/tools/.*\.sh"
-set -- "$@" "%{product_dir}/engine"
+set -- "$@" "%%dir %{product_dir}/engine"
+set -- "$@" "%%dir %{product_dir}/engine/.*"
 set -- "$@" "%{product_dir}/engine/.*"
 set -- "$@" "%{product_dir}/bin/.*"
 set -- "$@" "%{product_dir}/jdk/bin/.*"
@@ -163,6 +164,23 @@ do
 	sed -ri "\|^$i$|d" filelist.txt
 done
 
+# List the Wazuh Engine tree from what the bundle ships, so files it adds cannot break the build
+engine_dir=%{buildroot}%{product_dir}/engine
+find "${engine_dir}" -type d | sed 's|^%{buildroot}|%%dir %%attr(750, %{name}, %{name}) |' >> filelist.txt
+find "${engine_dir}" -type f | while read -r file; do
+    path=${file#%{buildroot}}
+    case "${path}" in
+        %{product_dir}/engine/bin/wazuh-engine|%{product_dir}/engine/run_engine.sh)
+            ;;
+        %{product_dir}/engine/*/*)
+            echo "%%attr(640, %{name}, %{name}) ${path}" ;;
+        %{product_dir}/engine/LICENSE*|%{product_dir}/engine/COPYING*|%{product_dir}/engine/*NOTICE*)
+            echo "%%license %%attr(640, %{name}, %{name}) ${path}" ;;
+        *)
+            echo "%%attr(640, %{name}, %{name}) ${path}" ;;
+    esac
+done >> filelist.txt
+
 # Change Permissions
 chmod -Rf a+rX,u+w,g-w,o-w %{buildroot}/*
 
@@ -175,8 +193,19 @@ set -e
 if [ $1 = 2 ]; then
     echo "Running upgrade pre-script"
 
-    # Hard block: refuse 4.X -> 5.X upgrades
-    detected_version=$(grep -Pho '4\.\d+\.\d+' /usr/share/wazuh-indexer/VERSION* 2>/dev/null | head -n1)
+    # Hard block: refuse 4.X -> 5.X upgrades. The version comes from the installed VERSION or
+    # VERSION.json with coreutils alone: every quote, brace, comma and blank becomes a line break,
+    # so each value stands on its own, and the shell picks the first one shaped like 4.x.y.
+    detected_version=""
+    for version_file in %{product_dir}/VERSION %{product_dir}/VERSION.json; do
+        [ -f "${version_file}" ] || continue
+        for word in $(tr -c 'A-Za-z0-9.:_-' '\n' < "${version_file}"); do
+            case "${word}" in
+                4.[0-9]*.[0-9]*) detected_version="${word}"; break ;;
+            esac
+        done
+        [ -z "${detected_version}" ] || break
+    done
     if [ -n "${detected_version}" ]; then
         cat >&2 <<EOF
 ==============================================================
@@ -224,10 +253,98 @@ if [ -L %{data_dir}/tmp ]; then
 fi
 mkdir -p %{data_dir}/tmp
 
-# Fix ownership and permissions.
-chown -R %{name}:%{name} %{config_dir}
+# The configuration directory is root's: the service reads it through its group and writes
+# nothing in it, so a compromised node cannot rewrite its own configuration, keystore or trust
+# material. Regular files and directories only, never through a symbolic link, and chown -h so
+# that a link planted where a file is expected is never followed. The %files attributes say the
+# same, so rpm -V reports no change.
+#
+# own_tree <dir>: <dir> and everything below it, root:%{name}, directories 0750, files 0640.
+own_tree() {
+    _ot_dir="$1"
+    [ -d "${_ot_dir}" ] && [ ! -L "${_ot_dir}" ] || return 0
+    chown -h root:%{name} "${_ot_dir}"
+    chmod 750 "${_ot_dir}"
+    for _ot_entry in "${_ot_dir}"/* "${_ot_dir}"/.[!.]* "${_ot_dir}"/..?*; do
+        [ -e "${_ot_entry}" ] || [ -L "${_ot_entry}" ] || continue
+        [ -L "${_ot_entry}" ] && continue
+        if [ -d "${_ot_entry}" ]; then
+            own_tree "${_ot_entry}"
+        elif [ -f "${_ot_entry}" ]; then
+            chown -h root:%{name} "${_ot_entry}"
+            chmod 640 "${_ot_entry}"
+        fi
+    done
+}
+
+# root_file <path> <mode> [group]: a regular file that is root's alone, or root's and the group's.
+root_file() {
+    [ -f "$1" ] && [ ! -L "$1" ] || return 0
+    chown -h "root:${3:-root}" "$1"
+    chmod "$2" "$1"
+}
+
+own_config_dir() {
+    [ -d %{config_dir} ] && [ ! -L %{config_dir} ] || return 0
+    chown -h root:%{name} %{config_dir}
+    chmod 750 %{config_dir}
+    for _oc_entry in %{config_dir}/* %{config_dir}/.[!.]* %{config_dir}/..?*; do
+        [ -e "${_oc_entry}" ] || [ -L "${_oc_entry}" ] || continue
+        [ -L "${_oc_entry}" ] && continue
+        case "${_oc_entry##*/}" in
+            export)
+                # What this package publishes: the directory can be entered by the service
+                # group, the passwords are root's alone, the CA certificate is the group's to
+                # read.
+                [ -d "${_oc_entry}" ] || continue
+                chown -h root:%{name} "${_oc_entry}"
+                chmod 750 "${_oc_entry}"
+                root_file "${_oc_entry}/credentials.env" 600
+                root_file "${_oc_entry}/ca.pem" 640 %{name}
+                for _oc_pair in manager-client dashboard-client; do
+                    root_file "${_oc_entry}/${_oc_pair}.pem" 600
+                    root_file "${_oc_entry}/${_oc_pair}-key.pem" 600
+                done
+                ;;
+            ca)
+                # This package's CA, or one staged by the operator: the key is root's alone.
+                [ -d "${_oc_entry}" ] || continue
+                chown -h root:%{name} "${_oc_entry}"
+                chmod 750 "${_oc_entry}"
+                root_file "${_oc_entry}/root-ca.pem" 640 %{name}
+                root_file "${_oc_entry}/root-ca.key" 400
+                root_file "${_oc_entry}/.wazuh-indexer-bootstrap-ca" 600
+                ;;
+            local.env|.wazuh-indexer-keystore)
+                # The operator's values, never written by the package, and the record of the
+                # keystore the package created: root's alone.
+                root_file "${_oc_entry}" 600
+                ;;
+            certs)
+                # The node's pair and the CA it trusts are read by the service through its
+                # group. The admin pair is root's alone: indexer-security-init.sh runs
+                # securityadmin as root, and the service must not be able to act as the
+                # security administrator.
+                own_tree "${_oc_entry}"
+                root_file "${_oc_entry}/admin.pem" 600
+                root_file "${_oc_entry}/admin-key.pem" 600
+                ;;
+            *)
+                if [ -d "${_oc_entry}" ]; then
+                    own_tree "${_oc_entry}"
+                elif [ -f "${_oc_entry}" ]; then
+                    chown -h root:%{name} "${_oc_entry}"
+                    chmod 640 "${_oc_entry}"
+                fi
+                ;;
+        esac
+    done
+}
+
+own_config_dir
 chown -R %{name}:%{name} %{log_dir}
 chown -R %{name}:%{name} %{data_dir}
+
 
 # Resolve credentials and TLS material.
 #
@@ -242,20 +359,34 @@ if [ -x %{product_dir}/bin/resolve-credentials.sh ]; then
     fi
 fi
 
+# The node creates opensearch.keystore at its first start when it is absent, and rewrites it
+# when its format is older than the one it knows. The configuration directory is root's now,
+# so both happen here, as root, and the node never has to write there. After the resolver: the
+# keystore tool loads opensearch.yml and refuses it while the DN settings the resolver fills
+# are empty, so on a node whose certificates could not be issued yet the pre-start step creates
+# the keystore once they are. A keystore the operator protected with a password is left alone:
+# the upgrade would prompt for it.
+if [ ! -e %{config_dir}/opensearch.keystore ] && [ ! -L %{config_dir}/opensearch.keystore ]; then
+    if OPENSEARCH_PATH_CONF=%{config_dir} %{product_dir}/bin/opensearch-keystore create < /dev/null > /dev/null; then
+        # What the package created, so that an erase can tell it from one the operator put
+        # secrets in: the digest of the keystore as created.
+        sha256sum < %{config_dir}/opensearch.keystore > %{config_dir}/.wazuh-indexer-keystore
+        chmod 600 %{config_dir}/.wazuh-indexer-keystore
+    else
+        echo "WARNING: could not create %{config_dir}/opensearch.keystore; the pre-start step will try again" >&2
+    fi
+elif [ -f %{config_dir}/opensearch.keystore ] && [ ! -L %{config_dir}/opensearch.keystore ]; then
+    OPENSEARCH_PATH_CONF=%{config_dir} %{product_dir}/bin/opensearch-keystore upgrade < /dev/null > /dev/null \
+        || echo "WARNING: could not upgrade %{config_dir}/opensearch.keystore" >&2
+fi
+root_file %{config_dir}/opensearch.keystore 640 %{name}
+
 # What to do next, on a fresh install only. %posttrans cannot tell an install from an upgrade,
 # which is why this lives here.
 if [ $1 -eq 1 ]; then
-    # The credentials file moves with WAZUH_BASE_DIR, so the shared helper says where it is
-    # rather than this printing a fixed path.
-    creds=""
-    if [ -f %{product_dir}/lib/wazuh-credentials.sh ]; then
-        . %{product_dir}/lib/wazuh-credentials.sh
-        creds=$(wazuh_env_get_file 2>/dev/null) || creds=""
-    fi
-
     echo ""
-    if [ -n "${creds}" ] && [ -f "${creds}" ]; then
-        echo "Passwords saved in ${creds} (readable by root only)."
+    if [ -f %{config_dir}/export/credentials.env ]; then
+        echo "Passwords saved in %{config_dir}/export/credentials.env (readable by root only)."
         echo "Log in to the Wazuh dashboard as admin, with WAZUH_INDEXER_ADMIN_PASSWORD."
     fi
     # %posttrans already ran `systemctl daemon-reload`, so the only steps left are enabling and
@@ -268,6 +399,7 @@ if [ $1 -eq 1 ]; then
     fi
     echo "Then load the security configuration, once, from one node:"
     echo " %{product_dir}/bin/indexer-security-init.sh"
+    echo "The package opens no firewall port: 9200 (API) and 9300 (cluster) stay as the host has them."
 fi
 
 exit 0
@@ -336,17 +468,6 @@ if [ $1 = 0 ]; then
     if command -v chkconfig > /dev/null 2>&1; then
         chkconfig --del %{name} > /dev/null 2>&1 || true
     fi
-
-    # %postun runs after rpm has deleted the package's files, so the removal path needs its own
-    # copy of the shared helper to take this component's keys out of credentials.env. It is
-    # stashed beside that file, in a directory only root can write -- %postun sources it as root,
-    # so it must never sit anywhere the service account can reach. The service is already stopped.
-    if [ -f %{product_dir}/lib/wazuh-credentials.sh ] && [ -d /etc/wazuh ] && [ ! -L /etc/wazuh ] \
-       && [ "$(stat -c '%%u %%a' /etc/wazuh 2>/dev/null)" = "0 700" ]; then
-        rm -f /etc/wazuh/.%{name}-credentials.sh
-        install -m 600 -o root -g root %{product_dir}/lib/wazuh-credentials.sh \
-            /etc/wazuh/.%{name}-credentials.sh 2>/dev/null || true
-    fi
 fi
 
 for snapshot in %{cti_snapshots}; do
@@ -366,79 +487,41 @@ if [ $1 -eq 0 ]; then
     rm -rf %{product_dir}/engine
     rm -rf %{product_dir}/plugins
 
-    # Take back only what this package owns: its own keys inside the credentials.env.
-    #
-    # %preun stashed the helper, because the packaged copy is already gone. Root is about to
-    # source it, so accept it only where nothing but root could have written it: a regular file,
-    # not a symlink, owned by root and writable by nobody else. The last two mode digits are group
-    # and other; 2, 3, 6 and 7 carry the write bit.
-    _wazuh_safe_to_source() {
-        [ -f "$1" ] && [ ! -L "$1" ] || return 1
-        [ "$(stat -c '%%u' "$1" 2>/dev/null)" = "0" ] || return 1
-        case "$(stat -c '%%a' "$1" 2>/dev/null)" in
-            ""|*[2367][0-7]|*[2367]) return 1 ;;
-        esac
-        return 0
-    }
-
-    _wazuh_lib=/etc/wazuh/.%{name}-credentials.sh
-    if ! _wazuh_safe_to_source "${_wazuh_lib}"; then
-        _wazuh_lib=%{product_dir}/lib/wazuh-credentials.sh
-        _wazuh_safe_to_source "${_wazuh_lib}" || _wazuh_lib=""
-    fi
-    if [ -n "${_wazuh_lib}" ]; then
-        . "${_wazuh_lib}"
-        # Gone as soon as it is loaded, so it cannot keep /etc/wazuh alive below.
-        rm -f /etc/wazuh/.%{name}-credentials.sh
-        for key in WAZUH_INDEXER_ADMIN_PASSWORD \
-                   WAZUH_INDEXER_KIBANASERVER_PASSWORD \
-                   WAZUH_INDEXER_MANAGER_PASSWORD; do
-            wazuh_env_unset "${key}" > /dev/null 2>&1 || true
-        done
-
-        creds="$(wazuh_env_get_file 2>/dev/null)" || creds=""
-        if [ -n "${creds}" ] && [ -f "${creds}" ]; then
-            # Remove the /etc/wazuh directory if this is the LAST component
-            # being purged.
-            if ! grep -qE '^[[:space:]]*[A-Za-z_][A-Za-z0-9_]*=' "${creds}" 2>/dev/null; then
-                ca_dir="$(wazuh_ca_get_dir 2>/dev/null)" || ca_dir=""
-                if [ -n "${ca_dir}" ] && [ -d "${ca_dir}" ]; then
-                    # The certificates this node was issued from that CA go with it. Kept, they
-                    # are an identity nothing trusts any more, and a reinstall would find them
-                    # beside a new CA. Only a CA with its key here issued anything on this host;
-                    # a pair it did not issue -- the operator's own -- stays.
-                    if [ -f "${ca_dir}/root-ca.key" ] && [ -f "${ca_dir}/root-ca.pem" ]; then
-                        for cert in indexer admin; do
-                            if [ -f %{certs_dir}/${cert}.pem ] && \
-                               openssl verify -no_check_time -CAfile "${ca_dir}/root-ca.pem" \
-                                   %{certs_dir}/${cert}.pem > /dev/null 2>&1; then
-                                rm -f %{certs_dir}/${cert}.pem %{certs_dir}/${cert}-key.pem
-                            fi
-                        done
-                        if cmp -s "${ca_dir}/root-ca.pem" %{certs_dir}/root-ca.pem; then
-                            rm -f %{certs_dir}/root-ca.pem
-                        fi
-                        rmdir %{certs_dir} > /dev/null 2>&1 || true
-                    fi
-                    rm -f "${ca_dir}/root-ca.pem" "${ca_dir}/root-ca.key" "${ca_dir}/root-ca.srl"
-                    rmdir "${ca_dir}" > /dev/null 2>&1 || true
-                fi
-                # The shared lock file lives in this directory and is recreated on every
-                # write, so it would keep the tree non-empty for ever. With no keys left there
-                # is no component to serialize against, so it goes too.
-                base="$(wazuh_base_get_dir 2>/dev/null)" || base=""
-                if [ -n "${base}" ]; then
-                    rm -f "${base}/.credentials.lock"
-                    # rmdir refuses a non-empty directory, which is exactly the check wanted
-                    # here: it succeeds only once credentials.env itself is gone.
-                    rmdir "${base}" > /dev/null 2>&1 || true
-                fi
+    # The certificates this node was issued from its own CA go with it. Kept, they are an
+    # identity nothing trusts any more, and a reinstall would find them beside a new CA. Only a
+    # CA with its key here issued anything on this host; a pair it did not issue -- the
+    # operator's own -- stays, and a reinstall with nothing to verify it against reports it
+    # rather than minting a CA beside it.
+    if [ -f %{config_dir}/ca/root-ca.key ] && [ -f %{config_dir}/ca/root-ca.pem ]; then
+        for cert in indexer admin; do
+            if [ -f %{certs_dir}/${cert}.pem ] && [ ! -L %{certs_dir}/${cert}.pem ] && \
+               openssl verify -no_check_time -CAfile %{config_dir}/ca/root-ca.pem \
+                   %{certs_dir}/${cert}.pem > /dev/null 2>&1; then
+                rm -f %{certs_dir}/${cert:?}.pem %{certs_dir}/${cert:?}-key.pem
             fi
+        done
+        if [ -f %{certs_dir}/root-ca.pem ] && [ ! -L %{certs_dir}/root-ca.pem ] && \
+           [ "$(sha256sum < %{config_dir}/ca/root-ca.pem)" = "$(sha256sum < %{certs_dir}/root-ca.pem)" ]; then
+            rm -f %{certs_dir}/root-ca.pem
         fi
+        rmdir %{certs_dir} > /dev/null 2>&1 || true
     fi
-    # The second path is where releases before this one stashed the helper.
-    rm -f %{data_dir}/.initialized %{data_dir}/.wazuh-credentials.sh \
-          /etc/wazuh/.%{name}-credentials.sh
+
+    # What this package published for the other components on this host, its CA and the record
+    # that it resolved its credentials.
+    rm -rf %{config_dir}/export %{config_dir}/ca
+    rm -f %{data_dir}/.initialized
+
+    # The keystore the package created, when it is still exactly as created: one the operator
+    # put secrets in has a different digest and stays, with the marker.
+    if [ -f %{config_dir}/.wazuh-indexer-keystore ] && [ ! -L %{config_dir}/.wazuh-indexer-keystore ] \
+       && [ -f %{config_dir}/opensearch.keystore ] && [ ! -L %{config_dir}/opensearch.keystore ] \
+       && [ "$(sha256sum < %{config_dir}/opensearch.keystore)" = "$(cat %{config_dir}/.wazuh-indexer-keystore)" ]; then
+        rm -f %{config_dir}/opensearch.keystore %{config_dir}/.wazuh-indexer-keystore
+    fi
+
+    # Where releases before this one stashed a helper library.
+    rm -f %{data_dir}/.wazuh-credentials.sh /etc/wazuh/.%{name}-credentials.sh
 
     # rpm saves a modified %config file as *.rpmsave when the package goes away.
     # Both of these are modified by resolve-credentials.sh -- one gains the three
@@ -465,22 +548,56 @@ if [ $1 -eq 0 ]; then
     # data left behind. The files keep their modes. Each directory is closed to
     # everyone but root instead, which keeps what is inside unreadable and is all
     # a reinstall has to undo: rpm restores the packaged mode of every directory
-    # in the file list, and %post runs chown -R. Nothing is deleted.
-    # find -H follows a directory that is itself a symlink but no link inside it,
-    # and chown -h changes those links themselves, so a link the account planted
-    # cannot aim any of this at another file. Only a directory that still holds
-    # something other than directories is reported as kept.
+    # in the file list, and %post sets the ownership again. Nothing is deleted.
+    # The walk never enters a symbolic link, and chown -h changes links
+    # themselves, so a link the account planted cannot aim any of this at
+    # another file. Only a directory that still holds something other than
+    # directories is reported as kept. A shell walk, not find: findutils is not
+    # a dependency of this package.
+    #
+    # hand_over <dir>: every entry below <dir> that the account owns goes to root. Returns 1
+    # when something could not be changed.
+    hand_over() {
+        _ho_ok=0
+        for _ho_entry in "$1"/* "$1"/.[!.]* "$1"/..?*; do
+            [ -e "${_ho_entry}" ] || [ -L "${_ho_entry}" ] || continue
+            _ho_owner=$(stat -c '%%U %%G' "${_ho_entry}" 2>/dev/null) || { _ho_ok=1; continue; }
+            case "${_ho_owner}" in
+                "%{name} "*) chown -h root:root "${_ho_entry}" 2>/dev/null || _ho_ok=1 ;;
+                *" %{name}") chgrp -h root "${_ho_entry}" 2>/dev/null || _ho_ok=1 ;;
+            esac
+            if [ -d "${_ho_entry}" ] && [ ! -L "${_ho_entry}" ]; then
+                hand_over "${_ho_entry}" || _ho_ok=1
+            fi
+        done
+        return ${_ho_ok}
+    }
+    # has_files <dir>: true when something below <dir> is not a directory.
+    has_files() {
+        for _hf_entry in "$1"/* "$1"/.[!.]* "$1"/..?*; do
+            [ -e "${_hf_entry}" ] || [ -L "${_hf_entry}" ] || continue
+            if [ -d "${_hf_entry}" ] && [ ! -L "${_hf_entry}" ]; then
+                has_files "${_hf_entry}" && return 0
+            else
+                return 0
+            fi
+        done
+        return 1
+    }
     not_handed_over=""
     if getent passwd %{name} > /dev/null 2>&1; then
         for dir in %{config_dir} %{product_dir} %{data_dir} %{log_dir}; do
             [ -d "${dir}" ] || continue
             dir_ok=true
-            find -H "${dir}" \( -user %{name} -exec chown -h root:root {} + \) \
-                -o \( -group %{name} -exec chgrp -h root {} + \) 2>/dev/null || dir_ok=false
+            case "$(stat -c '%%U %%G' "${dir}" 2>/dev/null)" in
+                "%{name} "*) chown -h root:root "${dir}" 2>/dev/null || dir_ok=false ;;
+                *" %{name}") chgrp -h root "${dir}" 2>/dev/null || dir_ok=false ;;
+            esac
+            hand_over "${dir}" || dir_ok=false
             chmod go-rwx "${dir}" 2>/dev/null || dir_ok=false
             if [ "${dir_ok}" != true ]; then
                 not_handed_over="${not_handed_over} ${dir}"
-            elif [ -n "$(find -H "${dir}" -mindepth 1 ! -type d -print -quit 2>/dev/null)" ]; then
+            elif has_files "${dir}"; then
                 echo "Kept ${dir}, now owned by root. Reinstalling %{name} takes it back."
             fi
         done
@@ -493,14 +610,15 @@ if [ $1 -eq 0 ]; then
     # it back. userdel may already have dropped the group along with the user
     # (USERGROUPS_ENAB), hence the second lookup.
     #
-    # A JVM keeps its performance data in /tmp/hsperfdata_<user>.
-    # indexer-security-init.sh runs securityadmin.sh as the account outside the
-    # unit's private /tmp, and so does a node the SysV script starts, so that
-    # directory is left behind. It is empty once the JVM exits, but the next
-    # account given the freed ID would own it.
+    # A JVM keeps its performance data in /tmp/hsperfdata_<user>. A node the
+    # SysV script starts runs outside the unit's private /tmp, so that directory
+    # is left behind. It is empty once the JVM exits, but the next account given
+    # the freed ID would own it.
     if getent passwd %{name} > /dev/null 2>&1; then
-        find /tmp -maxdepth 1 -type d -name "hsperfdata_%{name}" -user %{name} \
-            -exec rm -rf {} + 2>/dev/null || true
+        if [ -d /tmp/hsperfdata_%{name} ] && [ ! -L /tmp/hsperfdata_%{name} ] \
+           && [ "$(stat -c '%%U' /tmp/hsperfdata_%{name} 2>/dev/null)" = "%{name}" ]; then
+            rm -rf /tmp/hsperfdata_%{name} 2>/dev/null || true
+        fi
         userdel %{name} > /dev/null 2>&1 || true
     fi
     if getent group %{name} > /dev/null 2>&1; then
@@ -531,16 +649,21 @@ exit 0
 %attr(0644, root, root) %config(noreplace) %{_prefix}/lib/sysctl.d/%{name}.conf
 %attr(0644, root, root) %config(noreplace) %{_prefix}/lib/tmpfiles.d/%{name}.conf
 
-# Configuration files
+# Configuration files: root's, read by the service through its group. These attributes are the
+# installed state %post leaves, so rpm -V reports no ownership or mode change.
 %config(noreplace) %attr(0640, root, %{name}) "%{_sysconfdir}/sysconfig/%{name}"
-%config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/log4j2.properties
-%config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/jvm.options
-%config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/opensearch.yml
-%config(noreplace) %attr(640, %{name}, %{name}) %{config_dir}/opensearch-security/*
+%config(noreplace) %attr(0640, root, %{name}) %{config_dir}/log4j2.properties
+%config(noreplace) %attr(0640, root, %{name}) %{config_dir}/jvm.options
+%config(noreplace) %attr(0640, root, %{name}) %{config_dir}/opensearch.yml
+%config(noreplace) %attr(0640, root, %{name}) %{config_dir}/opensearch-security/*
 
 %if %reportsscheduler_plugin
-%config(noreplace) %attr(660, %{name}, %{name}) %{config_dir}/opensearch-reports-scheduler/reports-scheduler.yml
+%config(noreplace) %attr(0640, root, %{name}) %{config_dir}/opensearch-reports-scheduler/reports-scheduler.yml
 %endif
+
+# The directories the service writes.
+%dir %attr(750, %{name}, %{name}) %{data_dir}
+%dir %attr(750, %{name}, %{name}) %{log_dir}
 
 # Carve-out: the content manager deletes the shipped snapshot once it has
 # consumed it, which needs write on this directory. Everything else under the
@@ -548,18 +671,8 @@ exit 0
 %dir %attr(750, %{name}, %{name}) %{snapshots_dir}
 
 # Wazuh Engine
-%dir %attr(750, %{name}, %{name}) %{product_dir}/engine
-%dir %attr(750, %{name}, %{name}) %{product_dir}/engine/bin
 %attr(750, %{name}, %{name}) %{product_dir}/engine/bin/wazuh-engine
 %attr(750, %{name}, %{name}) %{product_dir}/engine/run_engine.sh
-%dir %attr(750, %{name}, %{name}) %{product_dir}/engine/sockets
-%attr(-, %{name}, %{name}) %{product_dir}/engine/sockets/.keep
-%attr(-, %{name}, %{name}) %{product_dir}/engine/bin/lib
-%attr(-, %{name}, %{name}) %{product_dir}/engine/data
-%attr(-, %{name}, %{name}) %{product_dir}/engine/data/tzdb
-%attr(-, %{name}, %{name}) %{product_dir}/engine/logs
-%attr(-, %{name}, %{name}) %{product_dir}/engine/schemas
-%attr(-, %{name}, %{name}) %{product_dir}/engine/README.md
 
 # Files that need other permissions
 %attr(440, root, %{name}) %{product_dir}/VERSION.json
@@ -571,10 +684,11 @@ exit 0
 %attr(750, root, %{name}) %{product_dir}/jdk/lib/modules
 
 # Preserve service state flag across upgrade
-%ghost %attr(440, %{name}, %{name}) %{config_dir}/.was_active
+%ghost %attr(640, root, %{name}) %{config_dir}/.was_active
 
-# Certificates files permissions
-%attr(500, %{name}, %{name}) %{certs_dir}
+# The node's certificates: root's, read by the service through its group. The files are issued
+# at install and are not in the file list.
+%dir %attr(750, root, %{name}) %{certs_dir}
 
 %changelog
 * Wed Oct 28 2026 support <info@wazuh.com> - 5.1.0
@@ -583,6 +697,8 @@ exit 0
 - More info: https://documentation.wazuh.com/current/release-notes/release-5-0-1.html
 * Wed Oct 28 2026 support <info@wazuh.com> - 5.0.0
 - More info: https://documentation.wazuh.com/current/release-notes/release-5-0-0.html
+* Wed Nov 11 2026 support <info@wazuh.com> - 4.14.11
+- More info: https://documentation.wazuh.com/current/release-notes/release-4-14-11.html
 * Wed Oct 28 2026 support <info@wazuh.com> - 4.14.10
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-14-10.html
 * Wed Oct 14 2026 support <info@wazuh.com> - 4.14.9

@@ -307,6 +307,11 @@ function remove_unneeded_files() {
 # so the package does not depend on a nightly being published for the version.
 # The first reference that resolves wins: the branch named after the version,
 # then its tag.
+#
+# The assistant's tools follow the per-package layout themselves (/etc/wazuh-indexer,
+# local.env, ca/, certs/, export/), so they ship as they are built but for one edit, and
+# the build checks the layout they follow rather than the text they carry: a changed
+# upstream fails the build only when it brings back the shared /etc/wazuh model.
 function add_wazuh_tools() {
     local version=${1}
 
@@ -333,6 +338,12 @@ function add_wazuh_tools() {
     tar -xzf "${src_dir}/source.tar.gz" -C "${src_dir}" --strip-components=1
     bash "${src_dir}/builder.sh" -c -p
 
+    # The indexer's credential helper belongs in lib/, not tools/: it is sourced,
+    # never executed, and ships non-executable.
+    local lib_dir="${PATH_PRODUCT}/lib"
+    mkdir -p "${lib_dir}"
+    install -m 644 "${REPO_PATH}/distribution/src/lib/wazuh-indexer-credentials.sh" "${lib_dir}"/wazuh-indexer-credentials.sh
+
     # tools folder
     local tools_dir="${PATH_PRODUCT}/tools"
     mkdir -p "${tools_dir}"
@@ -341,13 +352,29 @@ function add_wazuh_tools() {
     install -m 644 "${src_dir}/wazuh-passwords-tool.sh" "${tools_dir}"/wazuh-passwords-tool.sh
     install -m 644 "${src_dir}/wazuh-certs-tool.sh" "${tools_dir}"/wazuh-certs-tool.sh
 
-    # The shared credential library belongs in lib/, not tools/: it is sourced,
-    # never executed, and ships non-executable.
-    local lib_dir="${PATH_PRODUCT}/lib"
-    mkdir -p "${lib_dir}"
-    install -m 644 "${src_dir}/credentials_lib/wazuh-credentials.sh" "${lib_dir}"/wazuh-credentials.sh
+    adapt_wazuh_tool "${tools_dir}/wazuh-passwords-tool.sh"
+    adapt_wazuh_tool "${tools_dir}/wazuh-certs-tool.sh"
 
     rm -rf "${src_dir}"
+}
+
+# Read the init system from /proc instead of ps, which is not among this package's
+# dependencies, and check that the tool follows the per-package layout: it embeds no shared
+# credential library and never names the shared /etc/wazuh base. The edit applies wherever the
+# line is, and to none once the assistant reads /proc itself.
+function adapt_wazuh_tool() {
+    local tool="$1"
+
+    sed -i 's#ps -p 1 -o comm= | grep "init"#grep "init" /proc/1/comm#' "${tool}"
+
+    if grep -q 'wazuh-credentials.sh ------' "${tool}"; then
+        echo "ERROR: ${tool} embeds the shared credential library of the /etc/wazuh model" >&2
+        exit 1
+    fi
+    if grep -qE '/etc/wazuh([^-a-z]|$)|wazuh_base_get_dir|WAZUH_BASE_DIR' "${tool}"; then
+        echo "ERROR: ${tool} still refers to the shared /etc/wazuh model" >&2
+        exit 1
+    fi
 }
 
 # ====

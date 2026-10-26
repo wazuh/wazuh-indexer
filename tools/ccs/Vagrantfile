@@ -14,7 +14,7 @@ nodes = [
     { name: "ccs",       hostname: "ccs",       ip: "192.168.56.10" },
 ]
 
-# Creates the shared root CA and the credentials file before any machine is provisioned.
+# Creates the shared CAs and the credentials file before any machine is provisioned.
 if (ARGV & %w[up provision reload]).any?
     abort("pre-start.sh failed") unless system("bash", "./pre-start.sh", chdir: __dir__)
 end
@@ -39,8 +39,8 @@ Vagrant.configure("2") do |config|
             n.vm.hostname = node[:hostname]
             n.vm.network "private_network", ip: node[:ip]
 
-            %w[ca/root-ca.pem ca/root-ca.key credentials.env].each do |file|
-                n.vm.provision "file", source: file, destination: "/tmp/ccs/#{File.basename(file)}"
+            %w[ca/root-ca.pem ca/root-ca.key manager-ca/root-ca.pem manager-ca/root-ca.key credentials.env].each do |file|
+                n.vm.provision "file", source: file, destination: "/tmp/ccs/#{file}"
             end
             n.vm.provision "shell", path: "node-start.sh", args: [node[:name]],
                 env: { "ARTIFACT_URLS" => artifact_urls }

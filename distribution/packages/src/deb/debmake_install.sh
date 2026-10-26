@@ -58,17 +58,17 @@ config_files+=("${buildroot}/${config_dir}/jvm.options")
 config_files+=("${buildroot}/${config_dir}/opensearch.yml")
 
 for i in "${config_files[@]}"; do
-	chmod -c 0660 "$i"
+	chmod -c 0640 "$i"
 done
 
 # Plugin-related files
 if [ -e "${buildroot}/${config_dir}/opensearch-reports-scheduler/reports-scheduler.yml" ]; then
-	chmod -c 660 "${buildroot}/${config_dir}/opensearch-reports-scheduler/reports-scheduler.yml"
+	chmod -c 640 "${buildroot}/${config_dir}/opensearch-reports-scheduler/reports-scheduler.yml"
 fi
 
 # Files that need other permissions
 chmod -c 440 "${buildroot}${product_dir}/VERSION.json"
-chmod -c 500 "${buildroot}${certs_dir}"
+chmod -c 750 "${buildroot}${certs_dir}"
 if [ -d "${buildroot}${product_dir}/plugins/opensearch-security" ]; then
 	chmod -c 0750 "${buildroot}${product_dir}"/plugins/opensearch-security/tools/*.sh
 fi

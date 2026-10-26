@@ -41,6 +41,7 @@ bootstrap.memory_lock: true
 # Resilience under heap pressure (small heaps, e.g. 2 GB): shed work — reject (429)
 # and cancel runaway searches instead of letting the JVM heap exhaust and crash.
 search_backpressure.mode: enforced                    # actually cancel heavy search tasks (default only logs)
+search_backpressure.search_shard_task.heap_percent_threshold: 0.04  # a shard task is a cancellation candidate from 4% of the heap (default 0.5%, ~10 MB on 2 GB), above the manager's inventory sync batches
 indices.breaker.total.use_real_memory: true           # account real heap used, not just reserved bytes
 indices.breaker.total.limit: 80%                      # trip early (default 95%); leaves headroom for Lucene flush/merge
 indexing_pressure.memory.limit: 10%                   # cap in-flight indexing bytes; reject excess bulk

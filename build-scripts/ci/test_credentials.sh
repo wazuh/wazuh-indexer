@@ -584,6 +584,23 @@ case "${sans}" in
     *"DNS:$(short_hostname)"*) ok "this host's name is in the SAN list" ;;
     *) fail "hostname missing from the SAN list" ;;
 esac
+# Every global IPv4 address of every interface, not only those of the default-route one. IPv6 is
+# left out of this check because openssl -text renders it uncompressed and in upper case.
+missing=""
+for addr in $(ip -o -4 addr show scope global 2>/dev/null | awk '{ sub(/\/.*/, "", $4); print $4 }'); do
+    case "${addr}" in
+        127.*|169.254.*) continue ;;
+    esac
+    case "${sans}," in
+        *"IPAddress:${addr},"*) ;;
+        *) missing="${missing} ${addr}" ;;
+    esac
+done
+if [ -z "${missing}" ]; then
+    ok "every global IPv4 address of this host is in the SAN list"
+else
+    fail "global addresses missing from the SAN list:${missing}"
+fi
 
 # A deployment that replaces the package certificates with wazuh-certs-tool's keeps admin_dn valid
 # only while both issue the admin certificate with the same subject. Read from the tool this

@@ -55,6 +55,7 @@
 | Issue | Comment |
 |-------|---------|
 | [#1532](https://github.com/wazuh/wazuh-indexer/issues/1532) | Fix the ownership and permissions of `/etc/default/wazuh-indexer` in DEB packages |
+| [#2045](https://github.com/wazuh/wazuh-indexer/issues/2045) | Name every global address of the host in the node certificate, not only those of the default-route interface |
 | [#1951](https://github.com/wazuh/wazuh-indexer/issues/1951) | Fix the `wazuh-indexer` user and group left behind when the package is purged, and hand the files it keeps over to root |
 
 ## Prior versions

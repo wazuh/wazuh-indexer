@@ -42,15 +42,20 @@ point `WAZUH_ARTIFACT_URLS` to its artifact list.
 ### Certificates and credentials
 
 The Wazuh 5.x packages issue their own certificates and generate their own passwords when
-installed. Before the nodes are created, `pre-start.sh` prepares the two things they must share:
+installed, each under its own configuration directory. Before the nodes are created,
+`pre-start.sh` prepares what they must share:
 
-- **`ca/root-ca.pem` and `ca/root-ca.key`**: the root CA every node issues its certificates from.
-  The clusters must share it to trust each other.
+- **`ca/root-ca.pem` and `ca/root-ca.key`**: the CA every Wazuh indexer issues its certificates
+  from. The clusters must share it to trust each other.
+- **`manager-ca/root-ca.pem` and `manager-ca/root-ca.key`**: the CA both Wazuh servers issue their
+  certificates from, so that the dashboard on the CCS node trusts both Server APIs.
 - **`credentials.env`**: the passwords given to the packages instead of generating them.
   `pre-start.sh` only puts `WAZUH_MANAGER_WUI_PASSWORD` in it, because the dashboard on the CCS
   node needs it to connect to both Wazuh servers. Every other password is generated on each node.
 
-Both are copied to `/etc/wazuh/` on every node and kept between runs. To use your own CA or
+On every node, `node-start.sh` stages each CA in the `ca/` directory of the package that uses it
+(`/etc/wazuh-indexer/ca/`, the server's), and each password in the `local.env` of the package that
+owns it, before that package is installed. Everything is kept between runs. To use your own CAs or
 passwords, create them in `tools/ccs` before running `vagrant up`. If your `credentials.env` has no
 `WAZUH_MANAGER_WUI_PASSWORD`, a generated one is added to it. For example:
 
@@ -62,7 +67,8 @@ WAZUH_INDEXER_ADMIN_PASSWORD=<password>
 Passwords must be 12 to 64 characters long, use only `A-Z a-z 0-9 . , _ + : @ % ^ = ~ -`, and
 include at least one uppercase letter, one lowercase letter, one digit and one symbol.
 
-The passwords used on each node, generated or not, are in its `/etc/wazuh/credentials.env`.
+The passwords used on each node, generated or not, are published by the package that owns them:
+the indexer's in `/etc/wazuh-indexer/export/credentials.env`, the server's in its own `export/`.
 
 ## Usage
 
@@ -88,7 +94,7 @@ The passwords used on each node, generated or not, are in its `/etc/wazuh/creden
 
 1. Get the password of the `admin` user of the CCS node:
    ```bash
-   vagrant ssh ccs -c "sudo grep ^WAZUH_INDEXER_ADMIN_PASSWORD= /etc/wazuh/credentials.env"
+   vagrant ssh ccs -c "sudo grep ^WAZUH_INDEXER_ADMIN_PASSWORD= /etc/wazuh-indexer/export/credentials.env"
    ```
 
 2. Log in to the Wazuh dashboard:
@@ -184,5 +190,5 @@ After the testing session is complete you can stop or destroy the environment as
   vagrant destroy -f
   ```
 
-To start the next environment with a new CA and new passwords, also delete `ca/` and
-`credentials.env`.
+To start the next environment with new CAs and new passwords, also delete `ca/`, `manager-ca/`
+and `credentials.env`.

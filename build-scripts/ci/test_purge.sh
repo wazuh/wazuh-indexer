@@ -2,7 +2,8 @@
 # Verifies that purging the package takes back what its maintainer scripts
 # created, that nothing it leaves in its own directories can be inherited by
 # another account, and that a reinstall over what it kept comes back as it was.
-# See https://github.com/wazuh/wazuh-indexer/issues/1951
+# See https://github.com/wazuh/wazuh-indexer/issues/1951 and
+# https://github.com/wazuh/wazuh-indexer/issues/2020
 #
 # The purge manages the package's default directories -- /etc/wazuh-indexer,
 # /usr/share/wazuh-indexer, /var/lib/wazuh-indexer and /var/log/wazuh-indexer --
@@ -11,28 +12,30 @@
 # Six scenarios, run one after the other on the same host:
 #
 #   1. Fresh install, then purge. Nothing is left: no user, no group, no data
-#      or configuration directory, no CA and no certificate issued from it, no
-#      "not empty" warning from the package manager, and no directory reported
-#      as kept.
-#   2. A node that has been used, then purge. Index data, logs, the keystore,
-#      the engine's runtime files, the JVM's performance data in /tmp, a
-#      snapshot repository at a custom path.repo, a planted symlink and the
-#      CTI snapshots the content manager consumed stand in for a node that ran.
-#      What the account owned in the default directories belongs to root and
-#      keeps its mode, and each of those directories is closed to everyone but
-#      root. The product directory and the performance data are removed, and
-#      the certificates issued from the removed CA go with it. The custom
-#      snapshot repository and the symlink's target are not touched, and the
-#      package manager does not warn about the snapshots it found gone.
+#      or configuration directory, no export/, no CA and no certificate issued
+#      from it, no "not empty" warning from the package manager, and no
+#      directory reported as kept.
+#   2. A node that has been used, then purge. Index data, logs, the engine's
+#      runtime files, the JVM's performance data in /tmp, a snapshot repository
+#      at a custom path.repo, a planted symlink and the CTI snapshots the
+#      content manager consumed stand in for a node that ran. What the account
+#      owned in the default directories belongs to root and keeps its mode, and
+#      each of those directories is closed to everyone but root. The product
+#      directory and the performance data are removed, and the certificates
+#      issued from the removed CA go with it. The custom snapshot repository and
+#      the symlink's target are not touched, and the package manager does not
+#      warn about the snapshots it found gone.
 #   3. Reinstall. Everything kept comes back with the owner and mode it had
-#      before the purge, and the node's certificates chain to the CA it trusts.
+#      before the purge, the configuration directory is root's again, and the
+#      node's certificates chain to the CA it trusts.
 #   4. A default directory the purge cannot hand over (a read-only mount), then
 #      purge. The user and group are still removed, the purge names that
 #      directory, and it does not claim to have kept it for root.
 #   5. A certificate pair the CA did not issue -- the operator's own. The
 #      resolver refuses it while the CA directory holds another CA, the purge
 #      keeps it, a reinstall with nothing to verify it against reports it
-#      instead of minting a CA, and staging the CA that issued it resolves.
+#      instead of minting a CA, and staging the CA that issued it resolves and
+#      publishes that CA for the other components.
 #   6. The package installed over itself, as an upgrade would, once the
 #      content manager has consumed the CTI snapshots. Every snapshot the
 #      package ships is laid down again, without a warning.
@@ -53,12 +56,13 @@ name="wazuh-indexer"
 package="/artifacts/dist/${PACKAGE_NAME}"
 config_dir="/etc/${name}"
 certs_dir="${config_dir}/certs"
+export_dir="${config_dir}/export"
+ca_dir="${config_dir}/ca"
 data_dir="/var/lib/${name}"
 log_dir="/var/log/${name}"
 product_dir="/usr/share/${name}"
 snapshots_dir="${product_dir}/plugins/wazuh-indexer-content-manager/snapshots"
 default_dirs=("${config_dir}" "${product_dir}" "${data_dir}" "${log_dir}")
-ca_dir="/etc/wazuh/ca"
 marker="${data_dir}/.initialized"
 resolver="${product_dir}/bin/resolve-credentials.sh"
 repo_dir="/srv/${name}-repo"
@@ -77,10 +81,13 @@ check() {
 }
 
 not()          { ! "$@"; }
+# The host's short name, without hostname(1): the package no longer depends on it.
+short_hostname() { local h; h=$(cat /proc/sys/kernel/hostname 2>/dev/null || uname -n); printf '%s' "${h%%.*}"; }
 user_exists()  { getent passwd "${name}" > /dev/null 2>&1; }
 group_exists() { getent group "${name}" > /dev/null 2>&1; }
 output_has()   { grep -qF -- "$1" <<< "${purge_out}"; }
 owned_by()     { [ "$(stat -c '%U:%G' "$2")" = "$1" ]; }
+same()         { [ "$(sha256sum < "$1")" = "$(sha256sum < "$2")" ]; }
 installed() {
     case "$PACKAGE_MANAGER" in
         rpm) rpm -q "${name}" > /dev/null 2>&1 ;;
@@ -88,6 +95,10 @@ installed() {
     esac
 }
 verifies() { openssl verify -CAfile "$2" "$1" > /dev/null 2>&1; }
+
+# Run a command as the service account with coreutils alone: the package no
+# longer depends on util-linux, so runuser may be absent from the host.
+as_service() { chroot --userspec="${name}:${name}" --skip-chdir / "$@"; }
 
 # Prints every file under the given paths that still carries an owner or group
 # with no account behind it.
@@ -115,13 +126,16 @@ external_pki() {
     mkdir -p "${dir}"
     openssl req -x509 -newkey rsa:2048 -nodes -days 3650 -keyout "${dir}/root-ca.key" \
         -out "${dir}/root-ca.pem" -subj "/C=US/L=California/O=Wazuh/OU=Wazuh/CN=external-root-ca" \
+        -addext "basicConstraints=critical,CA:TRUE" -addext "keyUsage=critical,keyCertSign,cRLSign" \
         > /dev/null 2>&1
     for n in indexer admin; do
-        cn="${n}"; [ "${n}" = "indexer" ] && cn="$(hostname -s)"
+        cn="${n}"; [ "${n}" = "indexer" ] && cn="$(short_hostname)"
         openssl req -newkey rsa:2048 -nodes -keyout "${dir}/${n}-key.pem" -out "${dir}/${n}.csr" \
             -subj "/C=US/L=California/O=Wazuh/OU=Wazuh/CN=${cn}" > /dev/null 2>&1
+        printf 'subjectAltName = DNS:%s,DNS:localhost,IP:127.0.0.1\n' "${cn}" > "${dir}/${n}.ext"
         openssl x509 -req -in "${dir}/${n}.csr" -CA "${dir}/root-ca.pem" -CAkey "${dir}/root-ca.key" \
-            -CAcreateserial -days 3650 -out "${dir}/${n}.pem" > /dev/null 2>&1
+            -set_serial "0x$(od -An -N8 -tx1 /dev/urandom | tr -d ' \n')" -days 3650 \
+            -extfile "${dir}/${n}.ext" -out "${dir}/${n}.pem" > /dev/null 2>&1
     done
 }
 
@@ -177,11 +191,11 @@ consume_snapshots() {
     for f in "${snapshots[@]}"; do
         if [ "${first}" -eq 1 ]; then
             check "the ${name} account can move ${f} to ${f%.zip}.stable.zip" \
-                runuser -u "${name}" -- mv "${snapshots_dir}/${f}" "${snapshots_dir}/${f%.zip}.stable.zip"
+                as_service mv "${snapshots_dir}/${f}" "${snapshots_dir}/${f%.zip}.stable.zip"
             first=0
         else
             check "the ${name} account can delete ${f}" \
-                runuser -u "${name}" -- rm "${snapshots_dir}/${f}"
+                as_service rm "${snapshots_dir}/${f}"
         fi
     done
 }
@@ -209,6 +223,9 @@ echo "== 1. Fresh install, then purge"
 install_package
 check "the install issued a certificate pair from the CA" \
     verifies "${certs_dir}/indexer.pem" "${ca_dir}/root-ca.pem"
+check "the install published the CA for the other components" \
+    same "${export_dir}/ca.pem" "${ca_dir}/root-ca.pem"
+check "the install created no /etc/wazuh" [ ! -e /etc/wazuh ]
 
 purge_package
 echo "Checking what the purge left behind:"
@@ -225,6 +242,7 @@ done
 check "no 'not empty' warning for ${data_dir}" \
     not output_has "directory '${data_dir}' not empty so not removed"
 check "the CA is removed" [ ! -e "${ca_dir}/root-ca.pem" ]
+check "export/ is removed" [ ! -e "${export_dir}" ]
 
 left=$(orphans "${default_dirs[@]}")
 check "no file is left with an orphaned owner" [ -z "${left}" ]
@@ -238,7 +256,8 @@ echo "== 2. A used node, then purge"
 install_package
 
 # What a node that ran leaves behind, owned by the service account, with the
-# permissive modes an unset UMask gives.
+# permissive modes an unset UMask gives. The keystore is the package's: root's,
+# read by the service through its group, and never written by the node.
 mkdir -p "${data_dir}/nodes/0/indices/index-uuid" "${repo_dir}/indices" \
     "${product_dir}/engine/data/store" "${hsperfdata}"
 echo "segment" > "${data_dir}/nodes/0/indices/index-uuid/segment"
@@ -246,11 +265,12 @@ echo "log line" > "${log_dir}/${name}.log"
 echo "keystore" > "${config_dir}/opensearch.keystore"
 echo "snapshot" > "${repo_dir}/indices/snapshot"
 echo "store" > "${product_dir}/engine/data/store/runtime"
-chown -R "${name}:${name}" "${data_dir}/nodes" "${log_dir}" "${repo_dir}" "${config_dir}/opensearch.keystore" \
+chown -R "${name}:${name}" "${data_dir}/nodes" "${log_dir}" "${repo_dir}" \
     "${product_dir}/engine/data/store" "${hsperfdata}"
 chmod 755 "${data_dir}/nodes" "${data_dir}/nodes/0" "${data_dir}/nodes/0/indices" "${data_dir}/nodes/0/indices/index-uuid"
 chmod 644 "${data_dir}/nodes/0/indices/index-uuid/segment" "${log_dir}/${name}.log" "${repo_dir}/indices/snapshot"
-chmod 660 "${config_dir}/opensearch.keystore"
+chown "root:${name}" "${config_dir}/opensearch.keystore"
+chmod 640 "${config_dir}/opensearch.keystore"
 printf '\npath.repo: ["%s"]\n' "${repo_dir}" >> "${config_dir}/opensearch.yml"
 
 # A link the service account could have planted, aimed at a file it does not
@@ -283,6 +303,9 @@ check "${product_dir} is removed with the engine's runtime files" [ ! -e "${prod
 check "the purge does not report ${product_dir} as kept" not output_has "Kept ${product_dir}"
 check "the JVM's performance data in /tmp is removed" [ ! -e "${hsperfdata}" ]
 check "no 'remove failed' warning for the CTI snapshots the node consumed" not output_has "remove failed"
+check "export/ is removed" [ ! -e "${export_dir}" ]
+check "the CA is removed" [ ! -e "${ca_dir}" ]
+check "the state file is removed" [ ! -e "${marker}" ]
 
 left=$(orphans "${default_dirs[@]}")
 if [ -z "${left}" ]; then
@@ -339,10 +362,15 @@ else
     printf '%s\n' "${differs}" | head -10 | sed 's/^/        /'
 fi
 
+check "the configuration directory is root's again" \
+    [ "$(stat -c '%U:%G %a' "${config_dir}")" = "root:${name} 750" ]
+check "the keystore is root's, read by the service group" \
+    [ "$(stat -c '%U:%G %a' "${config_dir}/opensearch.keystore")" = "root:${name} 640" ]
 check "the node's certificate chains to its root-ca.pem" \
     verifies "${certs_dir}/indexer.pem" "${certs_dir}/root-ca.pem"
 check "the node's certificate chains to the CA in ${ca_dir}" \
     verifies "${certs_dir}/indexer.pem" "${ca_dir}/root-ca.pem"
+check "the CA is published again" same "${export_dir}/ca.pem" "${ca_dir}/root-ca.pem"
 check "the resolution completed" [ -f "${marker}" ]
 
 # ---------------------------------------------------------------------------
@@ -375,10 +403,12 @@ echo "== 5. A certificate pair the CA did not issue"
 
 install_package
 external_pki /tmp/external-pki
-for n in indexer admin; do
-    install -m 0400 -o "${name}" -g "${name}" "/tmp/external-pki/${n}.pem" "${certs_dir}/${n}.pem"
-    install -m 0400 -o "${name}" -g "${name}" "/tmp/external-pki/${n}-key.pem" "${certs_dir}/${n}-key.pem"
-done
+# Staged as the specification asks: root's, read by the service through its group; the admin
+# pair root's alone.
+install -m 0640 -o root -g "${name}" /tmp/external-pki/indexer.pem "${certs_dir}/indexer.pem"
+install -m 0640 -o root -g "${name}" /tmp/external-pki/indexer-key.pem "${certs_dir}/indexer-key.pem"
+install -m 0600 -o root -g root /tmp/external-pki/admin.pem "${certs_dir}/admin.pem"
+install -m 0600 -o root -g root /tmp/external-pki/admin-key.pem "${certs_dir}/admin-key.pem"
 
 echo "Checking that the resolver refuses it while ${ca_dir} holds another CA:"
 rm -f "${marker}"
@@ -402,14 +432,18 @@ check "it says there is no CA certificate to verify the pair" \
     grep -qF "no CA certificate to verify it" <<< "${install_out}"
 check "no CA is minted" [ ! -e "${ca_dir}/root-ca.pem" ]
 check "no state file while the pair is unresolved" [ ! -e "${marker}" ]
+check "the reinstall handed the pair back to the service group" \
+    [ "$(stat -c '%U:%G %a' "${certs_dir}/indexer.pem")" = "root:${name} 640" ]
 
 echo "Checking that staging the CA that issued it resolves:"
-install -m 0400 -o "${name}" -g "${name}" /tmp/external-pki/root-ca.pem "${certs_dir}/root-ca.pem"
+install -m 0640 -o root -g "${name}" /tmp/external-pki/root-ca.pem "${certs_dir}/root-ca.pem"
 "${resolver}" --prestart > /tmp/prestart.log 2>&1; rc=$?
 check "--prestart resolves" [ "${rc}" -eq 0 ]
 check "the state file is written" [ -f "${marker}" ]
 check "the operator's pair is used, not replaced" \
-    cmp -s /tmp/external-pki/indexer.pem "${certs_dir}/indexer.pem"
+    same /tmp/external-pki/indexer.pem "${certs_dir}/indexer.pem"
+check "the staged anchor is published for the other components" \
+    same /tmp/external-pki/root-ca.pem "${export_dir}/ca.pem"
 
 # ---------------------------------------------------------------------------
 echo "== 6. An upgrade over CTI snapshots the node consumed"
@@ -437,4 +471,4 @@ if [ "${failed}" -gt 0 ]; then
     exit 1
 fi
 
-echo "OK: purge hands the default directories over to root, takes back the certificates it issued, and a reinstall comes back as it was"
+echo "OK: purge hands the default directories over to root, takes back what it published and the certificates it issued, and a reinstall comes back as it was"

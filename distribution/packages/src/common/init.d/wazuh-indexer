@@ -45,6 +45,29 @@ if [ -f "$DEFAULT" ]; then
     . "$DEFAULT"
 fi
 
+# run_as <command...>: run a command as the service account, with coreutils alone. chroot
+# --userspec switches uid, gid and supplementary groups; --skip-chdir keeps the working
+# directory, which GNU chroot allows exactly when the new root is /. What runuser did, without
+# util-linux.
+run_as() {
+    _ra_home=$(getent passwd "$NAME" | cut -d: -f6)
+    HOME=${_ra_home:-/} USER=$NAME LOGNAME=$NAME SHELL=/bin/bash \
+        chroot --userspec="$NAME:$NAME" --skip-chdir / "$@"
+}
+
+# The processes whose parent is $1, read from /proc/<pid>/stat (the fourth field, after the
+# command name in parentheses): what pkill -P reads.
+children_of() {
+    _co_parent=$1
+    for _co_stat in /proc/[0-9]*/stat; do
+        IFS= read -r _co_line < "${_co_stat}" 2>/dev/null || continue
+        _co_pid=${_co_stat#/proc/}; _co_pid=${_co_pid%/stat}
+        set -- ${_co_line##*) }
+        [ "$2" = "${_co_parent}" ] && printf '%s\n' "${_co_pid}"
+    done
+    return 0
+}
+
 # Sets the default values for wazuh-indexer variables used in this script
 OPENSEARCH_HOME="/usr/share/$NAME"
 MAX_OPEN_FILES=65535
@@ -102,10 +125,12 @@ start() {
         mkdir -p "$PID_DIR" && chown wazuh-indexer:wazuh-indexer "$PID_DIR"
     fi
     # Recreated on every start, never reused: stop() signals what it reads from these, and a
-    # pidfile left behind by the previous run is not this run's process.
+    # pidfile left behind by the previous run is not this run's process. PID_DIR belongs to the
+    # service account, which can plant a link in it at any time, so nothing here touches its
+    # contents as root: the old pidfiles are removed as that account, and the new one is written
+    # by the indexer itself (-p), as that account too, the way the systemd unit does it.
     if [ -n "$PID_DIR" ]; then
-        rm -f "$pidfile" "$PID_DIR/wazuh-engine.pid"
-        touch "$pidfile" && chown $NAME:$NAME "$pidfile"
+        run_as rm -f "$pidfile" "$PID_DIR/wazuh-engine.pid"
     fi
     # Ensure that the lockfile directory exists
     if [ ! -d "/var/lock/subsys/" ]; then
@@ -116,17 +141,20 @@ start() {
     echo -n $"Starting $prog..."
     # if not running, start it up here, usually something like "daemon $exec"
     if command -v daemon > /dev/null 2>&1; then
-        nohup daemon --user wazuh-indexer --pidfile $pidfile $exec -d > /dev/null 2>&1
+        nohup daemon --user wazuh-indexer --pidfile $pidfile $exec -p $pidfile -d > /dev/null 2>&1
     else
-        nohup runuser wazuh-indexer --shell="/bin/bash" --command="$exec -p $pidfile -d" > /dev/null 2>&1
+        # run_as, spelled out: nohup takes a program, not a shell function.
+        _home=$(getent passwd wazuh-indexer | cut -d: -f6)
+        HOME=${_home:-/} USER=wazuh-indexer LOGNAME=wazuh-indexer SHELL=/bin/bash \
+            nohup chroot --userspec=wazuh-indexer:wazuh-indexer --skip-chdir / /bin/bash -c "$exec -p $pidfile -d" > /dev/null 2>&1
     fi
     retval=$?
 
     # Start Wazuh Engine
     if [ -x "$OPENSEARCH_HOME/engine/run_engine.sh" ]; then
-        runuser wazuh-indexer -s /bin/bash -c "nohup $OPENSEARCH_HOME/engine/run_engine.sh > /dev/null 2>&1 & echo \$! > $PID_DIR/wazuh-engine.pid"
+        run_as /bin/bash -c "nohup $OPENSEARCH_HOME/engine/run_engine.sh > /dev/null 2>&1 & echo \$! > $PID_DIR/wazuh-engine.pid"
     fi
-    
+
     echo
     if [ $retval -eq 0 ]; then
         if [ ! -f $lockfile ]; then
@@ -148,7 +176,11 @@ is_indexer_process() {
     esac
     [ -r "/proc/$1/cmdline" ] || return 1
     [ "$(stat -c '%U' "/proc/$1" 2>/dev/null)" = "$NAME" ] || return 1
-    tr '\0' ' ' < "/proc/$1/cmdline" 2>/dev/null | grep -qF "$OPENSEARCH_HOME"
+    _iip_cmdline=$(tr '\0' ' ' < "/proc/$1/cmdline" 2>/dev/null)
+    case "$_iip_cmdline" in
+        *"$OPENSEARCH_HOME"*) return 0 ;;
+    esac
+    return 1
 }
 
 stop() {
@@ -159,7 +191,7 @@ stop() {
     if [ -f "$PID_DIR/wazuh-engine.pid" ]; then
         PID_TO_KILL=$(cat "$PID_DIR/wazuh-engine.pid")
         if is_indexer_process "$PID_TO_KILL"; then
-            pkill -P "$PID_TO_KILL" > /dev/null 2>&1 || true
+            for _child in $(children_of "$PID_TO_KILL"); do kill "$_child" > /dev/null 2>&1 || true; done
             kill "$PID_TO_KILL" > /dev/null 2>&1 || true
         fi
         rm -f "$PID_DIR/wazuh-engine.pid"

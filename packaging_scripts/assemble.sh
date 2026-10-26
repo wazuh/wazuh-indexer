@@ -184,7 +184,9 @@ function add_wazuh_tools() {
 
     curl -sL "${download_url}/config.yml" -o $PATH_PLUGINS/opensearch-security/tools/config.yml
     curl -sL "${download_url}/wazuh-passwords-tool.sh" -o $PATH_PLUGINS/opensearch-security/tools/wazuh-passwords-tool.sh
-    curl -sL "${download_url}/wazuh-certs-tool.sh" -o $PATH_PLUGINS/opensearch-security/tools/wazuh-certs-tool.sh
+    curl -sL --fail --retry 3 "${download_url}/config.yml" -o $PATH_PLUGINS/opensearch-security/tools/config.yml
+    curl -sL --fail --retry 3 "${download_url}/wazuh-passwords-tool.sh" -o $PATH_PLUGINS/opensearch-security/tools/wazuh-passwords-tool.sh
+    curl -sL --fail --retry 3 "${download_url}/wazuh-certs-tool.sh" -o $PATH_PLUGINS/opensearch-security/tools/wazuh-certs-tool.sh
 }
 
 # ====

@@ -177,14 +177,14 @@ function remove_unneeded_files() {
 # Add additional tools into packages
 # ====
 function add_wazuh_tools() {
-    local version=${1%%.[[:digit:]]}
+    local version=${1%.*}
 
     local download_url
     download_url="https://packages-dev.wazuh.com/${version}"
 
-    curl -sL "${download_url}/config.yml" -o $PATH_PLUGINS/opensearch-security/tools/config.yml
-    curl -sL "${download_url}/wazuh-passwords-tool.sh" -o $PATH_PLUGINS/opensearch-security/tools/wazuh-passwords-tool.sh
-    curl -sL "${download_url}/wazuh-certs-tool.sh" -o $PATH_PLUGINS/opensearch-security/tools/wazuh-certs-tool.sh
+    curl -sL --fail --retry 3 "${download_url}/config.yml" -o $PATH_PLUGINS/opensearch-security/tools/config.yml
+    curl -sL --fail --retry 3 "${download_url}/wazuh-passwords-tool.sh" -o $PATH_PLUGINS/opensearch-security/tools/wazuh-passwords-tool.sh
+    curl -sL --fail --retry 3 "${download_url}/wazuh-certs-tool.sh" -o $PATH_PLUGINS/opensearch-security/tools/wazuh-certs-tool.sh
 }
 
 # ====

@@ -177,7 +177,7 @@ function remove_unneeded_files() {
 # Add additional tools into packages
 # ====
 function add_wazuh_tools() {
-    local version=${1%%.[[:digit:]]}
+    local version=${1%.*}
 
     local download_url
     download_url="https://packages-dev.wazuh.com/${version}"

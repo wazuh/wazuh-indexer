@@ -32,12 +32,24 @@ def get_events(bucket: str, key: str) -> list:
     logger.info(f"Reading {key}.")
     try:
         response = s3_client.get_object(Bucket=bucket, Key=key)
-        data = gzip.decompress(response['Body'].read()).decode('utf-8')
+        encoded_data = response['Body'].read()
+        # Objects can be plain text or gzip compressed
+        if is_gzip_compressed(encoded_data):
+            data = gzip.decompress(encoded_data).decode('utf-8')
+        else:
+            data = encoded_data.decode('utf-8')
         return data.splitlines()
     except ClientError as e:
         logger.error(
             f"Failed to read S3 object {key} from bucket {bucket}: {e}")
         return []
+
+
+def is_gzip_compressed(data: bytes) -> bool:
+    """
+    Check if data is gzip compressed by inspecting its magic number.
+    """
+    return data[:2] == b'\x1f\x8b'
 
 
 def write_parquet_file(ocsf_events: list, filename: str) -> None:

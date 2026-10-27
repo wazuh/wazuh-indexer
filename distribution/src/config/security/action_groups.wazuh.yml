@@ -270,8 +270,15 @@ plugin:content_manager/space/delete:
   hidden: false
   allowed_actions:
     - 'cluster:admin/content_manager/space/delete'
+    - 'cluster:admin/wazuh/securityanalytics/space/delete'
+    - 'cluster:admin/wazuh/securityanalytics/rule/custom/delete'
+    - 'cluster:admin/wazuh/securityanalytics/logtype/delete'
+    - 'cluster:admin/opensearch/securityanalytics/rule/delete'
+    - 'cluster:admin/opensearch/securityanalytics/logtype/delete'
+    - 'indices:data/write/bulk'
+    - 'indices:data/read/scroll'
   type: "cluster"
-  description: "Delete a content space"
+  description: "Reset or clear a content space (full reset, normalization-only or detection-only), including the Security Analytics cleanup it performs"
 
 plugin:content_manager/policy/update:
   reserved: true

@@ -277,6 +277,7 @@ plugin:content_manager/space/delete:
     - 'cluster:admin/opensearch/securityanalytics/logtype/delete'
     - 'indices:data/write/bulk'
     - 'indices:data/read/scroll'
+    - 'indices:data/read/scroll/clear'
   type: "cluster"
   description: "Reset or clear a content space (full reset, normalization-only or detection-only), including the Security Analytics cleanup it performs"
 

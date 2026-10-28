@@ -361,23 +361,26 @@ fi
 
 # The node creates opensearch.keystore at its first start when it is absent, and rewrites it
 # when its format is older than the one it knows. The configuration directory is root's now,
-# so both happen here, as root, and the node never has to write there. After the resolver: the
-# keystore tool loads opensearch.yml and refuses it while the DN settings the resolver fills
-# are empty, so on a node whose certificates could not be issued yet the pre-start step creates
-# the keystore once they are. A keystore the operator protected with a password is left alone:
-# the upgrade would prompt for it.
-if [ ! -e %{config_dir}/opensearch.keystore ] && [ ! -L %{config_dir}/opensearch.keystore ]; then
-    if OPENSEARCH_PATH_CONF=%{config_dir} %{product_dir}/bin/opensearch-keystore create < /dev/null > /dev/null; then
-        # What the package created, so that an erase can tell it from one the operator put
-        # secrets in: the digest of the keystore as created.
-        sha256sum < %{config_dir}/opensearch.keystore > %{config_dir}/.wazuh-indexer-keystore
-        chmod 600 %{config_dir}/.wazuh-indexer-keystore
-    else
-        echo "WARNING: could not create %{config_dir}/opensearch.keystore; the pre-start step will try again" >&2
+# so both happen here, as root, and the node never has to write there. Only on a resolved node:
+# the keystore tool loads opensearch.yml and refuses it while the DN settings the resolver fills
+# are empty, so on a node whose prerequisites are not staged yet this prints nothing and the
+# resolver creates the keystore once they are, at the pre-start step. The tool's own error output
+# is not shown: a failure is the one warning line below, never a stack trace. A keystore the
+# operator protected with a password is left alone: the upgrade would prompt for it.
+if [ -f %{data_dir}/.initialized ]; then
+    if [ ! -e %{config_dir}/opensearch.keystore ] && [ ! -L %{config_dir}/opensearch.keystore ]; then
+        if OPENSEARCH_PATH_CONF=%{config_dir} %{product_dir}/bin/opensearch-keystore create < /dev/null > /dev/null 2>&1; then
+            # What the package created, so that an erase can tell it from one the operator put
+            # secrets in: the digest of the keystore as created.
+            sha256sum < %{config_dir}/opensearch.keystore > %{config_dir}/.wazuh-indexer-keystore
+            chmod 600 %{config_dir}/.wazuh-indexer-keystore
+        else
+            echo "WARNING: could not create %{config_dir}/opensearch.keystore; the pre-start step will try again" >&2
+        fi
+    elif [ -f %{config_dir}/opensearch.keystore ] && [ ! -L %{config_dir}/opensearch.keystore ]; then
+        OPENSEARCH_PATH_CONF=%{config_dir} %{product_dir}/bin/opensearch-keystore upgrade < /dev/null > /dev/null 2>&1 \
+            || echo "WARNING: could not upgrade %{config_dir}/opensearch.keystore" >&2
     fi
-elif [ -f %{config_dir}/opensearch.keystore ] && [ ! -L %{config_dir}/opensearch.keystore ]; then
-    OPENSEARCH_PATH_CONF=%{config_dir} %{product_dir}/bin/opensearch-keystore upgrade < /dev/null > /dev/null \
-        || echo "WARNING: could not upgrade %{config_dir}/opensearch.keystore" >&2
 fi
 root_file %{config_dir}/opensearch.keystore 640 %{name}
 
@@ -391,14 +394,32 @@ if [ $1 -eq 1 ]; then
     fi
     # %posttrans already ran `systemctl daemon-reload`, so the only steps left are enabling and
     # starting, which `--now` does together.
-    echo "The indexer is not running, and will not start at boot until it is enabled:"
     if command -v systemctl > /dev/null 2>&1 && systemctl > /dev/null 2>&1; then
-        echo " systemctl enable --now %{name}"
+        start=" systemctl enable --now %{name}"
     elif command -v chkconfig > /dev/null 2>&1; then
-        echo " chkconfig --add %{name} && service %{name} start"
+        start=" chkconfig --add %{name} && service %{name} start"
+    else
+        start=""
     fi
-    echo "Then load the security configuration, once, from one node:"
-    echo " %{product_dir}/bin/indexer-security-init.sh"
+    if [ -f %{data_dir}/.initialized ]; then
+        echo "The indexer is not running, and will not start at boot until it is enabled:"
+        [ -n "${start}" ] && echo "${start}"
+        echo "Then load the security configuration, once, from one node:"
+        echo " %{product_dir}/bin/indexer-security-init.sh"
+    else
+        # The resolver's own error, printed above, names what is missing. It creates the keystore
+        # only once the certificates resolved, so with no keystore the missing piece is TLS, and
+        # with one it is something else, such as a password the policy rejected.
+        if [ -f %{config_dir}/opensearch.keystore ]; then
+            echo "The indexer is installed but not configured: correct what is reported above,"
+        else
+            echo "The indexer is installed but not configured: it has no usable TLS certificate."
+            echo "Stage the node's certificate pair and its root-ca.pem in %{config_dir}/certs/ (root:%{name} 0640),"
+        fi
+        echo "then run:"
+        [ -n "${start}" ] && echo "${start}"
+        echo " %{product_dir}/bin/indexer-security-init.sh   (once, from one node)"
+    fi
     echo "The package opens no firewall port: 9200 (API) and 9300 (cluster) stay as the host has them."
 fi
 

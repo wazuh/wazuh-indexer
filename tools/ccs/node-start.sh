@@ -117,9 +117,9 @@ install_indexer() {
     download indexer
     stage_ca "${INDEXER_CONF}" "${UPLOADS}/ca"
     stage_local_env "${INDEXER_CONF}" WAZUH_INDEXER_ADMIN_PASSWORD WAZUH_INDEXER_KIBANASERVER_PASSWORD WAZUH_INDEXER_MANAGER_PASSWORD
-    # The indexer puts in its certificate the addresses of the default-route interface only, which
-    # here is the provider's management interface. The clusters reach each other on the private
-    # network with hostname verification enabled, so the private address has to be there too.
+    # The clusters reach each other on the private network with hostname verification enabled, so
+    # the certificate names this host by its private address, and not by the provider's management
+    # interface the indexer would also discover.
     printf 'WAZUH_INDEXER_CERT_SANS=DNS:%s,IP:%s\n' "$(hostname -s)" "${IP}" >> "${INDEXER_CONF}/local.env"
     dnf install -y "${DOWNLOADS}/wazuh-indexer.rpm"
 

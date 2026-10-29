@@ -55,6 +55,7 @@
 | Issue | Comment |
 |-------|---------|
 | [#1532](https://github.com/wazuh/wazuh-indexer/issues/1532) | Fix the ownership and permissions of `/etc/default/wazuh-indexer` in DEB packages |
+| [#2045](https://github.com/wazuh/wazuh-indexer/issues/2045) | Name every global address of the host in the node certificate, not only those of the default-route interface |
 | [#1951](https://github.com/wazuh/wazuh-indexer/issues/1951) | Fix the `wazuh-indexer` user and group left behind when the package is purged, and hand the files it keeps over to root |
 | [#2049](https://github.com/wazuh/wazuh-indexer/issues/2049) | Fix the keystore stack trace printed when the package is installed before its TLS prerequisites are staged, and say in the closing lines that such a node is not configured yet |
 

@@ -1219,14 +1219,15 @@ resolve_certificates() {
 # where it is still missing. It comes after the certificates: the keystore tool loads
 # opensearch.yml, and refuses it while the DN settings the resolution fills are still empty.
 # Nothing is written through an existing entry: a link or anything else in its place is reported
-# by the file checks.
+# by the file checks. The tool's own error output is not shown: a failure is the one line below,
+# never a stack trace.
 # -----------------------------------------------------------------------------------------
 
 ensure_keystore() {
     _ek_file="${CONFIG_DIR}/opensearch.keystore"
     [ -e "${_ek_file}" ] || [ -L "${_ek_file}" ] && return 0
     [ -x "${DIR}/bin/opensearch-keystore" ] || return 0
-    if OPENSEARCH_PATH_CONF="${CONFIG_DIR}" "${DIR}/bin/opensearch-keystore" create < /dev/null > /dev/null; then
+    if OPENSEARCH_PATH_CONF="${CONFIG_DIR}" "${DIR}/bin/opensearch-keystore" create < /dev/null > /dev/null 2>&1; then
         chown "root:${SERVICE_GROUP}" "${_ek_file}" 2>/dev/null || true
         chmod 0640 "${_ek_file}" 2>/dev/null || true
         # The digest of the keystore as created, so that a purge can tell it from one the

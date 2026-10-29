@@ -1410,6 +1410,21 @@ else
         bash -c "! grep -qE 'Exception in thread|opensearch.keystore' /tmp/pending-reinstall.log"
     check "still no keystore after the reinstall" bash -c "[ ! -e '${KEYSTORE}' ]"
 
+    # A marker planted as a link is no marker, as the resolver reads it: the maintainer scripts
+    # must not take the node for a resolved one either.
+    ln -s /etc/hostname "${MARKER}"
+    if [ "${PKG_KIND}" = "deb" ]; then
+        DEBIAN_FRONTEND=noninteractive dpkg -i "${PACKAGE}" >/tmp/pending-link.log 2>&1
+    else
+        yum reinstall -y "${PACKAGE}" >/tmp/pending-link.log 2>&1 \
+            || rpm -Uvh --replacepkgs "${PACKAGE}" >/tmp/pending-link.log 2>&1
+    fi
+    check_eq "the package reinstalls over a linked marker" "0" "$?"
+    check "a linked marker does not run the keystore tool" \
+        bash -c "! grep -qE 'Exception in thread|opensearch.keystore' /tmp/pending-link.log"
+    check "still no keystore with a linked marker" bash -c "[ ! -e '${KEYSTORE}' ]"
+    rm -f "${MARKER}"
+
     # The operator stages the CA beside the pair; the pre-start step finishes the resolution and
     # creates the keystore the install left alone.
     install -m 0640 -o root -g wazuh-indexer /tmp/pending-ca.pem "${CERTS_DIR}/root-ca.pem"

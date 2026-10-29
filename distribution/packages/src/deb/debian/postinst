@@ -234,7 +234,7 @@ fi
 # is not shown: a failure is the one warning line below, never a stack trace. A keystore the
 # operator protected with a password is left alone: the upgrade would prompt for it.
 keystore="${config_dir}/opensearch.keystore"
-if [ -f "${data_dir}/.initialized" ]; then
+if [ -f "${data_dir}/.initialized" ] && [ ! -L "${data_dir}/.initialized" ]; then
     if [ ! -e "${keystore}" ] && [ ! -L "${keystore}" ]; then
         if OPENSEARCH_PATH_CONF="${config_dir}" "${product_dir}/bin/opensearch-keystore" create < /dev/null > /dev/null 2>&1; then
             # What the package created, so that a purge can tell it from one the operator put
@@ -269,7 +269,7 @@ if [ -z "$2" ]; then
     else
         start=""
     fi
-    if [ -f "${data_dir}/.initialized" ]; then
+    if [ -f "${data_dir}/.initialized" ] && [ ! -L "${data_dir}/.initialized" ]; then
         echo "The indexer is not running, and will not start at boot until it is enabled:"
         [ -n "${start}" ] && echo "${start}"
         echo "Then load the security configuration, once, from one node:"

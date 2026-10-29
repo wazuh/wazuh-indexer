@@ -367,7 +367,7 @@ fi
 # resolver creates the keystore once they are, at the pre-start step. The tool's own error output
 # is not shown: a failure is the one warning line below, never a stack trace. A keystore the
 # operator protected with a password is left alone: the upgrade would prompt for it.
-if [ -f %{data_dir}/.initialized ]; then
+if [ -f %{data_dir}/.initialized ] && [ ! -L %{data_dir}/.initialized ]; then
     if [ ! -e %{config_dir}/opensearch.keystore ] && [ ! -L %{config_dir}/opensearch.keystore ]; then
         if OPENSEARCH_PATH_CONF=%{config_dir} %{product_dir}/bin/opensearch-keystore create < /dev/null > /dev/null 2>&1; then
             # What the package created, so that an erase can tell it from one the operator put
@@ -401,7 +401,7 @@ if [ $1 -eq 1 ]; then
     else
         start=""
     fi
-    if [ -f %{data_dir}/.initialized ]; then
+    if [ -f %{data_dir}/.initialized ] && [ ! -L %{data_dir}/.initialized ]; then
         echo "The indexer is not running, and will not start at boot until it is enabled:"
         [ -n "${start}" ] && echo "${start}"
         echo "Then load the security configuration, once, from one node:"

@@ -684,37 +684,49 @@ derive_sans() {
             _ds_sans="${_ds_sans:+${_ds_sans},}DNS:${_ds_fqdn}"
         fi
 
-        # Global addresses on default-route interfaces only. Without that filter a host running
-        # containers advertises docker0, veth* and CNI addresses too. The filter is a heuristic;
-        # WAZUH_INDEXER_CERT_SANS is the escape hatch for when it guesses wrong.
-        _ds_ifaces=""
-        _ds_routes=$(ip -o route show default 2>/dev/null)
+        # Every global address of every interface, as `ip -o addr show scope global` lists them,
+        # whether or not the interface carries the default route, is virtual or is down: the rule the
+        # manager follows, so the certificates of one host agree on its addresses. Loopback and
+        # link-local addresses are left out even when configured with that scope, and so are IPv6
+        # addresses that are deprecated, tentative or failed duplicate address detection. A container
+        # bridge's address is named too; WAZUH_INDEXER_CERT_SANS is how to leave it out.
+        _ds_listed=1
+        _ds_found=0
+        _ds_addrs=$(ip -o addr show scope global 2>/dev/null) || _ds_listed=0
         while IFS= read -r _ds_line || [ -n "${_ds_line}" ]; do
             set -- ${_ds_line}
-            while [ $# -gt 1 ]; do
-                if [ "$1" = dev ]; then
-                    case " ${_ds_ifaces} " in
-                        *" $2 "*) ;;
-                        *) _ds_ifaces="${_ds_ifaces} $2" ;;
+            _ds_family="${3-}"
+            _ds_addr="${4-}"
+            _ds_addr="${_ds_addr%%/*}"
+            case "${_ds_family}" in
+                inet) ;;
+                inet6)
+                    case " ${_ds_line} " in
+                        *" deprecated "*|*" tentative "*|*" dadfailed "*) continue ;;
                     esac
-                    break
-                fi
-                shift
-            done
+                    ;;
+                *) continue ;;
+            esac
+            # Only the characters of an address reach the openssl extensions file, whatever else a
+            # line of `ip` output turned out to hold.
+            case "${_ds_addr}" in
+                ''|*[!0-9A-Fa-f.:]*|127.*|169.254.*|::1|[fF][eE][89aAbB]?:*) continue ;;
+            esac
+            _ds_found=1
+            case ",${_ds_sans}," in
+                *",IP:${_ds_addr},"*) ;;
+                *) _ds_sans="${_ds_sans:+${_ds_sans},}IP:${_ds_addr}" ;;
+            esac
         done <<EOT
-${_ds_routes}
-EOT
-        for _ds_iface in ${_ds_ifaces}; do
-            _ds_addrs=$(ip -o addr show dev "${_ds_iface}" scope global 2>/dev/null)
-            while IFS= read -r _ds_line || [ -n "${_ds_line}" ]; do
-                set -- ${_ds_line}
-                _ds_addr="${4-}"
-                _ds_addr="${_ds_addr%%/*}"
-                [ -n "${_ds_addr}" ] && _ds_sans="${_ds_sans:+${_ds_sans},}IP:${_ds_addr}"
-            done <<EOT
 ${_ds_addrs}
 EOT
-        done
+        if [ "${_ds_listed}" -eq 0 ]; then
+            err "WARNING: cannot list the interface addresses (ip -o addr show failed); the certificate"
+            err "        names this node only by name and loopback. Set WAZUH_INDEXER_CERT_SANS"
+        elif [ "${_ds_found}" -eq 0 ]; then
+            err "WARNING: no global interface address; the certificate names this node only by name and"
+            err "        loopback. Set WAZUH_INDEXER_CERT_SANS"
+        fi
     fi
 
     for _ds_required in DNS:localhost IP:127.0.0.1 IP:::1; do

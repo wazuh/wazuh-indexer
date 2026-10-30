@@ -653,6 +653,20 @@ jobs:
               bash /build-scripts/ci/test_credentials.sh
           '
 
+      - name: Test DEB needrestart rule
+        if: ${{ matrix.distribution == 'deb' }}
+        run: |
+          # Ubuntu 22.04 and 24.04 ship different needrestart releases.
+          for release in jammy noble; do
+            echo "::group::Ubuntu ${release}"
+            SYSTEMD_IMAGE="wazuh-indexer-systemd-test:${release}" \
+              bash build-scripts/run_in_systemd_container.sh "${{ github.workspace }}" '
+                PACKAGE="/artifacts/dist/${{ steps.package.outputs.name }}" \
+                  bash /build-scripts/ci/test_needrestart.sh
+              '
+            echo "::endgroup::"
+          done
+
       - name: Test DEB package update stopping the indexer
         if: ${{ matrix.distribution == 'deb' && needs.setup.outputs.update_tests == 'true' }}
         run: |

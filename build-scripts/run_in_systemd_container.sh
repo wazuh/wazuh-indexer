@@ -24,17 +24,20 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # The Debian-family image is built locally (from ECR Public) on first call and
-# reused via the layer cache. Set SYSTEMD_IMAGE to any other systemd-enabled
-# image -- redhat/ubi9-init for the RPM tests, say -- and it is pulled instead
-# of built, so the same harness drives both package formats.
-DEFAULT_SYSTEMD_IMAGE="wazuh-indexer-systemd-test:jammy"
-SYSTEMD_IMAGE="${SYSTEMD_IMAGE:-$DEFAULT_SYSTEMD_IMAGE}"
+# reused via the layer cache. Its tag names the Ubuntu release, so
+# wazuh-indexer-systemd-test:noble builds a 24.04 image. Set SYSTEMD_IMAGE to
+# any other systemd-enabled image -- redhat/ubi9-init for the RPM tests, say --
+# and it is pulled instead of built, so the same harness drives both package
+# formats.
+LOCAL_SYSTEMD_IMAGE="wazuh-indexer-systemd-test"
+SYSTEMD_IMAGE="${SYSTEMD_IMAGE:-${LOCAL_SYSTEMD_IMAGE}:jammy}"
 
 if ! docker image inspect "$SYSTEMD_IMAGE" >/dev/null 2>&1; then
-    if [ "$SYSTEMD_IMAGE" = "$DEFAULT_SYSTEMD_IMAGE" ]; then
+    if [ "${SYSTEMD_IMAGE%%:*}" = "$LOCAL_SYSTEMD_IMAGE" ]; then
         echo "Building systemd test image ${SYSTEMD_IMAGE}..."
         # The Dockerfile has no COPY/ADD, so an empty build context keeps it fast.
         docker build -t "$SYSTEMD_IMAGE" \
+            --build-arg UBUNTU_RELEASE="${SYSTEMD_IMAGE#*:}" \
             -f "${SCRIPT_DIR}/builder/systemd-test.Dockerfile" \
             "${SCRIPT_DIR}/builder"
     else

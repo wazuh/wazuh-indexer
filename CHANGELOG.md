@@ -8,7 +8,7 @@
 | [#1105](https://github.com/wazuh/wazuh-indexer-plugins/issues/1105) | Bundle CTI content snapshots in the Wazuh Indexer packages |
 | [#1927](https://github.com/wazuh/wazuh-indexer/issues/1927) [#1975](https://github.com/wazuh/wazuh-indexer/issues/1975) | Generate indexer credentials and TLS material at install time instead of shipping defaults |
 | [#462](https://github.com/wazuh/wazuh-indexer-plugins/issues/462) [#1538](https://github.com/wazuh/wazuh-indexer/issues/1538) [#528](https://github.com/wazuh/wazuh-indexer-plugins/issues/528) [#1422](https://github.com/wazuh/wazuh-indexer-plugins/issues/1422) [#1195](https://github.com/wazuh/wazuh-indexer/issues/1195) | Add default Wazuh Indexer users and roles |
-| [#1636](https://github.com/wazuh/wazuh-indexer/issues/1636) [#1662](https://github.com/wazuh/wazuh-indexer/issues/1662) [#1249](https://github.com/wazuh/wazuh-indexer/issues/1249) [#1782](https://github.com/wazuh/wazuh-indexer/issues/1782) | Add performance improvements & default configurations |
+| [#1636](https://github.com/wazuh/wazuh-indexer/issues/1636) [#1662](https://github.com/wazuh/wazuh-indexer/issues/1662) [#2007](https://github.com/wazuh/wazuh-indexer/issues/2007) [#1249](https://github.com/wazuh/wazuh-indexer/issues/1249) [#1782](https://github.com/wazuh/wazuh-indexer/issues/1782) | Add performance improvements & default configurations |
 | [#1299](https://github.com/wazuh/wazuh-indexer/issues/1299) [#1365](https://github.com/wazuh/wazuh-indexer/issues/1365) | Add support for ARM architecture in Wazuh Indexer Docker images |
 | [#1576](https://github.com/wazuh/wazuh-indexer/issues/1576) | Add `workload-management` plugin |
 | [#1271](https://github.com/wazuh/wazuh-indexer-plugins/issues/1271) | Add `opensearch-custom-codecs` plugin |
@@ -32,7 +32,6 @@
 | [#1572](https://github.com/wazuh/wazuh-indexer/issues/1572) | Set `OPENSEARCH_TMPDIR` to `/var/lib/wazuh-indexer/tmp` to avoid exhausting the `/tmp` partition |
 | [#1581](https://github.com/wazuh/wazuh-indexer/issues/1581) | Log the disabled automatic import of dangling indices at `INFO` instead of `WARN` on every startup |
 | [#1998](https://github.com/wazuh/wazuh-indexer/issues/1998) | Enable transport hostname verification (`transport.ssl.enforce_hostname_verification`) by default |
-| [#2007](https://github.com/wazuh/wazuh-indexer/issues/2007) | Raise the search backpressure heap threshold of search shard tasks to 4% of the heap (`search_backpressure.search_shard_task.heap_percent_threshold`), so it no longer cancels the Wazuh manager's inventory sync |
 
 
 ### Removed
@@ -55,8 +54,6 @@
 | Issue | Comment |
 |-------|---------|
 | [#1532](https://github.com/wazuh/wazuh-indexer/issues/1532) | Fix the ownership and permissions of `/etc/default/wazuh-indexer` in DEB packages |
-| [#2045](https://github.com/wazuh/wazuh-indexer/issues/2045) | Name every global address of the host in the node certificate, not only those of the default-route interface |
 | [#1951](https://github.com/wazuh/wazuh-indexer/issues/1951) | Fix the `wazuh-indexer` user and group left behind when the package is purged, and hand the files it keeps over to root |
-| [#2049](https://github.com/wazuh/wazuh-indexer/issues/2049) | Fix the keystore stack trace printed when the package is installed before its TLS prerequisites are staged, and say in the closing lines that such a node is not configured yet |
 
 ## Prior versions

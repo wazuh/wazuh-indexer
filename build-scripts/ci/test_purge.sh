@@ -66,6 +66,7 @@ default_dirs=("${config_dir}" "${product_dir}" "${data_dir}" "${log_dir}")
 marker="${data_dir}/.initialized"
 resolver="${product_dir}/bin/resolve-credentials.sh"
 repo_dir="/srv/${name}-repo"
+default_repo="${data_dir}/backup"
 hsperfdata="/tmp/hsperfdata_${name}"
 canary="/etc/${name}-canary"
 note="Directories set elsewhere in opensearch.yml (a custom path.data, path.logs or path.repo) are left as they are"
@@ -227,6 +228,15 @@ check "the install published the CA for the other components" \
     same "${export_dir}/ca.pem" "${ca_dir}/root-ca.pem"
 check "the install created no /etc/wazuh" [ ! -e /etc/wazuh ]
 
+# The directory path.repo names, shipped empty and never written to by the package.
+# See https://github.com/wazuh/wazuh-indexer/issues/2062.
+check "the install points path.repo at ${default_repo}" \
+    grep -qF "path.repo: [\"${default_repo}\"]" "${config_dir}/opensearch.yml"
+check "the install created ${default_repo}" [ -d "${default_repo}" ]
+check "${default_repo} belongs to ${name}:${name}" owned_by "${name}:${name}" "${default_repo}"
+check "${default_repo} is 0750" [ "$(stat -c '%a' "${default_repo}")" = "750" ]
+check "${default_repo} ships empty" [ -z "$(ls -A "${default_repo}" 2>/dev/null)" ]
+
 purge_package
 echo "Checking what the purge left behind:"
 check_purged
@@ -259,19 +269,28 @@ install_package
 # permissive modes an unset UMask gives. The keystore is the package's: root's,
 # read by the service through its group, and never written by the node.
 mkdir -p "${data_dir}/nodes/0/indices/index-uuid" "${repo_dir}/indices" \
-    "${product_dir}/engine/data/store" "${hsperfdata}"
+    "${default_repo}/indices" "${product_dir}/engine/data/store" "${hsperfdata}"
 echo "segment" > "${data_dir}/nodes/0/indices/index-uuid/segment"
 echo "log line" > "${log_dir}/${name}.log"
 echo "keystore" > "${config_dir}/opensearch.keystore"
 echo "snapshot" > "${repo_dir}/indices/snapshot"
+# A backup taken into the directory the package ships. Unlike the empty one of the fresh install,
+# this must outlive the purge: it may be the only copy of the data.
+echo "default snapshot" > "${default_repo}/indices/snapshot"
 echo "store" > "${product_dir}/engine/data/store/runtime"
-chown -R "${name}:${name}" "${data_dir}/nodes" "${log_dir}" "${repo_dir}" \
+chown -R "${name}:${name}" "${data_dir}/nodes" "${log_dir}" "${repo_dir}" "${default_repo}" \
     "${product_dir}/engine/data/store" "${hsperfdata}"
 chmod 755 "${data_dir}/nodes" "${data_dir}/nodes/0" "${data_dir}/nodes/0/indices" "${data_dir}/nodes/0/indices/index-uuid"
-chmod 644 "${data_dir}/nodes/0/indices/index-uuid/segment" "${log_dir}/${name}.log" "${repo_dir}/indices/snapshot"
+chmod 644 "${data_dir}/nodes/0/indices/index-uuid/segment" "${log_dir}/${name}.log" \
+    "${repo_dir}/indices/snapshot" "${default_repo}/indices/snapshot"
 chown "root:${name}" "${config_dir}/opensearch.keystore"
 chmod 640 "${config_dir}/opensearch.keystore"
-printf '\npath.repo: ["%s"]\n' "${repo_dir}" >> "${config_dir}/opensearch.yml"
+# An operator's own location beside the one the package ships. Checked rather than assumed: with no
+# line to replace, the substitution would quietly do nothing and the checks below would still pass.
+sed -i -E "s|^[[:space:]]*path\.repo[[:space:]]*:.*$|path.repo: [\"${default_repo}\", \"${repo_dir}\"]|" \
+    "${config_dir}/opensearch.yml"
+check "path.repo names both the shipped and the operator's directory" \
+    grep -qF "path.repo: [\"${default_repo}\", \"${repo_dir}\"]" "${config_dir}/opensearch.yml"
 
 # A link the service account could have planted, aimed at a file it does not
 # own. The purge must change the link, never its target.
@@ -342,6 +361,12 @@ check "the symlink's target is untouched" \
     [ "$(stat -c '%U:%G %a' "${canary}")" = "root:root 644" ]
 check "the custom path.repo is left exactly as it was" \
     [ "$(find -P "${repo_dir}" -printf '%p %U:%G %m\n' | sort)" = "${repo_before}" ]
+# The directory the package ships is the package's, so the purge hands it to root rather than
+# leaving it with the removed account's ID. What is inside it stays: it may be the only copy.
+check "a backup in ${default_repo} outlives the purge" \
+    [ -f "${default_repo}/indices/snapshot" ]
+check "the backup keeps its content" \
+    [ "$(cat "${default_repo}/indices/snapshot")" = "default snapshot" ]
 check "the purge says it leaves custom paths alone" output_has "${note}"
 
 # ---------------------------------------------------------------------------

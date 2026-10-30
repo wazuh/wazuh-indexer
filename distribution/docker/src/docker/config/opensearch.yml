@@ -1,2 +1,7 @@
 cluster.name: "docker-cluster"
 network.host: 0.0.0.0
+# Where a filesystem snapshot repository may be registered. A repository anywhere else is refused,
+# so without this setting no backup can be set up at all. The directory ships empty: mount a volume
+# there to keep backups outside the container, and on a cluster mount the same shared filesystem at
+# this path in every node.
+path.repo: ["/usr/share/wazuh-indexer/backup"]

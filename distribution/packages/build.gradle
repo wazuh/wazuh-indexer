@@ -386,9 +386,9 @@ Closure commonDebConfig(boolean jdk, String architecture) {
 
     // needrestart flags the service for the native libraries the JVM extracts into its
     // temporary directory and deletes while still mapped. Ignore only those mappings.
-    configurationFile '/etc/needrestart/conf.d/wazuh-indexer-tmp.conf'
+    configurationFile '/etc/needrestart/conf.d/wazuh-indexer.conf'
     into('/etc/needrestart/conf.d') {
-      from('src/deb/needrestart/wazuh-indexer-tmp.conf')
+      from('src/deb/needrestart/wazuh-indexer.conf')
       filePermissions {
         unix 0644
       }

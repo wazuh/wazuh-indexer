@@ -9,7 +9,7 @@
 # The JVM extracts native libraries into /var/lib/wazuh-indexer/tmp and deletes
 # them while they stay mapped, and needrestart restarts a service whose
 # processes map deleted files. The package ships
-# /etc/needrestart/conf.d/wazuh-indexer-tmp.conf so that needrestart ignores
+# /etc/needrestart/conf.d/wazuh-indexer.conf so that needrestart ignores
 # those mappings, and only those.
 #
 #   1. The rule is valid Perl (a syntax error breaks needrestart for the whole
@@ -31,7 +31,7 @@ set -uo pipefail
 : "${PACKAGE:?PACKAGE is required}"
 
 name="wazuh-indexer"
-rule="/etc/needrestart/conf.d/${name}-tmp.conf"
+rule="/etc/needrestart/conf.d/${name}.conf"
 tmp_dir="/var/lib/${name}/tmp"
 failed=0
 

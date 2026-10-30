@@ -44,7 +44,7 @@ find "${buildroot}" -type f -exec chmod 640 {} \;
 # The needrestart directories belong to needrestart, so they keep its modes
 needrestart_dir="${buildroot}/etc/needrestart"
 chmod -c 755 "${needrestart_dir}" "${needrestart_dir}/conf.d"
-chmod -c 644 "${needrestart_dir}/conf.d/wazuh-indexer-tmp.conf"
+chmod -c 644 "${needrestart_dir}/conf.d/wazuh-indexer.conf"
 
 # Permissions for the Systemd files
 systemd_files=()

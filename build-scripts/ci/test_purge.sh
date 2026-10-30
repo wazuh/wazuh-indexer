@@ -228,9 +228,7 @@ check "the install published the CA for the other components" \
     same "${export_dir}/ca.pem" "${ca_dir}/root-ca.pem"
 check "the install created no /etc/wazuh" [ ! -e /etc/wazuh ]
 
-# The directory path.repo names, the only one a filesystem snapshot repository may be registered
-# under. It ships empty and the package never writes to it; the setting itself is written by the
-# resolver, so that the packaged opensearch.yml stays byte for byte what it always was.
+# The directory path.repo names, shipped empty and never written to by the package.
 # See https://github.com/wazuh/wazuh-indexer/issues/2062.
 check "the install points path.repo at ${default_repo}" \
     grep -qF "path.repo: [\"${default_repo}\"]" "${config_dir}/opensearch.yml"
@@ -277,8 +275,7 @@ echo "log line" > "${log_dir}/${name}.log"
 echo "keystore" > "${config_dir}/opensearch.keystore"
 echo "snapshot" > "${repo_dir}/indices/snapshot"
 # A backup taken into the directory the package ships. Unlike the empty one of the fresh install,
-# this must outlive the purge: it may be the only copy of the data, and the directory may be a
-# mount point of its own volume.
+# this must outlive the purge: it may be the only copy of the data.
 echo "default snapshot" > "${default_repo}/indices/snapshot"
 echo "store" > "${product_dir}/engine/data/store/runtime"
 chown -R "${name}:${name}" "${data_dir}/nodes" "${log_dir}" "${repo_dir}" "${default_repo}" \
@@ -288,10 +285,8 @@ chmod 644 "${data_dir}/nodes/0/indices/index-uuid/segment" "${log_dir}/${name}.l
     "${repo_dir}/indices/snapshot" "${default_repo}/indices/snapshot"
 chown "root:${name}" "${config_dir}/opensearch.keystore"
 chmod 640 "${config_dir}/opensearch.keystore"
-# An operator's own location beside the one the package ships, which is how path.repo takes a
-# second directory. Replacing the line keeps the key single, as YAML requires. Checked rather than
-# assumed: if the resolver ever stopped writing the line, the substitution would quietly do nothing
-# and the checks below would pass without a custom repository being named at all.
+# An operator's own location beside the one the package ships. Checked rather than assumed: with no
+# line to replace, the substitution would quietly do nothing and the checks below would still pass.
 sed -i -E "s|^[[:space:]]*path\.repo[[:space:]]*:.*$|path.repo: [\"${default_repo}\", \"${repo_dir}\"]|" \
     "${config_dir}/opensearch.yml"
 check "path.repo names both the shipped and the operator's directory" \

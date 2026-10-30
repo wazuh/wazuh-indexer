@@ -824,44 +824,36 @@ done
 
 section "1.7b A filesystem snapshot repository can be registered"
 
-# The functional requirement of https://github.com/wazuh/wazuh-indexer/issues/2062: backing up the
-# data must not need a hand edit of opensearch.yml and a restart. A repository can only be
-# registered under a directory named in path.repo, a static setting, so the packaged configuration
-# names one and the package ships it empty.
+# A repository can only be registered under a directory named in path.repo, which is read at start,
+# so without it no backup can be set up at all. See
+# https://github.com/wazuh/wazuh-indexer/issues/2062.
 REPO_DIR="${DATA_DIR}/backup"
 ADMIN_PW=$(cred_get WAZUH_INDEXER_ADMIN_PASSWORD)
-api_admin() { curl -sk -u "admin:${ADMIN_PW}" "$@" 2>/dev/null; }
-# This script has no `not` helper, so the negative form is its own function.
 has_path_repo()   { grep -qE '^[[:space:]]*path\.repo[[:space:]]*:' "${OPENSEARCH_YML}"; }
 lacks_path_repo() { ! has_path_repo; }
 path_repo_count() { grep -cE '^[[:space:]]*path\.repo[[:space:]]*:' "${OPENSEARCH_YML}"; }
 
 check "${REPO_DIR} is wazuh-indexer:wazuh-indexer 0750" is 750 "${REPO_DIR}" wazuh-indexer:wazuh-indexer
-
-# The setting is written by the resolver, not shipped in opensearch.yml. That is what keeps the
-# packaged bytes of a configuration file the maintainer scripts write from ever changing, which is
-# what would otherwise make every upgrade of an existing node prompt.
 check "the install set path.repo" has_path_repo
 check_eq "it is there exactly once" "1" "$(path_repo_count)"
 
-got=$(api_admin "${API}/_nodes/settings?filter_path=nodes.*.settings.path.repo")
+got=$(curl -sk -u "admin:${ADMIN_PW}" "${API}/_nodes/settings?filter_path=nodes.*.settings.path.repo" 2>/dev/null)
 case "${got}" in
     *"${REPO_DIR}"*) ok "the node reports ${REPO_DIR} in path.repo" ;;
     *) fail "path.repo does not name ${REPO_DIR}"; info "${got}" ;;
 esac
 
-got=$(api_admin -XPUT -H 'Content-Type: application/json' "${API}/_snapshot/packaged-backups" \
-    -d "{\"type\":\"fs\",\"settings\":{\"location\":\"${REPO_DIR}\"}}")
-case "${got}" in
-    *'"acknowledged":true'*) ok "an fs repository registers with no edit and no restart" ;;
-    *) fail "the repository was refused"; info "$(printf '%s' "${got}" | head -c 300)" ;;
-esac
+got=$(curl -sk -u "admin:${ADMIN_PW}" -X PUT -H 'Content-Type: application/json' \
+    -o /dev/null -w '%{http_code}' "${API}/_snapshot/packaged-backups" \
+    -d "{\"type\":\"fs\",\"settings\":{\"location\":\"${REPO_DIR}\"}}" 2>/dev/null)
+check_eq "an fs repository registers with no edit and no restart" "200" "${got}"
 
-api_admin -XPUT -H 'Content-Type: application/json' "${API}/snapshot-probe/_doc/1?refresh" \
-    -d '{"probe":1}' > /dev/null
-got=$(api_admin -XPUT -H 'Content-Type: application/json' \
+curl -sk -u "admin:${ADMIN_PW}" -X PUT -H 'Content-Type: application/json' \
+    "${API}/snapshot-probe/_doc/1?refresh" -d '{"probe":1}' > /dev/null 2>&1
+# A snapshot that failed answers 200 as well, with the state in the body, so this one is read.
+got=$(curl -sk -u "admin:${ADMIN_PW}" -X PUT -H 'Content-Type: application/json' \
     "${API}/_snapshot/packaged-backups/probe-1?wait_for_completion=true" \
-    -d '{"indices":"snapshot-probe"}')
+    -d '{"indices":"snapshot-probe"}' 2>/dev/null)
 case "${got}" in
     *'"state":"SUCCESS"'*) ok "a snapshot into it completes" ;;
     *) fail "the snapshot did not complete"; info "$(printf '%s' "${got}" | head -c 300)" ;;
@@ -869,22 +861,19 @@ esac
 check "the snapshot was written under ${REPO_DIR}" \
     bash -c "[ -n \"\$(ls -A '${REPO_DIR}' 2>/dev/null)\" ]"
 
-# Leave the node as this section found it. What a purge does with a repository that holds backups
-# is test_purge.sh's, which stages one without needing a running node.
-api_admin -XDELETE "${API}/_snapshot/packaged-backups/probe-1" > /dev/null
-api_admin -XDELETE "${API}/_snapshot/packaged-backups" > /dev/null
-api_admin -XDELETE "${API}/snapshot-probe" > /dev/null
+# The sections below run against this node, so the probe goes away with its repository. What a
+# purge does with one that holds backups is test_purge.sh's.
+for path in "_snapshot/packaged-backups/probe-1" "_snapshot/packaged-backups" "snapshot-probe"; do
+    curl -sk -u "admin:${ADMIN_PW}" -X DELETE "${API}/${path}" > /dev/null 2>&1
+done
 rm -rf "${REPO_DIR:?}"/..?* "${REPO_DIR:?}"/.[!.]* "${REPO_DIR:?}"/* 2>/dev/null || true
 
-# A node installed before the setting existed gets it from the upgrade, which is what shipping it
-# in opensearch.yml could not have done: the package manager keeps the file it already has.
-# Writing through the original file keeps the owner and mode the package set, as the resolver's
-# own writes do. The note the resolver leaves rides on the same line, so deleting the key is all
-# it takes to put the node back where it was.
+# Writing through the original file keeps the owner and mode, as the resolver's own writes do.
 drop_path_repo() {
     grep -vE '^[[:space:]]*path\.repo[[:space:]]*:' "${OPENSEARCH_YML}" > /tmp/yml.norepo \
         && cat /tmp/yml.norepo > "${OPENSEARCH_YML}"
 }
+# A node installed before the setting existed gets it from an upgrade, not from a hand edit.
 drop_path_repo
 check "a node without path.repo stands in for one installed before it existed" lacks_path_repo
 "${RESOLVER}" --upgrade > /tmp/pathrepo.log 2>&1
@@ -892,8 +881,7 @@ check "an upgrade sets path.repo on a node that had none" has_path_repo
 check "the resolver is what writes it, not the package" \
     grep -qF "set path.repo to ${REPO_DIR}" /tmp/pathrepo.log
 
-# What the operator decides about it is theirs: a value they changed is not corrected, and one they
-# removed does not come back on every start.
+# What the operator decides about it is theirs.
 sed -i -E 's|^[[:space:]]*path\.repo[[:space:]]*:.*$|path.repo: ["/srv/operator-backups"]|' "${OPENSEARCH_YML}"
 "${RESOLVER}" --upgrade --quiet > /dev/null 2>&1
 check "a path.repo the operator chose is left alone" \
@@ -906,9 +894,8 @@ check "a start does not add path.repo back" lacks_path_repo
 check "the next upgrade does" has_path_repo
 check_eq "still exactly one, after three cycles" "1" "$(path_repo_count)"
 
-# YAML writes this setting two ways. An operator using the block form must not get a flat key
-# appended below it: the settings loader would take the appended one and their repository would be
-# gone, with no error anywhere.
+# YAML writes this setting two ways. A flat key appended below the block form would win in the
+# settings loader, and the operator's repository would be gone with no error anywhere.
 drop_path_repo
 printf 'path:\n  repo:\n  - /srv/operator-backups\n' >> "${OPENSEARCH_YML}"
 "${RESOLVER}" --upgrade --quiet > /dev/null 2>&1
@@ -993,11 +980,9 @@ wait_for_cluster admin "${admin_pw}"
 
 section "1.8c A replaced opensearch.yml does not strand the node"
 
-# opensearch.yml is a configuration file of the package, and the two distinguished names are the
-# only part of it the package writes. That is also what makes the package manager treat the file as
-# the operator's from the first install on, so a version that changes the shipped copy offers to
-# replace it, and replacing it empties the two settings. The node refuses to start without them, so
-# the pre-start step fills an empty one back in from the certificates already on disk.
+# An upgrade that replaces opensearch.yml with the packaged copy empties the two distinguished
+# names, and the node refuses to start without them. The pre-start step fills an empty one back in
+# from the certificates already on disk.
 systemctl stop wazuh-indexer > /dev/null 2>&1
 empty_the_dns() {
     awk '

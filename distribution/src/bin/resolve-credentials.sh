@@ -995,27 +995,22 @@ dn_is_empty() {
 # Only --install replaces a key that already has a value. Every other mode fills the empty keys the
 # package ships and leaves the rest alone, because by then the list may be the operator's own: one
 # entry per node of their cluster.
-# path.repo lists the only directories a filesystem snapshot repository may be registered under. It
-# is read at start, so a node without it cannot be given one at all: the dashboard refuses with a
-# raw error and the operator is sent to the terminal to edit this file and restart. The package
-# creates REPO_DIR empty for it and writes nothing there.
+# path.repo lists the only directories a snapshot repository may be registered under, and it is read
+# at start, so a node without it cannot be given one at all. The package creates REPO_DIR empty for
+# it and writes nothing there.
 #
-# The setting is written from here rather than shipped in opensearch.yml because the maintainer
-# scripts already write this file, which makes the package manager record it as the operator's from
-# the first install on. A shipped line that changed would therefore make every upgrade of an
-# existing node ask what to do with the file: unattended-upgrades answers that by never upgrading
-# the package again, and a scripted apt run fails outright. Written here, the shipped bytes never
-# change and existing nodes get the setting too.
+# Written from here rather than shipped in opensearch.yml because these scripts already write that
+# file, which is a conffile: dpkg has recorded it as the operator's since the first install, so a
+# shipped line that changed would stop every upgrade of an existing node at a conffile prompt. This
+# way the shipped bytes never change, and existing nodes get the setting too.
 #
-# Only an absent key is added, and only at install and upgrade, so a list the operator has since
-# changed is left alone and one they removed does not come back on every start.
+# Only an absent key is added, and only at install and upgrade, so a list the operator changed is
+# left alone and one they removed does not come back on every start.
 # See https://github.com/wazuh/wazuh-indexer/issues/2062.
-# YAML writes the same setting two ways, `path.repo:` at the top level and `repo:` inside a `path:`
-# block, and a line match sees only the first. An operator who wrote the second would get a flat key
-# appended below it, which the settings loader resolves in favour of the one appended last: their
-# repository would be dropped with no error and no warning, and every snapshot against it would
-# start failing. Only a key at the top level counts, so one indented under something else, or
-# commented out, is not mistaken for this setting.
+# YAML writes this setting two ways, `path.repo:` at the top level and `repo:` inside a `path:`
+# block. A flat key appended below the second form wins in the settings loader, so the operator's
+# repository would be dropped with no error anywhere. Only a key at the top level counts: one
+# indented under something else, or commented out, is not this setting.
 path_repo_is_set() {
     _pri_in_path=0
     while IFS= read -r _pri_line || [ -n "${_pri_line}" ]; do

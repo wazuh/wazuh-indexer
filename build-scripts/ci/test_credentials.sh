@@ -4,8 +4,9 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # Acceptance tests for install-time credential and TLS resolution.
-# See https://github.com/wazuh/wazuh-indexer/issues/1927 and
-# https://github.com/wazuh/wazuh-indexer/issues/2020
+# See https://github.com/wazuh/wazuh-indexer/issues/1927,
+# https://github.com/wazuh/wazuh-indexer/issues/2020 and
+# https://github.com/wazuh/wazuh-indexer/issues/2049
 #
 # Exercises the wazuh-indexer package end to end: that it generates its own
 # passwords and certificates at install, under its own /etc/wazuh-indexer and
@@ -374,6 +375,10 @@ check "the install says it opens no firewall port" \
     grep -qF "opens no firewall port" /tmp/install.log
 check "the per-key progress lines are not in the install output" \
     bash -c "! grep -q 'published WAZUH_INDEXER' /tmp/install.log"
+check "a resolved install does not call itself unconfigured" \
+    bash -c "! grep -q 'installed but not configured' /tmp/install.log"
+check "the install printed no stack trace" \
+    bash -c "! grep -qE 'Exception in thread|^[[:space:]]+at [a-z]+\\.' /tmp/install.log"
 
 # 1.a2 Everything the resolver needs must be on the host, and nothing else may
 # be declared: the dependency list is exactly the host tools the scripts run.
@@ -477,6 +482,7 @@ check "opensearch-security/ is root:wazuh-indexer 0750" is 750 "${CONFIG_DIR}/op
 check "internal_users.yml is root:wazuh-indexer 0640" is 640 "${INTERNAL_USERS}" root:wazuh-indexer
 check "the keystore was created by the package" test -f "${KEYSTORE}"
 check "the keystore is root:wazuh-indexer 0640" is 640 "${KEYSTORE}" root:wazuh-indexer
+check "the digest of the keystore as created is root:root 0600" is 600 "${CONFIG_DIR}/.wazuh-indexer-keystore" root:root
 check "export/ is root:wazuh-indexer 0750" is 750 "${EXPORT_DIR}" root:wazuh-indexer
 check "export/credentials.env is root:root 0600" is 600 "${CREDENTIALS}" root:root
 check "export/ca.pem is root:wazuh-indexer 0640" is 640 "${EXPORT_DIR}/ca.pem" root:wazuh-indexer
@@ -1210,6 +1216,8 @@ else
         || rpm -Uvh --replacepkgs "${PACKAGE}" >/tmp/reinstall.log 2>&1
 fi
 check_eq "the package reinstalls cleanly" "0" "$?"
+check "the reinstall upgraded the keystore without a warning or a stack trace" \
+    bash -c "! grep -qE 'WARNING: could not|Exception in thread' /tmp/reinstall.log"
 
 # Resolution happens once, so nothing the first install resolved may change.
 check_eq "the certificate is untouched" "${cert_before}" \
@@ -1329,6 +1337,144 @@ for _log in /tmp/remove.log /tmp/purge.log; do
         [ -n "${missing}" ] && info "note: ${missing} was already gone at removal (deleted at runtime)"
     done
 done
+
+# ---------------------------------------------------------------------------
+# 3. A certificate pair staged without its CA
+# ---------------------------------------------------------------------------
+
+# How a second node of a bring-your-own-PKI cluster installs when the CA is staged where the
+# package does not read it: the pair is there, nothing can verify it, and resolution has to stop.
+# The install still succeeds, but it must say the node is not configured, print no stack trace,
+# and leave the keystore to the pre-start step, which creates it once the CA is staged.
+# See https://github.com/wazuh/wazuh-indexer/issues/2049
+section "3. A certificate pair staged without its CA"
+
+if [ "${PKG_KIND}" = "deb" ] && [ "${SKIP_PURGE}" = "1" ]; then
+    skip "pending-PKI install (needs the purge phase, SKIP_PURGE=1)"
+else
+    # From a clean host: what the removal kept would make this an upgrade of a resolved node.
+    rm -rf "${CONFIG_DIR}" "${DATA_DIR}"
+    openssl req -x509 -newkey rsa:2048 -keyout /tmp/pending-ca.key -out /tmp/pending-ca.pem \
+        -days 3650 -nodes -subj "/C=US/L=California/O=Wazuh/OU=Wazuh/CN=pending-root-ca" \
+        -addext "basicConstraints=critical,CA:TRUE" -addext "keyUsage=critical,keyCertSign,cRLSign" \
+        >/dev/null 2>&1
+    install -d -m 0750 -o root -g root "${CONFIG_DIR}" "${CERTS_DIR}"
+    for n in indexer admin; do
+        cn="node-2"; [ "${n}" = "admin" ] && cn="admin"
+        openssl req -newkey rsa:2048 -keyout "/tmp/pending-${n}-key.pem" -out "/tmp/pending-${n}.csr" \
+            -nodes -subj "/C=US/L=California/O=Wazuh/OU=Wazuh/CN=${cn}" >/dev/null 2>&1
+        printf 'subjectAltName = DNS:%s,DNS:localhost,IP:127.0.0.1\n' "${cn}" > "/tmp/pending-${n}.ext"
+        openssl x509 -req -in "/tmp/pending-${n}.csr" -CA /tmp/pending-ca.pem -CAkey /tmp/pending-ca.key \
+            -set_serial "0x$(od -An -N8 -tx1 /dev/urandom | tr -d ' \n')" -out "/tmp/pending-${n}.pem" -days 3650 \
+            -extfile "/tmp/pending-${n}.ext" >/dev/null 2>&1
+        install -m 0640 -o root -g root "/tmp/pending-${n}.pem" "${CERTS_DIR}/${n}.pem"
+        install -m 0640 -o root -g root "/tmp/pending-${n}-key.pem" "${CERTS_DIR}/${n}-key.pem"
+    done
+
+    if [ "${PKG_KIND}" = "deb" ]; then
+        DEBIAN_FRONTEND=noninteractive dpkg -i "${PACKAGE}" >/tmp/pending.log 2>&1
+    else
+        yum localinstall -y "${PACKAGE}" >/tmp/pending.log 2>&1
+    fi
+    check_eq "the package installs over a pair with no CA" "0" "$?"
+    check "the resolver names the missing CA" \
+        grep -qF "a certificate pair is staged in ${CERTS_DIR}, but no CA certificate to verify it" /tmp/pending.log
+    check "the install printed no stack trace" \
+        bash -c "! grep -qE 'Exception in thread|^[[:space:]]+at [a-z]+\\.' /tmp/pending.log"
+    check "the install printed no keystore warning" \
+        bash -c "! grep -q 'opensearch.keystore' /tmp/pending.log"
+    check "the install says the node is not configured" \
+        grep -qF "The indexer is installed but not configured: it has no usable TLS certificate." /tmp/pending.log
+    check "the install names where the pair and its CA go" \
+        grep -qF "its root-ca.pem in ${CERTS_DIR}/ (root:wazuh-indexer 0640)" /tmp/pending.log
+    check "the install still gives the command that starts and enables it" \
+        grep -qE "enable --now|chkconfig --add" /tmp/pending.log
+    check "the install still points at indexer-security-init.sh" \
+        grep -qF "indexer-security-init.sh   (once, from one node)" /tmp/pending.log
+    check "the install does not say the node only needs starting" \
+        bash -c "! grep -q 'not running, and will not start at boot' /tmp/pending.log"
+    check "no state file while the pair is unverified" bash -c "[ ! -e '${MARKER}' ]"
+    check "no keystore yet" bash -c "[ ! -e '${KEYSTORE}' ]"
+    check_eq "nodes_dn is left empty" "" "$(dn_list plugins.security.nodes_dn)"
+
+    # A reinstall while the node is still pending is an upgrade with no marker: it skips the
+    # keystore, quietly.
+    if [ "${PKG_KIND}" = "deb" ]; then
+        DEBIAN_FRONTEND=noninteractive dpkg -i "${PACKAGE}" >/tmp/pending-reinstall.log 2>&1
+    else
+        yum reinstall -y "${PACKAGE}" >/tmp/pending-reinstall.log 2>&1 \
+            || rpm -Uvh --replacepkgs "${PACKAGE}" >/tmp/pending-reinstall.log 2>&1
+    fi
+    check_eq "the package reinstalls over a pending node" "0" "$?"
+    check "the reinstall printed no stack trace or keystore warning" \
+        bash -c "! grep -qE 'Exception in thread|opensearch.keystore' /tmp/pending-reinstall.log"
+    check "still no keystore after the reinstall" bash -c "[ ! -e '${KEYSTORE}' ]"
+
+    # A marker planted as a link is no marker, as the resolver reads it: the maintainer scripts
+    # must not take the node for a resolved one either.
+    ln -s /etc/hostname "${MARKER}"
+    if [ "${PKG_KIND}" = "deb" ]; then
+        DEBIAN_FRONTEND=noninteractive dpkg -i "${PACKAGE}" >/tmp/pending-link.log 2>&1
+    else
+        yum reinstall -y "${PACKAGE}" >/tmp/pending-link.log 2>&1 \
+            || rpm -Uvh --replacepkgs "${PACKAGE}" >/tmp/pending-link.log 2>&1
+    fi
+    check_eq "the package reinstalls over a linked marker" "0" "$?"
+    check "a linked marker does not run the keystore tool" \
+        bash -c "! grep -qE 'Exception in thread|opensearch.keystore' /tmp/pending-link.log"
+    check "still no keystore with a linked marker" bash -c "[ ! -e '${KEYSTORE}' ]"
+    rm -f "${MARKER}"
+
+    # The operator stages the CA beside the pair; the pre-start step finishes the resolution and
+    # creates the keystore the install left alone.
+    install -m 0640 -o root -g wazuh-indexer /tmp/pending-ca.pem "${CERTS_DIR}/root-ca.pem"
+    "${RESOLVER}" --prestart >/tmp/pending-prestart.log 2>&1
+    check_eq "--prestart resolves once the CA is staged" "0" "$?"
+    check "--prestart created the keystore" grep -qF "created ${KEYSTORE}" /tmp/pending-prestart.log
+    check "the keystore is root:wazuh-indexer 0640" is 640 "${KEYSTORE}" root:wazuh-indexer
+    check "the digest of the keystore as created is root:root 0600" is 600 "${CONFIG_DIR}/.wazuh-indexer-keystore" root:root
+    check "the state file is written" test -f "${MARKER}"
+    check_eq "nodes_dn is filled from the staged pair" \
+        "$(subject_of "${CERTS_DIR}/indexer.pem")" "$(dn_list plugins.security.nodes_dn)"
+    check_eq "admin_dn is filled from the staged pair" \
+        "$(subject_of "${CERTS_DIR}/admin.pem")" "$(dn_list plugins.security.authcz.admin_dn)"
+
+    rm -f /tmp/pending-*
+    if [ "${PKG_KIND}" = "deb" ]; then
+        DEBIAN_FRONTEND=noninteractive apt-get purge -y wazuh-indexer >/tmp/pending-purge.log 2>&1 \
+            || dpkg -P wazuh-indexer >/tmp/pending-purge.log 2>&1
+    else
+        yum remove -y wazuh-indexer >/tmp/pending-purge.log 2>&1
+    fi
+    check_eq "the pending-PKI node is removed cleanly" "0" "$?"
+
+    # The other way a fresh install ends unresolved: the certificates are issued, but local.env
+    # holds a password the policy rejects. The keystore is created then, and the closing lines must
+    # not send the operator after a certificate that is already there.
+    rm -rf "${CONFIG_DIR}" "${DATA_DIR}"
+    install -d -m 0750 -o root -g root "${CONFIG_DIR}"
+    printf "WAZUH_INDEXER_ADMIN_PASSWORD='MyCompanyPass2026'\n" > "${LOCAL_ENV}"
+    chmod 600 "${LOCAL_ENV}"
+    if [ "${PKG_KIND}" = "deb" ]; then
+        DEBIAN_FRONTEND=noninteractive dpkg -i "${PACKAGE}" >/tmp/rejected.log 2>&1
+    else
+        yum localinstall -y "${PACKAGE}" >/tmp/rejected.log 2>&1
+    fi
+    check_eq "the package installs with a rejected password" "0" "$?"
+    check "no state file while the password is rejected" bash -c "[ ! -e '${MARKER}' ]"
+    check "the keystore is created, the certificates being resolved" test -f "${KEYSTORE}"
+    check "the install says the node is not configured" \
+        grep -qF "The indexer is installed but not configured: correct what is reported above," /tmp/rejected.log
+    check "the install does not ask for a certificate it already has" \
+        bash -c "! grep -q 'no usable TLS certificate' /tmp/rejected.log"
+    if [ "${PKG_KIND}" = "deb" ]; then
+        DEBIAN_FRONTEND=noninteractive apt-get purge -y wazuh-indexer >/tmp/rejected-purge.log 2>&1 \
+            || dpkg -P wazuh-indexer >/tmp/rejected-purge.log 2>&1
+    else
+        yum remove -y wazuh-indexer >/tmp/rejected-purge.log 2>&1
+    fi
+    check_eq "the node with a rejected password is removed cleanly" "0" "$?"
+fi
 
 # ---------------------------------------------------------------------------
 # Report

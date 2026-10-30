@@ -33,6 +33,7 @@
 | [#1581](https://github.com/wazuh/wazuh-indexer/issues/1581) | Log the disabled automatic import of dangling indices at `INFO` instead of `WARN` on every startup |
 | [#1998](https://github.com/wazuh/wazuh-indexer/issues/1998) | Enable transport hostname verification (`transport.ssl.enforce_hostname_verification`) by default |
 | [#2007](https://github.com/wazuh/wazuh-indexer/issues/2007) | Raise the search backpressure heap threshold of search shard tasks to 4% of the heap (`search_backpressure.search_shard_task.heap_percent_threshold`), so it no longer cancels the Wazuh manager's inventory sync |
+| [#2062](https://github.com/wazuh/wazuh-indexer/issues/2062) | Set `path.repo` to `/var/lib/wazuh-indexer/backup` and ship that directory, so a filesystem snapshot repository can be registered without editing `opensearch.yml` and restarting |
 
 
 ### Removed

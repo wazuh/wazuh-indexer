@@ -26,6 +26,7 @@
 %define config_dir %{_sysconfdir}/%{name}
 %define certs_dir %{config_dir}/certs
 %define data_dir %{_sharedstatedir}/%{name}
+%define repo_dir %{data_dir}/backup
 %define log_dir %{_localstatedir}/log/%{name}
 %define pid_dir %{_localstatedir}/run/%{name}
 %define state_file %{config_dir}/.was_active
@@ -132,6 +133,7 @@ set -- "$@" "%{config_dir}/jvm.options"
 set -- "$@" "%{config_dir}/opensearch.yml"
 set -- "$@" "%{config_dir}/opensearch-security/.*"
 set -- "$@" "%%dir %{data_dir}"
+set -- "$@" "%%dir %{repo_dir}"
 set -- "$@" "%%dir %{log_dir}"
 set -- "$@" "%%dir %{certs_dir}"
 set -- "$@" "%%dir %{snapshots_dir}"
@@ -685,6 +687,11 @@ exit 0
 # The directories the service writes.
 %dir %attr(750, %{name}, %{name}) %{data_dir}
 %dir %attr(750, %{name}, %{name}) %{log_dir}
+
+# path.repo points here: the only directory a filesystem snapshot repository may be registered
+# under. Shipped empty, so an erase takes it back when nothing was ever written to it, and keeps
+# it when it holds backups.
+%dir %attr(750, %{name}, %{name}) %{repo_dir}
 
 # Carve-out: the content manager deletes the shipped snapshot once it has
 # consumed it, which needs write on this directory. Everything else under the

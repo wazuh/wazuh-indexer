@@ -88,6 +88,10 @@ void addProcessFilesTask(String type, boolean jdk) {
       // create empty dirs, we set the permissions when configuring the packages
       mkdir "${packagingFiles}/var/log/wazuh-indexer"
       mkdir "${packagingFiles}/var/lib/wazuh-indexer"
+      // path.repo points here: the only directory a filesystem snapshot repository may be
+      // registered under. Shipped empty, and as a directory entry of the package, so that a
+      // purge takes it back when nothing was ever written to it.
+      mkdir "${packagingFiles}/var/lib/wazuh-indexer/backup"
       mkdir "${packagingFiles}/usr/share/wazuh-indexer/plugins"
 
       // bare empty dir for /etc/wazuh-indexer and /etc/wazuh-indexer/jvm.options.d
@@ -321,6 +325,7 @@ Closure commonPackageConfig(String type, boolean jdk, String architecture) {
     }
     copyEmptyDir('/var/log/wazuh-indexer', 'wazuh-indexer', 'wazuh-indexer', 0750)
     copyEmptyDir('/var/lib/wazuh-indexer', 'wazuh-indexer', 'wazuh-indexer', 0750)
+    copyEmptyDir('/var/lib/wazuh-indexer/backup', 'wazuh-indexer', 'wazuh-indexer', 0750)
     copyEmptyDir('/usr/share/wazuh-indexer/plugins', 'root', 'root', 0755)
 
     into '/usr/share/wazuh-indexer'

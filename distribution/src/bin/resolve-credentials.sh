@@ -123,6 +123,8 @@ SERVICE_GROUP=$(wazuh_service_group)
 # their own certificates. It holds no secret, and internal_users.yml cannot take its place: that
 # file ships with the package.
 MARKER="${DATA_DIR}/.initialized"
+# The directory the package ships for filesystem snapshot repositories, named by path.repo.
+REPO_DIR="${DATA_DIR}/backup"
 
 OWNED_KEYS="WAZUH_INDEXER_ADMIN_PASSWORD WAZUH_INDEXER_KIBANASERVER_PASSWORD WAZUH_INDEXER_MANAGER_PASSWORD"
 
@@ -993,6 +995,72 @@ dn_is_empty() {
 # Only --install replaces a key that already has a value. Every other mode fills the empty keys the
 # package ships and leaves the rest alone, because by then the list may be the operator's own: one
 # entry per node of their cluster.
+# path.repo lists the only directories a filesystem snapshot repository may be registered under. It
+# is read at start, so a node without it cannot be given one at all: the dashboard refuses with a
+# raw error and the operator is sent to the terminal to edit this file and restart. The package
+# creates REPO_DIR empty for it and writes nothing there.
+#
+# The setting is written from here rather than shipped in opensearch.yml because the maintainer
+# scripts already write this file, which makes the package manager record it as the operator's from
+# the first install on. A shipped line that changed would therefore make every upgrade of an
+# existing node ask what to do with the file: unattended-upgrades answers that by never upgrading
+# the package again, and a scripted apt run fails outright. Written here, the shipped bytes never
+# change and existing nodes get the setting too.
+#
+# Only an absent key is added, and only at install and upgrade, so a list the operator has since
+# changed is left alone and one they removed does not come back on every start.
+# See https://github.com/wazuh/wazuh-indexer/issues/2062.
+# YAML writes the same setting two ways, `path.repo:` at the top level and `repo:` inside a `path:`
+# block, and a line match sees only the first. An operator who wrote the second would get a flat key
+# appended below it, which the settings loader resolves in favour of the one appended last: their
+# repository would be dropped with no error and no warning, and every snapshot against it would
+# start failing. Only a key at the top level counts, so one indented under something else, or
+# commented out, is not mistaken for this setting.
+path_repo_is_set() {
+    _pri_in_path=0
+    while IFS= read -r _pri_line || [ -n "${_pri_line}" ]; do
+        _pri_body="${_pri_line#"${_pri_line%%[! 	]*}"}"
+        case "${_pri_body}" in
+            '' | '#'*) continue ;;
+        esac
+        if [ "${_pri_body}" = "${_pri_line}" ]; then
+            _pri_in_path=0
+            case "${_pri_body}" in
+                path.repo:*) return 0 ;;
+                path:*)
+                    # A block header only: `path: {repo: ...}` is not a form this file is written in.
+                    [ -z "$(printf '%s' "${_pri_body#path:}" | tr -d ' 	')" ] && _pri_in_path=1
+                    ;;
+            esac
+        elif [ "${_pri_in_path}" -eq 1 ]; then
+            case "${_pri_body}" in
+                repo:*) return 0 ;;
+            esac
+        fi
+    done < "${CONFIG_FILE}"
+    return 1
+}
+
+ensure_snapshot_repository_path() {
+    [ -f "${CONFIG_FILE}" ] || return 0
+    path_repo_is_set && return 0
+    wazuh_check_file "${CONFIG_FILE}" || {
+        err "refusing to write ${CONFIG_FILE}"
+        return 1
+    }
+
+    # Appending keeps the owner and the mode the file already has. A file whose last line has no
+    # newline would otherwise swallow the key.
+    if [ -s "${CONFIG_FILE}" ] && [ -n "$(tail -c 1 "${CONFIG_FILE}")" ]; then
+        printf '\n' >> "${CONFIG_FILE}"
+    fi
+    # The note rides on the same line as the setting, so an operator who deletes the key takes it
+    # with them and the next upgrade cannot stack an orphaned comment on top.
+    printf 'path.repo: ["%s"]  # the only directory a snapshot repository may be registered under\n' \
+        "${REPO_DIR}" >> "${CONFIG_FILE}" || return 1
+    log "set path.repo to ${REPO_DIR}"
+}
+
 write_distinguished_names() {
     [ -f "${CERTS_DIR}/indexer.pem" ] || return 0
     [ -f "${CONFIG_FILE}" ] || return 0
@@ -1379,6 +1447,14 @@ if [ "${MODE}" = "check" ]; then
     exit 0
 fi
 
+# A packaging default rather than a credential, so it is set whether or not anything is resolved
+# below, and on a node resolved long ago just the same.
+case "${MODE}" in
+    install|upgrade)
+        ensure_snapshot_repository_path || err "could not set path.repo in ${CONFIG_FILE}"
+        ;;
+esac
+
 # Resolution happens once. Everything below this point is skipped for the whole life of the
 # installation once the marker exists, which is what stops a restart or an upgrade from touching
 # credentials or certificates an operator has since changed. --clear is the only way back.
@@ -1388,6 +1464,21 @@ if resolution_is_complete; then
     # idempotent.
     case "${MODE}" in
         install|upgrade) trust_ca ;;
+    esac
+    # opensearch.yml is a packaged file in the same way, and the two distinguished names are the
+    # only part of it this package writes. That is also what makes the package manager treat it as
+    # the operator's from the first install on, so every later version that changes the shipped
+    # file offers to replace it -- and replacing it empties the two settings, after which the node
+    # refuses to start. Filling an empty one back in from the certificates already on disk needs
+    # nothing resolved either, and a name the operator has since changed is left alone.
+    # Not in install mode: that is the one mode in which write_distinguished_names replaces a name
+    # that already has a value, and a genuine fresh install never reaches this branch anyway. It is
+    # reached in install mode only when a data directory carrying the marker was restored or
+    # attached, and rewriting nodes_dn there would drop every other node of the cluster from it.
+    case "${MODE}" in
+        upgrade|prestart)
+            write_distinguished_names || err "could not restore the distinguished names in ${CONFIG_FILE}"
+            ;;
     esac
     ensure_keystore
     log "already initialised; nothing is resolved again"

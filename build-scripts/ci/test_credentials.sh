@@ -822,6 +822,106 @@ for pair in "admin:admin" "kibanaserver:kibanaserver" "wazuh-manager:wazuh-manag
     check_eq "${u}:${p} is rejected" "401" "${got}"
 done
 
+section "1.7b A filesystem snapshot repository can be registered"
+
+# The functional requirement of https://github.com/wazuh/wazuh-indexer/issues/2062: backing up the
+# data must not need a hand edit of opensearch.yml and a restart. A repository can only be
+# registered under a directory named in path.repo, a static setting, so the packaged configuration
+# names one and the package ships it empty.
+REPO_DIR="${DATA_DIR}/backup"
+ADMIN_PW=$(cred_get WAZUH_INDEXER_ADMIN_PASSWORD)
+api_admin() { curl -sk -u "admin:${ADMIN_PW}" "$@" 2>/dev/null; }
+# This script has no `not` helper, so the negative form is its own function.
+has_path_repo()   { grep -qE '^[[:space:]]*path\.repo[[:space:]]*:' "${OPENSEARCH_YML}"; }
+lacks_path_repo() { ! has_path_repo; }
+path_repo_count() { grep -cE '^[[:space:]]*path\.repo[[:space:]]*:' "${OPENSEARCH_YML}"; }
+
+check "${REPO_DIR} is wazuh-indexer:wazuh-indexer 0750" is 750 "${REPO_DIR}" wazuh-indexer:wazuh-indexer
+
+# The setting is written by the resolver, not shipped in opensearch.yml. That is what keeps the
+# packaged bytes of a configuration file the maintainer scripts write from ever changing, which is
+# what would otherwise make every upgrade of an existing node prompt.
+check "the install set path.repo" has_path_repo
+check_eq "it is there exactly once" "1" "$(path_repo_count)"
+
+got=$(api_admin "${API}/_nodes/settings?filter_path=nodes.*.settings.path.repo")
+case "${got}" in
+    *"${REPO_DIR}"*) ok "the node reports ${REPO_DIR} in path.repo" ;;
+    *) fail "path.repo does not name ${REPO_DIR}"; info "${got}" ;;
+esac
+
+got=$(api_admin -XPUT -H 'Content-Type: application/json' "${API}/_snapshot/packaged-backups" \
+    -d "{\"type\":\"fs\",\"settings\":{\"location\":\"${REPO_DIR}\"}}")
+case "${got}" in
+    *'"acknowledged":true'*) ok "an fs repository registers with no edit and no restart" ;;
+    *) fail "the repository was refused"; info "$(printf '%s' "${got}" | head -c 300)" ;;
+esac
+
+api_admin -XPUT -H 'Content-Type: application/json' "${API}/snapshot-probe/_doc/1?refresh" \
+    -d '{"probe":1}' > /dev/null
+got=$(api_admin -XPUT -H 'Content-Type: application/json' \
+    "${API}/_snapshot/packaged-backups/probe-1?wait_for_completion=true" \
+    -d '{"indices":"snapshot-probe"}')
+case "${got}" in
+    *'"state":"SUCCESS"'*) ok "a snapshot into it completes" ;;
+    *) fail "the snapshot did not complete"; info "$(printf '%s' "${got}" | head -c 300)" ;;
+esac
+check "the snapshot was written under ${REPO_DIR}" \
+    bash -c "[ -n \"\$(ls -A '${REPO_DIR}' 2>/dev/null)\" ]"
+
+# Leave the node as this section found it. What a purge does with a repository that holds backups
+# is test_purge.sh's, which stages one without needing a running node.
+api_admin -XDELETE "${API}/_snapshot/packaged-backups/probe-1" > /dev/null
+api_admin -XDELETE "${API}/_snapshot/packaged-backups" > /dev/null
+api_admin -XDELETE "${API}/snapshot-probe" > /dev/null
+rm -rf "${REPO_DIR:?}"/..?* "${REPO_DIR:?}"/.[!.]* "${REPO_DIR:?}"/* 2>/dev/null || true
+
+# A node installed before the setting existed gets it from the upgrade, which is what shipping it
+# in opensearch.yml could not have done: the package manager keeps the file it already has.
+# Writing through the original file keeps the owner and mode the package set, as the resolver's
+# own writes do. The note the resolver leaves rides on the same line, so deleting the key is all
+# it takes to put the node back where it was.
+drop_path_repo() {
+    grep -vE '^[[:space:]]*path\.repo[[:space:]]*:' "${OPENSEARCH_YML}" > /tmp/yml.norepo \
+        && cat /tmp/yml.norepo > "${OPENSEARCH_YML}"
+}
+drop_path_repo
+check "a node without path.repo stands in for one installed before it existed" lacks_path_repo
+"${RESOLVER}" --upgrade > /tmp/pathrepo.log 2>&1
+check "an upgrade sets path.repo on a node that had none" has_path_repo
+check "the resolver is what writes it, not the package" \
+    grep -qF "set path.repo to ${REPO_DIR}" /tmp/pathrepo.log
+
+# What the operator decides about it is theirs: a value they changed is not corrected, and one they
+# removed does not come back on every start.
+sed -i -E 's|^[[:space:]]*path\.repo[[:space:]]*:.*$|path.repo: ["/srv/operator-backups"]|' "${OPENSEARCH_YML}"
+"${RESOLVER}" --upgrade --quiet > /dev/null 2>&1
+check "a path.repo the operator chose is left alone" \
+    grep -qF 'path.repo: ["/srv/operator-backups"]' "${OPENSEARCH_YML}"
+check_eq "and no second one is added beside it" "1" "$(path_repo_count)"
+drop_path_repo
+"${RESOLVER}" --prestart > /dev/null 2>&1
+check "a start does not add path.repo back" lacks_path_repo
+"${RESOLVER}" --upgrade --quiet > /dev/null 2>&1
+check "the next upgrade does" has_path_repo
+check_eq "still exactly one, after three cycles" "1" "$(path_repo_count)"
+
+# YAML writes this setting two ways. An operator using the block form must not get a flat key
+# appended below it: the settings loader would take the appended one and their repository would be
+# gone, with no error anywhere.
+drop_path_repo
+printf 'path:\n  repo:\n  - /srv/operator-backups\n' >> "${OPENSEARCH_YML}"
+"${RESOLVER}" --upgrade --quiet > /dev/null 2>&1
+check "a path.repo written as a block is recognised, not overridden" lacks_path_repo
+check "the operator's block is untouched" grep -qF '  - /srv/operator-backups' "${OPENSEARCH_YML}"
+
+# Back to what the install left, for the sections that follow.
+grep -v '^path:$' "${OPENSEARCH_YML}" | grep -v '^  repo:$' | grep -v '^  - /srv/operator-backups$' \
+    > /tmp/yml.norepo && cat /tmp/yml.norepo > "${OPENSEARCH_YML}"
+"${RESOLVER}" --upgrade --quiet > /dev/null 2>&1
+check "the node is back to the shipped repository" has_path_repo
+rm -f /tmp/yml.norepo
+
 section "1.8 Resolution happens once — a restart changes nothing"
 
 before=$(fingerprint "${CERTS_DIR}"/*.pem "${EXPORT_DIR}"/*.pem "${CREDENTIALS}" "${CA_DIR}/root-ca.pem" "${CA_DIR}/root-ca.key" "${KEYSTORE}" "${OPENSEARCH_YML}" "${INTERNAL_USERS}")
@@ -890,6 +990,49 @@ systemctl start wazuh-indexer >/tmp/start2.log 2>&1
 check_eq "the service starts again" "0" "$?"
 wait_for_node && ok "node answers again" || fail "node did not come back"
 wait_for_cluster admin "${admin_pw}"
+
+section "1.8c A replaced opensearch.yml does not strand the node"
+
+# opensearch.yml is a configuration file of the package, and the two distinguished names are the
+# only part of it the package writes. That is also what makes the package manager treat the file as
+# the operator's from the first install on, so a version that changes the shipped copy offers to
+# replace it, and replacing it empties the two settings. The node refuses to start without them, so
+# the pre-start step fills an empty one back in from the certificates already on disk.
+systemctl stop wazuh-indexer > /dev/null 2>&1
+empty_the_dns() {
+    awk '
+        /^plugins\.security\.(authcz\.admin_dn|nodes_dn):$/ { print; skip = 1; next }
+        skip && /^- / { next }
+        { skip = 0; print }
+    ' "${OPENSEARCH_YML}" > /tmp/yml.replaced && cat /tmp/yml.replaced > "${OPENSEARCH_YML}"
+}
+empty_the_dns
+check "the replaced file leaves nodes_dn empty" test -z "$(dn_list plugins.security.nodes_dn)"
+
+"${RESOLVER}" --prestart > /tmp/strand.log 2>&1
+check_eq "--prestart succeeds on a node whose DNs were emptied" "0" "$?"
+check_eq "nodes_dn is filled back in from this node's certificate" \
+    "$(subject_of "${CERTS_DIR}/indexer.pem")" "$(dn_list plugins.security.nodes_dn)"
+check_eq "admin_dn is filled back in from the admin certificate" \
+    "$(subject_of "${CERTS_DIR}/admin.pem")" "$(dn_list plugins.security.authcz.admin_dn)"
+
+systemctl start wazuh-indexer > /dev/null 2>&1
+wait_for_node
+check "the node starts again" systemctl is-active --quiet wazuh-indexer
+
+# A name the operator chose is not the package's to correct: only an empty one is filled.
+systemctl stop wazuh-indexer > /dev/null 2>&1
+sed -i 's|^- "'"$(subject_of "${CERTS_DIR}/indexer.pem")"'"$|- "CN=chosen.by.operator"|' "${OPENSEARCH_YML}"
+"${RESOLVER}" --prestart > /dev/null 2>&1
+check_eq "a node DN the operator changed is left alone" \
+    "CN=chosen.by.operator" "$(dn_list plugins.security.nodes_dn)"
+empty_the_dns
+"${RESOLVER}" --prestart > /dev/null 2>&1
+systemctl start wazuh-indexer > /dev/null 2>&1
+wait_for_node
+# Left unchecked, a failure here would surface as an unrelated failure in the sections below.
+check "the node is running again for the sections that follow" systemctl is-active --quiet wazuh-indexer
+rm -f /tmp/yml.replaced
 
 section "1.9 Rotation with wazuh-passwords-tool.sh"
 

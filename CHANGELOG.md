@@ -20,7 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 -
 
 ### Fixed
--
+- Build the bundled installation-assistant tools from GitHub instead of the development repository [(#2073)](https://github.com/wazuh/wazuh-indexer/issues/2073)
 
 ### Security
 -

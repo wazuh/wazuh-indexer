@@ -12,6 +12,9 @@ cluster.name: "wazuh-cluster"
 node.max_local_storage_nodes: "3"
 path.data: /var/lib/wazuh-indexer
 path.logs: /var/log/wazuh-indexer
+# The only directory a filesystem snapshot repository may be registered under. It ships empty:
+# mount a volume there to keep backups off the data disk.
+path.repo: ["/var/lib/wazuh-indexer/backup"]
 
 plugins.security.ssl.http.pemcert_filepath: /etc/wazuh-indexer/certs/indexer.pem
 plugins.security.ssl.http.pemkey_filepath: /etc/wazuh-indexer/certs/indexer-key.pem

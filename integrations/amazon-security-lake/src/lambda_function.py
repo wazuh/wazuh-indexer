@@ -77,7 +77,7 @@ def get_events(bucket: str, key: str, client: boto3.client) -> list:
         response = client.get_object(Bucket=bucket, Key=key)
         encoded_data = response['Body'].read()
         logger.debug(f"Decoding event data {encoded_data}")
-        # Check if data is gzip compressed
+        # Objects can be plain text or gzip compressed
         if is_gzip_compressed(encoded_data):
             data = gzip.decompress(encoded_data).decode('utf-8')
         else:
@@ -85,6 +85,13 @@ def get_events(bucket: str, key: str, client: boto3.client) -> list:
         return data.splitlines()
     except ClientError as e:
         exit_on_error(f"Failed to read S3 object {key} from bucket {bucket}: {e}")
+
+
+def is_gzip_compressed(data: bytes) -> bool:
+    """
+    Check if data is gzip compressed by inspecting its magic number.
+    """
+    return data[:2] == b'\x1f\x8b'
 
 
 def write_parquet_file(ocsf_events: list, filename: str) -> None:
@@ -130,11 +137,6 @@ def check_environment_variables(variables):
     if missing_variables:
         error_message = f"The following environment variables are not set: {', '.join(missing_variables)}"
         exit_on_error(error_message)
-
-
-def is_gzip_compressed(data: bytes) -> bool:
-    """Check if data is gzip-compressed by inspecting its magic number."""
-    return data[:2] == b'\x1f\x8b'  # Gzip magic number
 
 
 def get_full_key(src_location: str, account_id: str, region: str, key: str, format: str) -> str:

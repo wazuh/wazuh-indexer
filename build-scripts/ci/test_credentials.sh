@@ -822,6 +822,51 @@ for pair in "admin:admin" "kibanaserver:kibanaserver" "wazuh-manager:wazuh-manag
     check_eq "${u}:${p} is rejected" "401" "${got}"
 done
 
+section "1.7b A filesystem snapshot repository can be registered"
+
+# A filesystem (fs) repository can only be registered under a directory named in path.repo, which
+# is read at start. The package ships a default location, so this needs no configuration. See
+# https://github.com/wazuh/wazuh-indexer/issues/2062.
+REPO_DIR="${DATA_DIR}/backup"
+ADMIN_PW=$(cred_get WAZUH_INDEXER_ADMIN_PASSWORD)
+has_path_repo()   { grep -qE '^[[:space:]]*path\.repo[[:space:]]*:' "${OPENSEARCH_YML}"; }
+path_repo_count() { grep -cE '^[[:space:]]*path\.repo[[:space:]]*:' "${OPENSEARCH_YML}"; }
+
+check "${REPO_DIR} is wazuh-indexer:wazuh-indexer 0750" is 750 "${REPO_DIR}" wazuh-indexer:wazuh-indexer
+check "the packaged configuration sets path.repo" has_path_repo
+check_eq "it is there exactly once" "1" "$(path_repo_count)"
+
+got=$(curl -sk -u "admin:${ADMIN_PW}" "${API}/_nodes/settings?filter_path=nodes.*.settings.path.repo" 2>/dev/null)
+case "${got}" in
+    *"${REPO_DIR}"*) ok "the node reports ${REPO_DIR} in path.repo" ;;
+    *) fail "path.repo does not name ${REPO_DIR}"; info "${got}" ;;
+esac
+
+got=$(curl -sk -u "admin:${ADMIN_PW}" -X PUT -H 'Content-Type: application/json' \
+    -o /dev/null -w '%{http_code}' "${API}/_snapshot/packaged-backups" \
+    -d "{\"type\":\"fs\",\"settings\":{\"location\":\"${REPO_DIR}\"}}" 2>/dev/null)
+check_eq "an fs repository registers with no edit and no restart" "200" "${got}"
+
+curl -sk -u "admin:${ADMIN_PW}" -X PUT -H 'Content-Type: application/json' \
+    "${API}/snapshot-probe/_doc/1?refresh" -d '{"probe":1}' > /dev/null 2>&1
+# A snapshot that failed answers 200 as well, with the state in the body, so this one is read.
+got=$(curl -sk -u "admin:${ADMIN_PW}" -X PUT -H 'Content-Type: application/json' \
+    "${API}/_snapshot/packaged-backups/probe-1?wait_for_completion=true" \
+    -d '{"indices":"snapshot-probe"}' 2>/dev/null)
+case "${got}" in
+    *'"state":"SUCCESS"'*) ok "a snapshot into it completes" ;;
+    *) fail "the snapshot did not complete"; info "$(printf '%s' "${got}" | head -c 300)" ;;
+esac
+check "the snapshot was written under ${REPO_DIR}" \
+    bash -c "[ -n \"\$(ls -A '${REPO_DIR}' 2>/dev/null)\" ]"
+
+# The sections below run against this node, so the probe goes away with its repository. What a
+# purge does with one that holds backups is test_purge.sh's.
+for path in "_snapshot/packaged-backups/probe-1" "_snapshot/packaged-backups" "snapshot-probe"; do
+    curl -sk -u "admin:${ADMIN_PW}" -X DELETE "${API}/${path}" > /dev/null 2>&1
+done
+rm -rf "${REPO_DIR:?}"/..?* "${REPO_DIR:?}"/.[!.]* "${REPO_DIR:?}"/* 2>/dev/null || true
+
 section "1.8 Resolution happens once — a restart changes nothing"
 
 before=$(fingerprint "${CERTS_DIR}"/*.pem "${EXPORT_DIR}"/*.pem "${CREDENTIALS}" "${CA_DIR}/root-ca.pem" "${CA_DIR}/root-ca.key" "${KEYSTORE}" "${OPENSEARCH_YML}" "${INTERNAL_USERS}")

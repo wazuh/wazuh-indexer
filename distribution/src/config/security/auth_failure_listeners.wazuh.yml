@@ -1,0 +1,13 @@
+# Rate limiting of failed logins against the internal users database.
+# A user that fails to authenticate 3 times within 60 seconds is blocked for
+# 60 seconds. To change or disable it, edit or remove this block and load
+# the file with indexer-security-init.sh.
+auth_failure_listeners:
+  internal_authentication_backend_limiting:
+    type: username
+    authentication_backend: internal
+    allowed_tries: 3
+    time_window_seconds: 60
+    block_expiry_seconds: 60
+    max_blocked_clients: 100000
+    max_tracked_clients: 100000

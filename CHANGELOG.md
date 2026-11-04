@@ -18,6 +18,7 @@
 | [#1](https://github.com/wazuh/wazuh-indexer-security-analytics/issues/1) [#1270](https://github.com/wazuh/wazuh-indexer/issues/1270) | Add `wazuh-indexer-security-analytics` plugin, a fork of `opensearch-security-analytics` |
 | [#1](https://github.com/wazuh/wazuh-indexer-alerting/issues/1) | Add `wazuh-indexer-alerting` plugin, replacing `opensearch-alerting` |
 | [#2](https://github.com/wazuh/wazuh-indexer-notifications/issues/2) [#1335](https://github.com/wazuh/wazuh-indexer/issues/1335) | Add `wazuh-indexer-notifications` and `wazuh-indexer-notifications-core` plugins, replacing `opensearch-notifications` and `opensearch-notifications-core` |
+| [#2074](https://github.com/wazuh/wazuh-indexer/issues/2074) | Enable rate limiting of failed logins per user by default |
 
 ### Changed
 

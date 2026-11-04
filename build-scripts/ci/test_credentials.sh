@@ -5,8 +5,9 @@
 #
 # Acceptance tests for install-time credential and TLS resolution.
 # See https://github.com/wazuh/wazuh-indexer/issues/1927,
-# https://github.com/wazuh/wazuh-indexer/issues/2020 and
-# https://github.com/wazuh/wazuh-indexer/issues/2049
+# https://github.com/wazuh/wazuh-indexer/issues/2020,
+# https://github.com/wazuh/wazuh-indexer/issues/2049 and
+# https://github.com/wazuh/wazuh-indexer/issues/2074
 #
 # Exercises the wazuh-indexer package end to end: that it generates its own
 # passwords and certificates at install, under its own /etc/wazuh-indexer and
@@ -14,6 +15,7 @@
 # export/; that the configuration directory is root's and the service account
 # can write nothing in it; that the node comes up; that the three internal
 # users authenticate once an operator has uploaded the security configuration;
+# that failed logins are rate limited per user;
 # that resolution never happens a second time; that planted material is refused
 # before the service starts; and that removal and purge take back exactly what
 # they own.
@@ -675,6 +677,9 @@ check "the certificate authentication domain is disabled" \
     bash -c "awk '/clientcert_auth_domain:/{f=1} f && /http_enabled:/{print \$2; exit}' '${CONFIG_DIR}/opensearch-security/config.yml' | grep -qx false"
 check "client certificates are not required by the HTTP layer" \
     bash -c "! grep -qE '^plugins.security.ssl.http.clientauth_mode:[[:space:]]*REQUIRE' '${OPENSEARCH_YML}'"
+# What limits repeated failed logins.
+check "failed logins are rate limited per user in config.yml" \
+    bash -c "awk '/^    auth_failure_listeners:/{f=1} f && /type:/{print \$2; exit}' '${CONFIG_DIR}/opensearch-security/config.yml' | grep -qx username"
 
 section "1.4 internal_users.yml and opensearch.yml"
 
@@ -821,6 +826,29 @@ for pair in "admin:admin" "kibanaserver:kibanaserver" "wazuh-manager:wazuh-manag
     got=$(api_status "${u}" "${p}")
     check_eq "${u}:${p} is rejected" "401" "${got}"
 done
+
+# Failed logins are rate limited per user: 3 failures within 60 s block the
+# user for 60 s. A throwaway user keeps the block away from the accounts the
+# following sections authenticate with.
+RL_USER="ci-rate-limit"
+RL_PW="RateLimit.Pass+$(od -An -N6 -tx1 /dev/urandom | tr -d ' \n')"
+RL_ADMIN_PW=$(cred_get WAZUH_INDEXER_ADMIN_PASSWORD)
+authinfo_status() {
+    curl -sk -o /dev/null -w '%{http_code}' -u "$1:$2" "${API}/_plugins/_security/authinfo" 2>/dev/null
+}
+got=$(curl -sk -u "admin:${RL_ADMIN_PW}" "${API}/_plugins/_security/api/authfailurelisteners" 2>/dev/null)
+case "${got}" in
+    *'"internal_authentication_backend_limiting"'*'"type":"username"'*) ok "the username rate limiter is loaded" ;;
+    *) fail "the username rate limiter is not loaded: ${got}" ;;
+esac
+got=$(curl -sk -o /dev/null -w '%{http_code}' -u "admin:${RL_ADMIN_PW}" -X PUT -H 'Content-Type: application/json' \
+    "${API}/_plugins/_security/api/internalusers/${RL_USER}" -d "{\"password\":\"${RL_PW}\"}" 2>/dev/null)
+check_eq "a throwaway user is created" "201" "${got}"
+check_eq "the throwaway user authenticates" "200" "$(authinfo_status "${RL_USER}" "${RL_PW}")"
+for _ in 1 2 3; do authinfo_status "${RL_USER}" wrong-password >/dev/null; done
+check_eq "after 3 failed logins the right password is refused" "401" "$(authinfo_status "${RL_USER}" "${RL_PW}")"
+check_eq "other users are not blocked" "200" "$(authinfo_status admin "${RL_ADMIN_PW}")"
+curl -sk -o /dev/null -u "admin:${RL_ADMIN_PW}" -X DELETE "${API}/_plugins/_security/api/internalusers/${RL_USER}" 2>/dev/null
 
 section "1.7b A filesystem snapshot repository can be registered"
 

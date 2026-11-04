@@ -253,6 +253,46 @@ function set_security_hash_placeholder() {
 }
 
 # ====
+# Add the rate limiting of failed logins to the security config.yml
+#
+# Upstream ships auth_failure_listeners only as a commented example, and the
+# key belongs under config.dynamic, so the fragment cannot be appended like the
+# other *.wazuh.yml files: it is inserted right after the "dynamic:" line. If
+# that anchor moved, or upstream now defines the key itself, fail the build
+# rather than producing a package without the limit or with a duplicate key.
+# ====
+function add_auth_failure_listeners() {
+    local fragment="$1"
+    local file="$2"
+
+    if [ "$(grep -c '^  dynamic:[[:space:]]*$' "$file")" != "1" ]; then
+        echo "ERROR: no single 'config.dynamic' entry found in ${file}."
+        echo "       Upstream changed this file. Re-check where auth_failure_listeners belongs before releasing."
+        exit 1
+    fi
+    if grep -qE '^[[:space:]]*auth_failure_listeners:' "$file"; then
+        echo "ERROR: ${file} already defines auth_failure_listeners."
+        echo "       Upstream changed this file. Merge ${fragment} into it before releasing."
+        exit 1
+    fi
+
+    awk -v fragment="$fragment" '
+        { print }
+        /^  dynamic:[[:space:]]*$/ {
+            while ((getline line < fragment) > 0) {
+                print (line == "" ? "" : "    " line)
+            }
+            close(fragment)
+        }
+    ' "$file" >"${file}.tmp" && mv "${file}.tmp" "$file"
+
+    if [ "$(grep -c '^    auth_failure_listeners:$' "$file")" != "1" ]; then
+        echo "ERROR: failed to add auth_failure_listeners to ${file}"
+        exit 1
+    fi
+}
+
+# ====
 # Set up configuration files
 # ====
 function add_configuration_files() {
@@ -281,6 +321,10 @@ function add_configuration_files() {
     # Disable multi-tenancy
     sed -i 's/#kibana:/kibana:/' "$PATH_CONF/opensearch-security/config.yml"
     sed -i 's/#multitenancy_enabled: true/  multitenancy_enabled: false/' "$PATH_CONF/opensearch-security/config.yml"
+
+    # Rate limit failed logins per user
+    add_auth_failure_listeners "$PATH_CONF/security/auth_failure_listeners.wazuh.yml" \
+        "$PATH_CONF/opensearch-security/config.yml"
 
     cp "$PATH_CONF/opensearch.prod.yml" "$PATH_CONF/opensearch.yml"
 

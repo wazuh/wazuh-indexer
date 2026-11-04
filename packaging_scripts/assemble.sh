@@ -185,7 +185,9 @@ function add_wazuh_tools() {
     local version=${1}
 
     local archive_url="https://github.com/wazuh/wazuh-installation-assistant/archive"
-    local refs=("refs/heads/${version}" "refs/tags/v${version}")
+    # A released version resolves by tag, a release candidate by its stage tag, and one
+    # still in development by branch, whose head moves between builds.
+    local refs=("refs/tags/v${version}" "refs/tags/v${version}-${PRODUCT_STAGE}" "refs/heads/${version}")
 
     local src_dir
     src_dir=$(mktemp -d)
@@ -206,6 +208,16 @@ function add_wazuh_tools() {
     fi
     tar -xzf "${src_dir}/source.tar.gz" -C "${src_dir}" --strip-components=1
     bash "${src_dir}/builder.sh" -c -p
+
+    # builder.sh declares no `set -e` and, with -c -p, exits with the status of its last
+    # chmod, so a step that failed halfway would otherwise ship a truncated tool.
+    local tool
+    for tool in wazuh-passwords-tool.sh wazuh-certs-tool.sh; do
+        if [ ! -s "${src_dir}/${tool}" ] || ! head -1 "${src_dir}/${tool}" | grep -q '^#!'; then
+            echo "ERROR: ${tool} was not built by the installation assistant's builder" >&2
+            exit 1
+        fi
+    done
 
     # tools folder
     local tools_dir="${PATH_PLUGINS}/opensearch-security/tools"
@@ -439,6 +451,7 @@ function main() {
 
     UPSTREAM_VERSION=$(bash packaging_scripts/upstream_version.sh)
     PRODUCT_VERSION=$(bash packaging_scripts/product_version.sh)
+    PRODUCT_STAGE=$(jq -r .stage VERSION.json)
     ARTIFACT_BUILD_NAME=$(ls "${OUTPUT}/dist/" | grep "wazuh-indexer-min.*$SUFFIX.*\.$EXT")
     ARTIFACT_PACKAGE_NAME=${ARTIFACT_BUILD_NAME/-min/}
 

@@ -688,9 +688,8 @@ exit 0
 %dir %attr(750, %{name}, %{name}) %{data_dir}
 %dir %attr(750, %{name}, %{name}) %{log_dir}
 
-# path.repo points here: the only directory a filesystem snapshot repository may be registered
-# under. Shipped empty, so an erase takes it back when nothing was ever written to it, and keeps
-# it when it holds backups.
+# Default location for filesystem snapshot repositories (path.repo). Shipped empty, so an erase
+# takes it back when nothing was ever written to it, and keeps it when it holds backups.
 %dir %attr(750, %{name}, %{name}) %{repo_dir}
 
 # Carve-out: the content manager deletes the shipped snapshot once it has

@@ -824,8 +824,8 @@ done
 
 section "1.7b A filesystem snapshot repository can be registered"
 
-# A repository can only be registered under a directory named in path.repo, which is read at start,
-# so without it no backup can be set up at all. See
+# A filesystem (fs) repository can only be registered under a directory named in path.repo, which
+# is read at start. The package ships a default location, so this needs no configuration. See
 # https://github.com/wazuh/wazuh-indexer/issues/2062.
 REPO_DIR="${DATA_DIR}/backup"
 ADMIN_PW=$(cred_get WAZUH_INDEXER_ADMIN_PASSWORD)

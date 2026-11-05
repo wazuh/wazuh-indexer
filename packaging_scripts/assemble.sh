@@ -179,8 +179,7 @@ function remove_unneeded_files() {
 #
 # The tools are built from the wazuh-installation-assistant sources on GitHub,
 # so the package does not depend on a nightly being published for the version.
-# The first reference that resolves wins: the branch named after the version,
-# then its tag.
+# The first reference that resolves wins, in the order set inside the function.
 function add_wazuh_tools() {
     local version=${1}
 
@@ -207,14 +206,17 @@ function add_wazuh_tools() {
         exit 1
     fi
     tar -xzf "${src_dir}/source.tar.gz" -C "${src_dir}" --strip-components=1
-    bash "${src_dir}/builder.sh" -c -p
 
-    # builder.sh declares no `set -e` and, with -c -p, exits with the status of its last
-    # chmod, so a step that failed halfway would otherwise ship a truncated tool.
+    # builder.sh declares no `set -e` and exits with the status of its last chmod, so -e
+    # is what stops it at the first failed step and fails the job.
+    bash -e "${src_dir}/builder.sh" -c -p
+
+    # -e misses a module absent from its folder: nothing fails, but the tool comes out
+    # without the main function that builder.sh calls on its last line.
     local tool
     for tool in wazuh-passwords-tool.sh wazuh-certs-tool.sh; do
-        if [ ! -s "${src_dir}/${tool}" ] || ! head -1 "${src_dir}/${tool}" | grep -q '^#!'; then
-            echo "ERROR: ${tool} was not built by the installation assistant's builder" >&2
+        if ! grep -q '^function main()' "${src_dir}/${tool}"; then
+            echo "ERROR: ${tool} was built without its main function" >&2
             exit 1
         fi
     done

@@ -32,6 +32,7 @@
 | [#1572](https://github.com/wazuh/wazuh-indexer/issues/1572) | Set `OPENSEARCH_TMPDIR` to `/var/lib/wazuh-indexer/tmp` to avoid exhausting the `/tmp` partition |
 | [#1581](https://github.com/wazuh/wazuh-indexer/issues/1581) | Log the disabled automatic import of dangling indices at `INFO` instead of `WARN` on every startup |
 | [#1998](https://github.com/wazuh/wazuh-indexer/issues/1998) | Enable transport hostname verification (`transport.ssl.enforce_hostname_verification`) by default |
+| [#2062](https://github.com/wazuh/wazuh-indexer/issues/2062) | Set `path.repo` to `/var/lib/wazuh-indexer/backup` and ship that directory, so a filesystem snapshot repository can be registered without editing `opensearch.yml` and restarting |
 
 
 ### Removed

@@ -12,6 +12,11 @@ cluster.name: "wazuh-cluster"
 node.max_local_storage_nodes: "3"
 path.data: /var/lib/wazuh-indexer
 path.logs: /var/log/wazuh-indexer
+# Default location for filesystem snapshot repositories, so one can be registered with no further
+# configuration. This is only a default: change or extend the list to keep backups elsewhere, for
+# example on a mounted volume. It applies to fs and url repositories; s3, azure and hdfs do not
+# use it. The directory ships empty.
+path.repo: ["/var/lib/wazuh-indexer/backup"]
 
 plugins.security.ssl.http.pemcert_filepath: /etc/wazuh-indexer/certs/indexer.pem
 plugins.security.ssl.http.pemkey_filepath: /etc/wazuh-indexer/certs/indexer-key.pem

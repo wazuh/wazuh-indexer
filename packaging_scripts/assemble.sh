@@ -176,15 +176,59 @@ function remove_unneeded_files() {
 # ====
 # Add additional tools into packages
 # ====
+#
+# The tools are built from the wazuh-installation-assistant sources on GitHub,
+# so the package does not depend on a nightly being published for the version.
+# The first reference that resolves wins, in the order set inside the function.
 function add_wazuh_tools() {
-    local version=${1%.*}
+    local version=${1}
 
-    local download_url
-    download_url="https://packages-dev.wazuh.com/${version}"
+    local archive_url="https://github.com/wazuh/wazuh-installation-assistant/archive"
+    # A released version resolves by tag, a release candidate by its stage tag, and one
+    # still in development by branch, whose head moves between builds.
+    local refs=("refs/tags/v${version}" "refs/tags/v${version}-${PRODUCT_STAGE}" "refs/heads/${version}")
 
-    curl -sL --fail --retry 3 "${download_url}/config.yml" -o $PATH_PLUGINS/opensearch-security/tools/config.yml
-    curl -sL --fail --retry 3 "${download_url}/wazuh-passwords-tool.sh" -o $PATH_PLUGINS/opensearch-security/tools/wazuh-passwords-tool.sh
-    curl -sL --fail --retry 3 "${download_url}/wazuh-certs-tool.sh" -o $PATH_PLUGINS/opensearch-security/tools/wazuh-certs-tool.sh
+    local src_dir
+    src_dir=$(mktemp -d)
+
+    # curl --retry only retries transient errors, so a missing reference fails
+    # at once and the next one is tried.
+    local ref
+    for ref in "${refs[@]}"; do
+        if curl -sL --connect-timeout 10 --max-time 60 --retry 3 --retry-delay 5 --fail \
+            "${archive_url}/${ref}.tar.gz" -o "${src_dir}/source.tar.gz"; then
+            break
+        fi
+        rm -f "${src_dir}/source.tar.gz"
+    done
+    if [ ! -f "${src_dir}/source.tar.gz" ]; then
+        echo "ERROR: Could not download wazuh-installation-assistant from any of: ${refs[*]}" >&2
+        exit 1
+    fi
+    tar -xzf "${src_dir}/source.tar.gz" -C "${src_dir}" --strip-components=1
+
+    # builder.sh declares no `set -e` and exits with the status of its last chmod, so -e
+    # is what stops it at the first failed step and fails the job.
+    bash -e "${src_dir}/builder.sh" -c -p
+
+    # -e misses a module absent from its folder: nothing fails, but the tool comes out
+    # without the main function that builder.sh calls on its last line.
+    local tool
+    for tool in wazuh-passwords-tool.sh wazuh-certs-tool.sh; do
+        if ! grep -q '^function main()' "${src_dir}/${tool}"; then
+            echo "ERROR: ${tool} was built without its main function" >&2
+            exit 1
+        fi
+    done
+
+    # tools folder
+    local tools_dir="${PATH_PLUGINS}/opensearch-security/tools"
+
+    install -m 644 "${src_dir}/documentation-templates/wazuh/config.yml" "${tools_dir}"/config.yml
+    install -m 644 "${src_dir}/wazuh-passwords-tool.sh" "${tools_dir}"/wazuh-passwords-tool.sh
+    install -m 644 "${src_dir}/wazuh-certs-tool.sh" "${tools_dir}"/wazuh-certs-tool.sh
+
+    rm -rf "${src_dir}"
 }
 
 # ====
@@ -409,6 +453,7 @@ function main() {
 
     UPSTREAM_VERSION=$(bash packaging_scripts/upstream_version.sh)
     PRODUCT_VERSION=$(bash packaging_scripts/product_version.sh)
+    PRODUCT_STAGE=$(jq -r .stage VERSION.json)
     ARTIFACT_BUILD_NAME=$(ls "${OUTPUT}/dist/" | grep "wazuh-indexer-min.*$SUFFIX.*\.$EXT")
     ARTIFACT_PACKAGE_NAME=${ARTIFACT_BUILD_NAME/-min/}
 

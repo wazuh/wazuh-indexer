@@ -21,7 +21,7 @@ You may also need to create an **index pattern** in _dashboards_ in order to per
 queries to the index from the UI. To do that, go to Dashboards Management > Index Patterns > Create index pattern > wazuh-alerts-4.x-* > timestamp as Time field
 
 Newer indices, like `wazuh-states-vulnerabilities`, are ECS compliant and use a dedicated events' generator.
-You can find it in the [ecs](../../../ecs/) folder.
+You can find it in the [wcs](../../../wcs/) folder.
 
 
 ```console

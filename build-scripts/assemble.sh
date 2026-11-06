@@ -253,6 +253,46 @@ function set_security_hash_placeholder() {
 }
 
 # ====
+# Leave flushes out of the audit trail
+#
+# Operators flush a node right before stopping it, and every shard flush is an
+# audited index event. The closing node cannot store those events, so the audit
+# sink logs one ERROR per flushed shard on every stop. A flush carries nothing
+# worth auditing. See https://github.com/wazuh/wazuh-indexer/issues/2094.
+#
+# audit.yml is a single nested map, so it cannot take an appended *.wazuh.yml
+# block like the other security files: the upstream "ignore_requests: []" line
+# is rewritten in place. Any other value there means upstream changed the file,
+# and the build fails rather than ship an exclusion list nobody reviewed.
+# ====
+function exclude_flushes_from_audit() {
+    local file="$1"
+    local upstream='    ignore_requests: []'
+    local wanted='    ignore_requests: ["indices:admin/flush*"]'
+
+    if [ "$(grep -cxF "$upstream" "$file")" != "1" ]; then
+        echo "ERROR: expected exactly one 'ignore_requests: []' line in ${file}."
+        echo "       Upstream changed this file. Re-check the audit exclusions before releasing."
+        exit 1
+    fi
+
+    awk -v upstream="$upstream" -v wanted="$wanted" '
+        $0 == upstream {
+            print "    # Flushes are not audited: the flush run before stopping a node would"
+            print "    # queue events that the closing node can no longer store."
+            print wanted
+            next
+        }
+        { print }
+    ' "$file" >"${file}.tmp" && mv "${file}.tmp" "$file"
+
+    if ! grep -qxF "$wanted" "$file"; then
+        echo "ERROR: failed to set ignore_requests in ${file}"
+        exit 1
+    fi
+}
+
+# ====
 # Set up configuration files
 # ====
 function add_configuration_files() {
@@ -281,6 +321,8 @@ function add_configuration_files() {
     # Disable multi-tenancy
     sed -i 's/#kibana:/kibana:/' "$PATH_CONF/opensearch-security/config.yml"
     sed -i 's/#multitenancy_enabled: true/  multitenancy_enabled: false/' "$PATH_CONF/opensearch-security/config.yml"
+
+    exclude_flushes_from_audit "$PATH_CONF/opensearch-security/audit.yml"
 
     cp "$PATH_CONF/opensearch.prod.yml" "$PATH_CONF/opensearch.yml"
 

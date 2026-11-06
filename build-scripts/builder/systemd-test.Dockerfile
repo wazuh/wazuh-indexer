@@ -1,7 +1,9 @@
 # Minimal systemd-enabled Ubuntu image for the DEB package tests, booted with
 # /sbin/init (Debian-family analog of redhat/ubi9-init). Built from AWS ECR
 # Public to avoid Docker Hub unauthenticated pull-rate limits on CodeBuild.
-FROM public.ecr.aws/ubuntu/ubuntu:jammy
+# UBUNTU_RELEASE selects the Ubuntu release (jammy by default).
+ARG UBUNTU_RELEASE=jammy
+FROM public.ecr.aws/ubuntu/ubuntu:${UBUNTU_RELEASE}
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV container=docker

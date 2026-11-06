@@ -50,8 +50,8 @@ ${source_opensearch}
 
 RUN tar zxf /opt/opensearch.tar.gz --strip-components=1
 RUN sed -i -e 's/OPENSEARCH_DISTRIBUTION_TYPE=tar/OPENSEARCH_DISTRIBUTION_TYPE=docker/' /usr/share/wazuh-indexer/bin/opensearch-env
-RUN mkdir -p config config/jvm.options.d data logs
-RUN chmod 0775 config config/jvm.options.d data logs
+RUN mkdir -p config config/jvm.options.d data logs backup
+RUN chmod 0775 config config/jvm.options.d data logs backup
 COPY config/opensearch.yml config/log4j2.properties config/
 RUN chmod 0660 config/opensearch.yml config/log4j2.properties
 

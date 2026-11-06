@@ -87,28 +87,12 @@ To create the custom source:
 5. For _Account details_, enter the AWS account ID and External ID of the custom source that will write logs and events to the data lake.
 6. For _Service Access_, create and use a new service role or use an existing service role that gives Security Lake permission to invoke AWS Glue.
    ![*Custom source* creation form](./images/asl-custom-source-form.jpeg)
-   Ensure the policy created for the Role associated with the Custom Source matches the policy below:
-   ```json
-    {
-        "Version": "2025-04-04",
-        "Statement": [
-            {
-
-                "Sid": "1",
-                "Effect": "Allow",
-                "Principal": {
-                    "AWS": "arn:aws:iam::<Lambda AWS Account ID>:root"
-                },
-                "Action": "sts:AssumeRole"
-            }
-        ]
-    }
-   ```
-7. Choose _Create_. Upon creation, Amazon Security Lake automatically creates an AWS Service Role with permissions to push files into the Security Lake bucket, under the proper prefix named after the custom source name. An AWS Glue Crawler is also created to populate the AWS Glue Data Catalog automatically.
+7. Choose _Create_. Upon creation, Amazon Security Lake automatically creates an AWS Service Role with permissions to push files into the Security Lake bucket, under the proper prefix named after the custom source name. Its trust policy allows the AWS account ID entered above to assume it, only with the External ID entered above: do not edit it. An AWS Glue Crawler is also created to populate the AWS Glue Data Catalog automatically.
    ![*Custom source* after creation](./images/asl-custom-source.jpeg)
-8. Finally, collect the S3 bucket details, as these will be needed in the next step. Make sure you have the following information:
+8. Finally, collect the details of the custom source, as these will be needed in the next steps. Make sure you have the following information:
    - The Amazon Security Lake S3 region.
    - The S3 bucket name (e.g, `aws-security-data-lake-us-east-1-AAABBBCCCDDD`).
+   - The ARN of the role of the custom source (_Provider role ARN_), and the External ID entered above, to use cross-account.
 
 ### Create an S3 bucket to store events
 
@@ -131,11 +115,37 @@ On the Lambda AWS Account, follow the [official documentation](https://docs.aws.
   | AWS_BUCKET           | True     | The name of the Custom Source S3 bucket in the **Security Lake AWS Account**                             |
   | SOURCE_LOCATION      | True     | The _Data source name_ of the _Custom Source_                                                            |
   | ACCOUNT_ID           | True     | Enter the ID that you specified when creating your Amazon Security Lake custom source                    |
-  | ROLE_ARN             | True     | The ARN of the role that the Lambda function assumes to write data to the Amazon Security Lake S3 bucket |
-  | EXTERNAL_ID          | True     | The External ID that you specified when creating your Amazon Security Lake custom source                 |
-  | REGION               | True     | The AWS Region of the AWS Lambda                                                                         |
+  | ROLE_ARN             | False    | The ARN of the role that the Lambda function assumes to write data to the Amazon Security Lake S3 bucket. Set it, together with `EXTERNAL_ID`, to use cross-account |
+  | EXTERNAL_ID          | False    | The External ID that you specified when creating your Amazon Security Lake custom source. Set it together with `ROLE_ARN` |
+  | REGION               | True     | The AWS Region of Amazon Security Lake                                                                   |
   | S3_BUCKET_OCSF       | False    | The name of the S3 bucket created to store the OCSF events in the **Lambda AWS Account**                 |
   | OCSF_CLASS           | False    | The OCSF class to map the events into. Can be "SECURITY_FINDING" (default) or "DETECTION_FINDING".       |
+
+- Give the execution role of the Lambda function the permissions it needs, besides the `AWSLambdaBasicExecutionRole` managed policy for its logs. The function reads the raw events, and writes the optional OCSF events, with its own role:
+  - `s3:GetObject` on the S3 bucket of the raw events.
+  - `s3:PutObject` on the S3 bucket of the OCSF events, if `S3_BUCKET_OCSF` is set.
+  - With cross-account, `sts:AssumeRole` on the role of the custom source: the function writes to the Amazon Security Lake S3 bucket with that role.
+  - Without cross-account, `s3:PutObject` on the location of the custom source in the Amazon Security Lake S3 bucket instead.
+
+  ```json
+  {
+      "Version": "2012-10-17",
+      "Statement": [
+          {
+              "Effect": "Allow",
+              "Action": "s3:GetObject",
+              "Resource": "arn:aws:s3:::wazuh-aws-security-lake-raw/*"
+          },
+          {
+              "Effect": "Allow",
+              "Action": "sts:AssumeRole",
+              "Resource": "<ARN of the role of the custom source>"
+          }
+      ]
+  }
+  ```
+
+  If an invocation fails, for example because the raw events cannot be read or the Parquet file cannot be written to the Amazon Security Lake S3 bucket, the error is logged and the invocation ends with an error. AWS Lambda then retries it, as with any asynchronous invocation, and a retry overwrites the files of the failed one. A failure writing the optional OCSF events is only logged.
 
 ### Validation
 

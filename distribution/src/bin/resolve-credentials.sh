@@ -852,8 +852,10 @@ issue_client_pair() {
     _icp_consumer="$1"
     _icp_work=$(mktemp -d "${TMPDIR:-/tmp}/wazuh-indexer-client.XXXXXX") || return 1
     chmod 700 "${_icp_work}"
-    printf '%s\n' 'extendedKeyUsage = clientAuth' 'keyUsage = digitalSignature, keyEncipherment' \
-        'basicConstraints = CA:FALSE' 'subjectKeyIdentifier = hash' 'authorityKeyIdentifier = keyid' \
+    printf '%s\n' 'extendedKeyUsage = clientAuth' \
+        'keyUsage = critical, digitalSignature, keyEncipherment' \
+        'basicConstraints = critical, CA:FALSE' \
+        'subjectKeyIdentifier = hash' 'authorityKeyIdentifier = keyid' \
         > "${_icp_work}/client.ext"
     _icp_status=1
     if make_pair "${_icp_work}" "${_icp_consumer}-client" "$(client_subject "${_icp_consumer}")" "${_icp_work}/client.ext"; then

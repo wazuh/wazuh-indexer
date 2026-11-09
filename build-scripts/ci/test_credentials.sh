@@ -677,6 +677,8 @@ for consumer in manager dashboard; do
     check_eq "${consumer} subject" "C=US,L=California,O=Wazuh,OU=Wazuh,CN=wazuh-${consumer}" "$(subject_of "${pem}")"
     check "${consumer} pair is for client authentication" \
         bash -c "openssl x509 -in '${pem}' -noout -ext extendedKeyUsage | grep -q 'TLS Web Client Authentication'"
+    check_eq "${consumer} pair is not a CA" "critical, CA:FALSE" "$(ext_of "${pem}" basicConstraints)"
+    check_eq "${consumer} pair key usage" "critical, Digital Signature, Key Encipherment" "$(ext_of "${pem}" keyUsage)"
     check "${consumer} pair names no host" \
         bash -c "! openssl x509 -in '${pem}' -noout -ext subjectAltName 2>/dev/null | grep -q 'DNS:\|IP'"
     check "${consumer} key matches its certificate" \

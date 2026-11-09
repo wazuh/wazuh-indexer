@@ -216,6 +216,19 @@ subject_of() {
     openssl x509 -in "$1" -noout -subject -nameopt RFC2253 2>/dev/null | sed 's/^subject= *//'
 }
 
+# ext_of <pem> <extension>: the extension's value on one line, prefixed "critical, " when it is
+# critical; empty when the certificate does not carry it.
+ext_of() {
+    openssl x509 -in "$1" -noout -ext "$2" 2>/dev/null \
+        | awk 'NR == 1 { c = / critical$/ } NR == 2 { sub(/^ +/, ""); print (c ? "critical, " : "") $0 }'
+}
+
+# served_leaf <port>: the SHA-256 fingerprint of the certificate the node presents on <port>.
+served_leaf() {
+    echo | timeout 10 openssl s_client -connect "127.0.0.1:$1" 2>/dev/null \
+        | openssl x509 -noout -fingerprint -sha256 2>/dev/null
+}
+
 dn_list() {
     awk -v k="$1" '
         index($0, k ":") == 1 { f = 1; next }
@@ -608,6 +621,19 @@ else
     fail "global addresses missing from the SAN list:${missing}"
 fi
 
+# Each certificate is accepted only in its TLS role, with the key usages wazuh-certs-tool.sh gives
+# the same certificates: the node's is the server on 9200 and both ends of the transport layer on
+# 9300, the admin certificate is a client that names no host.
+for f in indexer.pem admin.pem; do
+    check_eq "${f} is not a CA" "critical, CA:FALSE" "$(ext_of "${CERTS_DIR}/${f}" basicConstraints)"
+    check_eq "${f} key usage" "critical, Digital Signature, Key Encipherment" "$(ext_of "${CERTS_DIR}/${f}" keyUsage)"
+done
+check_eq "indexer.pem is for server and client authentication" \
+    "TLS Web Server Authentication, TLS Web Client Authentication" "$(ext_of "${CERTS_DIR}/indexer.pem" extendedKeyUsage)"
+check_eq "admin.pem is for client authentication only" \
+    "TLS Web Client Authentication" "$(ext_of "${CERTS_DIR}/admin.pem" extendedKeyUsage)"
+check_eq "admin.pem names no host" "" "$(ext_of "${CERTS_DIR}/admin.pem" subjectAltName)"
+
 # A deployment that replaces the package certificates with wazuh-certs-tool's keeps admin_dn valid
 # only while both issue the admin certificate with the same subject. Read from the tool this
 # package ships: a literal here cannot notice the two drifting apart.
@@ -651,6 +677,8 @@ for consumer in manager dashboard; do
     check_eq "${consumer} subject" "C=US,L=California,O=Wazuh,OU=Wazuh,CN=wazuh-${consumer}" "$(subject_of "${pem}")"
     check "${consumer} pair is for client authentication" \
         bash -c "openssl x509 -in '${pem}' -noout -ext extendedKeyUsage | grep -q 'TLS Web Client Authentication'"
+    check_eq "${consumer} pair is not a CA" "critical, CA:FALSE" "$(ext_of "${pem}" basicConstraints)"
+    check_eq "${consumer} pair key usage" "critical, Digital Signature, Key Encipherment" "$(ext_of "${pem}" keyUsage)"
     check "${consumer} pair names no host" \
         bash -c "! openssl x509 -in '${pem}' -noout -ext subjectAltName 2>/dev/null | grep -q 'DNS:\|IP'"
     check "${consumer} key matches its certificate" \
@@ -727,6 +755,12 @@ else
     fail "node did not answer on 9200 within 120s"
     journalctl -u wazuh-indexer --no-pager 2>/dev/null | tail -20 | sed 's/^/        /'
 fi
+
+# What a peer sees is what section 1.2 checked: the leaf of certs/indexer.pem, on both ports.
+leaf=$(openssl x509 -in "${CERTS_DIR}/indexer.pem" -noout -fingerprint -sha256 2>/dev/null)
+for port in 9200 9300; do
+    check_eq "the node presents certs/indexer.pem on ${port}" "${leaf}" "$(served_leaf "${port}")"
+done
 
 errs="$(service_errors)"
 if [ -n "${errs}" ]; then

@@ -867,6 +867,90 @@ for path in "_snapshot/packaged-backups/probe-1" "_snapshot/packaged-backups" "s
 done
 rm -rf "${REPO_DIR:?}"/..?* "${REPO_DIR:?}"/.[!.]* "${REPO_DIR:?}"/* 2>/dev/null || true
 
+section "1.7c Audit events are stored, flushes are not, and a stop after a flush logs no ERROR"
+
+# The packaged configuration stores the security plugin's audit events in a data stream. Operators
+# flush a node right before stopping it, and the closing node cannot store the audit events of that
+# flush: the sink logged one ERROR per flushed shard. So the packaged audit.yml leaves flushes out.
+# See https://github.com/wazuh/wazuh-indexer/issues/2094.
+AUDIT_YML="${CONFIG_DIR}/opensearch-security/audit.yml"
+AUDIT_STREAM="security-auditlogs"
+CLUSTER_LOG="${LOG_DIR}/wazuh-cluster.log"
+PROBE_INDEX="audit-probe"
+
+# audit_count <filter>...: stored index events matching every filter, empty when unreadable.
+audit_count() {
+    _filters='{"term":{"audit_category.keyword":"INDEX_EVENT"}}'
+    for _f in "$@"; do _filters="${_filters},${_f}"; done
+    curl -sk -u "admin:${ADMIN_PW}" -H 'Content-Type: application/json' "${API}/${AUDIT_STREAM}/_count" \
+        -d "{\"query\":{\"bool\":{\"filter\":[${_filters}]}}}" 2>/dev/null \
+        | sed -n 's/.*"count":\([0-9]*\).*/\1/p'
+}
+
+# wait_for_audit <filter>...: true once at least one matching event is stored. Events are written
+# asynchronously, so a request returning is not its event being searchable.
+wait_for_audit() {
+    _n=0
+    while [ "${_n}" -lt 30 ]; do
+        [ "$(audit_count "$@")" -gt 0 ] 2>/dev/null && return 0
+        _n=$((_n + 1))
+        sleep 2
+    done
+    return 1
+}
+
+check "the packaged audit.yml leaves flushes out" \
+    grep -qxF '    ignore_requests: ["indices:admin/flush*"]' "${AUDIT_YML}"
+got=$(curl -sk -u "admin:${ADMIN_PW}" \
+    "${API}/_plugins/_security/api/audit?filter_path=config.audit.ignore_requests" 2>/dev/null)
+case "${got}" in
+    *'"ignore_requests":["indices:admin/flush*"]'*) ok "indexer-security-init.sh uploaded that exclusion" ;;
+    *) fail "the active audit configuration does not leave flushes out"; info "${got}" ;;
+esac
+
+# Same user, same category, different action: once the creation that follows the flush is stored,
+# the flush has had every chance to be stored too.
+curl -sk -u "admin:${ADMIN_PW}" -X POST "${API}/_flush" > /dev/null 2>&1
+curl -sk -u "admin:${ADMIN_PW}" -X PUT "${API}/${PROBE_INDEX}" > /dev/null 2>&1
+if wait_for_audit '{"term":{"audit_request_privilege.keyword":"indices:admin/create"}}' \
+                  "{\"term\":{\"audit_trace_indices.keyword\":\"${PROBE_INDEX}\"}}"; then
+    ok "an index creation is audited and stored in ${AUDIT_STREAM}"
+else
+    fail "the index creation was not stored in ${AUDIT_STREAM} within 60s"
+fi
+check_eq "no flush is audited" "0" \
+    "$(audit_count '{"prefix":{"audit_request_privilege.keyword":"indices:admin/flush"}}')"
+
+# The deletion is audited as well, and waiting for it keeps it out of the stop below: any audited
+# request still in flight when the node closes would log the same ERROR as a flush did.
+curl -sk -u "admin:${ADMIN_PW}" -X DELETE "${API}/${PROBE_INDEX}" > /dev/null 2>&1
+if wait_for_audit '{"term":{"audit_request_privilege.keyword":"indices:admin/delete"}}' \
+                  "{\"term\":{\"audit_trace_indices.keyword\":\"${PROBE_INDEX}\"}}"; then
+    ok "an index deletion is audited and stored in ${AUDIT_STREAM}"
+else
+    fail "the index deletion was not stored in ${AUDIT_STREAM} within 60s"
+fi
+
+# What a rolling restart does: flush, then stop at once.
+log_lines=$(wc -l < "${CLUSTER_LOG}" 2>/dev/null || echo 0)
+curl -sk -u "admin:${ADMIN_PW}" -X POST "${API}/_flush" > /dev/null 2>&1
+systemctl stop wazuh-indexer > /dev/null 2>&1
+sink_errors=$(tail -n +"$((log_lines + 1))" "${CLUSTER_LOG}" 2>/dev/null \
+    | grep -E 'ERROR.*(InternalOpenSearchDataStreamSink|Unable to index audit log)' || true)
+if [ -n "${sink_errors}" ]; then
+    fail "the stop after a flush logged $(printf '%s\n' "${sink_errors}" | wc -l) audit sink ERROR(s)"
+    printf '%s\n' "${sink_errors}" | head -3 | cut -c1-200 | sed 's/^/        /'
+else
+    ok "a stop right after a flush logs no audit sink ERROR"
+fi
+systemctl start wazuh-indexer > /dev/null 2>&1
+if wait_for_node && wait_for_cluster admin "${ADMIN_PW}"; then
+    ok "node is back after the stop"
+else
+    fail "node did not come back after the stop"
+    journalctl -u wazuh-indexer --no-pager -n 20 2>/dev/null | sed 's/^/        /'
+fi
+
 section "1.8 Resolution happens once — a restart changes nothing"
 
 before=$(fingerprint "${CERTS_DIR}"/*.pem "${EXPORT_DIR}"/*.pem "${CREDENTIALS}" "${CA_DIR}/root-ca.pem" "${CA_DIR}/root-ca.key" "${KEYSTORE}" "${OPENSEARCH_YML}" "${INTERNAL_USERS}")

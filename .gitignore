@@ -1,3 +1,16 @@
+# build files
+artifacts/
+.devscripts
+*.deb
+*.rpm
+*.zip
+*.tar.gz
+
+integrations/amazon-security-lake/package
+
+.java
+.m2
+maven
 
 # intellij files
 .idea/
@@ -64,3 +77,6 @@ testfixtures_shared/
 
 # build files generated
 doc-tools/missing-doclet/bin/
+
+# log files
+*.log

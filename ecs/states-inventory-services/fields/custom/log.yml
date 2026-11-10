@@ -1,0 +1,6 @@
+---
+- name: log
+  reusable:
+    top_level: true
+    expected:
+      - { at: error, as: log }

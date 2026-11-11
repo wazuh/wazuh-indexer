@@ -13,29 +13,19 @@ This document describes how to prepare a Docker Compose environment to test the 
    ```bash
    docker compose -f ./docker/compose.indexer-splunk.yml up -d
    ```
-3. If you prefer, you can start the integration with the Wazuh Manager as data source:
-   ```bash
-   docker compose -f ./docker/compose.manager-splunk.yml up -d
-   ```
 
 The Docker Compose project will bring up the following services:
 
 - 1x Events Generator (learn more in [wazuh-indexer/integrations/tools/events-generator](../tools/events-generator/README.md)).
-- 1x Wazuh Indexer (OpenSearch).
+- 1x Wazuh Indexer.
 - 1x Logstash
 - 1x Splunk
-- 1x Wazuh Manager (optional).
 
 For custom configurations, you may need to modify these files:
 
 - [docker/compose.indexer-splunk.yml](../docker/compose.indexer-splunk.yml): Docker Compose file.
 - [docker/.env](../docker/.env): Environment variables file.
 - [splunk/logstash/pipeline/indexer-to-splunk.conf](./logstash/pipeline/indexer-to-splunk.conf): Logstash Pipeline configuration file.
-
-If you opted to start the integration with the Wazuh Manager, you can modify the following files:
-
-- [docker/compose.manager-splunk.yml](../docker/compose.manager-splunk.yml): Docker Compose file.
-- [splunk/logstash/pipeline/manager-to-splunk.conf](./logstash/pipeline/manager-to-splunk.conf): Logstash Pipeline configuration file.
 
 Check the files above for **credentials**, ports, and other configurations.
 
@@ -51,7 +41,7 @@ The dashboards for Splunk are included in this folder. The steps to import them 
 - In the Splunk UI, go to `Settings` > `Data Inputs` > `HTTP Event Collector` and make sure that the `hec` token is enabled and uses the `wazuh-alerts` index.
 - Open a dashboard file and copy all its content.
 - In the Splunk UI, navigate to `Search & Reporting`, `Dashboards`, click `Create New Dashboard`, write the title and select `Dashboard Studio`, select `Grid` and click on `Create`.
-- On the top menu, there is a `Source` icon. Click on it, and replace all the content with the copied content from the dashboard file. After that, click on `Back` and click on `Save`.
+- On the top menu, there is a `Source` icon. Click on it, and replace all the content with the contents from one of the dashboard files under `integrations/splunk`. After that, click on `Back` and click on `Save`.
 - Repeat the steps for all the desired dashboards.
 
 Imported dashboards will appear under `Search & Reporting` > `Dashboards`.

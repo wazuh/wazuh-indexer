@@ -2,17 +2,28 @@
 
 ## Table of Contents
 
-- [Introduction](#introduction)
-- [Prerequisites](#prerequisites)
-- [Integration guide](#integration-guide)
-  - [Configure Amazon Security Lake](#configure-amazon-security-lake)
-  - [Create an AWS S3 bucket](#create-an-s3-bucket-to-store-events)
-  - [Configure the AWS Lambda function](#create-an-aws-lambda-function)
-  - [Validation](#validation)
-  - [Install and configure Logstash](#install-and-configure-logstash)
-- [OCSF mapping](#ocsf-mapping)
-- [Troubleshooting](#troubleshooting)
-- [Support](#support)
+- [Wazuh to Amazon Security Lake Integration Guide](#wazuh-to-amazon-security-lake-integration-guide)
+  - [Table of Contents](#table-of-contents)
+  - [Introduction](#introduction)
+    - [Amazon Security Lake](#amazon-security-lake)
+    - [Open Cybersecurity Schema Framework](#open-cybersecurity-schema-framework)
+    - [Wazuh Security Events](#wazuh-security-events)
+    - [Wazuh Security Events to Amazon Security Lake](#wazuh-security-events-to-amazon-security-lake)
+  - [Prerequisites](#prerequisites)
+  - [Integration guide](#integration-guide)
+    - [Configure Amazon Security Lake](#configure-amazon-security-lake)
+      - [Create a custom source for Wazuh](#create-a-custom-source-for-wazuh)
+    - [Create an S3 bucket to store events](#create-an-s3-bucket-to-store-events)
+    - [Create an AWS Lambda function](#create-an-aws-lambda-function)
+    - [Validation](#validation)
+    - [Install and configure Logstash](#install-and-configure-logstash)
+      - [Configure the Logstash pipeline](#configure-the-logstash-pipeline)
+      - [Running Logstash](#running-logstash)
+  - [OCSF Mapping](#ocsf-mapping)
+    - [Metadata](#metadata)
+      - [Security events](#security-events)
+  - [Troubleshooting](#troubleshooting)
+  - [Support](#support)
 
 ## Introduction
 
@@ -30,9 +41,8 @@ Wazuh uses rules to monitor the events and logs in your network to detect securi
 
 **References**:
 
-- https://documentation.wazuh.com/current/user-manual/ruleset/getting-started.html#github-repository
-- https://github.com/wazuh/wazuh/tree/master/ruleset/rules
-- https://github.com/wazuh/wazuh/blob/master/extensions/elasticsearch/7.x/wazuh-template.json
+- https://documentation.wazuh.com/current/user-manual/ruleset/index.html#github-repository
+- https://github.com/wazuh/wazuh/tree/main/ruleset
 
 ### Wazuh Security Events to Amazon Security Lake
 
@@ -42,7 +52,9 @@ A properly configured Logstash instance can send the Wazuh Security events to an
 
 The diagram below illustrates the process of converting Wazuh Security Events to OCSF events and to Parquet format for Amazon Security Lake:
 
-![Overview diagram of the Wazuh integration with Amazon Security Lake](./images/asl-overview.jpeg)
+![Overview diagram of the Wazuh integration with Amazon Security Lake](./images/wazuh-amazon-security-lake.jpg)
+
+> The diagram above represents the recommended deployment using cross-account. Although recommended, the use of cross-account is not mandatory.
 
 ## Prerequisites
 
@@ -52,12 +64,15 @@ The diagram below illustrates the process of converting Wazuh Security Events to
 4. An S3 bucket to store raw events.
 5. An AWS Lambda function, using the Python 3.12 runtime.
 6. (Optional) An S3 bucket to store OCSF events, mapped from raw events.
+7. (Optional) Two AWS accounts:
+    - One to execute the AWS Lambda function, referred to as Lambda AWS Account.
+    - One for Amazon Security Lake, referred to as Security Lake AWS Account.
 
 ## Integration guide
 
 ### Configure Amazon Security Lake
 
-Enable Amazon Security Lake as per the [official instructions](https://docs.aws.amazon.com/security-lake/latest/userguide/what-is-security-lake.html).
+On Security Lake AWS Account, enable Amazon Security Lake as per the [official instructions](https://docs.aws.amazon.com/security-lake/latest/userguide/what-is-security-lake.html).
 
 #### Create a custom source for Wazuh
 
@@ -69,22 +84,23 @@ To create the custom source:
 2. Click on the _Create custom source_ button.
 3. Enter "Wazuh" as the _Data source name_.
 4. Select "Security Finding" as the _OCSF Event class_.
-5. For _AWS account with permission to write data_, enter the AWS account ID and External ID of the custom source that will write logs and events to the data lake.
+5. For _Account details_, enter the AWS account ID and External ID of the custom source that will write logs and events to the data lake.
 6. For _Service Access_, create and use a new service role or use an existing service role that gives Security Lake permission to invoke AWS Glue.
    ![*Custom source* creation form](./images/asl-custom-source-form.jpeg)
-7. Choose _Create_. Upon creation, Amazon Security Lake automatically creates an AWS Service Role with permissions to push files into the Security Lake bucket, under the proper prefix named after the custom source name. An AWS Glue Crawler is also created to populate the AWS Glue Data Catalog automatically.
+7. Choose _Create_. Upon creation, Amazon Security Lake automatically creates an AWS Service Role with permissions to push files into the Security Lake bucket, under the proper prefix named after the custom source name. Its trust policy allows the AWS account ID entered above to assume it, only with the External ID entered above: do not edit it. An AWS Glue Crawler is also created to populate the AWS Glue Data Catalog automatically.
    ![*Custom source* after creation](./images/asl-custom-source.jpeg)
-8. Finally, collect the S3 bucket details, as these will be needed in the next step. Make sure you have the following information:
+8. Finally, collect the details of the custom source, as these will be needed in the next steps. Make sure you have the following information:
    - The Amazon Security Lake S3 region.
    - The S3 bucket name (e.g, `aws-security-data-lake-us-east-1-AAABBBCCCDDD`).
+   - The ARN of the role of the custom source (_Provider role ARN_), and the External ID entered above, to use cross-account.
 
 ### Create an S3 bucket to store events
 
-Follow the [official documentation](https://docs.aws.amazon.com/AmazonS3/latest/userguide/create-bucket-overview.html) to create an S3 bucket within your organization. Use a descriptive name, for example: `wazuh-aws-security-lake-raw`.
+On the Lambda AWS Account, follow the [official documentation](https://docs.aws.amazon.com/AmazonS3/latest/userguide/create-bucket-overview.html) to create an S3 bucket within your organization. Use a descriptive name, for example: `wazuh-aws-security-lake-raw`.
 
 ### Create an AWS Lambda function
 
-Follow the [official documentation](https://docs.aws.amazon.com/lambda/latest/dg/getting-started.html) to create an AWS Lambda:
+On the Lambda AWS Account, follow the [official documentation](https://docs.aws.amazon.com/lambda/latest/dg/getting-started.html) to create an AWS Lambda:
 
 - Select Python 3.12 as the runtime.
 - Configure the runtime to have 512 MB of memory and 30 seconds timeout.
@@ -94,18 +110,46 @@ Follow the [official documentation](https://docs.aws.amazon.com/lambda/latest/dg
 - Use the [Makefile](./Makefile) to generate the zip package `wazuh_to_amazon_security_lake.zip`, and upload it to the S3 bucket created previously as per [these instructions](https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-package.html#gettingstarted-package-zip). See [CONTRIBUTING](./CONTRIBUTING.md) for details about the Makefile.
 - Configure the Lambda with the at least the required _Environment Variables_ below:
 
-  | Environment variable | Required | Value                                                                                              |
-  | -------------------- | -------- | -------------------------------------------------------------------------------------------------- |
-  | AWS_BUCKET           | True     | The name of the Amazon S3 bucket in which Security Lake stores your custom source data             |
-  | SOURCE_LOCATION      | True     | The _Data source name_ of the _Custom Source_                                                      |
-  | ACCOUNT_ID           | True     | Enter the ID that you specified when creating your Amazon Security Lake custom source              |
-  | REGION               | True     | AWS Region to which the data is written                                                            |
-  | S3_BUCKET_OCSF       | False    | S3 bucket to which the mapped events are written                                                   |
-  | OCSF_CLASS           | False    | The OCSF class to map the events into. Can be "SECURITY_FINDING" (default) or "DETECTION_FINDING". |
+  | Environment variable | Required | Value                                                                                                    |
+  | -------------------- | -------- | -------------------------------------------------------------------------------------------------------- |
+  | AWS_BUCKET           | True     | The name of the Custom Source S3 bucket in the **Security Lake AWS Account**                             |
+  | SOURCE_LOCATION      | True     | The _Data source name_ of the _Custom Source_                                                            |
+  | ACCOUNT_ID           | True     | Enter the ID that you specified when creating your Amazon Security Lake custom source                    |
+  | ROLE_ARN             | False    | The ARN of the role that the Lambda function assumes to write data to the Amazon Security Lake S3 bucket. Set it, together with `EXTERNAL_ID`, to use cross-account |
+  | EXTERNAL_ID          | False    | The External ID that you specified when creating your Amazon Security Lake custom source. Set it together with `ROLE_ARN` |
+  | REGION               | True     | The AWS Region of Amazon Security Lake                                                                   |
+  | S3_BUCKET_OCSF       | False    | The name of the S3 bucket created to store the OCSF events in the **Lambda AWS Account**                 |
+  | OCSF_CLASS           | False    | The OCSF class to map the events into. Can be "SECURITY_FINDING" (default) or "DETECTION_FINDING".       |
+
+- Give the execution role of the Lambda function the permissions it needs, besides the `AWSLambdaBasicExecutionRole` managed policy for its logs. The function reads the raw events, and writes the optional OCSF events, with its own role:
+  - `s3:GetObject` on the S3 bucket of the raw events.
+  - `s3:PutObject` on the S3 bucket of the OCSF events, if `S3_BUCKET_OCSF` is set.
+  - With cross-account, `sts:AssumeRole` on the role of the custom source: the function writes to the Amazon Security Lake S3 bucket with that role.
+  - Without cross-account, `s3:PutObject` on the location of the custom source in the Amazon Security Lake S3 bucket instead.
+
+  ```json
+  {
+      "Version": "2012-10-17",
+      "Statement": [
+          {
+              "Effect": "Allow",
+              "Action": "s3:GetObject",
+              "Resource": "arn:aws:s3:::wazuh-aws-security-lake-raw/*"
+          },
+          {
+              "Effect": "Allow",
+              "Action": "sts:AssumeRole",
+              "Resource": "<ARN of the role of the custom source>"
+          }
+      ]
+  }
+  ```
+
+  If an invocation fails, for example because the raw events cannot be read or the Parquet file cannot be written to the Amazon Security Lake S3 bucket, the error is logged and the invocation ends with an error. AWS Lambda then retries it, as with any asynchronous invocation, and a retry overwrites the files of the failed one. A failure writing the optional OCSF events is only logged.
 
 ### Validation
 
-To validate that the Lambda function works as it should, add the sample events below to the `sample.txt` file and upload it to the S3 bucket.
+To validate that the Lambda function works as it should, add the sample events below to the `20240422_ls.s3.2f062956-5a30-4c2a-b693-a0f5d878294c.2024-04-22T14.20.part39.txt` file and upload it to the S3 bucket.
 
 ```
 {"cluster":{"name":"wazuh-cluster","node":"wazuh-manager"},"timestamp":"2024-04-22T14:20:46.976+0000","rule":{"mail":false,"gdpr":["IV_30.1.g"],"groups":["audit","audit_command"],"level":3,"firedtimes":1,"id":"80791","description":"Audit: Command: /usr/sbin/crond"},"location":"","agent":{"id":"004","ip":"47.204.15.21","name":"Ubuntu"},"data":{"audit":{"type":"NORMAL","file":{"name":"/etc/sample/file"},"success":"yes","command":"cron","exe":"/usr/sbin/crond","cwd":"/home/wazuh"}},"predecoder":{},"manager":{"name":"wazuh-manager"},"id":"1580123327.49031","decoder":{},"@version":"1","@timestamp":"2024-04-22T14:20:46.976Z"}

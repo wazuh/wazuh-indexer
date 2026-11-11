@@ -127,7 +127,7 @@ services:
       		-ca root-ca.pem \
       		-ca-key root-ca.key \
       		-config /conf/cfssl.json \
-      		-profile=server - | \
+      		-profile=peer - | \
       	cfssljson -bare splunk
       	openssl pkcs8 -topk8 -inform pem -in splunk-key.pem -outform pem -nocrypt -out splunk.key
         rm splunk.csr
@@ -137,6 +137,7 @@ services:
 
   splunk:
     image: splunk/splunk:${SPLUNK_VERSION}
+    user: root
     volumes:
       - ./certs/splunk.key:/opt/splunk/etc/auth/custom/splunk.key
       - ./certs/splunk.pem:/opt/splunk/etc/auth/custom/splunk.pem
@@ -158,13 +159,18 @@ services:
       SPLUNK_HTTP_ENABLESSL: "true"
       SPLUNK_PASSWORD: Password.1234
       SPLUNK_STANDALONE_URL: https://splunk:8080
-      SPLUNK_START_ARGS: --accept-license
+      SPLUNK_GENERAL_TERMS: --accept-sgt-current-at-splunk-com
+      SPLUNK_START_ARGS: --accept-license --run-as-root
 
   logstash:
+    image: logstash-oss:${LOGSTASH_OSS_VERSION}
     depends_on:
       splunk:
         condition: service_healthy
-    image: logstash-oss:${LOGSTASH_OSS_VERSION}
+    build:
+      context: ../logstash
+      args:
+        - LOGSTASH_OSS_VERSION=${LOGSTASH_OSS_VERSION}
     environment:
       LOGSTASH_OSS_VERSION: ${LOGSTASH_OSS_VERSION}
       LOG_LEVEL: info

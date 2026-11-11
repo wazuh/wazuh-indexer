@@ -2,7 +2,7 @@
 
 # Events generator tool for Wazuh's indices.
 # Chooses a random element from <index>/alerts.json to index
-#  (indexer, filebeat). Required. Destination of the events. Default: indexer.
+# Required. Destination of the events. Default: indexer.
 #  -c: Number of elements to push. Use 0 to run indefinitely. Default: 0
 #  -i: index name prefix or module (e.g: wazuh-alerts, wazuh-states-vulnerabilities)
 #  -t: interval between events in seconds. Default: 5
@@ -97,18 +97,6 @@ class PublisherHttp(Publisher):
 # ================================================== #
 
 
-class PublisherFilebeat(Publisher):
-    def __init__(self):
-        super()
-        self.path = "/var/ossec/logs/alerts/alerts.json"
-
-    def publish(self, event: str):
-        with open(self.path, "a") as fd:
-            fd.write(event)
-
-# ================================================== #
-
-
 class PublisherCreator:
     @staticmethod
     def create(publisher: str, args) -> Publisher:
@@ -120,8 +108,6 @@ class PublisherCreator:
             password = args["password"]
 
             return PublisherHttp(address, port, path, username, password)
-        elif publisher == "filebeat":
-            return PublisherFilebeat()
         else:
             raise ValueError("Unsupported publisher type")
 
@@ -145,7 +131,7 @@ def parse_args():
     )
     parser.add_argument(
         '-o', '--output',
-        choices=['indexer', 'filebeat'],
+        choices=['indexer'],
         default="indexer",
         help="Destination of the events. Default: indexer."
     )

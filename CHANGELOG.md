@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 -
 
 ### Changed
--
+- Migrate 4.14.11 to 2.19.7 [(#2088)](https://github.com/wazuh/wazuh-indexer/pull/2088)
 
 ### Deprecated
 -
@@ -25,4 +25,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Security
 -
 
-[Unreleased 4.14.x]: https://github.com/wazuh/wazuh-indexer/compare/4.14.10...4.14.11
+[Unreleased 4.14.x]: https://github.com/wazuh/wazuh-indexer/compare/9db8ae0826dba3286f758ec106f1a28e4d14ba84...v4.14.11

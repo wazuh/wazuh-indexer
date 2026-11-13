@@ -87,13 +87,15 @@ if [[ "$(id -u)" == "0" ]]; then
 fi
 
 # Start Wazuh Engine
+# env -u: DEPLOY_KEY is the indexer's pre-registration key, and in a container everything
+# started from here inherits the container environment, where it is set.
 if [ -x "$INDEXER_HOME/engine/run_engine.sh" ]; then
-  nohup "$INDEXER_HOME/engine/run_engine.sh" > /dev/null 2>&1 &
+  nohup env -u DEPLOY_KEY "$INDEXER_HOME/engine/run_engine.sh" > /dev/null 2>&1 &
   echo $! > /run/wazuh-indexer/wazuh-engine.pid
 fi
 
 # Initialize security
-nohup /securityadmin.sh &
+nohup env -u DEPLOY_KEY /securityadmin.sh &
 
 #if [[ "$DISCOVERY" == "single-node" ]] && [[ ! -f "/var/lib/wazuh-indexer/.flag" ]]; then
 # run securityadmin.sh for single node with CACERT, CERT and KEY parameter

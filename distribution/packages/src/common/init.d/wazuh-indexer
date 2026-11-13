@@ -92,6 +92,10 @@ export WI_JAVA_OPTS
 export JAVA_HOME
 export OPENSEARCH_PATH_CONF
 export WI_STARTUP_SLEEP_TIME
+# DEPLOY_KEY: the pre-registration key the Content Manager reads from the environment. The
+# env file above is sourced, which sets it in this shell only, and the daemon starts in a new
+# one: without the export it never arrives. Exported while unset it adds nothing.
+export DEPLOY_KEY
 
 lockfile=/var/lock/subsys/$prog
 
@@ -152,7 +156,9 @@ start() {
 
     # Start Wazuh Engine
     if [ -x "$OPENSEARCH_HOME/engine/run_engine.sh" ]; then
-        run_as /bin/bash -c "nohup $OPENSEARCH_HOME/engine/run_engine.sh > /dev/null 2>&1 & echo \$! > $PID_DIR/wazuh-engine.pid"
+        # env -u: DEPLOY_KEY is the indexer's pre-registration key, and whatever starts from
+        # here inherits the service environment.
+        run_as /bin/bash -c "nohup env -u DEPLOY_KEY $OPENSEARCH_HOME/engine/run_engine.sh > /dev/null 2>&1 & echo \$! > $PID_DIR/wazuh-engine.pid"
     fi
 
     echo

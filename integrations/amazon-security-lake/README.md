@@ -163,12 +163,14 @@ A successful execution of the Lambda function will map these events into the OCS
 
 Install Logstash on a dedicated server or on the server hosting the `wazuh-indexer`. Logstash forwards the data from the `wazuh-indexer` to the [AWS S3 bucket created previously](#create-an-s3-bucket-to-store-events).
 
-1. Follow the [official documentation](https://www.elastic.co/guide/en/logstash/current/installing-logstash.html) to install Logstash.
+1. Follow the [official documentation](https://www.elastic.co/guide/en/logstash/current/installing-logstash.html) to install Logstash 9.5.6, the version this integration is tested with.
 2. Install the [logstash-input-opensearch](https://github.com/opensearch-project/logstash-input-opensearch) plugin and the [logstash-output-s3](https://www.elastic.co/guide/en/logstash/8.13/plugins-outputs-s3.html) plugin (this one is installed by default in most cases).
 
    ```console
-   sudo /usr/share/logstash/bin/logstash-plugin install logstash-input-opensearch
+   sudo env LS_JAVA_OPTS="-Xmx2g" /usr/share/logstash/bin/logstash-plugin install --version 1.0.0 logstash-input-opensearch
    ```
+
+   The plugin manager needs more memory than the default 1 GB heap of Logstash. `LS_JAVA_OPTS` raises it for this command only.
 
 3. Copy the `wazuh-indexer` root certificate on the Logstash server, to any folder of your choice (e.g, `/usr/share/logstash/root-ca.pem`).
 4. Give the `logstash` user the required permissions to read the certificate.
@@ -247,11 +249,12 @@ The Logstash pipeline requires access to the following secrets:
 
 #### Running Logstash
 
-1. Once you have everything set, run Logstash from the CLI with your configuration:
+1. Once you have everything set, run Logstash from the CLI with your configuration, as the `logstash` user. Logstash 9 does not run as root, and that user must own the log files that the previous commands created as root:
 
    ```console
    sudo systemctl stop logstash
-   sudo -E /usr/share/logstash/bin/logstash -f /etc/logstash/conf.d/indexer-to-s3.conf --path.settings /etc/logstash --config.test_and_exit
+   sudo chown -R logstash:logstash /var/log/logstash
+   sudo -E -u logstash /usr/share/logstash/bin/logstash -f /etc/logstash/conf.d/indexer-to-s3.conf --path.settings /etc/logstash --config.test_and_exit
    ```
 
 2. After confirming that the configuration loads correctly without errors, run Logstash as a service.

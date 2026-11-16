@@ -80,7 +80,8 @@ services:
 
   logstash:
     depends_on:
-      - wazuh.indexer
+      wazuh.indexer:
+        condition: service_healthy
     # image: wazuh/indexer-security-lake-integration
     image: logstash-oss:${LOGSTASH_OSS_VERSION}
     build:

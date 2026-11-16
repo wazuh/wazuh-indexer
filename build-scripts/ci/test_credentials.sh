@@ -216,6 +216,19 @@ subject_of() {
     openssl x509 -in "$1" -noout -subject -nameopt RFC2253 2>/dev/null | sed 's/^subject= *//'
 }
 
+# ext_of <pem> <extension>: the extension's value on one line, prefixed "critical, " when it is
+# critical; empty when the certificate does not carry it.
+ext_of() {
+    openssl x509 -in "$1" -noout -ext "$2" 2>/dev/null \
+        | awk 'NR == 1 { c = / critical$/ } NR == 2 { sub(/^ +/, ""); print (c ? "critical, " : "") $0 }'
+}
+
+# served_leaf <port>: the SHA-256 fingerprint of the certificate the node presents on <port>.
+served_leaf() {
+    echo | timeout 10 openssl s_client -connect "127.0.0.1:$1" 2>/dev/null \
+        | openssl x509 -noout -fingerprint -sha256 2>/dev/null
+}
+
 dn_list() {
     awk -v k="$1" '
         index($0, k ":") == 1 { f = 1; next }
@@ -608,6 +621,19 @@ else
     fail "global addresses missing from the SAN list:${missing}"
 fi
 
+# Each certificate is accepted only in its TLS role, with the key usages wazuh-certs-tool.sh gives
+# the same certificates: the node's is the server on 9200 and both ends of the transport layer on
+# 9300, the admin certificate is a client that names no host.
+for f in indexer.pem admin.pem; do
+    check_eq "${f} is not a CA" "critical, CA:FALSE" "$(ext_of "${CERTS_DIR}/${f}" basicConstraints)"
+    check_eq "${f} key usage" "critical, Digital Signature, Key Encipherment" "$(ext_of "${CERTS_DIR}/${f}" keyUsage)"
+done
+check_eq "indexer.pem is for server and client authentication" \
+    "TLS Web Server Authentication, TLS Web Client Authentication" "$(ext_of "${CERTS_DIR}/indexer.pem" extendedKeyUsage)"
+check_eq "admin.pem is for client authentication only" \
+    "TLS Web Client Authentication" "$(ext_of "${CERTS_DIR}/admin.pem" extendedKeyUsage)"
+check_eq "admin.pem names no host" "" "$(ext_of "${CERTS_DIR}/admin.pem" subjectAltName)"
+
 # A deployment that replaces the package certificates with wazuh-certs-tool's keeps admin_dn valid
 # only while both issue the admin certificate with the same subject. Read from the tool this
 # package ships: a literal here cannot notice the two drifting apart.
@@ -651,6 +677,8 @@ for consumer in manager dashboard; do
     check_eq "${consumer} subject" "C=US,L=California,O=Wazuh,OU=Wazuh,CN=wazuh-${consumer}" "$(subject_of "${pem}")"
     check "${consumer} pair is for client authentication" \
         bash -c "openssl x509 -in '${pem}' -noout -ext extendedKeyUsage | grep -q 'TLS Web Client Authentication'"
+    check_eq "${consumer} pair is not a CA" "critical, CA:FALSE" "$(ext_of "${pem}" basicConstraints)"
+    check_eq "${consumer} pair key usage" "critical, Digital Signature, Key Encipherment" "$(ext_of "${pem}" keyUsage)"
     check "${consumer} pair names no host" \
         bash -c "! openssl x509 -in '${pem}' -noout -ext subjectAltName 2>/dev/null | grep -q 'DNS:\|IP'"
     check "${consumer} key matches its certificate" \
@@ -727,6 +755,12 @@ else
     fail "node did not answer on 9200 within 120s"
     journalctl -u wazuh-indexer --no-pager 2>/dev/null | tail -20 | sed 's/^/        /'
 fi
+
+# What a peer sees is what section 1.2 checked: the leaf of certs/indexer.pem, on both ports.
+leaf=$(openssl x509 -in "${CERTS_DIR}/indexer.pem" -noout -fingerprint -sha256 2>/dev/null)
+for port in 9200 9300; do
+    check_eq "the node presents certs/indexer.pem on ${port}" "${leaf}" "$(served_leaf "${port}")"
+done
 
 errs="$(service_errors)"
 if [ -n "${errs}" ]; then
@@ -866,6 +900,90 @@ for path in "_snapshot/packaged-backups/probe-1" "_snapshot/packaged-backups" "s
     curl -sk -u "admin:${ADMIN_PW}" -X DELETE "${API}/${path}" > /dev/null 2>&1
 done
 rm -rf "${REPO_DIR:?}"/..?* "${REPO_DIR:?}"/.[!.]* "${REPO_DIR:?}"/* 2>/dev/null || true
+
+section "1.7c Audit events are stored, flushes are not, and a stop after a flush logs no ERROR"
+
+# The packaged configuration stores the security plugin's audit events in a data stream. Operators
+# flush a node right before stopping it, and the closing node cannot store the audit events of that
+# flush: the sink logged one ERROR per flushed shard. So the packaged audit.yml leaves flushes out.
+# See https://github.com/wazuh/wazuh-indexer/issues/2094.
+AUDIT_YML="${CONFIG_DIR}/opensearch-security/audit.yml"
+AUDIT_STREAM="security-auditlogs"
+CLUSTER_LOG="${LOG_DIR}/wazuh-cluster.log"
+PROBE_INDEX="audit-probe"
+
+# audit_count <filter>...: stored index events matching every filter, empty when unreadable.
+audit_count() {
+    _filters='{"term":{"audit_category.keyword":"INDEX_EVENT"}}'
+    for _f in "$@"; do _filters="${_filters},${_f}"; done
+    curl -sk -u "admin:${ADMIN_PW}" -H 'Content-Type: application/json' "${API}/${AUDIT_STREAM}/_count" \
+        -d "{\"query\":{\"bool\":{\"filter\":[${_filters}]}}}" 2>/dev/null \
+        | sed -n 's/.*"count":\([0-9]*\).*/\1/p'
+}
+
+# wait_for_audit <filter>...: true once at least one matching event is stored. Events are written
+# asynchronously, so a request returning is not its event being searchable.
+wait_for_audit() {
+    _n=0
+    while [ "${_n}" -lt 30 ]; do
+        [ "$(audit_count "$@")" -gt 0 ] 2>/dev/null && return 0
+        _n=$((_n + 1))
+        sleep 2
+    done
+    return 1
+}
+
+check "the packaged audit.yml leaves flushes out" \
+    grep -qxF '    ignore_requests: ["indices:admin/flush*"]' "${AUDIT_YML}"
+got=$(curl -sk -u "admin:${ADMIN_PW}" \
+    "${API}/_plugins/_security/api/audit?filter_path=config.audit.ignore_requests" 2>/dev/null)
+case "${got}" in
+    *'"ignore_requests":["indices:admin/flush*"]'*) ok "indexer-security-init.sh uploaded that exclusion" ;;
+    *) fail "the active audit configuration does not leave flushes out"; info "${got}" ;;
+esac
+
+# Same user, same category, different action: once the creation that follows the flush is stored,
+# the flush has had every chance to be stored too.
+curl -sk -u "admin:${ADMIN_PW}" -X POST "${API}/_flush" > /dev/null 2>&1
+curl -sk -u "admin:${ADMIN_PW}" -X PUT "${API}/${PROBE_INDEX}" > /dev/null 2>&1
+if wait_for_audit '{"term":{"audit_request_privilege.keyword":"indices:admin/create"}}' \
+                  "{\"term\":{\"audit_trace_indices.keyword\":\"${PROBE_INDEX}\"}}"; then
+    ok "an index creation is audited and stored in ${AUDIT_STREAM}"
+else
+    fail "the index creation was not stored in ${AUDIT_STREAM} within 60s"
+fi
+check_eq "no flush is audited" "0" \
+    "$(audit_count '{"prefix":{"audit_request_privilege.keyword":"indices:admin/flush"}}')"
+
+# The deletion is audited as well, and waiting for it keeps it out of the stop below: any audited
+# request still in flight when the node closes would log the same ERROR as a flush did.
+curl -sk -u "admin:${ADMIN_PW}" -X DELETE "${API}/${PROBE_INDEX}" > /dev/null 2>&1
+if wait_for_audit '{"term":{"audit_request_privilege.keyword":"indices:admin/delete"}}' \
+                  "{\"term\":{\"audit_trace_indices.keyword\":\"${PROBE_INDEX}\"}}"; then
+    ok "an index deletion is audited and stored in ${AUDIT_STREAM}"
+else
+    fail "the index deletion was not stored in ${AUDIT_STREAM} within 60s"
+fi
+
+# What a rolling restart does: flush, then stop at once.
+log_lines=$(wc -l < "${CLUSTER_LOG}" 2>/dev/null || echo 0)
+curl -sk -u "admin:${ADMIN_PW}" -X POST "${API}/_flush" > /dev/null 2>&1
+systemctl stop wazuh-indexer > /dev/null 2>&1
+sink_errors=$(tail -n +"$((log_lines + 1))" "${CLUSTER_LOG}" 2>/dev/null \
+    | grep -E 'ERROR.*(InternalOpenSearchDataStreamSink|Unable to index audit log)' || true)
+if [ -n "${sink_errors}" ]; then
+    fail "the stop after a flush logged $(printf '%s\n' "${sink_errors}" | wc -l) audit sink ERROR(s)"
+    printf '%s\n' "${sink_errors}" | head -3 | cut -c1-200 | sed 's/^/        /'
+else
+    ok "a stop right after a flush logs no audit sink ERROR"
+fi
+systemctl start wazuh-indexer > /dev/null 2>&1
+if wait_for_node && wait_for_cluster admin "${ADMIN_PW}"; then
+    ok "node is back after the stop"
+else
+    fail "node did not come back after the stop"
+    journalctl -u wazuh-indexer --no-pager -n 20 2>/dev/null | sed 's/^/        /'
+fi
 
 section "1.8 Resolution happens once — a restart changes nothing"
 

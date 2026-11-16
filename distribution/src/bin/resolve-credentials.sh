@@ -776,19 +776,26 @@ make_pair() {
     cat "$(wazuh_ca_get_dir)/root-ca.pem" >> "${_mp_work}/${_mp_name}.pem" || return 1
 }
 
-# issue_certificate <name> <subject> <sans> <group> <mode>: this node's own pair, issued from the
-# CA and installed in certs/ as root:<group> <mode>.
+# issue_certificate <name> <subject> <extended key usage> <sans> <group> <mode>: this node's own
+# pair, issued from the CA and installed in certs/ as root:<group> <mode>. The key usage is the one
+# wazuh-certs-tool.sh gives the same certificates, so a certificate is accepted only in the TLS role
+# its extended key usage names; an empty <sans> names no host.
 issue_certificate() {
     _ic_name="$1"
     _ic_subject="$2"
-    _ic_sans="$3"
-    _ic_group="$4"
-    _ic_mode="$5"
+    _ic_eku="$3"
+    _ic_sans="$4"
+    _ic_group="$5"
+    _ic_mode="$6"
 
     _ic_work=$(mktemp -d "${TMPDIR:-/tmp}/wazuh-indexer-certs.XXXXXX") || return 1
     chmod 700 "${_ic_work}"
-    printf '%s\n' "subjectAltName = ${_ic_sans}" 'basicConstraints = CA:FALSE' \
-        'subjectKeyIdentifier = hash' 'authorityKeyIdentifier = keyid' > "${_ic_work}/req.ext"
+    {
+        [ -z "${_ic_sans}" ] || printf 'subjectAltName = %s\n' "${_ic_sans}"
+        printf '%s\n' 'basicConstraints = critical, CA:FALSE' \
+            'keyUsage = critical, digitalSignature, keyEncipherment' "extendedKeyUsage = ${_ic_eku}" \
+            'subjectKeyIdentifier = hash' 'authorityKeyIdentifier = keyid'
+    } > "${_ic_work}/req.ext"
 
     if make_pair "${_ic_work}" "${_ic_name}" "${_ic_subject}" "${_ic_work}/req.ext"; then
         install -m "${_ic_mode}" -o root -g "${_ic_group}" "${_ic_work}/${_ic_name}-key.pem" "${CERTS_DIR}/${_ic_name}-key.pem" &&
@@ -845,8 +852,10 @@ issue_client_pair() {
     _icp_consumer="$1"
     _icp_work=$(mktemp -d "${TMPDIR:-/tmp}/wazuh-indexer-client.XXXXXX") || return 1
     chmod 700 "${_icp_work}"
-    printf '%s\n' 'extendedKeyUsage = clientAuth' 'keyUsage = digitalSignature, keyEncipherment' \
-        'basicConstraints = CA:FALSE' 'subjectKeyIdentifier = hash' 'authorityKeyIdentifier = keyid' \
+    printf '%s\n' 'extendedKeyUsage = clientAuth' \
+        'keyUsage = critical, digitalSignature, keyEncipherment' \
+        'basicConstraints = critical, CA:FALSE' \
+        'subjectKeyIdentifier = hash' 'authorityKeyIdentifier = keyid' \
         > "${_icp_work}/client.ext"
     _icp_status=1
     if make_pair "${_icp_work}" "${_icp_consumer}-client" "$(client_subject "${_icp_consumer}")" "${_icp_work}/client.ext"; then
@@ -1192,12 +1201,15 @@ resolve_certificates() {
 
     # The node's pair is read by the service through its group. The admin pair is root's alone:
     # indexer-security-init.sh runs securityadmin as root, and the service account must not be
-    # able to act as the security administrator.
-    issue_certificate "indexer" "/CN=${_rc_short}${_rc_suffix}" "${_rc_sans}" "${SERVICE_GROUP}" 0640 || {
+    # able to act as the security administrator. The node's certificate is the server on 9200 and
+    # both ends of the transport layer on 9300; the admin certificate is only ever presented by
+    # securityadmin, so it is a client certificate and names no host.
+    issue_certificate "indexer" "/CN=${_rc_short}${_rc_suffix}" "serverAuth, clientAuth" "${_rc_sans}" \
+        "${SERVICE_GROUP}" 0640 || {
         err "could not issue the node certificate"
         return 1
     }
-    issue_certificate "admin" "/CN=admin${_rc_suffix}" "DNS:localhost" root 0600 || {
+    issue_certificate "admin" "/CN=admin${_rc_suffix}" "clientAuth" "" root 0600 || {
         err "could not issue the admin certificate"
         return 1
     }

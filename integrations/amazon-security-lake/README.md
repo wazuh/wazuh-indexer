@@ -163,8 +163,8 @@ A successful execution of the Lambda function will map these events into the OCS
 
 Install Logstash on a dedicated server or on the server hosting the `wazuh-indexer`. Logstash forwards the data from the `wazuh-indexer` to the [AWS S3 bucket created previously](#create-an-s3-bucket-to-store-events).
 
-1. Follow the [official documentation](https://www.elastic.co/guide/en/logstash/current/installing-logstash.html) to install Logstash 9.5.6, the version this integration is tested with.
-2. Install the [logstash-input-opensearch](https://github.com/opensearch-project/logstash-input-opensearch) plugin and the [logstash-output-s3](https://www.elastic.co/guide/en/logstash/8.13/plugins-outputs-s3.html) plugin (this one is installed by default in most cases).
+1. Follow the [official documentation](https://www.elastic.co/docs/reference/logstash/installing-logstash) to install Logstash 9.5.6, the version this integration is tested with.
+2. Install the [logstash-input-opensearch](https://github.com/opensearch-project/logstash-input-opensearch) plugin and the [logstash-output-s3](https://www.elastic.co/docs/reference/logstash/plugins/plugins-outputs-s3) plugin (this one is installed by default in most cases).
 
    ```console
    sudo env LS_JAVA_OPTS="-Xmx2g" /usr/share/logstash/bin/logstash-plugin install --version 1.0.0 logstash-input-opensearch

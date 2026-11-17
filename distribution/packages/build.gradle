@@ -107,7 +107,7 @@ addProcessFilesTask('rpm', false)
 // since we have different templated files that need to be consumed, but the structure
 // is the same
 Closure commonPackageConfig(String type, boolean jdk, String architecture) {
-  project.version = rootProject.file('VERSION').getText()
+  project.version = rootProject.file('VERSION').getText().trim()
   return {
     onlyIf {
       OS.current().equals(OS.WINDOWS) == false

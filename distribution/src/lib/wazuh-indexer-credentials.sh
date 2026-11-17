@@ -74,8 +74,6 @@
 #                                 lines. Ten years, backdated one day, SHA-256, the subject in the
 #                                 order of the request. With "selfsign KEY" in place of the CA, the
 #                                 request is signed with KEY: how the CA itself is minted.
-#   wazuh_export_publish NAME MODE [GROUP]
-#                                 Writes standard input to export/NAME atomically, root:GROUP MODE.
 #   wazuh_password_generate       Prints 32 characters from the password alphabet, with at
 #                                 least one of each of its four classes.
 #   wazuh_password_validate VALUE The rule every supplied password must meet: 12 to 64
@@ -573,15 +571,6 @@ wazuh_ca_publish_file() (
         2) return 1 ;;
     esac
     _wazuh_write_file "${_WAZUH_EXPORT}/ca.pem" 0640 "$_WAZUH_GROUP" < "$_pem"
-)
-
-# Write standard input to export/NAME atomically, for the client pairs the resolver issues.
-wazuh_export_publish() (
-    _name=$1
-    _m=$2
-    _g=${3-root}
-    _wazuh_root_dir "$_WAZUH_EXPORT" 0750 "$_WAZUH_GROUP" || return 1
-    _wazuh_write_file "${_WAZUH_EXPORT}/${_name}" "$_m" "$_g"
 )
 
 # Publish the CA this package keeps in ca/. A directory given with WAZUH_CA_DIR is someone

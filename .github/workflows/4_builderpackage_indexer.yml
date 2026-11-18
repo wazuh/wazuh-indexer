@@ -1,0 +1,253 @@
+run-name: Build ${{ inputs.distribution }} Wazuh Indexer on ${{ inputs.architecture }} | ${{ inputs.id }}
+name: Build packages (on demand)
+
+permissions:
+  id-token: write
+  contents: read
+
+# This workflow runs when any of the following occur:
+# - Run manually
+# - Invoked from another workflow
+on:
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: "Revision"
+        type: string
+        default: "0"
+      upload:
+        description: "Upload ?"
+        type: boolean
+        default: false
+      is_stage:
+        description: "Is stage ?"
+        type: boolean
+        default: false
+      distribution:
+        description: '[ "tar", "rpm", "deb" ]'
+        type: string
+        default: '[ "rpm", "deb" ]'
+      architecture:
+        description: '[ "x64" ]'
+        type: string
+        default: '[ "x64" ]'
+      checksum:
+        description: "Checksum ?"
+        type: boolean
+        default: false
+      id:
+        description: "ID used to identify the workflow uniquely."
+        type: string
+        required: false
+  workflow_call:
+    inputs:
+      revision:
+        description: "Revision"
+        type: string
+        default: "0"
+      upload:
+        description: "Upload ?"
+        type: boolean
+        default: false
+      is_stage:
+        description: "Is stage ?"
+        type: boolean
+        default: false
+      distribution:
+        description: '[ "tar", "rpm", "deb" ]'
+        type: string
+        default: '[ "rpm", "deb" ]'
+      architecture:
+        description: '[ "x64" ]'
+        type: string
+        default: '[ "x64" ]'
+      checksum:
+        description: "Checksum ?"
+        type: boolean
+        default: false
+      id:
+        type: string
+        required: false
+    secrets:
+      AWS_INDEXER_ACTIONS_ROLE:
+        required: true
+        description: "AWS IAM OIDC role for S3 and infrastructure access"
+      CI_INTERNAL_S3_BUCKET:
+        required: true
+        description: "Internal S3 bucket URI used to stage build artifacts"
+      CI_AWS_REGION:
+        required: true
+        description: "AWS region for the final package upload"
+      CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY:
+        required: true
+        description: "AWS user access key for the final package upload"
+      CI_INTERNAL_DEVELOPMENT_BUCKET_USER_SECRET_KEY:
+        required: true
+        description: "AWS user secret key for the final package upload"
+
+env:
+  CI_ARTIFACTS_REPO: wazuh-indexer
+  CI_ARTIFACTS_WORKFLOW: 4_builderpackage_indexer
+
+# ==========================
+# Bibliography
+# ==========================
+#
+# * Reusable workflows: limitations
+#   | https://docs.github.com/en/actions/using-workflows/reusing-workflows#limitations
+# * Using matrix in reusable workflows:
+#   | https://docs.github.com/en/actions/using-workflows/reusing-workflows#using-a-matrix-strategy-with-a-reusable-workflow
+# * Reading input from the called workflow
+#   | https://docs.github.com/en/enterprise-cloud@latest/actions/using-workflows/workflow-syntax-for-github-actions#onworkflow_callinputs
+# * Ternary operator
+#   | https://docs.github.com/en/actions/learn-github-actions/expressions#example
+
+jobs:
+  matrix:
+    name: Set up matrix
+    runs-on:
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
+    outputs:
+      matrix: ${{ steps.setup.outputs.matrix }}
+    steps:
+      - id: setup
+        run: |
+          matrix=$(jq -cn \
+              --argjson distribution '${{ inputs.distribution }}' \
+              --argjson architecture '${{ inputs.architecture }}' \
+              '{distribution: $distribution, architecture: $architecture}'
+          )
+          echo "matrix=$matrix" >> $GITHUB_OUTPUT
+
+  build:
+    needs: [matrix]
+    runs-on:
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.matrix.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Provision
+        if: ${{ matrix.distribution == 'deb' }}
+        run: |
+          sudo bash packaging_scripts/provision.sh
+
+      - name: Provision (rpm)
+        if: ${{ matrix.distribution == 'rpm' }}
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y cpio rpm
+
+      - name: Run `baptizer.sh` (min)
+        run: |
+          name=$(bash packaging_scripts/baptizer.sh -m \
+            -a ${{ matrix.architecture }} \
+            -d ${{ matrix.distribution }}  \
+            -r ${{ inputs.revision }} \
+            ${{ inputs.is_stage && '-x' || '' }} \
+          )
+          echo "name=$name" >> $GITHUB_OUTPUT
+        id: min_package
+
+      - name: Run `baptizer.sh`
+        run: |
+          name=$(bash packaging_scripts/baptizer.sh \
+            -a ${{ matrix.architecture }} \
+            -d ${{ matrix.distribution }}  \
+            -r ${{ inputs.revision }} \
+            ${{ inputs.is_stage && '-x' || '' }} \
+          )
+          echo "name=$name" >> $GITHUB_OUTPUT
+        id: package
+
+      - name: Run `build.sh`
+        run: |
+          id -u builder &>/dev/null || useradd -m builder
+          cp -a "$HOME/.m2" /home/builder/.m2 2>/dev/null || true
+          chown -R builder:builder "$GITHUB_WORKSPACE" /home/builder
+          runuser -u builder -- env "JAVA_HOME=$JAVA_HOME" "PATH=$PATH" \
+          bash packaging_scripts/build.sh \
+            -a ${{ matrix.architecture }} \
+            -d ${{ matrix.distribution }} \
+            -n ${{ steps.min_package.outputs.name }}
+
+      - name: Run `assemble.sh`
+        run: |
+          bash packaging_scripts/assemble.sh \
+            -a ${{ matrix.architecture }} \
+            -d ${{ matrix.distribution }} \
+            -r ${{ inputs.revision }}
+
+      - name: Test RPM package
+        if: ${{ matrix.distribution == 'rpm' }}
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}/artifacts/dist:/artifacts/dist \
+            registry.access.redhat.com/ubi9:latest \
+            bash -c "yum localinstall /artifacts/dist/${{ steps.package.outputs.name }} -y"
+
+      - name: Test DEB package
+        if: ${{ matrix.distribution == 'deb' }}
+        run: |
+          # AWS CodeBuild runners execute jobs in a container without a real
+          # systemd PID 1, so postinst's systemctl calls fail with "Host is down".
+          # Hide systemctl so postinst takes its already-supported non-systemd path.
+          sudo mv /usr/bin/systemctl /usr/bin/systemctl.bak 2>/dev/null || true
+          sudo dpkg -i "artifacts/dist/${{ steps.package.outputs.name }}"
+
+      - name: Set up AWS CLI for final package upload
+        if: ${{ inputs.upload }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.CI_INTERNAL_DEVELOPMENT_BUCKET_USER_SECRET_KEY }}
+          aws-region: ${{ secrets.CI_AWS_REGION }}
+
+      - name: Upload package to S3
+        if: ${{ inputs.upload }}
+        run: |
+          src="artifacts/dist/${{ steps.package.outputs.name }}"
+          dest="s3://xdrsiem-packages-dev-internal/development/wazuh/4.x/main/packages/"
+          aws s3 cp "$src" "$dest"
+          s3uri="${dest}${{ steps.package.outputs.name }}"
+          echo "::notice::S3 URI: ${s3uri}"
+
+      - name: Upload checksum to S3
+        if: ${{ inputs.upload && inputs.checksum }}
+        run: |
+          src="artifacts/dist/${{ steps.package.outputs.name }}.sha512"
+          dest="s3://xdrsiem-packages-dev-internal/development/wazuh/4.x/main/packages/"
+          aws s3 cp "$src" "$dest"
+          s3uri="${dest}${{ steps.package.outputs.name }}.sha512"
+          echo "::notice::S3 sha512 URI: ${s3uri}"
+
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_INDEXER_ACTIONS_ROLE }}
+          aws-region: ${{ secrets.CI_AWS_REGION }}
+
+      - name: Upload package to CI internal bucket
+        if: ${{ inputs.upload }}
+        run: |
+          dest="${{ secrets.CI_INTERNAL_S3_BUCKET }}/${{ env.CI_ARTIFACTS_REPO }}/${{ env.CI_ARTIFACTS_WORKFLOW }}/${{ github.run_id }}/"
+
+          aws s3 cp "artifacts/dist/${{ steps.package.outputs.name }}" "$dest"
+          echo "::notice::CI internal S3 URI: ${dest}${{ steps.package.outputs.name }}"
+
+      - name: Upload checksum to CI internal bucket
+        if: ${{ inputs.upload && inputs.checksum }}
+        run: |
+          dest="${{ secrets.CI_INTERNAL_S3_BUCKET }}/${{ env.CI_ARTIFACTS_REPO }}/${{ env.CI_ARTIFACTS_WORKFLOW }}/${{ github.run_id }}/"
+
+          aws s3 cp "artifacts/dist/${{ steps.package.outputs.name }}.sha512" "$dest"
+          echo "::notice::CI internal S3 sha512 URI: ${dest}${{ steps.package.outputs.name }}.sha512"

@@ -92,6 +92,7 @@ export WI_JAVA_OPTS
 export JAVA_HOME
 export OPENSEARCH_PATH_CONF
 export WI_STARTUP_SLEEP_TIME
+export DEPLOY_KEY
 
 lockfile=/var/lock/subsys/$prog
 
@@ -152,7 +153,7 @@ start() {
 
     # Start Wazuh Engine
     if [ -x "$OPENSEARCH_HOME/engine/run_engine.sh" ]; then
-        run_as /bin/bash -c "nohup $OPENSEARCH_HOME/engine/run_engine.sh > /dev/null 2>&1 & echo \$! > $PID_DIR/wazuh-engine.pid"
+        run_as /bin/bash -c "nohup env -u DEPLOY_KEY $OPENSEARCH_HOME/engine/run_engine.sh > /dev/null 2>&1 & echo \$! > $PID_DIR/wazuh-engine.pid"
     fi
 
     echo

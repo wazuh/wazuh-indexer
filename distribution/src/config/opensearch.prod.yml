@@ -87,3 +87,11 @@ plugins.index_state_management.history.number_of_replicas: 0
 
 # Default max scroll context keep alive
 search.max_keep_alive: "4h"
+
+# Log levels.
+logger.org.opensearch.index.MergeSchedulerConfig: WARN
+logger.org.opensearch.plugins.PluginsService: WARN
+logger.org.opensearch.alerting.alerts.AlertIndices: WARN
+logger.org.opensearch.alerting.transport.TransportDocLevelMonitorFanOutAction: WARN
+logger.org.opensearch.alerting.transport.TransportExecuteWorkflowAction: WARN
+logger.org.opensearch.alerting.util.destinationmigration.DestinationMigrationCoordinator: WARN

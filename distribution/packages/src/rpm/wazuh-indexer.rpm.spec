@@ -303,10 +303,6 @@ own_config_dir() {
                 chmod 750 "${_oc_entry}"
                 root_file "${_oc_entry}/credentials.env" 600
                 root_file "${_oc_entry}/ca.pem" 640 %{name}
-                for _oc_pair in manager-client dashboard-client; do
-                    root_file "${_oc_entry}/${_oc_pair}.pem" 600
-                    root_file "${_oc_entry}/${_oc_pair}-key.pem" 600
-                done
                 ;;
             ca)
                 # This package's CA, or one staged by the operator: the key is root's alone.
@@ -728,7 +724,7 @@ exit 0
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-14-12.html
 * Wed Nov 25 2026 support <info@wazuh.com> - 5.0.0
 - More info: https://documentation.wazuh.com/current/release-notes/release-5-0-0.html
-* Wed Nov 18 2026 support <info@wazuh.com> - 4.14.11
+* Wed Nov 25 2026 support <info@wazuh.com> - 4.14.11
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-14-11.html
 * Thu Nov 05 2026 support <info@wazuh.com> - 4.14.10
 - More info: https://documentation.wazuh.com/current/release-notes/release-4-14-10.html

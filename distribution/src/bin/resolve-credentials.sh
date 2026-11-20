@@ -214,25 +214,6 @@ check_files() {
         2) check_failed ;;
     esac
 
-    # The client pairs this package published: root's private files that chain to the CA, whose
-    # keys match, and whose subjects grant nothing.
-    for _cf_consumer in ${CLIENT_CONSUMERS}; do
-        _cf_pem="${EXPORT_DIR}/${_cf_consumer}-client.pem"
-        _cf_key="${EXPORT_DIR}/${_cf_consumer}-client-key.pem"
-        wazuh_check_secret "${_cf_pem}"; case $? in 2) check_failed ;; esac
-        wazuh_check_secret "${_cf_key}"; case $? in 2) check_failed ;; esac
-        if [ -f "${_cf_pem}" ] && [ ! -L "${_cf_pem}" ]; then
-            if [ -f "$(wazuh_ca_get_dir)/root-ca.pem" ] && ! client_pair_is_valid "${_cf_consumer}"; then
-                err "INVALID ${_cf_pem}: does not chain to the CA, or its key does not match"
-                check_failed
-            fi
-            if ! client_subject_is_free "${_cf_pem}"; then
-                err "INVALID ${_cf_pem}: its subject is listed in ${CONFIG_FILE} and would grant rights"
-                check_failed
-            fi
-        fi
-    done
-
     # The CA: its key is root's private file, and the pair must be a CA that matches it.
     _cf_ca=$(wazuh_ca_get_dir)
     check_optional_dir "${_cf_ca}"
@@ -809,86 +790,6 @@ issue_certificate() {
     return ${_ic_status}
 }
 
-# -----------------------------------------------------------------------------------------
-# Published: the client pairs of the manager and the dashboard
-#
-# The indexer trusts only its own CA, so a client that presents a certificate to it has to present
-# one this CA issued, and only this package holds the key. The pairs are published in export/ for
-# the consumer on this host to import; a consumer on another host takes a copy from any node of the
-# cluster, since the pair names no host. They grant no rights: the security plugin's certificate
-# authentication domain is disabled, the subjects are in neither admin_dn nor nodes_dn, and each
-# client keeps authenticating with its password.
-# -----------------------------------------------------------------------------------------
-
-CLIENT_CONSUMERS="manager dashboard"
-
-client_subject() {
-    printf '/CN=wazuh-%s/OU=Wazuh/O=Wazuh/L=California/C=US' "$1"
-}
-
-# The published pair of <consumer> is present, trusted, chains to the current CA, and its key
-# matches: nothing to reissue.
-client_pair_is_valid() {
-    _cpv_pem="${EXPORT_DIR}/$1-client.pem"
-    _cpv_key="${EXPORT_DIR}/$1-client-key.pem"
-    wazuh_check_secret "${_cpv_pem}" > /dev/null 2>&1 || return 1
-    wazuh_check_secret "${_cpv_key}" > /dev/null 2>&1 || return 1
-    openssl verify -no_check_time -CAfile "$(wazuh_ca_get_dir)/root-ca.pem" "${_cpv_pem}" > /dev/null 2>&1 || return 1
-    _cpv_a=$(openssl x509 -in "${_cpv_pem}" -noout -pubkey 2>/dev/null | sha256sum)
-    _cpv_b=$(openssl pkey -in "${_cpv_key}" -pubout 2>/dev/null | sha256sum)
-    [ -n "${_cpv_a}" ] && [ "${_cpv_a%% *}" = "${_cpv_b%% *}" ]
-}
-
-# The subject of a client pair must map to nothing: a match in admin_dn or nodes_dn would make the
-# certificate an admin or a node.
-client_subject_is_free() {
-    [ -f "${CONFIG_FILE}" ] || return 0
-    _csf_dn=$(subject_of "$1")
-    [ -n "${_csf_dn}" ] || return 0
-    ! file_contains "\"${_csf_dn}\"" "${CONFIG_FILE}"
-}
-
-issue_client_pair() {
-    _icp_consumer="$1"
-    _icp_work=$(mktemp -d "${TMPDIR:-/tmp}/wazuh-indexer-client.XXXXXX") || return 1
-    chmod 700 "${_icp_work}"
-    printf '%s\n' 'extendedKeyUsage = clientAuth' \
-        'keyUsage = critical, digitalSignature, keyEncipherment' \
-        'basicConstraints = critical, CA:FALSE' \
-        'subjectKeyIdentifier = hash' 'authorityKeyIdentifier = keyid' \
-        > "${_icp_work}/client.ext"
-    _icp_status=1
-    if make_pair "${_icp_work}" "${_icp_consumer}-client" "$(client_subject "${_icp_consumer}")" "${_icp_work}/client.ext"; then
-        if client_subject_is_free "${_icp_work}/${_icp_consumer}-client.pem"; then
-            wazuh_export_publish "${_icp_consumer}-client-key.pem" 0600 < "${_icp_work}/${_icp_consumer}-client-key.pem" &&
-            wazuh_export_publish "${_icp_consumer}-client.pem" 0600 < "${_icp_work}/${_icp_consumer}-client.pem"
-            _icp_status=$?
-        else
-            err "the subject of the ${_icp_consumer} client certificate is listed in ${CONFIG_FILE}; it would grant rights"
-        fi
-    fi
-    rm -rf -- "${_icp_work:?}"
-    return ${_icp_status}
-}
-
-# Issued, or kept when still valid, whenever the CA key is here. Without the key nothing can be
-# issued: the consumer's pre-start names where to get a pair from.
-issue_client_pairs() {
-    [ -f "$(wazuh_ca_get_dir)/root-ca.key" ] || return 0
-    for _icps_consumer in ${CLIENT_CONSUMERS}; do
-        if client_pair_is_valid "${_icps_consumer}"; then
-            continue
-        fi
-        if issue_client_pair "${_icps_consumer}"; then
-            log "published the ${_icps_consumer} client pair in ${EXPORT_DIR}"
-        else
-            err "could not publish the ${_icps_consumer} client pair"
-            return 1
-        fi
-    done
-    return 0
-}
-
 # The certificate's subject in the form the security plugin compares against.
 subject_of() {
     [ -f "$1" ] || return 0
@@ -1161,7 +1062,6 @@ resolve_certificates() {
 
         log "found an issued certificate pair in ${CERTS_DIR}; generating nothing"
         write_distinguished_names || return 1
-        issue_client_pairs || return 1
         return 0
     fi
 
@@ -1219,7 +1119,6 @@ resolve_certificates() {
     log "issued indexer.pem: CN=${_rc_short}; SANs ${_rc_sans}"
 
     write_distinguished_names || return 1
-    issue_client_pairs || return 1
     return 0
 }
 
@@ -1352,7 +1251,7 @@ clear_credentials() {
     for _cc_key in ${OWNED_KEYS}; do
         wazuh_env_unset "${_cc_key}" >/dev/null 2>&1 || true
     done
-    for _cc_published in credentials.env ca.pem manager-client.pem manager-client-key.pem dashboard-client.pem dashboard-client-key.pem; do
+    for _cc_published in credentials.env ca.pem; do
         if [ -e "${EXPORT_DIR}/${_cc_published}" ] || [ -L "${EXPORT_DIR}/${_cc_published}" ]; then
             rm -f -- "${EXPORT_DIR:?}/${_cc_published:?}"
         fi

@@ -76,7 +76,9 @@ For more information, see: https://www.wazuh.com/
 %define reportsscheduler_plugin %( if [ -f %{_topdir}/etc/wazuh-indexer/opensearch-reports-scheduler/reports-scheduler.yml ]; then echo "1" ; else echo "0"; fi )
 
 # The setup plugin ships its configuration directory: setup.yml, a copy of each ISM policy for the
-# operator to edit, and a README. A package built without the plugin has none of them
+# operator to edit, and a README. A package built without the plugin has none of them. If the plugin
+# renames these files, this guard or the entries below no longer match them, and they are packaged as
+# plain files: build-scripts/ci/test_setup_config.sh fails on such a package
 %define setup_plugin_config %( if [ -f %{_topdir}/etc/wazuh-indexer/wazuh-indexer-setup/setup.yml ]; then echo "1" ; else echo "0"; fi )
 
 # The CTI snapshot archives this package ships. Which ones depends on the CTI plan the build

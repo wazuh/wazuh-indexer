@@ -75,6 +75,12 @@ For more information, see: https://www.wazuh.com/
 
 %define reportsscheduler_plugin %( if [ -f %{_topdir}/etc/wazuh-indexer/opensearch-reports-scheduler/reports-scheduler.yml ]; then echo "1" ; else echo "0"; fi )
 
+# The setup plugin ships its configuration directory: setup.yml, a copy of each ISM policy for the
+# operator to edit, and a README. A package built without the plugin has none of them. If the plugin
+# renames these files, this guard or the entries below no longer match them, and they are packaged as
+# plain files: build-scripts/ci/test_setup_config.sh fails on such a package
+%define setup_plugin_config %( if [ -f %{_topdir}/etc/wazuh-indexer/wazuh-indexer-setup/setup.yml ]; then echo "1" ; else echo "0"; fi )
+
 # The CTI snapshot archives this package ships. Which ones depends on the CTI plan the build
 # downloaded them from, so they are read from the assembled tree rather than named here
 %define cti_snapshots %( cd %{_topdir}%{snapshots_dir} 2>/dev/null && ls *.zip 2>/dev/null | xargs )
@@ -159,6 +165,13 @@ set -- "$@" "%{_prefix}/lib/tmpfiles.d/%{name}.conf"
 # Check if we are including the reports scheduler plugin
 if [ %reportsscheduler_plugin -eq 1 ]; then
     set -- "$@" "%{config_dir}/opensearch-reports-scheduler/reports-scheduler.yml"
+fi
+
+# The files of the setup plugin configuration that the operator edits are listed as configuration
+# below. Its README stays in the file list, so an upgrade always installs the current one
+if [ %setup_plugin_config -eq 1 ]; then
+    set -- "$@" "%{config_dir}/wazuh-indexer-setup/setup\.yml"
+    set -- "$@" "%{config_dir}/wazuh-indexer-setup/.*\.json"
 fi
 
 for i in "$@"
@@ -678,6 +691,13 @@ exit 0
 
 %if %reportsscheduler_plugin
 %config(noreplace) %attr(0640, root, %{name}) %{config_dir}/opensearch-reports-scheduler/reports-scheduler.yml
+%endif
+
+# Setup plugin configuration: an upgrade keeps a file the operator edited, and leaves the new
+# version next to it as .rpmnew
+%if %setup_plugin_config
+%config(noreplace) %attr(0640, root, %{name}) %{config_dir}/wazuh-indexer-setup/setup.yml
+%config(noreplace) %attr(0640, root, %{name}) %{config_dir}/wazuh-indexer-setup/*.json
 %endif
 
 # The directories the service writes.

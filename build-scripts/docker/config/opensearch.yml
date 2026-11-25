@@ -53,3 +53,11 @@ plugins.security.system_indices.enabled: true
 plugins.security.system_indices.indices: [".opendistro-alerting-config", ".opendistro-alerting-alert*", ".opendistro-reports-*", ".opendistro-notifications-*", ".replication-metadata-store", ".wazuh-internal-state"]
 cluster.default_number_of_replicas: 0
 search.max_keep_alive: "4h"
+
+# Log levels.
+logger.org.opensearch.index.MergeSchedulerConfig: WARN
+logger.org.opensearch.plugins.PluginsService: WARN
+logger.org.opensearch.alerting.alerts.AlertIndices: WARN
+logger.org.opensearch.alerting.transport.TransportDocLevelMonitorFanOutAction: WARN
+logger.org.opensearch.alerting.transport.TransportExecuteWorkflowAction: WARN
+logger.org.opensearch.alerting.util.destinationmigration.DestinationMigrationCoordinator: WARN

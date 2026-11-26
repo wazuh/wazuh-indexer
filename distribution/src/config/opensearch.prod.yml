@@ -81,10 +81,9 @@ search_backpressure.search_shard_task.heap_percent_threshold: 0.04  # a shard ta
 indices.breaker.total.use_real_memory: true           # account real heap used, not just reserved bytes
 indices.breaker.total.limit: 80%                      # trip early (default 95%); leaves headroom for Lucene flush/merge
 indexing_pressure.memory.limit: 10%                   # cap in-flight indexing bytes; reject excess bulk
-# Smaller detector batches (Alerting defaults: 10000 and 50000). Search backpressure (above) cancels the largest
-# searches while the node is under pressure, and a detector reads a cancelled batch again, at the same size, on
-# its next run, so with the default sizes a loaded node cancels the same batches run after run and the detectors
-# fall behind. Raise both only on nodes where the detectors' searches are not being cancelled.
+# Events a detector (Alerting doc-level monitor) reads per shard and rule-matches per percolate search
+# (defaults: 10000 and 50000). 5000 keeps the searches below what search backpressure (above) cancels on a
+# 2 GB heap: larger batches delay detection under pressure, smaller ones cost CPU. See the Alerting docs.
 plugins.alerting.monitor.doc_level_monitor_shard_fetch_size: 5000
 plugins.alerting.monitor.percolate_query_max_num_docs_in_memory: 5000
 

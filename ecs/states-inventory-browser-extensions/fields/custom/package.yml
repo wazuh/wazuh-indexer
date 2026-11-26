@@ -1,0 +1,54 @@
+---
+- name: package
+  title: package
+  fields:
+    - name: id
+      type: keyword
+      level: custom
+      description: >
+        Unique identifier for the browser extension.
+      example: com.example.extension
+    - name: vendor
+      type: keyword
+      level: custom
+      description: >
+        Vendor, author or creator of the browser extension.
+      example: Example Inc.
+    - name: permissions
+      type: keyword
+      normalize: 
+       - array
+      level: custom
+      description: >
+        Permissions required by the browser extension.
+      example: '["tabs", "storage"]'
+    - name: enabled
+      type: boolean
+      level: custom
+      description: >
+        Indicates if the browser extension is enabled.
+      example: true
+    - name: visible
+      type: boolean
+      level: custom
+      description: >
+        Indicates if the browser extension is visible in the toolbar.
+      example: true
+    - name: autoupdate
+      type: boolean
+      level: custom
+      description: >
+        Indicates if the browser extension is set to auto-update.
+      example: true
+    - name: persistent
+      type: boolean
+      level: custom
+      description: >
+        Indicates if the browser extension is persistent accross tabs.
+      example: true
+    - name: from_webstore
+      type: boolean
+      level: custom
+      description: >
+        Indicates if the browser extension was installed from a webstore.
+      example: true

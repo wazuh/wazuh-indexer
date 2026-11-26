@@ -1,0 +1,7 @@
+moto==5.0.27
+pytest==9.0.3
+requests==2.33.0
+pyarrow>=10.0.1
+parquet-tools>=0.2.15
+pydantic>=2.6.1
+boto3==1.34.46

@@ -1035,6 +1035,10 @@ if [ ! -f "${WAZUH_TOOLS}/wazuh-passwords-tool.sh" ]; then
     skip "wazuh-passwords-tool.sh is not shipped in this package"
 else
     NEW_PW='Rotated.Pass+2026x'
+    # The parent breaker refuses any request while real heap usage is over its
+    # limit, so rotating while the node is still loading content after the 1.8b
+    # restart fails on its own: #2124 measured 4 in 32 at once, 0 in 10 at 35 s.
+    sleep 35
     # -p is a flag: the tool reads the password from standard input.
     printf '%s' "${NEW_PW}" | bash "${WAZUH_TOOLS}/wazuh-passwords-tool.sh" -u admin -p \
         >/tmp/rotate.log 2>&1
@@ -1042,6 +1046,9 @@ else
     if [ "${ROTATE_RC}" != "0" ]; then
         fail "wazuh-passwords-tool.sh exited ${ROTATE_RC}"
         tail -10 /tmp/rotate.log | sed 's/^/        /'
+        # The tool prints only "The backup could not be created". The reason
+        # securityadmin.sh gave is in its own log, which nothing collects today.
+        tail -60 /var/log/wazuh-passwords-tool.log 2>/dev/null | sed 's/^/        /'
     else
         ok "wazuh-passwords-tool.sh succeeded"
     fi

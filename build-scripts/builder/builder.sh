@@ -26,7 +26,7 @@ function check_project_root_folder() {
 # ====
 function parse_args() {
 
-    while getopts ":p:r:s:n:t:c:R:S:d:a:e:Dh" arg; do
+    while getopts ":p:r:s:n:t:c:R:S:d:a:e:b:Dh" arg; do
         case $arg in
         h)
             usage
@@ -52,6 +52,9 @@ function parse_args() {
             ;;
         e)
             ENGINE_TARBALL=$OPTARG
+            ;;
+        b)
+            BUILD_PHASE=$OPTARG
             ;;
         R)
             REVISION=$OPTARG
@@ -92,6 +95,17 @@ function parse_args() {
     [ -z "$DISTRIBUTION" ] && DISTRIBUTION="rpm"
     [ -z "$ARCHITECTURE" ] && ARCHITECTURE="x64"
     [ -z "$DESTROY" ] && DESTROY=false
+    # An exported BUILD_PHASE is honoured when -b is not given.
+    [ -z "$BUILD_PHASE" ] && BUILD_PHASE="all"
+
+    case "$BUILD_PHASE" in
+    all | build | package) ;;
+    *)
+        echo "Error: invalid build phase '${BUILD_PHASE}', expected all, build or package."
+        usage
+        exit 1
+        ;;
+    esac
 }
 
 # ====
@@ -107,11 +121,12 @@ function usage() {
     echo -e "-n NOTIFICATIONS_BRANCH\t\t[Optional] wazuh-indexer-notifications repo branch, default is 'main'."
     echo -e "-t ALERTING_BRANCH\t\t[Optional] wazuh-indexer-alerting repo branch, default is 'main'."
     echo -e "-c COMMON_UTILS_BRANCH\t\t[Optional] wazuh-indexer-common-utils repo branch, default is 'main'."
-    echo -e "-e ENGINE_TARBALL\t\t[Required] Path to wazuh-engine tarball (.tar.gz) on the host."
+    echo -e "-e ENGINE_TARBALL\t\t[Required for all and package] Path to wazuh-engine tarball (.tar.gz) on the host."
     echo -e "-R REVISION\t[Optional] Package revision, default is '0'."
     echo -e "-S STAGE\t[Optional] Staging build, default is 'false'."
     echo -e "-d DISTRIBUTION\t[Optional] Distribution, default is 'rpm'."
     echo -e "-a ARCHITECTURE\t[Optional] Architecture, default is 'x64'."
+    echo -e "-b BUILD_PHASE\t[Optional] Stage to run: all, build or package, default is 'all'."
     echo -e "-D\tDestroy the docker environment"
     echo -e "-h\tPrint help"
 }
@@ -150,14 +165,15 @@ function main() {
     export IS_STAGE
     export DISTRIBUTION
     export ARCHITECTURE
+    export BUILD_PHASE
 
     if [[ "$DESTROY" == true || "$DESTROY" == "1" ]]; then
         $compose_cmd down -v
         exit 0
     fi
 
-    if [ -z "$ENGINE_TARBALL" ]; then
-        echo "Error: -e ENGINE_TARBALL is required."
+    if [ "$BUILD_PHASE" != "build" ] && [ -z "$ENGINE_TARBALL" ]; then
+        echo "Error: -e ENGINE_TARBALL is required for the '${BUILD_PHASE}' phase."
         usage
         exit 1
     fi

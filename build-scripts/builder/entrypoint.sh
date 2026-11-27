@@ -40,6 +40,16 @@ REVISION=${REVISION:-0}
 IS_STAGE=${IS_STAGE:-false}
 DISTRIBUTION=${DISTRIBUTION:-rpm}
 ARCHITECTURE=${ARCHITECTURE:-x64}
+# Stage to run: all (default), build or package. See build-scripts/README.md.
+BUILD_PHASE=${BUILD_PHASE:-all}
+
+case "$BUILD_PHASE" in
+all | build | package) ;;
+*)
+    echo "Error: invalid BUILD_PHASE '${BUILD_PHASE}', expected all, build or package." >&2
+    exit 1
+    ;;
+esac
 
 # Define repositories as an associative array
 declare -A REPOS=(
@@ -200,12 +210,17 @@ copy_builds() {
     done
 }
 
-# Function to set up the Wazuh Engine tarball
-setup_engine_tarball() {
+# Fails early if the Wazuh Engine tarball is not available to the container.
+check_engine_tarball() {
     if [ -z "$ENGINE_TARBALL" ] || [ ! -f /tmp/engine-tarball.tar.gz ]; then
         echo "Error: wazuh-engine tarball is required but was not provided or is not accessible at /tmp/engine-tarball.tar.gz."
         exit 1
     fi
+}
+
+# Function to set up the Wazuh Engine tarball
+setup_engine_tarball() {
+    check_engine_tarball
     echo "----------------------------------------"
     echo "Setting up Wazuh Engine tarball"
     echo "----------------------------------------"
@@ -222,72 +237,137 @@ setup_engine_tarball() {
     fi
 }
 
-# Function for packaging process
-package_artifacts() {
+# Records the commit of each repository in artifacts/commits.txt, so that the
+# package stage can name and assemble the package without the clones.
+# Format: "<repo> <full sha> <short sha>", in build order, wazuh-indexer last.
+# The short sha is kept as git computed it: its length depends on the clone.
+# Variables stay in lower case: the release tooling parses the upper-case
+# *_HASH= markers that assemble.sh prints, and the first occurrence wins.
+write_commits_file() {
+    echo "----------------------------------------"
+    echo "Recording repository commits"
+    echo "----------------------------------------"
+    local commits_file=~/artifacts/commits.txt
+    local entry repo_name repo_dir full short
+    mkdir -p ~/artifacts
+    : >"$commits_file"
+    for entry in \
+        "wazuh-indexer-common-utils|${COMMON_UTILS_REPO_DIR}" \
+        "wazuh-indexer-alerting|${ALERTING_REPO_DIR}" \
+        "wazuh-indexer-security-analytics|${SECURITY_ANALYTICS_REPO_DIR}" \
+        "wazuh-indexer-notifications|${NOTIFICATIONS_REPO_DIR}" \
+        "wazuh-indexer-reporting|${REPORTING_REPO_DIR}" \
+        "wazuh-indexer-plugins|${PLUGINS_REPO_DIR}" \
+        "wazuh-indexer|${HOME}"; do
+        IFS='|' read -r repo_name repo_dir <<<"$entry"
+        full=$(git -C "$repo_dir" rev-parse HEAD)
+        short=$(git -C "$repo_dir" rev-parse --short HEAD)
+        echo "$repo_name $full $short" >>"$commits_file"
+    done
+}
+
+# Builds the OpenSearch core and leaves its distribution in artifacts/core under
+# the Gradle name. The package stage gives it the final name.
+build_core() {
+    cd ~
+    # Drop the outputs of previous runs (the bind-mounted repository persists
+    # locally). build.sh does not stop on a failed Gradle command, so an old
+    # distribution or plugin zip left here could pass for a fresh one.
+    rm -rf ~/artifacts/dist ~/artifacts/tmp ~/artifacts/core
+    rm -rf distribution/archives/*/build/distributions \
+        distribution/packages/*/build/distributions \
+        plugins/workload-management/build/distributions
+
+    echo "Building package..."
+    bash build-scripts/build.sh -a "$ARCHITECTURE" -d "$DISTRIBUTION"
+
+    local cores=()
+    local file
+    shopt -s nullglob
+    for file in ~/artifacts/dist/wazuh-indexer-min*; do
+        cores+=("$file")
+    done
+    shopt -u nullglob
+    if [ "${#cores[@]}" -ne 1 ]; then
+        echo "Error: expected exactly one core distribution in artifacts/dist, found ${#cores[@]}."
+        exit 1
+    fi
+    mkdir -p ~/artifacts/core
+    mv "${cores[0]}" ~/artifacts/core/
+}
+
+# Reads artifacts/commits.txt into the variables used to name and assemble the
+# package. Fails if the core was built from a different indexer commit than the
+# one checked out, because the package name and the configuration files come
+# from the checkout.
+read_commits_file() {
+    local repo full short head
+    while read -r repo full short; do
+        case "$repo" in
+        wazuh-indexer-plugins) plugins_hash=$short ;;
+        wazuh-indexer-reporting) reporting_hash=$short ;;
+        wazuh-indexer-security-analytics) security_analytics_hash=$short ;;
+        wazuh-indexer-notifications) notifications_hash=$short ;;
+        wazuh-indexer-alerting) alerting_hash=$short ;;
+        wazuh-indexer) indexer_full=$full ;;
+        esac
+    done < <(grep -v '^#' ~/artifacts/commits.txt)
+
+    head=$(git -C ~ rev-parse HEAD)
+    if [ "$indexer_full" != "$head" ]; then
+        echo "Error: the build stage ran on wazuh-indexer ${indexer_full}, but ${head} is checked out."
+        exit 1
+    fi
+}
+
+# Gives the core distribution its final min name in artifacts/dist.
+prepare_dist() {
     echo "----------------------------------------"
     echo "Packaging Artifacts"
     echo "----------------------------------------"
+    cd ~
     # Drop packages from previous runs (the bind-mounted artifacts/ persists
     # locally); assemble.sh matches wazuh-indexer-min* by glob and breaks on a
     # stale match.
     rm -rf ~/artifacts/dist ~/artifacts/tmp
 
-    local architecture="$1"
-    local distribution="$2"
-    local revision="$3"
-    local is_stage="$4"
-
-    local plugins_hash
-    local reporting_hash
-    local security_analytics_hash
-    local notifications_hash
-    local alerting_hash
-    local package_min_name
-
-    plugins_hash=$(cd ${PLUGINS_REPO_DIR} && git rev-parse --short HEAD)
-    reporting_hash=$(cd ${REPORTING_REPO_DIR} && git rev-parse --short HEAD)
-    security_analytics_hash=$(cd ${SECURITY_ANALYTICS_REPO_DIR} && git rev-parse --short HEAD)
-    notifications_hash=$(cd ${NOTIFICATIONS_REPO_DIR} && git rev-parse --short HEAD)
-    alerting_hash=$(cd ${ALERTING_REPO_DIR} && git rev-parse --short HEAD)
-
-    cd ~
-
     echo "Creating package minimum name..."
     package_min_name=$(bash build-scripts/baptizer.sh -m \
-        -a "$architecture" \
-        -d "$distribution" \
-        -r "$revision" \
+        -a "$ARCHITECTURE" \
+        -d "$DISTRIBUTION" \
+        -r "$REVISION" \
         -l "$plugins_hash" \
         -e "$reporting_hash" \
         -s "$security_analytics_hash" \
         -n "$notifications_hash" \
         -t "$alerting_hash" \
-        "$(if [ "$is_stage" = "true" ]; then echo "-x"; fi)")
+        "$(if [ "$IS_STAGE" = "true" ]; then echo "-x"; fi)")
 
-    echo "Building package..."
-    bash build-scripts/build.sh -a "$architecture" -d "$distribution" -n "$package_min_name"
+    mkdir -p ~/artifacts/dist
+    cp ~/artifacts/core/wazuh-indexer-min* ~/artifacts/dist/"$package_min_name"
+}
+
+# Assembles the package from the min distribution and the Wazuh plugins.
+assemble_package() {
+    cd ~
     echo "Assembling package..."
     bash build-scripts/assemble.sh \
-        -a "$architecture" \
-        -d "$distribution" \
-        -r "$revision" \
+        -a "$ARCHITECTURE" \
+        -d "$DISTRIBUTION" \
+        -r "$REVISION" \
         -o "$(pwd)/artifacts" \
         -l "$plugins_hash" \
         -e "$reporting_hash" \
         -s "$security_analytics_hash" \
         -n "$notifications_hash" \
         -t "$alerting_hash"
-
 }
 
-# Main script execution
-main() {
-    echo "---------Starting Build Process---------"
+# Build stage: clone the repositories, build the plugins and the OpenSearch core.
+run_build_stage() {
     clone_repositories
     # Set version env var
     VERSION=$(bash ~/build-scripts/product_version.sh)
-    # Build and assemble the package
-    download_snapshots
     # Order matters
     build_common_utils "$VERSION" "$REVISION"
     build_alerting "$VERSION" "$REVISION"
@@ -295,14 +375,50 @@ main() {
     build_notifications "$VERSION" "$REVISION"
     build_reporting "$VERSION" "$REVISION"
     build_plugins "$VERSION" "$REVISION"
-    
+
     copy_builds "$VERSION" "$REVISION"
+    write_commits_file
+    build_core
+}
+
+# Package stage: set up the engine and the snapshots, name and assemble the
+# package from the stage contract. It does not clone or compile anything.
+run_package_stage() {
+    VERSION=$(bash ~/build-scripts/product_version.sh)
+    bash ~/build-scripts/check_stage_contract.sh \
+        -d "$DISTRIBUTION" -a "$ARCHITECTURE" -r "$REVISION" -v "$VERSION" -w ~
     setup_engine_tarball
-    package_artifacts "$ARCHITECTURE" "$DISTRIBUTION" "$REVISION" "$IS_STAGE"
+    download_snapshots
+    read_commits_file
+    prepare_dist
+    assemble_package
+}
+
+# Main script execution
+main() {
+    echo "---------Starting Build Process---------"
+    case "$BUILD_PHASE" in
+    all)
+        # Fail before compiling if the engine is missing.
+        check_engine_tarball
+        run_build_stage
+        run_package_stage
+        ;;
+    build)
+        run_build_stage
+        ;;
+    package)
+        run_package_stage
+        ;;
+    esac
 
     # Clean the environment
     echo "----------------------------------------"
-    echo "Build and Packaging Process Completed Successfully!"
+    if [ "$BUILD_PHASE" = "build" ]; then
+        echo "Build Stage Completed Successfully!"
+    else
+        echo "Build and Packaging Process Completed Successfully!"
+    fi
     echo "----------------------------------------"
 }
 

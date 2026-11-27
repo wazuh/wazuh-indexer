@@ -290,6 +290,9 @@ plugin:content_manager/promote/post:
   allowed_actions:
     - 'cluster:admin/content_manager/promote/create'
     - 'cluster:admin/wazuh/securityanalytics/detectors/refresh'
+    - 'cluster:admin/wazuh/securityanalytics/rule/write'
+    - 'cluster:admin/wazuh/securityanalytics/rule/custom/write'
+    - 'cluster:admin/opensearch/securityanalytics/rule/write'
   type: "cluster"
   description: "Execute a space promotion"
 

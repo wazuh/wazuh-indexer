@@ -54,7 +54,66 @@ scripts:
       is_min: if set, the package name will start by `wazuh-indexer-min`. Used on the build stage.
     outputs:
       package: the name of the wazuh-indexer package.
+
+  - file: check_stage_contract.sh
+    description: |
+      Checks that the stage contract left by the build stage is complete. Used
+      by the package stage of the builder and by ci/stage_contract.sh.
+    inputs:
+      distribution: [tar, deb, rpm]
+      architecture: [x64, arm64]
+      revision: revision number used by the build stage.
+      version: product version.
+    outputs:
+      result: the list of missing or invalid files, or the contract paths if -l is given.
+
+  - file: ci/stage_contract.sh
+    description: |
+      CI only. Packs the stage contract into a tar archive with a manifest
+      (pack) and checks and extracts it on another runner (unpack).
+    inputs:
+      command: [pack, unpack]
+      architecture: [x64, arm64]
+      distribution: [tar, deb, rpm]
+      revision: revision number used by the build stage (pack only).
+      version: product version (pack only).
+    outputs:
+      contract: contract.tar and contract.json (pack), or the contract files in the workspace (unpack).
 ```
+
+## Builder stages
+
+The builder (`builder/builder.sh`) runs in two stages. `-b all`, the default, runs both in the same container. `-b build` and `-b package` run one of them, so that the compilation and the assembly can run in different jobs. The package workflow (`5_builderpackage_indexer.yml`) uses them to start the compilation without waiting for the engine build.
+
+| Stage | Steps | Needs the engine |
+|---|---|---|
+| `build` | Clone the plugin repositories, build the plugins in order (common-utils first), copy their zips, record the commits, build the OpenSearch core | No |
+| `package` | Check the stage contract, set up the engine, download the CTI snapshots, name the core with `baptizer.sh -m`, run `assemble.sh` | Yes |
+
+### Stage contract
+
+The files that the `build` stage leaves and the `package` stage consumes. Paths are relative to the repository root.
+
+| Path | Count | Produced by |
+|---|---|---|
+| `artifacts/plugins/<artifact>-<VERSION>.<REVISION>.zip` | 7 Wazuh plugins | `copy_builds` (from the container's Maven local) |
+| `artifacts/core/wazuh-indexer-min*<suffix>*.<ext>` | 1, under its Gradle name | `build.sh` |
+| `plugins/workload-management/build/distributions/workload-management-<OpenSearch version>.zip` | 1 per internal plugin | `build.sh` |
+| `artifacts/commits.txt` | 1 | the `build` stage |
+
+The core keeps its Gradle name until the `package` stage names it, so it does not depend on the plugin commits, the revision or the stage flag.
+
+`artifacts/commits.txt` records the commit of each repository, because the `package` stage does not clone them. One line per repository, in build order, `wazuh-indexer` last:
+
+```
+<repository> <full sha> <short sha>
+```
+
+The short sha is kept as `git rev-parse --short` produced it, since its length depends on the clone.
+
+The engine, the CTI snapshots and the upstream OpenSearch plugins are not part of the contract: the `package` stage gets them. The packaging files (`distribution/packages/src/`, `distribution/src/lib/`, `VERSION.json`, `build-scripts/`) come from the repository checkout of the job that assembles.
+
+In CI, `ci/stage_contract.sh pack` stores the contract as a tar archive and a manifest under `<bucket>/wazuh-indexer/5_builderpackage_indexer/<run_id>/stage-contract/<distribution>-<architecture>/`, and `ci/stage_contract.sh unpack` restores it in the job that assembles.
 
 ## Build and Assemble
 

@@ -1,6 +1,7 @@
 # build files
 artifacts/
 .devscripts
+.rpmdb/
 *.deb
 *.rpm
 *.zip

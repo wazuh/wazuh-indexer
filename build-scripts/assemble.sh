@@ -26,8 +26,8 @@ else
         "opensearch-index-management"
         "opensearch-security"
     )
-    # Plugins built from this repository, installed from the local Maven repo
-    # (published by ./gradlew publishToMavenLocal in build.sh)
+    # Plugins built from this repository, installed from the ZIPs that build.sh
+    # leaves in OUTPUT/internal-plugins
     internal_plugins=(
         "workload-management"
     )
@@ -296,11 +296,16 @@ function exclude_flushes_from_audit() {
 # Set up configuration files
 # ====
 function add_configuration_files() {
+    # The Wazuh files come from the repository, not from the min package, which also
+    # bundles them: a min package restored from the build cache was built from an
+    # earlier commit, and its copies can be outdated (build-scripts/cache/README.md).
+    local wazuh_conf="${REPO_PATH}/distribution/src/config"
+
     # Add our settings to the configuration files
-    cat "$PATH_CONF/security/roles.wazuh.yml" >>"$PATH_CONF/opensearch-security/roles.yml"
-    cat "$PATH_CONF/security/roles_mapping.wazuh.yml" >>"$PATH_CONF/opensearch-security/roles_mapping.yml"
-    cat "$PATH_CONF/security/internal_users.wazuh.yml" >>"$PATH_CONF/opensearch-security/internal_users.yml"
-    cat "$PATH_CONF/security/action_groups.wazuh.yml" >>"$PATH_CONF/opensearch-security/action_groups.yml"
+    cat "${wazuh_conf}/security/roles.wazuh.yml" >>"$PATH_CONF/opensearch-security/roles.yml"
+    cat "${wazuh_conf}/security/roles_mapping.wazuh.yml" >>"$PATH_CONF/opensearch-security/roles_mapping.yml"
+    cat "${wazuh_conf}/security/internal_users.wazuh.yml" >>"$PATH_CONF/opensearch-security/internal_users.yml"
+    cat "${wazuh_conf}/security/action_groups.wazuh.yml" >>"$PATH_CONF/opensearch-security/action_groups.yml"
 
     # Deleting unused users.
     for user in anomalyadmin kibanaro logstash readall snapshotrestore; do
@@ -324,7 +329,7 @@ function add_configuration_files() {
 
     exclude_flushes_from_audit "$PATH_CONF/opensearch-security/audit.yml"
 
-    cp "$PATH_CONF/opensearch.prod.yml" "$PATH_CONF/opensearch.yml"
+    cp "${wazuh_conf}/opensearch.prod.yml" "$PATH_CONF/opensearch.yml"
 
     rm -r "$PATH_CONF/security"
     rm "$PATH_CONF/opensearch.prod.yml"
@@ -433,7 +438,7 @@ function install_plugins() {
 
     echo "Installing internal-built plugins"
     for plugin in "${internal_plugins[@]}"; do
-        local plugin_path="${REPO_PATH}/plugins/${plugin}/build/distributions/${plugin}-${UPSTREAM_VERSION}.zip"
+        local plugin_path="${INTERNAL_PLUGINS_DIR}/${plugin}-${UPSTREAM_VERSION}.zip"
         OPENSEARCH_PATH_CONF=$PATH_CONF "${PATH_BIN}/opensearch-plugin" install --batch --verbose "file:${plugin_path}"
     done
 
@@ -715,6 +720,8 @@ function main() {
     echo "Assembling wazuh-indexer for $PLATFORM-$DISTRIBUTION-$ARCHITECTURE"
 
     REPO_PATH="$(pwd)"
+    # Absolute, as the plugins are installed from the extraction directory.
+    INTERNAL_PLUGINS_DIR="$(realpath -m "${OUTPUT}/internal-plugins")"
 
     UPSTREAM_VERSION=$(bash build-scripts/opensearch_version.sh)
     PRODUCT_VERSION=$(bash build-scripts/product_version.sh)

@@ -75,8 +75,11 @@ Arguments:
 -b BRANCH       [Optional] Branch from wazuh/wazuh to download the index template from, default is $(bash build-scripts/product_version.sh)
 -n NAME [optional] Package name, default is set automatically.
 -o OUTPUT       [Optional] Output path, default is 'artifacts'.
+-m      [Optional] Also publish the Maven artifacts of the project to OUTPUT/maven. The packages do not use them.
 -h help
 ```
+
+It builds only what the package needs, in one Gradle run: the minimal package of the distribution (copied to `OUTPUT/dist`) and the ZIPs of the plugins built from this repository (`workload-management`, copied to `OUTPUT/internal-plugins`, where `assemble.sh` installs them from). The Maven publications of the whole project (javadoc, sources and POMs of every module) are built only with `-m`.
 
 ### Assemble
 

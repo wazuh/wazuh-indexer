@@ -173,6 +173,42 @@ plugin:content_manager/filter/*:
   type: "cluster"
   description: "Full access to content manager filter resources"
 
+plugin:content_manager/sigma_filter/create:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:admin/content_manager/sigma_filter/create'
+    - 'cluster:admin/wazuh/securityanalytics/rule/validate'
+  type: "cluster"
+  description: "Create a content manager Sigma filter resource"
+
+plugin:content_manager/sigma_filter/update:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:admin/content_manager/sigma_filter/update'
+    - 'cluster:admin/wazuh/securityanalytics/rule/validate'
+  type: "cluster"
+  description: "Update a content manager Sigma filter resource"
+
+plugin:content_manager/sigma_filter/delete:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'cluster:admin/content_manager/sigma_filter/delete'
+  type: "cluster"
+  description: "Delete a content manager Sigma filter resource"
+
+plugin:content_manager/sigma_filter/*:
+  reserved: true
+  hidden: false
+  allowed_actions:
+    - 'plugin:content_manager/sigma_filter/create'
+    - 'plugin:content_manager/sigma_filter/update'
+    - 'plugin:content_manager/sigma_filter/delete'
+  type: "cluster"
+  description: "Full access to content manager Sigma filter resources"
+
 plugin:content_manager/subscription/get:
   reserved: true
   hidden: false
@@ -253,6 +289,10 @@ plugin:content_manager/promote/post:
   hidden: false
   allowed_actions:
     - 'cluster:admin/content_manager/promote/create'
+    - 'cluster:admin/wazuh/securityanalytics/detectors/refresh'
+    - 'cluster:admin/wazuh/securityanalytics/rule/write'
+    - 'cluster:admin/wazuh/securityanalytics/rule/custom/write'
+    - 'cluster:admin/opensearch/securityanalytics/rule/write'
   type: "cluster"
   description: "Execute a space promotion"
 

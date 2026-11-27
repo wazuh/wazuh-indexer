@@ -1,0 +1,41 @@
+# DEBUG ONLY (wazuh/wazuh-indexer#2130). Not to be merged.
+# Compares the packages of the base run (5.0.0, current workflow) and the
+# candidate run (PR branch) of batch 1, and prints the report in the log.
+# Runs on push to this branch; the runs must have finished before pushing.
+name: (debug 2130) Compare base and candidate packages
+
+on:
+  push:
+    branches: [debug/2130-compare]
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  BASE_RUN_ID: "46001216497"       # 2130-base-multi, 5.0.0
+  CANDIDATE_RUN_ID: "46001231641"  # 2130-cand-multi, enhancement/2130-parallel-package-jobs
+
+jobs:
+  compare:
+    timeout-minutes: 120
+    runs-on:
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@v7
+
+      # Docker runs the UBI container that reads the rpm packages.
+      - name: Prepare Docker
+        run: bash build-scripts/ci/ensure_docker.sh
+
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_INDEXER_ACTIONS_ROLE }}
+          aws-region: ${{ secrets.CI_AWS_REGION }}
+
+      - name: Compare the packages of both runs
+        run: |
+          bucket="${{ secrets.CI_INTERNAL_S3_BUCKET }}"
+          export S3_RUNS_PREFIX="s3://${bucket#s3://}/wazuh-indexer/5_builderpackage_indexer"
+          python3 -I .github/debug_2130/compare_packages.py "$BASE_RUN_ID" "$CANDIDATE_RUN_ID" "${{ runner.temp }}/compare"

@@ -1,0 +1,130 @@
+name: (5.x) Build packages - compile
+
+# Build stage of one package target (wazuh/wazuh-indexer#2130): clones the
+# repositories, builds the plugins and the OpenSearch core with the builder
+# (BUILD_PHASE=build) and uploads the stage contract to S3 for the package stage.
+# It does not need the engine, so it starts without waiting for the engine build.
+# Called once per target by 5_builderpackage_indexer.yml.
+
+env:
+  CI_ARTIFACTS_REPO: wazuh-indexer
+  CI_ARTIFACTS_WORKFLOW: 5_builderpackage_indexer
+
+permissions:
+  contents: read
+  packages: read
+  id-token: write
+
+on:
+  workflow_call:
+    inputs:
+      distribution:
+        type: string
+        required: true
+      architecture:
+        type: string
+        required: true
+      revision:
+        type: string
+        required: true
+      version:
+        description: "Product version (VERSION.json), used to check the stage contract."
+        type: string
+        required: true
+      wazuh_plugins_ref:
+        type: string
+        required: true
+      reporting_plugin_ref:
+        type: string
+        required: true
+      security_analytics_plugin_ref:
+        type: string
+        required: true
+      notifications_plugin_ref:
+        type: string
+        required: true
+      alerting_plugin_ref:
+        type: string
+        required: true
+      common_utils_plugin_ref:
+        type: string
+        required: true
+    secrets:
+      AWS_INDEXER_ACTIONS_ROLE:
+        required: true
+        description: "AWS IAM OIDC role for S3 and infrastructure access"
+      CI_INTERNAL_S3_BUCKET:
+        required: true
+        description: "Internal S3 bucket URI used to stage build artifacts"
+      CI_AWS_REGION:
+        required: true
+        description: "AWS region for the internal S3 bucket and final package upload"
+      CI_OIDC_ROLE_ARN:
+        required: true
+        description: "AWS IAM OIDC role for authenticated pulls from ECR Public"
+
+jobs:
+  build:
+    timeout-minutes: 90
+    runs-on:
+      - codebuild-github-actions-codebuild-runner-indexer-${{ inputs.architecture == 'arm64' && 'arm' || 'amd' }}-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Prepare workspace
+        run: |
+            WORKSPACE="${{ github.workspace }}" bash build-scripts/ci/prepare_workspace.sh
+            # TODO: remove once Docker daemon and Compose are baked into the runner image.
+            bash build-scripts/ci/ensure_docker.sh
+
+      # The builder and the Ubuntu test images are pulled from ECR Public. Its token is always issued
+      # in us-east-1, whatever the region of the role.
+      - name: Set up AWS CLI for ECR Public
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.CI_OIDC_ROLE_ARN }}
+          aws-region: ${{ secrets.CI_AWS_REGION }}
+
+      - name: Log in to ECR Public
+        run: |
+          aws ecr-public get-login-password --region us-east-1 \
+            | docker login --username AWS --password-stdin public.ecr.aws
+
+      - name: Build the plugins and the OpenSearch core with the Docker builder
+        run: |
+          cd build-scripts/builder
+          bash ./builder.sh \
+            -b build \
+            -p "${{ inputs.wazuh_plugins_ref }}" \
+            -r "${{ inputs.reporting_plugin_ref }}" \
+            -s "${{ inputs.security_analytics_plugin_ref }}" \
+            -n "${{ inputs.notifications_plugin_ref }}" \
+            -t "${{ inputs.alerting_plugin_ref }}" \
+            -c "${{ inputs.common_utils_plugin_ref }}" \
+            -R "${{ inputs.revision }}" \
+            -d "${{ inputs.distribution }}" \
+            -a "${{ inputs.architecture }}"
+
+      - name: Pack the stage contract
+        run: |
+          WORKSPACE="${{ github.workspace }}" bash build-scripts/ci/stage_contract.sh pack \
+            -d "${{ inputs.distribution }}" \
+            -a "${{ inputs.architecture }}" \
+            -r "${{ inputs.revision }}" \
+            -v "${{ inputs.version }}" \
+            -o "${{ runner.temp }}/stage-contract"
+
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_INDEXER_ACTIONS_ROLE }}
+          aws-region: ${{ secrets.CI_AWS_REGION }}
+
+      # The manifest goes last: a package job that finds it knows the tar is complete.
+      - name: Upload the stage contract to S3
+        run: |
+          bucket="${{ secrets.CI_INTERNAL_S3_BUCKET }}"
+          s3_contract="s3://${bucket#s3://}/${{ env.CI_ARTIFACTS_REPO }}/${{ env.CI_ARTIFACTS_WORKFLOW }}/${{ github.run_id }}/stage-contract/${{ inputs.distribution }}-${{ inputs.architecture }}"
+          aws s3 cp "${{ runner.temp }}/stage-contract/contract.tar" "${s3_contract}/contract.tar"
+          aws s3 cp "${{ runner.temp }}/stage-contract/contract.json" "${s3_contract}/contract.json"
+          echo "::notice::Uploaded stage contract to ${s3_contract}/"

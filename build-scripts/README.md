@@ -48,11 +48,12 @@ Arguments:
 -n INDEXER_NOTIFICATIONS_BRANCH [Optional] wazuh-indexer-notifications repo branch, default is 'main'.
 -t INDEXER_ALERTING_BRANCH      [Optional] wazuh-indexer-alerting repo branch, default is 'main'.
 -c COMMON_UTILS_BRANCH          [Optional] wazuh-indexer-common-utils repo branch, default is 'main'.
--e ENGINE_TARBALL               [Required] Path to wazuh-engine tarball (.tar.gz) on the host.
+-e ENGINE_TARBALL               [Required for all and package] Path to wazuh-engine tarball (.tar.gz) on the host.
 -R REVISION     [Optional] Package revision, default is '0'.
 -S STAGE        [Optional] Staging build, default is 'false'.
 -d DISTRIBUTION [Optional] Distribution, default is 'rpm'.
 -a ARCHITECTURE [Optional] Architecture, default is 'x64'.
+-b BUILD_PHASE  [Optional] Stage to run: all, build or package, default is 'all'.
 -D      Destroy the docker environment
 -h      Print help
 ```
@@ -65,6 +66,26 @@ bash builder.sh -d deb -a x64 -R 1 -S true -e ./wazuh-engine-5.0.0-linux-amd64.t
 ```
 
 The resulting package will be stored at `wazuh-indexer/artifacts/dist`.
+
+### Running the build stages separately
+
+By default the builder runs end to end (`-b all`). The process has two stages that can also run on their own, which is how the package workflow runs them, so that the compilation does not wait for the engine:
+
+- **`build`**: clones the plugin repositories, builds the plugins (common-utils first) and the OpenSearch core. It does not need the engine, so `-e` is not required.
+- **`package`**: sets up the engine, downloads the CTI snapshots, names the package and assembles it. It does not clone or compile anything: it uses what the `build` stage left in the workspace (the stage contract, see [REFERENCE.md](./REFERENCE.md#builder-stages)).
+
+```bash
+# Within wazuh-indexer/build-scripts/builder
+bash builder.sh -b build -d deb -a x64 -R 1
+bash builder.sh -b package -d deb -a x64 -R 1 -S true -e ./wazuh-engine-5.0.0-linux-amd64.tar.gz
+```
+
+- Both stages must get the same `-d`, `-a` and `-R`. `-S` is only used by `package`.
+- The plugin branches (`-p`, `-r`, `-s`, `-n`, `-t`, `-c`) are only used by `build`.
+- The `package` stage checks that the stage contract is complete and fails listing what is missing. It also fails if the checked-out wazuh-indexer commit differs from the one the `build` stage recorded.
+- `build` cleans `artifacts/dist`, `artifacts/tmp`, `artifacts/core` and the Gradle distribution outputs before compiling. `package` cleans `artifacts/dist` and `artifacts/tmp`.
+- The stage can also be set with the `BUILD_PHASE` environment variable when `-b` is not given.
+- The engine tarball must keep its name, `wazuh-engine-<version>-linux-<amd64|arm64>.tar.gz`: the assembly looks it up by that pattern.
 
 > The `STAGE` option defines the naming of the package. When set to `false`, the package will be unequivocally named with the commits' SHA of the `wazuh-indexer`, `wazuh-indexer-plugins`, `wazuh-indexer-reporting`, `wazuh-indexer-security-analytics`, `wazuh-indexer-notifications` and `wazuh-indexer-alerting` repositories, in that order. For example: `wazuh-indexer_<version>-<revision>_x86_64_aff30960363-846f143-494d125-9c0c1fe.rpm`.
 

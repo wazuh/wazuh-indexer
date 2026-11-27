@@ -120,7 +120,7 @@ on:
     outputs:
       name:
         description: Name of the package built.
-        value: ${{ jobs.build.outputs.name }}
+        value: ${{ jobs.package-name.outputs.name }}
 
 # ==========================
 # Bibliography
@@ -399,8 +399,28 @@ jobs:
           echo "$versions"
           echo "$versions" >> "$GITHUB_OUTPUT"
 
-  build-wazuh-engine:
+  # ==========================
+  # Package targets (wazuh/wazuh-indexer#2130)
+  # ==========================
+  #
+  # Each target (distribution x architecture) has its own chain:
+  #   build-<dist>-<arch>     compiles the plugins and the core; does not wait for the engine.
+  #   assemble-<dist>-<arch>  needs that build and the engine of its architecture; assembles,
+  #                           tests and uploads the package.
+  # A job inside a reusable workflow cannot need a job of its caller, so the chain is two
+  # calls per target instead of one. The engine is built once per architecture.
+  # Targets that were not requested are skipped.
+  #
+  # Reapers: a job cannot cancel another job directly, but entering its concurrency group
+  # with cancel-in-progress does. reaper-build-* cancels a build whose engine failed, and
+  # reaper-engine-* cancels an engine whose builds all failed. Otherwise they join a group
+  # of their own and do nothing.
+
+  engine-x64:
     needs: [compatibility-check, branches]
+    if: ${{ contains(fromJSON(inputs.architecture), 'x64') }}
+    concurrency:
+      group: indexer-engine-${{ github.run_id }}-${{ github.run_attempt }}-x64
     uses: wazuh/wazuh/.github/workflows/5_builderpackage_engine-standalone.yml@5.0.0
     permissions:
       id-token: write
@@ -409,361 +429,418 @@ jobs:
     with:
       wazuh-branch: ${{ needs.branches.outputs.wazuh_ref }}
       build-type: "release"
-      arch: ${{ inputs.architecture }}
+      arch: '[ "x64" ]'
     secrets: inherit
 
-  build:
-    needs: [setup, branches, build-wazuh-engine]
-    timeout-minutes: 90
+  engine-arm64:
+    needs: [compatibility-check, branches]
+    if: ${{ contains(fromJSON(inputs.architecture), 'arm64') }}
+    concurrency:
+      group: indexer-engine-${{ github.run_id }}-${{ github.run_attempt }}-arm64
+    uses: wazuh/wazuh/.github/workflows/5_builderpackage_engine-standalone.yml@5.0.0
+    permissions:
+      id-token: write
+      contents: read
+      packages: read
+    with:
+      wazuh-branch: ${{ needs.branches.outputs.wazuh_ref }}
+      build-type: "release"
+      arch: '[ "arm64" ]'
+    secrets: inherit
+
+  build-tar-x64:
+    needs: [setup, branches, compatibility-check, get-versions-wazuh-indexer]
+    if: ${{ contains(fromJSON(inputs.distribution), 'tar') && contains(fromJSON(inputs.architecture), 'x64') }}
+    concurrency:
+      group: indexer-build-${{ github.run_id }}-${{ github.run_attempt }}-tar-x64
+    uses: ./.github/workflows/5_builderpackage_indexer_build.yml
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+    secrets: inherit
+    with:
+      distribution: tar
+      architecture: x64
+      revision: ${{ inputs.revision }}
+      version: ${{ needs.get-versions-wazuh-indexer.outputs.version }}
+      wazuh_plugins_ref: ${{ needs.branches.outputs.wazuh_plugins_ref }}
+      reporting_plugin_ref: ${{ needs.branches.outputs.reporting_plugin_ref }}
+      security_analytics_plugin_ref: ${{ needs.branches.outputs.security_analytics_plugin_ref }}
+      notifications_plugin_ref: ${{ needs.branches.outputs.notifications_plugin_ref }}
+      alerting_plugin_ref: ${{ needs.branches.outputs.alerting_plugin_ref }}
+      common_utils_plugin_ref: ${{ needs.branches.outputs.common_utils_plugin_ref }}
+
+  build-tar-arm64:
+    needs: [setup, branches, compatibility-check, get-versions-wazuh-indexer]
+    if: ${{ contains(fromJSON(inputs.distribution), 'tar') && contains(fromJSON(inputs.architecture), 'arm64') }}
+    concurrency:
+      group: indexer-build-${{ github.run_id }}-${{ github.run_attempt }}-tar-arm64
+    uses: ./.github/workflows/5_builderpackage_indexer_build.yml
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+    secrets: inherit
+    with:
+      distribution: tar
+      architecture: arm64
+      revision: ${{ inputs.revision }}
+      version: ${{ needs.get-versions-wazuh-indexer.outputs.version }}
+      wazuh_plugins_ref: ${{ needs.branches.outputs.wazuh_plugins_ref }}
+      reporting_plugin_ref: ${{ needs.branches.outputs.reporting_plugin_ref }}
+      security_analytics_plugin_ref: ${{ needs.branches.outputs.security_analytics_plugin_ref }}
+      notifications_plugin_ref: ${{ needs.branches.outputs.notifications_plugin_ref }}
+      alerting_plugin_ref: ${{ needs.branches.outputs.alerting_plugin_ref }}
+      common_utils_plugin_ref: ${{ needs.branches.outputs.common_utils_plugin_ref }}
+
+  build-deb-x64:
+    needs: [setup, branches, compatibility-check, get-versions-wazuh-indexer]
+    if: ${{ contains(fromJSON(inputs.distribution), 'deb') && contains(fromJSON(inputs.architecture), 'x64') }}
+    concurrency:
+      group: indexer-build-${{ github.run_id }}-${{ github.run_attempt }}-deb-x64
+    uses: ./.github/workflows/5_builderpackage_indexer_build.yml
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+    secrets: inherit
+    with:
+      distribution: deb
+      architecture: x64
+      revision: ${{ inputs.revision }}
+      version: ${{ needs.get-versions-wazuh-indexer.outputs.version }}
+      wazuh_plugins_ref: ${{ needs.branches.outputs.wazuh_plugins_ref }}
+      reporting_plugin_ref: ${{ needs.branches.outputs.reporting_plugin_ref }}
+      security_analytics_plugin_ref: ${{ needs.branches.outputs.security_analytics_plugin_ref }}
+      notifications_plugin_ref: ${{ needs.branches.outputs.notifications_plugin_ref }}
+      alerting_plugin_ref: ${{ needs.branches.outputs.alerting_plugin_ref }}
+      common_utils_plugin_ref: ${{ needs.branches.outputs.common_utils_plugin_ref }}
+
+  build-deb-arm64:
+    needs: [setup, branches, compatibility-check, get-versions-wazuh-indexer]
+    if: ${{ contains(fromJSON(inputs.distribution), 'deb') && contains(fromJSON(inputs.architecture), 'arm64') }}
+    concurrency:
+      group: indexer-build-${{ github.run_id }}-${{ github.run_attempt }}-deb-arm64
+    uses: ./.github/workflows/5_builderpackage_indexer_build.yml
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+    secrets: inherit
+    with:
+      distribution: deb
+      architecture: arm64
+      revision: ${{ inputs.revision }}
+      version: ${{ needs.get-versions-wazuh-indexer.outputs.version }}
+      wazuh_plugins_ref: ${{ needs.branches.outputs.wazuh_plugins_ref }}
+      reporting_plugin_ref: ${{ needs.branches.outputs.reporting_plugin_ref }}
+      security_analytics_plugin_ref: ${{ needs.branches.outputs.security_analytics_plugin_ref }}
+      notifications_plugin_ref: ${{ needs.branches.outputs.notifications_plugin_ref }}
+      alerting_plugin_ref: ${{ needs.branches.outputs.alerting_plugin_ref }}
+      common_utils_plugin_ref: ${{ needs.branches.outputs.common_utils_plugin_ref }}
+
+  build-rpm-x64:
+    needs: [setup, branches, compatibility-check, get-versions-wazuh-indexer]
+    if: ${{ contains(fromJSON(inputs.distribution), 'rpm') && contains(fromJSON(inputs.architecture), 'x64') }}
+    concurrency:
+      group: indexer-build-${{ github.run_id }}-${{ github.run_attempt }}-rpm-x64
+    uses: ./.github/workflows/5_builderpackage_indexer_build.yml
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+    secrets: inherit
+    with:
+      distribution: rpm
+      architecture: x64
+      revision: ${{ inputs.revision }}
+      version: ${{ needs.get-versions-wazuh-indexer.outputs.version }}
+      wazuh_plugins_ref: ${{ needs.branches.outputs.wazuh_plugins_ref }}
+      reporting_plugin_ref: ${{ needs.branches.outputs.reporting_plugin_ref }}
+      security_analytics_plugin_ref: ${{ needs.branches.outputs.security_analytics_plugin_ref }}
+      notifications_plugin_ref: ${{ needs.branches.outputs.notifications_plugin_ref }}
+      alerting_plugin_ref: ${{ needs.branches.outputs.alerting_plugin_ref }}
+      common_utils_plugin_ref: ${{ needs.branches.outputs.common_utils_plugin_ref }}
+
+  build-rpm-arm64:
+    needs: [setup, branches, compatibility-check, get-versions-wazuh-indexer]
+    if: ${{ contains(fromJSON(inputs.distribution), 'rpm') && contains(fromJSON(inputs.architecture), 'arm64') }}
+    concurrency:
+      group: indexer-build-${{ github.run_id }}-${{ github.run_attempt }}-rpm-arm64
+    uses: ./.github/workflows/5_builderpackage_indexer_build.yml
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+    secrets: inherit
+    with:
+      distribution: rpm
+      architecture: arm64
+      revision: ${{ inputs.revision }}
+      version: ${{ needs.get-versions-wazuh-indexer.outputs.version }}
+      wazuh_plugins_ref: ${{ needs.branches.outputs.wazuh_plugins_ref }}
+      reporting_plugin_ref: ${{ needs.branches.outputs.reporting_plugin_ref }}
+      security_analytics_plugin_ref: ${{ needs.branches.outputs.security_analytics_plugin_ref }}
+      notifications_plugin_ref: ${{ needs.branches.outputs.notifications_plugin_ref }}
+      alerting_plugin_ref: ${{ needs.branches.outputs.alerting_plugin_ref }}
+      common_utils_plugin_ref: ${{ needs.branches.outputs.common_utils_plugin_ref }}
+
+  assemble-tar-x64:
+    needs: [setup, build-tar-x64, engine-x64]
+    if: ${{ contains(fromJSON(inputs.distribution), 'tar') && contains(fromJSON(inputs.architecture), 'x64') }}
+    uses: ./.github/workflows/5_builderpackage_indexer_assemble.yml
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+    secrets: inherit
+    with:
+      distribution: tar
+      architecture: x64
+      revision: ${{ inputs.revision }}
+      is_stage: ${{ inputs.is_stage }}
+      upload: ${{ inputs.upload }}
+      checksum: ${{ inputs.checksum }}
+      previous_version: ${{ needs.setup.outputs.previous_version }}
+      previous_4x_version: ${{ needs.setup.outputs.previous_4x_version }}
+      update_tests: ${{ needs.setup.outputs.update_tests }}
+
+  assemble-tar-arm64:
+    needs: [setup, build-tar-arm64, engine-arm64]
+    if: ${{ contains(fromJSON(inputs.distribution), 'tar') && contains(fromJSON(inputs.architecture), 'arm64') }}
+    uses: ./.github/workflows/5_builderpackage_indexer_assemble.yml
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+    secrets: inherit
+    with:
+      distribution: tar
+      architecture: arm64
+      revision: ${{ inputs.revision }}
+      is_stage: ${{ inputs.is_stage }}
+      upload: ${{ inputs.upload }}
+      checksum: ${{ inputs.checksum }}
+      previous_version: ${{ needs.setup.outputs.previous_version }}
+      previous_4x_version: ${{ needs.setup.outputs.previous_4x_version }}
+      update_tests: ${{ needs.setup.outputs.update_tests }}
+
+  assemble-deb-x64:
+    needs: [setup, build-deb-x64, engine-x64]
+    if: ${{ contains(fromJSON(inputs.distribution), 'deb') && contains(fromJSON(inputs.architecture), 'x64') }}
+    uses: ./.github/workflows/5_builderpackage_indexer_assemble.yml
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+    secrets: inherit
+    with:
+      distribution: deb
+      architecture: x64
+      revision: ${{ inputs.revision }}
+      is_stage: ${{ inputs.is_stage }}
+      upload: ${{ inputs.upload }}
+      checksum: ${{ inputs.checksum }}
+      previous_version: ${{ needs.setup.outputs.previous_version }}
+      previous_4x_version: ${{ needs.setup.outputs.previous_4x_version }}
+      update_tests: ${{ needs.setup.outputs.update_tests }}
+
+  assemble-deb-arm64:
+    needs: [setup, build-deb-arm64, engine-arm64]
+    if: ${{ contains(fromJSON(inputs.distribution), 'deb') && contains(fromJSON(inputs.architecture), 'arm64') }}
+    uses: ./.github/workflows/5_builderpackage_indexer_assemble.yml
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+    secrets: inherit
+    with:
+      distribution: deb
+      architecture: arm64
+      revision: ${{ inputs.revision }}
+      is_stage: ${{ inputs.is_stage }}
+      upload: ${{ inputs.upload }}
+      checksum: ${{ inputs.checksum }}
+      previous_version: ${{ needs.setup.outputs.previous_version }}
+      previous_4x_version: ${{ needs.setup.outputs.previous_4x_version }}
+      update_tests: ${{ needs.setup.outputs.update_tests }}
+
+  assemble-rpm-x64:
+    needs: [setup, build-rpm-x64, engine-x64]
+    if: ${{ contains(fromJSON(inputs.distribution), 'rpm') && contains(fromJSON(inputs.architecture), 'x64') }}
+    uses: ./.github/workflows/5_builderpackage_indexer_assemble.yml
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+    secrets: inherit
+    with:
+      distribution: rpm
+      architecture: x64
+      revision: ${{ inputs.revision }}
+      is_stage: ${{ inputs.is_stage }}
+      upload: ${{ inputs.upload }}
+      checksum: ${{ inputs.checksum }}
+      previous_version: ${{ needs.setup.outputs.previous_version }}
+      previous_4x_version: ${{ needs.setup.outputs.previous_4x_version }}
+      update_tests: ${{ needs.setup.outputs.update_tests }}
+
+  assemble-rpm-arm64:
+    needs: [setup, build-rpm-arm64, engine-arm64]
+    if: ${{ contains(fromJSON(inputs.distribution), 'rpm') && contains(fromJSON(inputs.architecture), 'arm64') }}
+    uses: ./.github/workflows/5_builderpackage_indexer_assemble.yml
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+    secrets: inherit
+    with:
+      distribution: rpm
+      architecture: arm64
+      revision: ${{ inputs.revision }}
+      is_stage: ${{ inputs.is_stage }}
+      upload: ${{ inputs.upload }}
+      checksum: ${{ inputs.checksum }}
+      previous_version: ${{ needs.setup.outputs.previous_version }}
+      previous_4x_version: ${{ needs.setup.outputs.previous_4x_version }}
+      update_tests: ${{ needs.setup.outputs.update_tests }}
+
+  reaper-build-tar-x64:
+    needs: [engine-x64]
+    if: ${{ !cancelled() && contains(fromJSON(inputs.distribution), 'tar') && contains(fromJSON(inputs.architecture), 'x64') }}
+    timeout-minutes: 5
     runs-on:
-      - codebuild-github-actions-codebuild-runner-indexer-${{ matrix.architecture == 'arm64' && 'arm' || 'amd' }}-${{ github.run_id }}-${{ github.run_attempt }}
-    strategy:
-      fail-fast: false
-      matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
-    outputs:
-      name: ${{ steps.package.outputs.name }}
-    # Docker Hub limits anonymous pulls per IP, which the shared runners reach. The test
-    # images come from ECR Public, with authenticated pulls, and from the Red Hat registry.
-    env:
-      UBUNTU_IMAGE: public.ecr.aws/ubuntu/ubuntu:jammy
-      UBI_IMAGE: registry.access.redhat.com/ubi9/ubi:latest
-      UBI_INIT_IMAGE: registry.access.redhat.com/ubi9/ubi-init:latest
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
+    concurrency:
+      group: ${{ needs.engine-x64.result == 'failure' && format('indexer-build-{0}-{1}-tar-x64', github.run_id, github.run_attempt) || format('indexer-reaper-{0}-{1}-build-tar-x64', github.run_id, github.run_attempt) }}
+      cancel-in-progress: true
     steps:
-      - uses: actions/checkout@v7
-
-      # Built by the build-wazuh-engine job
-      - name: Set up AWS CLI
-        uses: aws-actions/configure-aws-credentials@v6
-        with:
-          role-to-assume: ${{ secrets.AWS_INDEXER_ACTIONS_ROLE }}
-          aws-region: ${{ secrets.CI_AWS_REGION }}
-
-      # Built by the build-wazuh-engine job
-      - name: Download Wazuh Engine
+      - name: Cancel the build if the engine failed
         run: |
-          mkdir -p "${{ github.workspace }}/artifacts/engine"
-          arch_suffix="${{ matrix.architecture == 'x64' && 'amd64' || 'arm64' }}"
-          bucket="${{ secrets.CI_INTERNAL_S3_BUCKET }}"
-          s3_base="s3://${bucket#s3://}/${{ env.CI_ARTIFACTS_REPO }}/${{ env.CI_ARTIFACTS_WORKFLOW }}"
-          aws s3 cp "$s3_base/" "${{ github.workspace }}/artifacts/engine/" --recursive \
-            --exclude "*" --include "${{ github.run_id }}/wazuh-engine-*-linux-${arch_suffix}.zip"
+          echo "engine-x64 result: ${{ needs.engine-x64.result }}"
 
-          shopt -s nullglob
-          archives=("${{ github.workspace }}/artifacts/engine"/${{ github.run_id }}/wazuh-engine-*-linux-${arch_suffix}.zip)
-          if [ ${#archives[@]} -eq 0 ]; then
-            echo "::error::No Wazuh Engine artifacts found in S3 for run ${{ github.run_id }} (arch ${arch_suffix})"
-            aws s3 ls "$s3_base/" || true
-            exit 1
-          fi
-
-          for z in "${archives[@]}"; do
-            unzip -j -o "$z" -d "${{ github.workspace }}/artifacts/engine"
-          done
-
-          engine_pattern="wazuh-engine-*-linux-${arch_suffix}.tar.gz"
-          if ! find "${{ github.workspace }}/artifacts/engine" -maxdepth 1 -type f -name "$engine_pattern" | grep -q .; then
-            echo "::error::No Wazuh Engine tarball found for pattern $engine_pattern"
-            ls -l "${{ github.workspace }}/artifacts/engine" || true
-            exit 1
-          fi
-
-      - name: Prepare workspace
+  reaper-build-tar-arm64:
+    needs: [engine-arm64]
+    if: ${{ !cancelled() && contains(fromJSON(inputs.distribution), 'tar') && contains(fromJSON(inputs.architecture), 'arm64') }}
+    timeout-minutes: 5
+    runs-on:
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
+    concurrency:
+      group: ${{ needs.engine-arm64.result == 'failure' && format('indexer-build-{0}-{1}-tar-arm64', github.run_id, github.run_attempt) || format('indexer-reaper-{0}-{1}-build-tar-arm64', github.run_id, github.run_attempt) }}
+      cancel-in-progress: true
+    steps:
+      - name: Cancel the build if the engine failed
         run: |
-            WORKSPACE="${{ github.workspace }}" bash build-scripts/ci/prepare_workspace.sh
-            # TODO: remove once Docker daemon and Compose are baked into the runner image.
-            bash build-scripts/ci/ensure_docker.sh
+          echo "engine-arm64 result: ${{ needs.engine-arm64.result }}"
 
-      # The builder and the Ubuntu test images are pulled from ECR Public. Its token is always issued
-      # in us-east-1, whatever the region of the role.
-      - name: Set up AWS CLI for ECR Public
-        uses: aws-actions/configure-aws-credentials@v6
-        with:
-          role-to-assume: ${{ secrets.CI_OIDC_ROLE_ARN }}
-          aws-region: ${{ secrets.CI_AWS_REGION }}
-
-      - name: Log in to ECR Public
+  reaper-build-deb-x64:
+    needs: [engine-x64]
+    if: ${{ !cancelled() && contains(fromJSON(inputs.distribution), 'deb') && contains(fromJSON(inputs.architecture), 'x64') }}
+    timeout-minutes: 5
+    runs-on:
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
+    concurrency:
+      group: ${{ needs.engine-x64.result == 'failure' && format('indexer-build-{0}-{1}-deb-x64', github.run_id, github.run_attempt) || format('indexer-reaper-{0}-{1}-build-deb-x64', github.run_id, github.run_attempt) }}
+      cancel-in-progress: true
+    steps:
+      - name: Cancel the build if the engine failed
         run: |
-          aws ecr-public get-login-password --region us-east-1 \
-            | docker login --username AWS --password-stdin public.ecr.aws
+          echo "engine-x64 result: ${{ needs.engine-x64.result }}"
 
-      - name: Build package with the Docker builder
+  reaper-build-deb-arm64:
+    needs: [engine-arm64]
+    if: ${{ !cancelled() && contains(fromJSON(inputs.distribution), 'deb') && contains(fromJSON(inputs.architecture), 'arm64') }}
+    timeout-minutes: 5
+    runs-on:
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
+    concurrency:
+      group: ${{ needs.engine-arm64.result == 'failure' && format('indexer-build-{0}-{1}-deb-arm64', github.run_id, github.run_attempt) || format('indexer-reaper-{0}-{1}-build-deb-arm64', github.run_id, github.run_attempt) }}
+      cancel-in-progress: true
+    steps:
+      - name: Cancel the build if the engine failed
+        run: |
+          echo "engine-arm64 result: ${{ needs.engine-arm64.result }}"
+
+  reaper-build-rpm-x64:
+    needs: [engine-x64]
+    if: ${{ !cancelled() && contains(fromJSON(inputs.distribution), 'rpm') && contains(fromJSON(inputs.architecture), 'x64') }}
+    timeout-minutes: 5
+    runs-on:
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
+    concurrency:
+      group: ${{ needs.engine-x64.result == 'failure' && format('indexer-build-{0}-{1}-rpm-x64', github.run_id, github.run_attempt) || format('indexer-reaper-{0}-{1}-build-rpm-x64', github.run_id, github.run_attempt) }}
+      cancel-in-progress: true
+    steps:
+      - name: Cancel the build if the engine failed
+        run: |
+          echo "engine-x64 result: ${{ needs.engine-x64.result }}"
+
+  reaper-build-rpm-arm64:
+    needs: [engine-arm64]
+    if: ${{ !cancelled() && contains(fromJSON(inputs.distribution), 'rpm') && contains(fromJSON(inputs.architecture), 'arm64') }}
+    timeout-minutes: 5
+    runs-on:
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
+    concurrency:
+      group: ${{ needs.engine-arm64.result == 'failure' && format('indexer-build-{0}-{1}-rpm-arm64', github.run_id, github.run_attempt) || format('indexer-reaper-{0}-{1}-build-rpm-arm64', github.run_id, github.run_attempt) }}
+      cancel-in-progress: true
+    steps:
+      - name: Cancel the build if the engine failed
+        run: |
+          echo "engine-arm64 result: ${{ needs.engine-arm64.result }}"
+
+  reaper-engine-x64:
+    needs: [build-tar-x64, build-deb-x64, build-rpm-x64]
+    if: ${{ !cancelled() && contains(fromJSON(inputs.architecture), 'x64') }}
+    timeout-minutes: 5
+    runs-on:
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
+    concurrency:
+      group: ${{ (needs.build-tar-x64.result != 'success' && needs.build-deb-x64.result != 'success' && needs.build-rpm-x64.result != 'success') && format('indexer-engine-{0}-{1}-x64', github.run_id, github.run_attempt) || format('indexer-reaper-{0}-{1}-engine-x64', github.run_id, github.run_attempt) }}
+      cancel-in-progress: true
+    steps:
+      - name: Cancel the engine if no build of this architecture succeeded
+        run: |
+          echo "builds of x64: ${{ join(needs.*.result, ', ') }}"
+
+  reaper-engine-arm64:
+    needs: [build-tar-arm64, build-deb-arm64, build-rpm-arm64]
+    if: ${{ !cancelled() && contains(fromJSON(inputs.architecture), 'arm64') }}
+    timeout-minutes: 5
+    runs-on:
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
+    concurrency:
+      group: ${{ (needs.build-tar-arm64.result != 'success' && needs.build-deb-arm64.result != 'success' && needs.build-rpm-arm64.result != 'success') && format('indexer-engine-{0}-{1}-arm64', github.run_id, github.run_attempt) || format('indexer-reaper-{0}-{1}-engine-arm64', github.run_id, github.run_attempt) }}
+      cancel-in-progress: true
+    steps:
+      - name: Cancel the engine if no build of this architecture succeeded
+        run: |
+          echo "builds of arm64: ${{ join(needs.*.result, ', ') }}"
+
+  # Keeps the "name" output of the workflow: the first package name set, in a fixed order.
+  package-name:
+    needs: [assemble-tar-x64, assemble-tar-arm64, assemble-deb-x64, assemble-deb-arm64, assemble-rpm-x64, assemble-rpm-arm64]
+    if: ${{ !cancelled() }}
+    timeout-minutes: 5
+    runs-on:
+      - codebuild-github-actions-codebuild-runner-indexer-amd-${{ github.run_id }}-${{ github.run_attempt }}
+    outputs:
+      name: ${{ steps.name.outputs.name }}
+    steps:
+      - name: Pick the package name
+        id: name
         env:
-          CTI_API_URL: ${{ vars.CTI_API_URL }}
+          NAME_TAR_X64: ${{ needs.assemble-tar-x64.outputs.name }}
+          NAME_TAR_ARM64: ${{ needs.assemble-tar-arm64.outputs.name }}
+          NAME_DEB_X64: ${{ needs.assemble-deb-x64.outputs.name }}
+          NAME_DEB_ARM64: ${{ needs.assemble-deb-arm64.outputs.name }}
+          NAME_RPM_X64: ${{ needs.assemble-rpm-x64.outputs.name }}
+          NAME_RPM_ARM64: ${{ needs.assemble-rpm-arm64.outputs.name }}
         run: |
-          ENGINE_TARBALL=$(ENGINE_DIR="${{ github.workspace }}/artifacts/engine" \
-            bash build-scripts/ci/find_engine_tarball.sh)
-          echo "Using engine tarball: $ENGINE_TARBALL"
-
-          cd build-scripts/builder
-          bash ./builder.sh \
-            -p "${{ needs.branches.outputs.wazuh_plugins_ref }}" \
-            -r "${{ needs.branches.outputs.reporting_plugin_ref }}" \
-            -s "${{ needs.branches.outputs.security_analytics_plugin_ref }}" \
-            -n "${{ needs.branches.outputs.notifications_plugin_ref }}" \
-            -t "${{ needs.branches.outputs.alerting_plugin_ref }}" \
-            -c "${{ needs.branches.outputs.common_utils_plugin_ref }}" \
-            -e "$ENGINE_TARBALL" \
-            -R "${{ inputs.revision }}" \
-            -S "${{ inputs.is_stage }}" \
-            -d "${{ matrix.distribution }}" \
-            -a "${{ matrix.architecture }}"
-
-      - name: Resolve built package name
-        id: package
-        run: |
-          name=$(DIST_DIR="${{ github.workspace }}/artifacts/dist" \
-            bash build-scripts/ci/resolve_package_name.sh)
-          echo "Built package: $name"
-          echo "name=$name" >> "$GITHUB_OUTPUT"
-
-      - name: Test RPM package installation
-        if: ${{ matrix.distribution == 'rpm' }}
-        run: |
-          docker pull "$UBI_IMAGE"
-          docker run --rm \
-            -v "${{ github.workspace }}/artifacts/dist:/artifacts/dist" \
-            "$UBI_IMAGE" \
-            bash -c "yum localinstall '/artifacts/dist/${{ steps.package.outputs.name }}' -y"
-
-      - name: Test RPM package host tools
-        if: ${{ matrix.distribution == 'rpm' }}
-        run: |
-          docker run --rm \
-            -v "${{ github.workspace }}/artifacts/dist:/artifacts/dist" \
-            -v "${{ github.workspace }}/build-scripts/:/build-scripts/" \
-            "$UBI_IMAGE" \
-            bash -c "dnf install -y -q cpio gawk > /dev/null 2>&1; PACKAGE='/artifacts/dist/${{ steps.package.outputs.name }}' bash /build-scripts/ci/test_host_tools.sh"
-
-      - name: Test RPM package setup plugin configuration
-        if: ${{ matrix.distribution == 'rpm' }}
-        run: |
-          docker run --rm \
-            -v "${{ github.workspace }}/artifacts/dist:/artifacts/dist" \
-            -v "${{ github.workspace }}/build-scripts/:/build-scripts/" \
-            "$UBI_IMAGE" \
-            bash -c "PACKAGE='/artifacts/dist/${{ steps.package.outputs.name }}' bash /build-scripts/ci/test_setup_config.sh"
-
-      - name: Test RPM package uninstallation
-        if: ${{ matrix.distribution == 'rpm' }}
-        run: |
-          docker run --rm \
-            -v "${{ github.workspace }}/artifacts/dist:/artifacts/dist" \
-            "$UBI_IMAGE" \
-            bash -c "yum localinstall '/artifacts/dist/${{ steps.package.outputs.name }}' -y && yum remove wazuh-indexer -y"
-
-      - name: Test RPM package leaves nothing behind on removal
-        if: ${{ matrix.distribution == 'rpm' }}
-        run: |
-          SYSTEMD_IMAGE="$UBI_INIT_IMAGE" \
-          bash build-scripts/run_in_systemd_container.sh "${{ github.workspace }}" "
-            PACKAGE_MANAGER=rpm \
-            PACKAGE_NAME=${{ steps.package.outputs.name }} \
-            bash /build-scripts/ci/test_purge.sh
-          "
-
-      - name: Test RPM credential and TLS resolution
-        if: ${{ matrix.distribution == 'rpm' }}
-        run: |
-          SYSTEMD_IMAGE="$UBI_INIT_IMAGE" \
-          bash build-scripts/run_in_systemd_container.sh "${{ github.workspace }}" '
-            set -e
-            # ubi9-init ships neither curl nor a bcrypt module. curl is required;
-            # bcrypt only enables the digest-vs-password check, which otherwise
-            # skips, so its install is allowed to fail on an offline runner.
-            command -v curl >/dev/null || dnf install -y -q curl
-            (dnf install -y -q python3-pip && pip3 install -q bcrypt) || true
-            PACKAGE="/artifacts/dist/${{ steps.package.outputs.name }}" \
-              bash /build-scripts/ci/test_credentials.sh
-          '
-
-      - name: Test RPM package update stopping the indexer
-        if: ${{ matrix.distribution == 'rpm' && needs.setup.outputs.update_tests == 'true' }}
-        run: |
-          docker run --rm --privileged \
-            -v "${{ github.workspace }}/artifacts/dist:/artifacts/dist" \
-            -v "${{ github.workspace }}/build-scripts/:/build-scripts/" \
-            "$UBI_IMAGE" \
-            bash -c "bash /build-scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }} && \
-                     systemctl stop wazuh-indexer && \
-                     yum localinstall '/artifacts/dist/${{ steps.package.outputs.name }}' -y && \
-                     if systemctl is-active --quiet wazuh-indexer; then echo 'Indexer running (unexpected)'; exit 1; else echo 'Indexer stopped (expected)'; fi"
-
-      - name: Test RPM package update without stopping the indexer
-        if: ${{ matrix.distribution == 'rpm' && needs.setup.outputs.update_tests == 'true' }}
-        run: |
-          docker run --rm --privileged \
-            -v "${{ github.workspace }}/artifacts/dist:/artifacts/dist" \
-            -v "${{ github.workspace }}/build-scripts/:/build-scripts/" \
-            "$UBI_IMAGE" \
-            bash -c "bash /build-scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }} && \
-                     yum localinstall '/artifacts/dist/${{ steps.package.outputs.name }}' -y && \
-                     if systemctl is-active --quiet wazuh-indexer; then echo 'Indexer running (expected)'; else echo 'Indexer not running (unexpected)'; exit 1; fi"
-
-      - name: Test RPM package refuses upgrade from 4.x
-        if: ${{ matrix.distribution == 'rpm' && needs.setup.outputs.previous_4x_version != '' }}
-        run: |
-          cid=$(docker run -d --rm \
-            --privileged \
-            --cgroupns=host \
-            -v /sys/fs/cgroup:/sys/fs/cgroup:rw \
-            -v "${{ github.workspace }}/artifacts/dist:/artifacts/dist" \
-            -v "${{ github.workspace }}/build-scripts/:/build-scripts/" \
-            "$UBI_INIT_IMAGE" /sbin/init)
-          trap 'docker stop "$cid" >/dev/null 2>&1 || true' EXIT
-
-          docker exec "$cid" bash -c "
-            PACKAGE_MANAGER=rpm \
-            PACKAGE_NAME=${{ steps.package.outputs.name }} \
-            PREVIOUS_VERSION=${{ needs.setup.outputs.previous_4x_version }} \
-            bash /build-scripts/ci/test_upgrade_block.sh
-          "
-
-      - name: Test DEB package installation
-        if: ${{ matrix.distribution == 'deb' }}
-        run: |
-          bash build-scripts/run_in_systemd_container.sh "${{ github.workspace }}" '
-            set -e
-            export DEBIAN_FRONTEND=noninteractive
-            bash /build-scripts/ci/install_package_dependencies.sh \
-              "/artifacts/dist/${{ steps.package.outputs.name }}"
-            dpkg -i "/artifacts/dist/${{ steps.package.outputs.name }}"
-            apt-get remove --purge wazuh-indexer -y
-          '
-
-      - name: Test DEB package host tools
-        if: ${{ matrix.distribution == 'deb' }}
-        run: |
-          docker run --rm \
-            -v "${{ github.workspace }}/artifacts/dist:/artifacts/dist" \
-            -v "${{ github.workspace }}/build-scripts/:/build-scripts/" \
-            "$UBUNTU_IMAGE" \
-            bash -c "PACKAGE='/artifacts/dist/${{ steps.package.outputs.name }}' bash /build-scripts/ci/test_host_tools.sh"
-
-      - name: Test DEB package setup plugin configuration
-        if: ${{ matrix.distribution == 'deb' }}
-        run: |
-          docker run --rm \
-            -v "${{ github.workspace }}/artifacts/dist:/artifacts/dist" \
-            -v "${{ github.workspace }}/build-scripts/:/build-scripts/" \
-            "$UBUNTU_IMAGE" \
-            bash -c "PACKAGE='/artifacts/dist/${{ steps.package.outputs.name }}' bash /build-scripts/ci/test_setup_config.sh"
-
-      - name: Test DEB package leaves nothing behind on purge
-        if: ${{ matrix.distribution == 'deb' }}
-        run: |
-          bash build-scripts/run_in_systemd_container.sh "${{ github.workspace }}" "
-            PACKAGE_MANAGER=deb \
-            PACKAGE_NAME=${{ steps.package.outputs.name }} \
-            bash /build-scripts/ci/test_purge.sh
-          "
-
-      - name: Test DEB credential and TLS resolution
-        if: ${{ matrix.distribution == 'deb' }}
-        run: |
-          bash build-scripts/run_in_systemd_container.sh "${{ github.workspace }}" '
-            set -e
-            export DEBIAN_FRONTEND=noninteractive
-            apt-get update -qq
-            # python3-bcrypt lets the suite verify each digest against the
-            # password that was published; without it that check is skipped.
-            apt-get install -y -qq python3-bcrypt || true
-            PACKAGE="/artifacts/dist/${{ steps.package.outputs.name }}" \
-              bash /build-scripts/ci/test_credentials.sh
-          '
-
-      - name: Test DEB needrestart rule
-        if: ${{ matrix.distribution == 'deb' }}
-        run: |
-          # Ubuntu 22.04 and 24.04 ship different needrestart releases.
-          for release in jammy noble; do
-            echo "::group::Ubuntu ${release}"
-            SYSTEMD_IMAGE="wazuh-indexer-systemd-test:${release}" \
-              bash build-scripts/run_in_systemd_container.sh "${{ github.workspace }}" '
-                PACKAGE="/artifacts/dist/${{ steps.package.outputs.name }}" \
-                  bash /build-scripts/ci/test_needrestart.sh
-              '
-            echo "::endgroup::"
+          for name in "$NAME_TAR_X64" "$NAME_TAR_ARM64" "$NAME_DEB_X64" "$NAME_DEB_ARM64" "$NAME_RPM_X64" "$NAME_RPM_ARM64"; do
+            if [ -n "$name" ]; then
+              echo "name=$name" >> "$GITHUB_OUTPUT"
+              break
+            fi
           done
-
-      - name: Test DEB package update stopping the indexer
-        if: ${{ matrix.distribution == 'deb' && needs.setup.outputs.update_tests == 'true' }}
-        run: |
-          bash build-scripts/run_in_systemd_container.sh "${{ github.workspace }}" '
-            set -e
-            export DEBIAN_FRONTEND=noninteractive
-            bash /build-scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }}
-            systemctl stop wazuh-indexer
-            bash /build-scripts/ci/install_package_dependencies.sh \
-              "/artifacts/dist/${{ steps.package.outputs.name }}"
-            dpkg -i --force-confnew "/artifacts/dist/${{ steps.package.outputs.name }}"
-          '
-
-      - name: Test DEB package update without stopping the indexer
-        if: ${{ matrix.distribution == 'deb' && needs.setup.outputs.update_tests == 'true' }}
-        run: |
-          bash build-scripts/run_in_systemd_container.sh "${{ github.workspace }}" '
-            set -e
-            export DEBIAN_FRONTEND=noninteractive
-            bash /build-scripts/indexer_node_install.sh ${{ needs.setup.outputs.previous_version }}
-            bash /build-scripts/ci/install_package_dependencies.sh \
-              "/artifacts/dist/${{ steps.package.outputs.name }}"
-            dpkg -i --force-confnew "/artifacts/dist/${{ steps.package.outputs.name }}"
-          '
-
-      - name: Test DEB package refuses upgrade from 4.x
-        if: ${{ matrix.distribution == 'deb' && needs.setup.outputs.previous_4x_version != '' }}
-        run: |
-          bash build-scripts/run_in_systemd_container.sh "${{ github.workspace }}" "
-            export DEBIAN_FRONTEND=noninteractive
-            PACKAGE_MANAGER=deb \
-            PACKAGE_NAME=${{ steps.package.outputs.name }} \
-            PREVIOUS_VERSION=${{ needs.setup.outputs.previous_4x_version }} \
-            bash /build-scripts/ci/test_upgrade_block.sh
-          "
-
-
-      - name: Set up AWS CLI
-        uses: aws-actions/configure-aws-credentials@v6
-        with:
-          role-to-assume: ${{ secrets.AWS_INDEXER_ACTIONS_ROLE }}
-          aws-region: ${{ secrets.CI_AWS_REGION }}
-
-      - name: Upload package artifact to S3
-        run: |
-          pkg_name="${{ steps.package.outputs.name }}"
-          pkg_path="artifacts/dist/${pkg_name}"
-          s3_base="${{ secrets.CI_INTERNAL_S3_BUCKET }}/${{ env.CI_ARTIFACTS_REPO }}/${{ env.CI_ARTIFACTS_WORKFLOW }}/${{ github.run_id }}"
-
-          if [ ! -f "$pkg_path" ]; then
-            echo "::error::Package not found at ${pkg_path}"
-            exit 1
-          fi
-
-          aws s3 cp "$pkg_path" "${s3_base}/${pkg_name}"
-          echo "::notice::Uploaded artifact to S3: ${s3_base}/${pkg_name}"
-
-      - name: Set up AWS CLI for final package upload
-        if: ${{ inputs.upload }}
-        uses: aws-actions/configure-aws-credentials@v6
-        with:
-          aws-access-key-id: ${{ secrets.CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY }}
-          aws-secret-access-key: ${{ secrets.CI_INTERNAL_DEVELOPMENT_BUCKET_USER_SECRET_KEY }}
-          aws-region: ${{ secrets.CI_AWS_REGION }}
-
-      - name: Upload final package to S3
-        if: ${{ inputs.upload }}
-        run: |
-          src="artifacts/dist/${{ steps.package.outputs.name }}"
-          dest="${{ vars.S3_PACKAGES_URI }}"
-          aws s3 cp "$src" "$dest"
-          s3uri="${dest}${{ steps.package.outputs.name }}"
-          echo "::notice::S3 URI: ${s3uri}"
-
-      - name: Upload checksum to S3
-        if: ${{ inputs.upload && inputs.checksum }}
-        run: |
-          src="artifacts/dist/${{ steps.package.outputs.name }}.sha512"
-          dest="${{ vars.S3_PACKAGES_URI }}"
-          aws s3 cp "$src" "$dest"
-          s3uri="${dest}${{ steps.package.outputs.name }}.sha512"
-          echo "::notice::S3 sha512 URI: ${s3uri}"

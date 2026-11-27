@@ -427,7 +427,8 @@ jobs:
       contents: read
       packages: read
     with:
-      wazuh-branch: ${{ needs.branches.outputs.wazuh_ref }}
+      # DEBUG ONLY (#2130 fault injection): a missing branch makes the x64 engine fail.
+      wazuh-branch: ${{ inputs.id == '2130-failinject-engine' && 'nonexistent-2130' || needs.branches.outputs.wazuh_ref }}
       build-type: "release"
       arch: '[ "x64" ]'
     secrets: inherit
@@ -561,7 +562,8 @@ jobs:
       security_analytics_plugin_ref: ${{ needs.branches.outputs.security_analytics_plugin_ref }}
       notifications_plugin_ref: ${{ needs.branches.outputs.notifications_plugin_ref }}
       alerting_plugin_ref: ${{ needs.branches.outputs.alerting_plugin_ref }}
-      common_utils_plugin_ref: ${{ needs.branches.outputs.common_utils_plugin_ref }}
+      # DEBUG ONLY (#2130 fault injection): a missing branch makes the rpm x64 build fail.
+      common_utils_plugin_ref: ${{ inputs.id == '2130-failinject-build' && 'nonexistent-2130' || needs.branches.outputs.common_utils_plugin_ref }}
 
   build-rpm-arm64:
     needs: [setup, branches, compatibility-check, get-versions-wazuh-indexer]

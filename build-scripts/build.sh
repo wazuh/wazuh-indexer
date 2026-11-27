@@ -15,6 +15,7 @@ function usage() {
     echo -e "-b BRANCH\t[Optional] Branch from wazuh/wazuh to download the index template from, default is $(bash build-scripts/product_version.sh)"
     echo -e "-n NAME\t[optional] Package name, default is set automatically."
     echo -e "-o OUTPUT\t[Optional] Output path, default is 'artifacts'."
+    echo -e "-m\t[Optional] Also publish the Maven artifacts of the project to OUTPUT/maven. The packages do not use them."
     echo -e "-h help"
 }
 
@@ -23,7 +24,7 @@ function usage() {
 # ====
 function parse_args() {
 
-    while getopts ":hq:s:o:p:a:d:r:b:n:" arg; do
+    while getopts ":hmq:s:o:p:a:d:r:b:n:" arg; do
         case $arg in
         h)
             usage
@@ -53,6 +54,9 @@ function parse_args() {
         b)
             BRANCH=$OPTARG
             ;;
+        m)
+            MAVEN=true
+            ;;
         :)
             echo "Error: -${OPTARG} requires an argument"
             usage
@@ -67,6 +71,7 @@ function parse_args() {
 
     [ -z "$OUTPUT" ] && OUTPUT=artifacts
     [ -z "$SNAPSHOT" ] && SNAPSHOT=false
+    [ -z "$MAVEN" ] && MAVEN=false
     [ -z "$PLATFORM" ] && PLATFORM=$(uname -s | awk '{print tolower($0)}')
     [ -z "$ARCHITECTURE" ] && ARCHITECTURE=$(uname -m)
     [ -z "$DISTRIBUTION" ] && DISTRIBUTION="tar"
@@ -140,28 +145,31 @@ function parse_args() {
 # Build function
 # ====
 function build() {
-    echo "Creating output directory $OUTPUT/maven/org/opensearch if it doesn't already exist"
-    mkdir -p "$OUTPUT/maven/org/opensearch"
+    local flags=(-Dbuild.snapshot="$SNAPSHOT" -Dbuild.version_qualifier="$QUALIFIER" -Pcrypto.standard=FIPS-140-3)
 
-    # Build project and publish to maven local.
-    echo "Building and publishing OpenSearch project to Maven Local"
-    ./gradlew publishToMavenLocal -Dbuild.snapshot="$SNAPSHOT" -Dbuild.version_qualifier="$QUALIFIER" -Pcrypto.standard=FIPS-140-3
+    if [ "$MAVEN" = true ]; then
+        echo "Creating output directory $OUTPUT/maven/org/opensearch if it doesn't already exist"
+        mkdir -p "$OUTPUT/maven/org/opensearch"
 
-    # Publish to existing test repo, using this to stage release versions of the artifacts that can be released from the same build.
-    echo "Publishing OpenSearch to Test Repository"
-    ./gradlew publishNebulaPublicationToTestRepository -Dbuild.snapshot="$SNAPSHOT" -Dbuild.version_qualifier="$QUALIFIER" -Pcrypto.standard=FIPS-140-3
+        # Build project and publish to maven local.
+        echo "Building and publishing OpenSearch project to Maven Local"
+        ./gradlew publishToMavenLocal "${flags[@]}"
 
-    # Copy maven publications to be promoted
-    echo "Copying Maven publications to $OUTPUT/maven/org"
-    cp -r ./build/local-test-repo/org/opensearch "${OUTPUT}"/maven/org
+        # Publish to existing test repo, using this to stage release versions of the artifacts that can be released from the same build.
+        echo "Publishing OpenSearch to Test Repository"
+        ./gradlew publishNebulaPublicationToTestRepository "${flags[@]}"
 
-    # Assemble distribution artifact
+        # Copy maven publications to be promoted
+        echo "Copying Maven publications to $OUTPUT/maven/org"
+        cp -r ./build/local-test-repo/org/opensearch "${OUTPUT}"/maven/org
+    fi
+
+    # Assemble the distribution artifact, and build the ZIPs of the internally-built
+    # plugins (not available on Maven Central), in one Gradle run. Only what the package
+    # needs is built: the Maven publications (javadoc, sources, POMs of every module)
+    # took most of the build time, and nothing in the package uses them.
     # see https://github.com/opensearch-project/OpenSearch/blob/main/settings.gradle#L34 for other distribution targets
-    ./gradlew ":distribution:$TYPE:$TARGET:assemble" -Dbuild.snapshot="$SNAPSHOT" -Dbuild.version_qualifier="$QUALIFIER" -Pcrypto.standard=FIPS-140-3
-
-    # Build plugin ZIPs for internally-built plugins (not available on Maven Central)
-    echo "Building internal plugin ZIPs"
-    ./gradlew :plugins:workload-management:bundlePlugin -Dbuild.snapshot="$SNAPSHOT" -Dbuild.version_qualifier="$QUALIFIER" -Pcrypto.standard=FIPS-140-3
+    ./gradlew ":distribution:$TYPE:$TARGET:assemble" :plugins:workload-management:bundlePlugin "${flags[@]}"
 }
 
 # ====
@@ -180,6 +188,11 @@ function main() {
     local package_name=${NAME:-$build_name}
     mkdir -p "${OUTPUT}/dist"
     cp "distribution/$TYPE/$TARGET/build/distributions/$build_name" "${OUTPUT}/dist/$package_name"
+
+    # assemble.sh installs the internally-built plugins from here
+    echo "Copying internal plugin ZIPs to ${OUTPUT}/internal-plugins"
+    mkdir -p "${OUTPUT}/internal-plugins"
+    cp plugins/workload-management/build/distributions/workload-management-*.zip "${OUTPUT}/internal-plugins/"
 }
 
 main "${@}"

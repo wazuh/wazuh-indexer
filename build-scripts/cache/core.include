@@ -1,0 +1,5 @@
+# Files that a line in core.exclude drops but the core build reads (one path per line).
+# build.sh holds the Gradle invocations, and distribution/{archives,packages}/build.gradle
+# run product_version.sh.
+build-scripts/build.sh
+build-scripts/product_version.sh

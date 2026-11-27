@@ -200,6 +200,111 @@ copy_builds() {
     done
 }
 
+# ====
+# Build cache (opt-in, see build-scripts/cache/README.md)
+#
+# builder.sh, on the host, writes artifacts/cache/keys and places the cache hits in
+# artifacts/cache/restore/<name>/ before this container starts. A restored artifact
+# replaces its build. An artifact built here is copied to artifacts/cache/publish/<name>/
+# for builder.sh to publish. Without the keys file everything is built, as before.
+# ====
+CACHE_ROOT=~/artifacts/cache
+CACHE_KEYS="${CACHE_ROOT}/keys"
+
+cache_enabled() {
+    [ -f "$CACHE_KEYS" ]
+}
+
+# Prints a column of the keys file line of an artifact: 2 is the key, 3 the commit.
+cache_field() {
+    awk -v name="$1" -v col="$2" '$1 == name { print $col }' "$CACHE_KEYS"
+}
+
+# Succeeds when the commit a plugin repository is at is the one its key was computed
+# for. Otherwise the cache is not used for it, in either direction.
+cache_commit_matches() {
+    local name="$1" repo_dir="$2" expected
+    expected=$(cache_field "$name" 3)
+    if [ "$(git -C "$repo_dir" rev-parse HEAD)" != "$expected" ]; then
+        echo "WARNING: ${name} is at $(git -C "$repo_dir" rev-parse HEAD), not at ${expected}; not using the cache for it"
+        return 1
+    fi
+}
+
+# Succeeds when artifacts/cache/restore/<name>/ holds the entry of the expected key.
+cache_restored() {
+    local name="$1" dir="${CACHE_ROOT}/restore/$1" key
+    cache_enabled || return 1
+    key=$(cache_field "$name" 2)
+    [ -n "$key" ] && [ -f "$dir/manifest.json" ] && [ "$(jq -r .key "$dir/manifest.json")" = "$key" ]
+}
+
+# Starts the publish copy of an artifact with its manifest.
+cache_publish_dir() {
+    local name="$1" commit="$2" dir="${CACHE_ROOT}/publish/$1"
+    rm -rf "$dir"
+    mkdir -p "$dir"
+    jq -n \
+        --arg name "$name" \
+        --arg key "$(cache_field "$name" 2)" \
+        --arg commit "$commit" \
+        --arg built_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+        --arg java "$(java -version 2>&1 | head -n 1)" \
+        --arg arch "$(uname -m)" \
+        '{name: $name, key: $key, commit: $commit, built_at: $built_at, toolchain: {java: $java, machine: $arch}}' \
+        >"$dir/manifest.json"
+    echo "$dir"
+}
+
+# Restores a plugin repository from the cache or builds it. A restored entry holds the
+# Maven local publications of the repository (artifact zips, jars and POMs), which is all
+# that copy_builds and the repositories built after it read.
+# Usage: build_or_restore <name> <repo dir> <build function>
+build_or_restore() {
+    local name="$1" repo_dir="$2" build_function="$3" v="${VERSION}.${REVISION}"
+    local use_cache=false
+    if cache_enabled && cache_commit_matches "$name" "$repo_dir"; then
+        use_cache=true
+    fi
+
+    if [ "$use_cache" = true ] && cache_restored "$name"; then
+        echo "----------------------------------------"
+        echo "Cache hit: ${name} ($(cache_field "$name" 2)), restoring instead of building"
+        echo "----------------------------------------"
+        cp -a "${CACHE_ROOT}/restore/${name}/m2/." /var/m2/
+        return
+    fi
+    if cache_enabled; then
+        echo "Cache miss: ${name} ($(cache_field "$name" 2))"
+    fi
+
+    local marker
+    marker=$(mktemp)
+    "$build_function" "$VERSION" "$REVISION"
+
+    if [ "$use_cache" = true ]; then
+        # What this build published to Maven local: the version directories with files
+        # newer than the marker, and the metadata of their artifacts.
+        local dir published
+        dir=$(cache_publish_dir "$name" "$(git -C "$repo_dir" rev-parse HEAD)")
+        published=$(cd /var/m2 && find com/wazuh -type f -newer "$marker" -path "*/${v}/*" -printf '%h\n' | sort -u)
+        if [ -z "$published" ]; then
+            echo "ERROR: ${name} published nothing to Maven local for version ${v}"
+            exit 1
+        fi
+        local version_dir
+        for version_dir in $published; do
+            mkdir -p "$dir/m2/$version_dir"
+            cp -a "/var/m2/$version_dir/." "$dir/m2/$version_dir/"
+            if [ -f "/var/m2/$(dirname "$version_dir")/maven-metadata-local.xml" ]; then
+                cp -a "/var/m2/$(dirname "$version_dir")/maven-metadata-local.xml" "$dir/m2/$(dirname "$version_dir")/"
+            fi
+        done
+        echo "Cache: ${name} built, ready to publish ($(echo "$published" | tr '\n' ' '))"
+    fi
+    rm -f "$marker"
+}
+
 # Function to set up the Wazuh Engine tarball
 setup_engine_tarball() {
     if [ -z "$ENGINE_TARBALL" ] || [ ! -f /tmp/engine-tarball.tar.gz ]; then
@@ -230,7 +335,7 @@ package_artifacts() {
     # Drop packages from previous runs (the bind-mounted artifacts/ persists
     # locally); assemble.sh matches wazuh-indexer-min* by glob and breaks on a
     # stale match.
-    rm -rf ~/artifacts/dist ~/artifacts/tmp
+    rm -rf ~/artifacts/dist ~/artifacts/tmp ~/artifacts/internal-plugins
 
     local architecture="$1"
     local distribution="$2"
@@ -264,8 +369,30 @@ package_artifacts() {
         -t "$alerting_hash" \
         "$(if [ "$is_stage" = "true" ]; then echo "-x"; fi)")
 
-    echo "Building package..."
-    bash build-scripts/build.sh -a "$architecture" -d "$distribution" -n "$package_min_name"
+    # The core entry stores the min package under a fixed name: its build name carries
+    # the commits of the build that produced it, so it is named after this build here.
+    local core="core-${distribution}-${architecture}"
+    if cache_restored "$core"; then
+        echo "----------------------------------------"
+        echo "Cache hit: ${core} ($(cache_field "$core" 2)), restoring instead of building"
+        echo "----------------------------------------"
+        mkdir -p ~/artifacts/dist ~/artifacts/internal-plugins
+        cp "${CACHE_ROOT}/restore/${core}"/min/wazuh-indexer-min.* ~/artifacts/dist/"$package_min_name"
+        cp "${CACHE_ROOT}/restore/${core}"/internal-plugins/* ~/artifacts/internal-plugins/
+    else
+        if cache_enabled; then
+            echo "Cache miss: ${core} ($(cache_field "$core" 2))"
+        fi
+        echo "Building package..."
+        bash build-scripts/build.sh -a "$architecture" -d "$distribution" -n "$package_min_name"
+        if cache_enabled; then
+            local dir
+            dir=$(cache_publish_dir "$core" "$(git rev-parse HEAD)")
+            mkdir -p "$dir/min" "$dir/internal-plugins"
+            cp ~/artifacts/dist/"$package_min_name" "$dir/min/wazuh-indexer-min.${package_min_name##*.}"
+            cp ~/artifacts/internal-plugins/* "$dir/internal-plugins/"
+        fi
+    fi
     echo "Assembling package..."
     bash build-scripts/assemble.sh \
         -a "$architecture" \
@@ -289,13 +416,13 @@ main() {
     # Build and assemble the package
     download_snapshots
     # Order matters
-    build_common_utils "$VERSION" "$REVISION"
-    build_alerting "$VERSION" "$REVISION"
-    build_security_analytics "$VERSION" "$REVISION"
-    build_notifications "$VERSION" "$REVISION"
-    build_reporting "$VERSION" "$REVISION"
-    build_plugins "$VERSION" "$REVISION"
-    
+    build_or_restore wazuh-indexer-common-utils "$COMMON_UTILS_REPO_DIR" build_common_utils
+    build_or_restore wazuh-indexer-alerting "$ALERTING_REPO_DIR" build_alerting
+    build_or_restore wazuh-indexer-security-analytics "$SECURITY_ANALYTICS_REPO_DIR" build_security_analytics
+    build_or_restore wazuh-indexer-notifications "$NOTIFICATIONS_REPO_DIR" build_notifications
+    build_or_restore wazuh-indexer-reporting "$REPORTING_REPO_DIR" build_reporting
+    build_or_restore wazuh-indexer-plugins "$PLUGINS_REPO_DIR" build_plugins
+
     copy_builds "$VERSION" "$REVISION"
     setup_engine_tarball
     package_artifacts "$ARCHITECTURE" "$DISTRIBUTION" "$REVISION" "$IS_STAGE"

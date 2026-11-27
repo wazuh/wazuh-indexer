@@ -53,9 +53,13 @@ Arguments:
 -S STAGE        [Optional] Staging build, default is 'false'.
 -d DISTRIBUTION [Optional] Distribution, default is 'rpm'.
 -a ARCHITECTURE [Optional] Architecture, default is 'x64'.
+-C STORE        [Optional] Use the build cache in STORE (file:///path or s3://bucket/prefix): restore the plugins and the core found there instead of building them. Off by default.
+-P      [Optional] With -C, also publish to STORE what this run built. Only for trusted builds.
 -D      Destroy the docker environment
 -h      Print help
 ```
+
+With `-C`, the plugin repositories and the OpenSearch core found in the cache are restored instead of built, and the package is assembled as usual. See [the build cache](cache/README.md) for the keys, the store and how to invalidate it.
 
 The example below it will generate a wazuh-indexer package for Debian based systems, for the x64 architecture, using 1 as revision number and using the production naming convention.
 
